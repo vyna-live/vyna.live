@@ -108,8 +108,25 @@ export async function getAIResponse(message: string) {
       hasInfoGraphic,
       infoGraphicData: hasInfoGraphic ? generateInfoGraphicData(message, text) : null
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating AI response:", error);
-    throw new Error("Failed to generate AI response");
+    
+    // Check for quota exceeded error
+    if (error?.error?.type === "insufficient_quota" || 
+        (error?.status === 429 && error?.error?.code === "insufficient_quota")) {
+      return {
+        text: "I'm unable to generate a response because the OpenAI API quota has been exceeded. This typically happens with new OpenAI accounts that haven't been set up with billing information. Please check the API key and billing settings on your OpenAI account.",
+        hasInfoGraphic: false,
+        infoGraphicData: null,
+        error: "API_QUOTA_EXCEEDED"
+      };
+    }
+    
+    return {
+      text: "I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment.",
+      hasInfoGraphic: false,
+      infoGraphicData: null,
+      error: "API_ERROR"
+    };
   }
 }

@@ -16,10 +16,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get AI response from OpenAI
       const aiResponse = await getAIResponse(message);
       
+      // If there's an error but we're still returning a response
+      if (aiResponse.error) {
+        console.log("Returning error message to client:", aiResponse.error);
+        return res.status(200).json(aiResponse);
+      }
+      
       return res.status(200).json(aiResponse);
     } catch (error) {
       console.error("Error in chat endpoint:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ 
+        text: "Sorry, there was an unexpected error processing your request.",
+        hasInfoGraphic: false,
+        error: "INTERNAL_SERVER_ERROR"
+      });
     }
   });
 
