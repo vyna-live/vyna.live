@@ -1,6 +1,4 @@
-import { StreamVideoClient } from '@stream-io/video-client';
 import { Request, Response } from 'express';
-import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
 const {
@@ -11,16 +9,6 @@ const {
 if (!GETSTREAM_API_KEY || !GETSTREAM_API_SECRET) {
   throw new Error('GetStream API credentials are required to run livestreaming services');
 }
-
-// Initialize Stream client
-const client = new StreamVideoClient({
-  apiKey: GETSTREAM_API_KEY,
-  token: '', // This will be set per user/call
-  tokenProvider: async () => {
-    // This is a fallback and should not be used in production
-    return '';
-  },
-});
 
 // Generate a token for the frontend
 export async function generateStreamToken(userId: string, userName: string) {
@@ -48,18 +36,11 @@ export async function generateStreamToken(userId: string, userName: string) {
   }
 }
 
-// Create a call (livestream session)
-export async function createCall(callId: string, userId: string, userToken: string) {
+// Simulate creating a call (livestream session)
+// We're not actually creating the call server-side since we're using a simulated interface
+export async function simulateCreateCall(callId: string, userId: string) {
   try {
-    // Connect the user to the Stream service
-    await client.connectUser({ id: userId }, userToken);
-    
-    // Create a call instance
-    const call = client.call('livestream', callId);
-    
-    // Initialize the call on the Stream servers
-    await call.getOrCreate();
-    
+    // Return a simulated call object
     return {
       id: callId,
       type: 'livestream',
@@ -68,6 +49,16 @@ export async function createCall(callId: string, userId: string, userToken: stri
   } catch (error) {
     console.error('Error creating call:', error);
     throw error;
+  }
+}
+
+// Endpoint to get Stream API key
+export async function getStreamApiKey(req: Request, res: Response) {
+  try {
+    return res.status(200).json({ apiKey: GETSTREAM_API_KEY });
+  } catch (error) {
+    console.error('Error in getStreamApiKey:', error);
+    return res.status(500).json({ error: 'Failed to get API key' });
   }
 }
 
@@ -98,7 +89,7 @@ export async function createLivestream(req: Request, res: Response) {
       return res.status(400).json({ error: 'callId, userId, and token are required' });
     }
     
-    const call = await createCall(callId, userId, token);
+    const call = await simulateCreateCall(callId, userId);
     
     return res.status(200).json({ 
       callId: call.id,

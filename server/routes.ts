@@ -11,7 +11,7 @@ import { eq, desc } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 import { log } from "./vite";
-import { getStreamToken, createLivestream } from "./getstream";
+import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -378,18 +378,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stream/livestream", createLivestream);
   
   // Get GetStream API key for frontend
-  app.get("/api/stream/key", (req, res) => {
-    try {
-      if (!process.env.GETSTREAM_API_KEY) {
-        return res.status(500).json({ error: "GetStream API key not configured" });
-      }
-      
-      res.json({ apiKey: process.env.GETSTREAM_API_KEY });
-    } catch (error) {
-      log(`Error getting GetStream API key: ${error}`, "error");
-      res.status(500).json({ error: "Failed to get GetStream API key" });
-    }
-  });
+  app.get("/api/stream/key", getStreamApiKey);
 
   const httpServer = createServer(app);
 
