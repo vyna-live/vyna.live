@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { Send, Loader2, Sparkles } from "lucide-react";
 
 interface InputAreaProps {
   onSubmit: (message: string) => void;
@@ -33,27 +33,32 @@ export default function InputArea({ onSubmit, isLoading }: InputAreaProps) {
 
   return (
     <div className="relative w-full">
-      <input
-        ref={inputRef}
-        type="text"
-        value={message}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        className="ai-input-field w-full pr-12"
-        placeholder="Ask me anything..."
-      />
-      
-      <button
-        onClick={handleSubmit}
-        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={!message.trim() || isLoading}
-      >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-        ) : (
-          <ArrowUp className="h-4 w-4 text-gray-500" />
-        )}
-      </button>
+      <div className="relative flex-grow group">
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[hsl(var(--ai-text-secondary))]">
+          <Sparkles className="h-5 w-5 opacity-70 group-focus-within:text-[hsl(var(--ai-accent))]" />
+        </div>
+        <input
+          ref={inputRef}
+          type="text"
+          value={message}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          className="ai-input-field w-full pr-12 pl-12"
+          placeholder="Ask me anything about your livestream..."
+        />
+        
+        <button
+          onClick={handleSubmit}
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 ai-primary-button w-9 h-9 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!message.trim() || isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+        </button>
+      </div>
     </div>
   );
 }

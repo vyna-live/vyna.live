@@ -17,7 +17,8 @@ import {
   FileType,
   Video,
   Search as SearchIcon,
-  CalendarDays
+  CalendarDays,
+  MonitorSmartphone
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -256,17 +257,17 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="flex-grow flex">
+    <div className="h-screen flex flex-col p-4">
+      <div className="flex-grow">
         {/* Mobile view handling */}
         {isMobile ? (
           // Mobile view - show either history or chat
-          <div className="w-full h-full flex flex-col">
+          <div className="w-full h-full">
             {activePanel === "history" ? (
               // History panel (mobile)
-              <div className="ai-panel flex-grow flex flex-col overflow-hidden m-2">
-                <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Chat Results</h2>
+              <div className="glassmorphic flex-grow flex flex-col overflow-hidden h-full">
+                <div className="p-4 flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold">History</h2>
                   <button 
                     onClick={() => setActivePanel("chat")}
                     className="ai-action-button"
@@ -278,62 +279,53 @@ export default function Home() {
                 <div className="flex-grow overflow-y-auto p-3">
                   {Object.keys(chatsByDay).sort().reverse().map(dateStr => (
                     <div key={dateStr} className="mb-6">
-                      <h3 className="text-sm font-medium text-gray-500 mb-3">{formatChatDay(dateStr)}</h3>
+                      <h3 className="text-sm font-medium text-[hsl(var(--ai-text-secondary))] mb-3">{formatChatDay(dateStr)}</h3>
                       <div className="space-y-3">
                         {chatsByDay[dateStr].map(chat => (
                           <div 
                             key={chat.id} 
-                            className="ai-card p-3 cursor-pointer hover:shadow-md transition-shadow"
+                            className="ai-card p-3 cursor-pointer transition-colors hover:bg-[hsl(var(--ai-card))]"
                             onClick={() => loadChat(chat.id)}
                           >
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center space-x-2">
-                                <div className="bg-gray-100 p-1.5 rounded-full">
+                                <div className="bg-[hsl(var(--ai-card))] p-1.5 rounded-full">
                                   {getCategoryIcon(chat.category)}
                                 </div>
                                 <span className="font-medium text-sm">{chat.title}</span>
                               </div>
-                              <div className="flex items-center text-xs text-gray-500 space-x-1">
+                              <div className="flex items-center text-xs text-[hsl(var(--ai-text-secondary))] space-x-1">
                                 <CalendarDays className="h-3 w-3" />
                                 <span>{format(chat.date, 'dd MMMM')}</span>
                               </div>
                             </div>
-                            <p className="text-sm text-gray-500 truncate">{chat.preview}</p>
+                            <p className="text-sm text-[hsl(var(--ai-text-secondary))] truncate">{chat.preview}</p>
                           </div>
                         ))}
                       </div>
                     </div>
                   ))}
                 </div>
-                
-                <div className="p-4 border-t border-gray-200">
-                  <button 
-                    onClick={startNewChat}
-                    className="ai-primary-button w-full py-2.5"
-                  >
-                    New Chat
-                  </button>
-                </div>
               </div>
             ) : (
               // Chat panel (mobile)
-              <div className="ai-panel flex-grow flex flex-col overflow-hidden m-2">
-                <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+              <div className="glassmorphic flex-grow flex flex-col overflow-hidden h-full">
+                <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <button 
                       onClick={() => setActivePanel("history")}
-                      className="p-2 rounded-full hover:bg-gray-100"
+                      className="ai-action-button"
                     >
                       <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h2 className="text-xl font-semibold">New Chat</h2>
+                    <h2 className="text-2xl font-semibold">Livestream AI</h2>
                   </div>
                   <button 
                     onClick={startLivestream}
-                    className="flex items-center space-x-1 bg-[hsl(var(--ai-accent))] text-white px-3 py-1.5 rounded-full text-sm"
+                    className="ai-primary-button ai-glow flex items-center space-x-1 px-3 py-1.5 text-sm"
                   >
                     <Video className="h-4 w-4" />
-                    <span>Live</span>
+                    <span>Go Live</span>
                   </button>
                 </div>
                 
@@ -347,22 +339,24 @@ export default function Home() {
                 
                 <div className="p-3">
                   <div className="flex justify-between space-x-2 mb-3">
-                    <button className="ai-tool-button flex-1">
-                      <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mb-1">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <span>Chat Files</span>
+                    <div 
+                      className="ai-feature-button flex-1"
+                      onClick={() => handleSubmit("Create a teleprompter script for my livestream about the latest gaming news")}
+                    >
+                      <div className="w-10 h-10 bg-purple-800 rounded-lg flex items-center justify-center mb-1">
+                        <MonitorSmartphone className="h-5 w-5 text-purple-200" />
                       </div>
-                    </button>
-                    <button className="ai-tool-button flex-1">
-                      <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mb-1">
-                          <ImageIcon className="h-4 w-4 text-amber-600" />
-                        </div>
-                        <span>Images</span>
+                      <span>Teleprompter</span>
+                    </div>
+                    <div 
+                      className="ai-feature-button flex-1"
+                      onClick={() => handleSubmit("Generate image ideas for my gaming livestream thumbnail")}
+                    >
+                      <div className="w-10 h-10 bg-amber-800 rounded-lg flex items-center justify-center mb-1">
+                        <ImageIcon className="h-5 w-5 text-amber-200" />
                       </div>
-                    </button>
+                      <span>Images</span>
+                    </div>
                   </div>
                   
                   <InputArea onSubmit={handleSubmit} isLoading={isLoading} />
@@ -371,62 +365,56 @@ export default function Home() {
             )}
           </div>
         ) : (
-          // Desktop view - show both panels
-          <div className="w-full h-full flex">
-            {/* Left panel - Chat history */}
-            <div className="w-1/3 h-full ai-panel m-2 flex flex-col overflow-hidden">
-              <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Chat Results</h2>
+          // Desktop view - single joined panel with divider
+          <div className="w-full h-full glassmorphic overflow-hidden flex">
+            {/* History sidebar */}
+            <div className="w-1/3 flex flex-col overflow-hidden">
+              <div className="p-4">
+                <h2 className="text-2xl font-semibold">History</h2>
               </div>
               
               <div className="flex-grow overflow-y-auto p-3">
                 {Object.keys(chatsByDay).sort().reverse().map(dateStr => (
                   <div key={dateStr} className="mb-6">
-                    <h3 className="text-sm font-medium text-gray-500 mb-3">{formatChatDay(dateStr)}</h3>
+                    <h3 className="text-sm font-medium text-[hsl(var(--ai-text-secondary))] mb-3">{formatChatDay(dateStr)}</h3>
                     <div className="space-y-3">
                       {chatsByDay[dateStr].map(chat => (
                         <div 
                           key={chat.id} 
-                          className="ai-card p-3 cursor-pointer hover:shadow-md transition-shadow"
+                          className="ai-card p-3 cursor-pointer transition-colors hover:bg-[hsl(var(--ai-card))]"
                           onClick={() => loadChat(chat.id)}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center space-x-2">
-                              <div className="bg-gray-100 p-1.5 rounded-full">
+                              <div className="bg-[hsl(var(--ai-card))] p-1.5 rounded-full">
                                 {getCategoryIcon(chat.category)}
                               </div>
                               <span className="font-medium text-sm">{chat.title}</span>
                             </div>
-                            <div className="flex items-center text-xs text-gray-500 space-x-1">
+                            <div className="flex items-center text-xs text-[hsl(var(--ai-text-secondary))] space-x-1">
                               <CalendarDays className="h-3 w-3" />
                               <span>{format(chat.date, 'dd MMMM')}</span>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-500 truncate">{chat.preview}</p>
+                          <p className="text-sm text-[hsl(var(--ai-text-secondary))] truncate">{chat.preview}</p>
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-              
-              <div className="p-4 border-t border-gray-200">
-                <button 
-                  onClick={startNewChat}
-                  className="ai-primary-button w-full py-2.5"
-                >
-                  New Chat
-                </button>
-              </div>
             </div>
             
-            {/* Right panel - Active chat */}
-            <div className="w-2/3 h-full ai-panel m-2 flex flex-col overflow-hidden">
-              <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-                <h2 className="text-xl font-semibold">New Chat</h2>
+            {/* Divider */}
+            <div className="ai-divider"></div>
+            
+            {/* Chat area */}
+            <div className="w-2/3 flex flex-col overflow-hidden">
+              <div className="p-4 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Livestream AI</h2>
                 <button 
                   onClick={startLivestream}
-                  className="flex items-center space-x-1 bg-[hsl(var(--ai-accent))] text-white px-3 py-1.5 rounded-full text-sm"
+                  className="ai-primary-button ai-glow flex items-center space-x-1 px-3 py-1.5"
                 >
                   <Video className="h-4 w-4" />
                   <span>Go Live</span>
@@ -441,40 +429,35 @@ export default function Home() {
                 />
               </div>
               
-              <div className="p-3">
-                <div className="flex justify-between space-x-2 mb-3">
-                  <button className="ai-tool-button flex-1">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mb-1">
-                        <FileText className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <span>Chat Files</span>
+              <div className="p-4 border-t border-[hsl(var(--ai-border))]">
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div 
+                    className="ai-feature-button ai-glow"
+                    onClick={() => handleSubmit("Create a teleprompter script for my livestream about the latest gaming news")}
+                  >
+                    <div className="w-10 h-10 bg-purple-800 rounded-lg flex items-center justify-center mb-1">
+                      <MonitorSmartphone className="h-5 w-5 text-purple-200" />
                     </div>
-                  </button>
-                  <button className="ai-tool-button flex-1">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center mb-1">
-                        <ImageIcon className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <span>Images</span>
+                    <span>Teleprompter</span>
+                  </div>
+                  <div 
+                    className="ai-feature-button ai-glow"
+                    onClick={() => handleSubmit("Generate image ideas for my gaming livestream thumbnail")}
+                  >
+                    <div className="w-10 h-10 bg-amber-800 rounded-lg flex items-center justify-center mb-1">
+                      <ImageIcon className="h-5 w-5 text-amber-200" />
                     </div>
-                  </button>
-                  <button className="ai-tool-button flex-1">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center mb-1">
-                        <Translate className="h-4 w-4 text-indigo-600" />
-                      </div>
-                      <span>Translate</span>
+                    <span>Images</span>
+                  </div>
+                  <div 
+                    className="ai-feature-button ai-glow"
+                    onClick={() => handleSubmit("Translate this to Spanish: Hello viewers, welcome to today's livestream!")}
+                  >
+                    <div className="w-10 h-10 bg-indigo-800 rounded-lg flex items-center justify-center mb-1">
+                      <Translate className="h-5 w-5 text-indigo-200" />
                     </div>
-                  </button>
-                  <button className="ai-tool-button flex-1">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mb-1">
-                        <Mic className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <span>Audio Chat</span>
-                    </div>
-                  </button>
+                    <span>Translate</span>
+                  </div>
                 </div>
                 
                 <InputArea onSubmit={handleSubmit} isLoading={isLoading} />

@@ -3,64 +3,47 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 20 14.3% 4.1%;
-  --muted: 60 4.8% 95.9%;
-  --muted-foreground: 25 5.3% 44.7%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 20 14.3% 4.1%;
-  --card: 0 0% 100%;
-  --card-foreground: 20 14.3% 4.1%;
-  --border: 20 5.9% 90%;
-  --input: 20 5.9% 90%;
-  --primary: 269 88% 65%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 60 4.8% 95.9%;
-  --secondary-foreground: 24 9.8% 10%;
-  --accent: 60 4.8% 95.9%;
-  --accent-foreground: 24 9.8% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 60 9.1% 97.8%;
-  --ring: 20 14.3% 4.1%;
+  /* Dark theme by default */
+  --background: 222 47% 11%;
+  --foreground: 0 0% 98%;
+  --muted: 223 47% 18%;
+  --muted-foreground: 215 20% 75%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 0 0% 98%;
+  --card: 222 47% 14%;
+  --card-foreground: 0 0% 98%;
+  --border: 216 34% 19%;
+  --input: 216 34% 19%;
+  --primary: 263 85% 60%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 222 47% 20%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 263 85% 60%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 263 85% 60%;
   --radius: 1rem;
 
-  /* Modern AI UI colors */
-  --ai-background: 220 25% 97%;
-  --ai-card: 0 0% 100%;
-  --ai-border: 220 20% 93%;
-  --ai-accent: 246 93% 63%;
-  --ai-accent-light: 246 93% 93%;
-  --ai-text-primary: 224 35% 18%;
-  --ai-text-secondary: 225 12% 40%;
+  /* Modern dark AI UI colors */
+  --ai-background: 222 47% 11%;
+  --ai-background-gradient-from: 222 47% 11%;
+  --ai-background-gradient-to: 250 38% 16%;
+  --ai-card: 223 47% 16%;
+  --ai-card-glass: 223 47% 16% / 0.85;
+  --ai-border: 216 34% 19%;
+  --ai-accent: 263 85% 60%;
+  --ai-accent-light: 263 85% 20%;
+  --ai-text-primary: 210 40% 98%;
+  --ai-text-secondary: 215 20% 75%;
   --ai-blue: 210 100% 66%;
   --ai-green: 142 77% 45%;
   --ai-purple: 276 100% 67%;
   --ai-red: 0 79% 63%;
-  --ai-chat-user: 214 100% 97%;
-  --ai-chat-ai: 0 0% 100%;
-}
-
-.dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --primary: 269 88% 65%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --ring: 240 4.9% 83.9%;
-  --radius: 1rem;
+  --ai-chat-user: 214 70% 20%;
+  --ai-chat-ai: 223 47% 18%;
+  --ai-divider: 216 34% 25%;
+  --ai-glow: 263 85% 60%;
 }
 
 @layer base {
@@ -69,21 +52,32 @@
   }
 
   body {
-    @apply font-sans antialiased bg-[hsl(var(--ai-background))] text-[hsl(var(--ai-text-primary))] min-h-screen;
+    @apply font-sans antialiased min-h-screen;
+    background: linear-gradient(135deg, hsl(var(--ai-background-gradient-from)), hsl(var(--ai-background-gradient-to)));
+    color: hsl(var(--ai-text-primary));
   }
 }
 
 @layer components {
+  .glassmorphic {
+    @apply backdrop-blur-md bg-[hsl(var(--ai-card-glass))] border border-[hsl(var(--ai-border))] rounded-2xl;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  }
+  
   .ai-card {
-    @apply bg-[hsl(var(--ai-card))] border border-[hsl(var(--ai-border))] rounded-2xl shadow-sm;
+    @apply bg-transparent backdrop-blur-sm border border-[hsl(var(--ai-border))] rounded-2xl;
   }
   
   .ai-panel {
-    @apply bg-[hsl(var(--ai-card))] border border-[hsl(var(--ai-border))] rounded-3xl shadow-lg;
+    @apply glassmorphic;
   }
   
   .ai-tool-button {
-    @apply flex items-center justify-center bg-white hover:bg-gray-50 border border-[hsl(var(--ai-border))] rounded-xl p-4 text-sm font-medium transition-all shadow-sm hover:shadow-md;
+    @apply flex items-center justify-center bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] border border-[hsl(var(--ai-border))] rounded-xl p-4 text-sm font-medium transition-all;
+  }
+  
+  .ai-feature-button {
+    @apply flex flex-col items-center p-4 bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-accent-light))] border border-[hsl(var(--ai-border))] rounded-xl transition-colors cursor-pointer;
   }
   
   .ai-avatar {
@@ -99,20 +93,46 @@
   }
   
   .ai-input-field {
-    @apply bg-white border border-[hsl(var(--ai-border))] rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ai-accent))] focus:border-transparent transition-all;
+    @apply bg-[hsl(var(--ai-card))] border border-[hsl(var(--ai-border))] rounded-full px-5 py-3 text-[hsl(var(--ai-text-primary))] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ai-accent))] focus:border-transparent transition-all;
   }
   
   .ai-primary-button {
-    @apply bg-[hsl(var(--ai-accent))] hover:bg-[hsl(var(--ai-accent))] text-white rounded-full px-4 py-2 font-medium transition-all shadow-sm hover:shadow-md;
+    @apply bg-[hsl(var(--ai-accent))] hover:bg-[hsl(var(--ai-accent))/0.9] text-white rounded-full px-4 py-2 font-medium transition-all;
   }
   
   .ai-action-button {
-    @apply p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors;
+    @apply p-2 rounded-full bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-accent-light))] text-[hsl(var(--ai-text-secondary))] transition-colors;
+  }
+  
+  .ai-divider {
+    @apply h-full w-px bg-[hsl(var(--ai-divider))];
+  }
+  
+  .ai-glow {
+    position: relative;
+  }
+  
+  .ai-glow::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 25px 2px hsl(var(--ai-glow) / 0.3);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+  }
+  
+  .ai-glow:hover::after {
+    opacity: 1;
   }
 
   /* For backward compatibility */
   .glass-card {
-    @apply ai-card;
+    @apply glassmorphic;
   }
   
   .primary-button {

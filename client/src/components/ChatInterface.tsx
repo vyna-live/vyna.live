@@ -15,32 +15,21 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="p-8 text-center mb-8 animate-fade-in">
-        <div className="mb-4 flex justify-center">
+      <div className="p-8 text-center animate-fade-in flex flex-col items-center justify-center h-full">
+        <div className="mb-8 flex justify-center">
           <img 
             src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&h=150&q=80" 
             alt="AI Assistant" 
-            className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
+            className="w-28 h-28 rounded-full object-cover border-2 border-[hsl(var(--ai-accent))] shadow-[0_0_15px_rgba(124,58,237,0.5)]"
           />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Hi, Streamer!</h3>
-        <p className="text-[hsl(var(--ai-text-secondary))] max-w-md mx-auto mb-6">
-          How can I help you with your livestream today?
+        <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Ready to Improve Your Stream?</h2>
+        <p className="text-[hsl(var(--ai-text-secondary))] text-xl max-w-lg mx-auto mb-10">
+          I can help prepare scripts, generate ideas, and make your content shine.
         </p>
-        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
-          <div className="ai-card p-3 flex flex-col items-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
-              <FileText className="h-5 w-5 text-blue-600" />
-            </div>
-            <span className="text-sm font-medium">Analyze Documents</span>
-          </div>
-          <div className="ai-card p-3 flex flex-col items-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
-              <MonitorSmartphone className="h-5 w-5 text-purple-600" />
-            </div>
-            <span className="text-sm font-medium">Teleprompter Script</span>
-          </div>
-        </div>
+        <p className="text-[hsl(var(--ai-text-secondary))] opacity-80 max-w-sm mb-6">
+          Try asking me to create a teleprompter script or suggest topics for your next stream.
+        </p>
       </div>
     );
   }
