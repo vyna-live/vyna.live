@@ -209,8 +209,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const [session] = await db.select()
         .from(researchSessions)
-        .where(eq(researchSessions.id, sessionId))
-        .where(eq(researchSessions.userId, userId));
+        .where(eq(researchSessions.id, sessionId));
       
       if (!session) {
         return res.status(404).json({ error: "Session not found" });

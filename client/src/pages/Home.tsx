@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import ChatInterface from "@/components/ChatInterface";
 import InputArea from "@/components/InputArea";
 import Teleprompter from "@/components/Teleprompter";
+import Logo from "@/components/Logo";
 import { InfoGraphic } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -16,7 +17,8 @@ import {
   Video,
   Search as SearchIcon,
   CalendarDays,
-  MonitorSmartphone
+  MonitorSmartphone,
+  Plus
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -245,67 +247,90 @@ export default function Home() {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      {/* Left sidebar - always visible */}
-      <div className="w-56 h-full bg-[hsl(var(--ai-background))] border-r border-[hsl(var(--ai-border))] flex flex-col">
+      {/* Left sidebar - research history */}
+      <div className="w-64 h-full bg-[hsl(var(--ai-background))] border-r border-[hsl(var(--ai-border))] flex flex-col">
         <div className="py-4 px-4 flex items-center">
-          <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-            <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
-            <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
-            <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
-            <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
-            <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
-            <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
-            <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
-            <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
-            <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
-            <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
-            <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
-            <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
-            <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
-          </svg>
-          <span className="ml-2 text-lg font-medium">perplexity</span>
+          <Logo size="md" />
         </div>
         
         <div className="px-3 py-4">
-          <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-white bg-[hsl(var(--ai-background))] hover:bg-[hsl(var(--ai-card))] rounded-lg transition-colors">
-            <span className="mr-1">New Thread</span>
-            <span className="ml-auto text-xs opacity-70">Ctrl I</span>
+          <button
+            onClick={startNewChat}
+            className="w-full flex items-center justify-center space-x-1 bg-[hsl(var(--ai-accent))] hover:bg-[hsl(var(--ai-accent))/90] text-black px-4 py-2 rounded-full text-sm font-medium"
+          >
+            <span>New Research Session</span>
+            <span className="ml-1 opacity-70 text-xs">+</span>
           </button>
         </div>
         
-        <nav className="flex-1 px-3">
-          <div className="space-y-2">
-            <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-[hsl(var(--ai-text-secondary))] hover:bg-[hsl(var(--ai-card))] rounded-lg transition-colors">
-              <svg className="h-5 w-5 mr-2 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span>Home</span>
-            </button>
-            
-            <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-[hsl(var(--ai-text-secondary))] hover:bg-[hsl(var(--ai-card))] rounded-lg transition-colors">
-              <svg className="h-5 w-5 mr-2 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>Discover</span>
-            </button>
-            
-            <button className="flex items-center w-full px-3 py-2 text-sm font-medium text-[hsl(var(--ai-text-secondary))] hover:bg-[hsl(var(--ai-card))] rounded-lg transition-colors">
-              <svg className="h-5 w-5 mr-2 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
-              <span>Library</span>
-            </button>
+        {/* Research history section */}
+        <div className="flex-1 px-3 overflow-y-auto">
+          <div className="mb-2 text-xs text-[hsl(var(--ai-text-secondary))] font-medium uppercase tracking-wider px-3 py-1">
+            Recent Research
           </div>
-        </nav>
+          
+          <div className="space-y-1.5">
+            {Object.entries(chatsByDay).map(([dateStr, sessions]) => (
+              <div key={dateStr} className="mb-3">
+                <div className="text-xs text-[hsl(var(--ai-text-secondary))] px-3 py-1">
+                  {formatChatDay(dateStr)}
+                </div>
+                
+                {sessions.map(session => (
+                  <button
+                    key={session.id}
+                    onClick={() => loadChat(session.id)}
+                    className={`flex items-start w-full px-3 py-2 text-sm text-left rounded-lg transition-colors ${
+                      currentChat?.id === session.id 
+                        ? 'bg-[hsl(180,85%,15%)] text-[hsl(var(--ai-text-primary))]'
+                        : 'text-[hsl(var(--ai-text-secondary))] hover:bg-[hsl(var(--ai-card))]'
+                    }`}
+                  >
+                    <div className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0">
+                      {getCategoryIcon(session.category)}
+                    </div>
+                    <div className="overflow-hidden flex-1">
+                      <div className="font-medium truncate">{session.title}</div>
+                      <div className="text-xs opacity-70 truncate">{session.preview}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ))}
+            
+            {chatHistory.length === 0 && (
+              <div className="text-center py-8 px-3">
+                <div className="w-12 h-12 mx-auto rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3">
+                  <SearchIcon className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                </div>
+                <p className="text-sm text-[hsl(var(--ai-text-secondary))]">
+                  No research history yet
+                </p>
+                <p className="text-xs text-[hsl(var(--ai-text-secondary))] mt-2">
+                  Start a new research session to see it here
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
         
         <div className="p-3 border-t border-[hsl(var(--ai-border))]">
-          <div className="flex items-center p-2">
-            <div className="w-8 h-8 rounded-full bg-teal-700 flex items-center justify-center text-white">
-              D
+          <div className="flex items-center justify-between p-2">
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-teal-700 flex items-center justify-center text-white">
+                V
+              </div>
+              <div className="ml-2">
+                <div className="text-sm font-medium">Livestreamer</div>
+              </div>
             </div>
-            <div className="ml-2">
-              <div className="text-sm font-medium">User</div>
-            </div>
+            
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] text-[hsl(var(--ai-text-secondary))]">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -314,17 +339,58 @@ export default function Home() {
       <div className="flex-1 flex flex-col h-full">
         {/* Chat header */}
         <div className="h-14 border-b border-[hsl(var(--ai-border))] flex items-center justify-between px-4">
-          <h1 className="text-lg font-medium">Livestream AI</h1>
+          <div className="flex items-center">
+            <Logo size="sm" />
+            <div className="h-6 mx-3 border-r border-[hsl(var(--ai-border))]"></div>
+            <h1 className="text-base font-medium text-[hsl(var(--ai-text-secondary))]">Research Assistant</h1>
+          </div>
+          
           <div className="flex items-center space-x-2">
-            <button className="w-9 h-9 flex items-center justify-center rounded-full bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] transition-colors">
-              <svg className="h-5 w-5 text-[hsl(var(--ai-text-secondary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
+            <button 
+              onClick={() => {
+                // Upload logo feature
+                document.getElementById('logo-upload')?.click();
+              }}
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] transition-colors text-[hsl(var(--ai-text-secondary))]"
+              title="Upload logo"
+            >
+              <ImageIcon className="h-4 w-4" />
             </button>
+            
+            <input 
+              id="logo-upload" 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={async (e) => {
+                const files = e.target.files;
+                if (!files || files.length === 0) return;
+                
+                const file = files[0];
+                const formData = new FormData();
+                formData.append("logo", file);
+                
+                try {
+                  const response = await fetch("/api/logo", {
+                    method: "POST",
+                    body: formData,
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error("Failed to upload logo");
+                  }
+                  
+                  // Force refresh
+                  window.location.reload();
+                } catch (error) {
+                  console.error("Error uploading logo:", error);
+                }
+              }}
+            />
             
             <button 
               onClick={startLivestream}
-              className="flex items-center space-x-1 bg-[hsl(var(--ai-accent))] text-black px-4 py-1.5 rounded-full text-sm"
+              className="flex items-center space-x-1 bg-gradient-to-r from-[#40C4D0] to-[#1AA7B3] text-black px-4 py-1.5 rounded-full text-sm font-medium"
             >
               <Video className="h-4 w-4" />
               <span>Go Live</span>
