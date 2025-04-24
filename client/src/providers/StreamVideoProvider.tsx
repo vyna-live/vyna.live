@@ -85,12 +85,13 @@ export function StreamVideoProvider({
     if (!apiKey || !token || !userId) return;
     
     try {
-      // Initialize the Stream client
+      // Initialize the Stream client with latest SDK pattern
       const streamClient = new StreamVideoClient({
         apiKey,
         user: {
           id: userId,
           name: userName || 'User',
+          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`, // Add user avatar
         },
         token,
       });

@@ -9,11 +9,12 @@ import {
   ParticipantView,
   StreamVideoClient,
   DeviceSettings,
-  useStreamVideoClient
+  useStreamVideoClient,
+  StreamVideo as StreamVideoSdk
 } from '@stream-io/video-react-sdk';
 
-// Import styling - we'll handle this with inline styles to avoid issues
-// import '@stream-io/video-react-sdk/dist/css/styles.css';
+// Import styling from the package
+import '@stream-io/video-react-sdk/dist/css/styles.css';
 
 interface StreamVideoComponentProps {
   apiKey: string;
@@ -254,9 +255,15 @@ function CallContent({ call }: { call: any }) {
             <Video className="w-10 h-10 text-[#EFE9E1]" />
           </div>
           <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Ready to Stream</h3>
-          <p className="text-[#CDBCAB] mb-6 max-w-md mx-auto">
-            Your stream is ready to go live. Click the button below to start streaming to your audience.
+          <p className="text-[#CDBCAB] mb-4 max-w-md mx-auto">
+            Your stream is ready to go live. Configure your camera and microphone settings below.
           </p>
+          
+          {/* Add device settings component for camera preview */}
+          <div className="mb-6 max-w-md mx-auto">
+            <DeviceSettings />
+          </div>
+          
           <button 
             onClick={handleJoinCall}
             disabled={isJoining}
