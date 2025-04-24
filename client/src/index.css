@@ -47,6 +47,13 @@
   
   /* Perplexity brand colors */
   --ai-teal: 180 85% 50%;
+  
+  /* Earthy palette */
+  --maroon: 329 64% 29%;
+  --golden: 36 53% 52%;
+  --sage: 103 16% 55%;
+  --taupe: 29 18% 80%;
+  --cream: 37 33% 94%;
 }
 
 @layer base {

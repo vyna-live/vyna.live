@@ -56,8 +56,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
           <div className="h-6 mx-3 border-r border-white/20"></div>
           <GradientText 
             text="LIVE STREAM" 
-            gradientFrom="from-red-500" 
-            gradientTo="to-pink-500" 
+            preset="earthy"
             className="text-base font-bold" 
             typingSpeed={70}
             showCursor={false}
@@ -97,8 +96,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
             
             <GradientText 
               text="Your Livestream is Active" 
-              gradientFrom="from-blue-400" 
-              gradientTo="to-purple-500" 
+              preset="warm"
               className="text-3xl font-bold mb-3" 
               typingSpeed={50}
               showCursor={false}

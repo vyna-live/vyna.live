@@ -345,8 +345,7 @@ export default function Home() {
             <div className="h-6 mx-3 border-r border-[hsl(var(--ai-border))]"></div>
             <GradientText 
               text="AI Research Assistant" 
-              gradientFrom="from-blue-400" 
-              gradientTo="to-teal-400" 
+              preset="warm"
               className="text-base font-semibold" 
               typingSpeed={80}
             />
@@ -397,7 +396,7 @@ export default function Home() {
             
             <button 
               onClick={startLivestream}
-              className="flex items-center space-x-1 bg-gradient-to-r from-[#40C4D0] to-[#1AA7B3] hover:from-[#50D4E0] hover:to-[#2AB7C3] text-black px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
+              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
             >
               <Video className="h-4 w-4" />
               <span>Go Live</span>
@@ -412,9 +411,7 @@ export default function Home() {
               <div className="mb-6">
                 <GradientText 
                   text="Welcome to vyna.live" 
-                  gradientFrom="from-blue-500" 
-                  gradientTo="to-pink-500" 
-                  gradientVia="via-purple-500"
+                  preset="earthy"
                   className="text-4xl font-bold" 
                   typingSpeed={70}
                 />
@@ -431,8 +428,8 @@ export default function Home() {
                   onClick={() => handleSubmit("Create a teleprompter script for my gaming livestream about the latest PlayStation releases")}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
-                      <MonitorSmartphone className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                    <div className="w-12 h-12 rounded-lg bg-[#5D1C34] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                      <MonitorSmartphone className="h-6 w-6 text-[#CDBCAB]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Teleprompter</h3>
                     <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Generate streaming scripts from any topic</p>
@@ -444,8 +441,8 @@ export default function Home() {
                   onClick={() => handleSubmit("Research trending topics for tech livestreams this week")}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
-                      <SearchIcon className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                    <div className="w-12 h-12 rounded-lg bg-[#A67D44] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                      <SearchIcon className="h-6 w-6 text-[#EFE9E1]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Research</h3>
                     <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Find trending topics and insights</p>
@@ -460,8 +457,8 @@ export default function Home() {
                   }}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
-                      <FileText className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                    <div className="w-12 h-12 rounded-lg bg-[#899481] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                      <FileText className="h-6 w-6 text-[#EFE9E1]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Upload Content</h3>
                     <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Analyze files for your streams</p>
