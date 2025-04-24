@@ -4,6 +4,7 @@ import ChatInterface from "@/components/ChatInterface";
 import InputArea from "@/components/InputArea";
 import Teleprompter from "@/components/Teleprompter";
 import Logo from "@/components/Logo";
+import GradientText from "@/components/GradientText";
 import { InfoGraphic } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -338,11 +339,17 @@ export default function Home() {
       {/* Main content area */}
       <div className="flex-1 flex flex-col h-full">
         {/* Chat header */}
-        <div className="h-14 border-b border-[hsl(var(--ai-border))] flex items-center justify-between px-4">
+        <div className="h-14 border-b border-[hsl(var(--ai-border))] flex items-center justify-between px-6">
           <div className="flex items-center">
             <Logo size="sm" />
             <div className="h-6 mx-3 border-r border-[hsl(var(--ai-border))]"></div>
-            <h1 className="text-base font-medium text-[hsl(var(--ai-text-secondary))]">Research Assistant</h1>
+            <GradientText 
+              text="AI Research Assistant" 
+              gradientFrom="from-blue-400" 
+              gradientTo="to-teal-400" 
+              className="text-base font-semibold" 
+              typingSpeed={80}
+            />
           </div>
           
           <div className="flex items-center space-x-2">
@@ -390,7 +397,7 @@ export default function Home() {
             
             <button 
               onClick={startLivestream}
-              className="flex items-center space-x-1 bg-gradient-to-r from-[#40C4D0] to-[#1AA7B3] text-black px-4 py-1.5 rounded-full text-sm font-medium"
+              className="flex items-center space-x-1 bg-gradient-to-r from-[#40C4D0] to-[#1AA7B3] hover:from-[#50D4E0] hover:to-[#2AB7C3] text-black px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
             >
               <Video className="h-4 w-4" />
               <span>Go Live</span>
@@ -398,59 +405,110 @@ export default function Home() {
           </div>
         </div>
         
-        {/* Main chat area */}
-        <div className="flex-1 overflow-y-auto">
-          <ChatInterface 
-            messages={messages} 
-            onTeleprompterClick={showTeleprompter}
-            isLoading={isLoading}
-          />
-        </div>
+        {/* Welcome message when no messages */}
+        {messages.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[hsl(var(--ai-background))] to-[hsl(var(--ai-background))]">
+            <div className="max-w-2xl w-full text-center">
+              <div className="mb-6">
+                <GradientText 
+                  text="Welcome to vyna.live" 
+                  gradientFrom="from-blue-500" 
+                  gradientTo="to-pink-500" 
+                  gradientVia="via-purple-500"
+                  className="text-4xl font-bold" 
+                  typingSpeed={70}
+                />
+              </div>
+              
+              <p className="text-[hsl(var(--ai-text-secondary))] mb-10 max-w-lg mx-auto">
+                Your AI-powered research assistant for creating engaging livestream content.
+                Upload files, ask questions, and get a teleprompter script ready for your stream.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                <div 
+                  className="relative group overflow-hidden rounded-xl bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] p-5 border border-[hsl(var(--ai-border))] cursor-pointer transition-all duration-300 hover:shadow-lg"
+                  onClick={() => handleSubmit("Create a teleprompter script for my gaming livestream about the latest PlayStation releases")}
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                      <MonitorSmartphone className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                    </div>
+                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Teleprompter</h3>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Generate streaming scripts from any topic</p>
+                  </div>
+                </div>
+                
+                <div 
+                  className="relative group overflow-hidden rounded-xl bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] p-5 border border-[hsl(var(--ai-border))] cursor-pointer transition-all duration-300 hover:shadow-lg"
+                  onClick={() => handleSubmit("Research trending topics for tech livestreams this week")}
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                      <SearchIcon className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                    </div>
+                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Research</h3>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Find trending topics and insights</p>
+                  </div>
+                </div>
+                
+                <div 
+                  className="relative group overflow-hidden rounded-xl bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] p-5 border border-[hsl(var(--ai-border))] cursor-pointer transition-all duration-300 hover:shadow-lg"
+                  onClick={() => {
+                    // Trigger file upload dialog
+                    document.getElementById('main-file-upload')?.click();
+                  }}
+                >
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                      <FileText className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                    </div>
+                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Upload Content</h3>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Analyze files for your streams</p>
+                  </div>
+                </div>
+              </div>
+              
+              <input 
+                id="main-file-upload" 
+                type="file" 
+                className="hidden" 
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
+                  
+                  const file = files[0];
+                  const fileExt = file.name.split('.').pop()?.toLowerCase();
+                  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt || '');
+                  
+                  if (isImage) {
+                    handleSubmit(`Analyze this image and suggest livestream topics related to it: ${file.name}`);
+                  } else {
+                    handleSubmit(`Extract key points from this document for my livestream: ${file.name}`);
+                  }
+                  
+                  // Reset the input
+                  if (e.target) {
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <ChatInterface 
+              messages={messages} 
+              onTeleprompterClick={showTeleprompter}
+              isLoading={isLoading}
+            />
+          </div>
+        )}
         
         {/* Input area */}
         <div className="p-4 border-t border-[hsl(var(--ai-border))]">
           <div className="mx-auto max-w-2xl">
-            <div className="mb-4">
-              <div className="flex space-x-3">
-                <div 
-                  className="perplexity-card flex-1 p-3 cursor-pointer hover:bg-[hsl(var(--ai-card-glass))]"
-                  onClick={() => handleSubmit("Create a teleprompter script for my livestream about the latest gaming news")}
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center">
-                      <MonitorSmartphone className="h-4 w-4 text-[hsl(var(--ai-teal))]" />
-                    </div>
-                    <span className="ml-2 text-sm">Teleprompter</span>
-                  </div>
-                </div>
-                
-                <div 
-                  className="perplexity-card flex-1 p-3 cursor-pointer hover:bg-[hsl(var(--ai-card-glass))]"
-                  onClick={() => handleSubmit("Generate image ideas for my gaming livestream thumbnail")}
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center">
-                      <ImageIcon className="h-4 w-4 text-[hsl(var(--ai-teal))]" />
-                    </div>
-                    <span className="ml-2 text-sm">Images</span>
-                  </div>
-                </div>
-                
-                <div 
-                  className="perplexity-card flex-1 p-3 cursor-pointer hover:bg-[hsl(var(--ai-card-glass))]"
-                  onClick={() => handleSubmit("Translate this to Spanish: Hello viewers, welcome to today's livestream!")}
-                >
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center">
-                      <Translate className="h-4 w-4 text-[hsl(var(--ai-teal))]" />
-                    </div>
-                    <span className="ml-2 text-sm">Translate</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <InputArea onSubmit={handleSubmit} isLoading={isLoading} />
+            <InputArea onSubmit={handleSubmit} isLoading={isLoading} sessionId={parseInt(currentChat?.id || '0')} />
           </div>
         </div>
       </div>
