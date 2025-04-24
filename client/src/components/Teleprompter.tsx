@@ -19,63 +19,49 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
   } = useTeleprompter(text);
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-white shadow-lg rounded-t-xl transform transition-transform duration-300 z-50">
-      <div className="container mx-auto px-4 py-4 max-w-5xl">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-lg font-semibold purple-gradient-text">
-            Teleprompter Mode
-          </h3>
+    <div className="h-full flex flex-col">
+      <div
+        ref={containerRef}
+        className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-4 overflow-hidden"
+      >
+        <div
+          ref={teleprompterTextRef}
+          className="text-lg leading-relaxed text-white"
+        >
+          {text}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between bg-black/30 backdrop-blur-sm rounded-lg p-3">
+        <div className="flex items-center space-x-4">
           <button
-            onClick={onClose}
-            className="text-[#6B7280] hover:text-[#A259FF]"
+            onClick={togglePlayPause}
+            className="bg-purple-600 hover:bg-purple-700 text-white rounded-full w-10 h-10 flex items-center justify-center"
           >
-            <X className="h-6 w-6" />
+            {isPlaying ? (
+              <Pause className="h-5 w-5" />
+            ) : (
+              <Play className="h-5 w-5" />
+            )}
+          </button>
+          <button
+            onClick={handleRestart}
+            className="text-white/80 hover:text-white"
+          >
+            <RotateCcw className="h-5 w-5" />
           </button>
         </div>
 
-        <div
-          ref={containerRef}
-          className="bg-[#F5F5F7] rounded-lg p-6 mb-4 h-40 overflow-hidden"
-        >
-          <div
-            ref={teleprompterTextRef}
-            className="text-lg leading-relaxed text-[#1F2937]"
-          >
-            {text}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={togglePlayPause}
-              className="bg-[#A259FF] text-white rounded-full w-12 h-12 flex items-center justify-center"
-            >
-              {isPlaying ? (
-                <Pause className="h-6 w-6" />
-              ) : (
-                <Play className="h-6 w-6" />
-              )}
-            </button>
-            <button
-              onClick={handleRestart}
-              className="text-[#6B7280] hover:text-[#A259FF]"
-            >
-              <RotateCcw className="h-6 w-6" />
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-[#6B7280]">Speed:</span>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={speed}
-              onChange={handleSpeedChange}
-              className="w-32 accent-[#A259FF]"
-            />
-          </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-white/80">Speed:</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={speed}
+            onChange={handleSpeedChange}
+            className="w-24 accent-purple-600"
+          />
         </div>
       </div>
     </div>

@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import Header from "@/components/Header";
 import PromptSuggestions from "@/components/PromptSuggestions";
 import ChatInterface from "@/components/ChatInterface";
 import InputArea from "@/components/InputArea";
 import Teleprompter from "@/components/Teleprompter";
 import { InfoGraphic } from "@shared/schema";
+import { Video } from "lucide-react";
 
 export type MessageType = {
   id: string;
@@ -20,6 +22,7 @@ export default function Home() {
   const [teleprompterVisible, setTeleprompterVisible] = useState(false);
   const [teleprompterText, setTeleprompterText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [, setLocation] = useLocation();
 
   const handleSubmit = async (message: string) => {
     if (!message.trim()) return;
@@ -79,9 +82,28 @@ export default function Home() {
     setTeleprompterVisible(true);
   };
 
+  const startLivestream = () => {
+    // Navigate to livestream page with teleprompter text if available
+    const queryParams = teleprompterText 
+      ? `?text=${encodeURIComponent(teleprompterText)}` 
+      : '';
+    setLocation(`/livestream${queryParams}`);
+  };
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-5xl">
       <Header username="John" />
+      
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-800">AI Research Assistant</h2>
+        <button
+          onClick={startLivestream}
+          className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          <Video className="h-5 w-5" />
+          <span>Go Live</span>
+        </button>
+      </div>
       
       <PromptSuggestions onPromptClick={handlePromptClick} />
       
@@ -94,10 +116,16 @@ export default function Home() {
       <InputArea onSubmit={handleSubmit} isLoading={isLoading} />
       
       {teleprompterVisible && (
-        <Teleprompter 
-          text={teleprompterText} 
-          onClose={() => setTeleprompterVisible(false)} 
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-auto">
+            <div className="h-[60vh] p-6">
+              <Teleprompter 
+                text={teleprompterText} 
+                onClose={() => setTeleprompterVisible(false)} 
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
