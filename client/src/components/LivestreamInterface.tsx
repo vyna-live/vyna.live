@@ -165,7 +165,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
               
               <button 
                 onClick={toggleTeleprompter}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] text-[hsl(var(--ai-text-secondary))] transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-r from-[#A67D44] to-[#5D1C34] text-[#EFE9E1] transition-all hover:shadow-md"
               >
                 <X className="w-5 h-5" />
               </button>

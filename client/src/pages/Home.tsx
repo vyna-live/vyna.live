@@ -357,7 +357,7 @@ export default function Home() {
                 // Upload logo feature
                 document.getElementById('logo-upload')?.click();
               }}
-              className="w-9 h-9 flex items-center justify-center rounded-lg bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] transition-colors text-[hsl(var(--ai-text-secondary))]"
+              className="w-9 h-9 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] hover:shadow-md transition-all text-[#EFE9E1]"
               title="Upload logo"
             >
               <ImageIcon className="h-4 w-4" />
@@ -516,7 +516,7 @@ export default function Home() {
           <div className="bg-[hsl(var(--ai-card))] rounded-2xl shadow-xl w-full max-w-3xl mx-auto" onClick={(e) => e.stopPropagation()}>
             <div className="h-[60vh] p-6 relative">
               <button 
-                className="absolute top-4 right-4 ai-action-button"
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-r from-[#A67D44] to-[#5D1C34] text-[#EFE9E1] transition-all hover:shadow-md"
                 onClick={() => setTeleprompterVisible(false)}
               >
                 <X className="h-5 w-5" />

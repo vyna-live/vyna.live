@@ -178,7 +178,7 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
               <button 
                 onClick={openDocumentUpload}
                 disabled={uploadingFiles || isLoading}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-[hsl(180,85%,15%)] text-[hsl(var(--ai-text-secondary))] hover:text-[hsl(var(--ai-teal))] transition-colors disabled:opacity-50"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[#EFE9E1] transition-all disabled:opacity-50 hover:shadow-md"
                 title="Upload document"
               >
                 <FileText className="h-5 w-5" />
@@ -187,7 +187,7 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
               <button 
                 onClick={openImageUpload}
                 disabled={uploadingFiles || isLoading}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-[hsl(180,85%,15%)] text-[hsl(var(--ai-text-secondary))] hover:text-[hsl(var(--ai-teal))] transition-colors disabled:opacity-50"
+                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#A67D44] to-[#899481] text-[#EFE9E1] transition-all disabled:opacity-50 hover:shadow-md"
                 title="Upload image"
               >
                 <ImageIcon className="h-5 w-5" />
@@ -196,7 +196,7 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
             
             <button
               onClick={handleSubmit}
-              className="w-9 h-9 flex items-center justify-center bg-[hsl(var(--ai-accent))] rounded-lg text-black disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-[#899481] to-[#5D1C34] rounded-lg text-[#EFE9E1] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md transition-all"
               disabled={!message.trim() || isLoading || uploadingFiles}
             >
               {isLoading || uploadingFiles ? (
