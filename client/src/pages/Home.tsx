@@ -257,10 +257,10 @@ export default function Home() {
         <div className="px-3 py-4">
           <button
             onClick={startNewChat}
-            className="w-full flex items-center justify-center space-x-1 bg-[hsl(var(--ai-accent))] hover:bg-[hsl(var(--ai-accent))/90] text-black px-4 py-2 rounded-full text-sm font-medium"
+            className="w-full flex items-center justify-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-[#EFE9E1] px-4 py-2 rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all"
           >
             <span>New Research Session</span>
-            <span className="ml-1 opacity-70 text-xs">+</span>
+            <span className="ml-1 opacity-90 text-xs">+</span>
           </button>
         </div>
         
@@ -281,10 +281,10 @@ export default function Home() {
                   <button
                     key={session.id}
                     onClick={() => loadChat(session.id)}
-                    className={`flex items-start w-full px-3 py-2 text-sm text-left rounded-lg transition-colors ${
+                    className={`flex items-start w-full px-3 py-2 text-sm text-left rounded-lg transition-all ${
                       currentChat?.id === session.id 
-                        ? 'bg-[hsl(180,85%,15%)] text-[hsl(var(--ai-text-primary))]'
-                        : 'text-[hsl(var(--ai-text-secondary))] hover:bg-[hsl(var(--ai-card))]'
+                        ? 'bg-gradient-to-r from-[#5D1C34]/20 to-[#A67D44]/10 shadow-sm border border-[#A67D44]/20 text-[#CDBCAB]'
+                        : 'text-[hsl(var(--ai-text-secondary))] hover:bg-[hsl(var(--ai-card))] hover:shadow-sm'
                     }`}
                   >
                     <div className="h-5 w-5 mt-0.5 mr-2 flex-shrink-0">
@@ -301,10 +301,10 @@ export default function Home() {
             
             {chatHistory.length === 0 && (
               <div className="text-center py-8 px-3">
-                <div className="w-12 h-12 mx-auto rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3">
-                  <SearchIcon className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+                <div className="w-12 h-12 mx-auto rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-3 shadow-md">
+                  <SearchIcon className="h-6 w-6 text-[#CDBCAB]" />
                 </div>
-                <p className="text-sm text-[hsl(var(--ai-text-secondary))]">
+                <p className="text-sm text-[#CDBCAB]">
                   No research history yet
                 </p>
                 <p className="text-xs text-[hsl(var(--ai-text-secondary))] mt-2">
@@ -326,7 +326,7 @@ export default function Home() {
               </div>
             </div>
             
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] text-[hsl(var(--ai-text-secondary))]">
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] hover:shadow-md transition-all text-[#EFE9E1]">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -424,11 +424,11 @@ export default function Home() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
                 <div 
-                  className="relative group overflow-hidden rounded-xl bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] p-5 border border-[hsl(var(--ai-border))] cursor-pointer transition-all duration-300 hover:shadow-lg"
+                  className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-[hsl(var(--ai-card))] to-[hsl(var(--ai-card-glass))] p-5 border border-[#5D1C34]/20 cursor-pointer transition-all duration-300 hover:shadow-lg shadow-md"
                   onClick={() => handleSubmit("Create a teleprompter script for my gaming livestream about the latest PlayStation releases")}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-lg bg-[#5D1C34] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#6D2C44] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
                       <MonitorSmartphone className="h-6 w-6 text-[#CDBCAB]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Teleprompter</h3>
@@ -437,11 +437,11 @@ export default function Home() {
                 </div>
                 
                 <div 
-                  className="relative group overflow-hidden rounded-xl bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] p-5 border border-[hsl(var(--ai-border))] cursor-pointer transition-all duration-300 hover:shadow-lg"
+                  className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-[hsl(var(--ai-card))] to-[hsl(var(--ai-card-glass))] p-5 border border-[#A67D44]/20 cursor-pointer transition-all duration-300 hover:shadow-lg shadow-md"
                   onClick={() => handleSubmit("Research trending topics for tech livestreams this week")}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-lg bg-[#A67D44] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#A67D44] to-[#B68D54] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
                       <SearchIcon className="h-6 w-6 text-[#EFE9E1]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Research</h3>
@@ -450,14 +450,14 @@ export default function Home() {
                 </div>
                 
                 <div 
-                  className="relative group overflow-hidden rounded-xl bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] p-5 border border-[hsl(var(--ai-border))] cursor-pointer transition-all duration-300 hover:shadow-lg"
+                  className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-[hsl(var(--ai-card))] to-[hsl(var(--ai-card-glass))] p-5 border border-[#899481]/20 cursor-pointer transition-all duration-300 hover:shadow-lg shadow-md"
                   onClick={() => {
                     // Trigger file upload dialog
                     document.getElementById('main-file-upload')?.click();
                   }}
                 >
                   <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-lg bg-[#899481] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#899481] to-[#99A491] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
                       <FileText className="h-6 w-6 text-[#EFE9E1]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Upload Content</h3>
