@@ -3,8 +3,7 @@ import { BrainCircuit, Mic, Video, Monitor, Volume2, X, Clock, Loader2 } from "l
 import Teleprompter from "./Teleprompter";
 import GradientText from "./GradientText";
 import Logo from "./Logo";
-import StreamVideo from "./StreamVideo";
-import "./StreamStyles.css";
+import StreamVideoComponent from "./StreamVideo";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
@@ -200,7 +199,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
         ) : isStreamActive ? (
           <div className="w-full h-full p-0 md:p-4 flex items-center justify-center">
             <div className="relative w-full h-full rounded-lg overflow-hidden">
-              <StreamVideo 
+              <StreamVideoComponent 
                 apiKey={streamApiKey}
                 token={streamToken}
                 userId={userId}
