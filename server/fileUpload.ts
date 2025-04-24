@@ -81,7 +81,7 @@ export const getFileById = async (fileId: number) => {
   }
 };
 
-// Process an uploaded file (can be extended based on file type)
+// Process an uploaded file with AI analysis based on file type
 export const processUploadedFile = async (fileId: number) => {
   try {
     const [file] = await db.select().from(uploadedFiles).where(eq(uploadedFiles.id, fileId));
@@ -90,8 +90,34 @@ export const processUploadedFile = async (fileId: number) => {
       throw new Error('File not found');
     }
     
+    // Read the file content
+    const fileBuffer = await readFileAsync(file.path);
+    
     // Implement different processing logic based on file type
     let processingResult: any = { success: true };
+    
+    if (file.fileType.startsWith('image/')) {
+      // For images, we would use AI vision capabilities here
+      processingResult = await processImageFile(fileBuffer, file);
+    } else if (file.fileType.startsWith('application/pdf') || 
+               file.fileType.startsWith('text/') ||
+               file.originalName.endsWith('.docx') ||
+               file.originalName.endsWith('.doc')) {
+      // For documents, extract text and analyze
+      processingResult = await processDocumentFile(fileBuffer, file);
+    } else {
+      // For other files, just return metadata
+      processingResult = {
+        success: true,
+        analysis: {
+          type: 'metadata',
+          filename: file.originalName,
+          fileType: file.fileType,
+          fileSize: file.fileSize,
+          message: "File type not supported for detailed analysis"
+        }
+      };
+    }
     
     // Mark as processed with results
     await db.update(uploadedFiles)
@@ -104,9 +130,85 @@ export const processUploadedFile = async (fileId: number) => {
     return processingResult;
   } catch (error) {
     console.error('Error processing file:', error);
-    throw new Error('Failed to process file');
+    throw new Error('Failed to process file: ' + (error as Error).message);
   }
 };
+
+// Process image files using available AI service
+async function processImageFile(fileBuffer: Buffer, file: any) {
+  try {
+    // In a real implementation, this would call the Gemini Vision API to analyze the image
+    // For now, we'll return structured results with key metadata
+    
+    return {
+      success: true,
+      analysis: {
+        type: 'image',
+        filename: file.originalName,
+        fileType: file.fileType,
+        fileSize: formatFileSize(file.fileSize),
+        dimensions: "Not available without image processing",
+        contentType: getContentTypeDescription(file.fileType),
+        aiStatus: "AI image analysis will be performed when user requests with proper prompt"
+      }
+    };
+  } catch (error) {
+    console.error('Error processing image:', error);
+    throw new Error('Image processing failed: ' + (error as Error).message);
+  }
+}
+
+// Process document files
+async function processDocumentFile(fileBuffer: Buffer, file: any) {
+  try {
+    // In a real implementation, this would extract text and analyze with AI
+    // For now, return structured metadata
+    
+    // Get a snippet if it's a text file
+    let textPreview = "";
+    if (file.fileType.startsWith("text/")) {
+      textPreview = fileBuffer.toString().substring(0, 200) + "...";
+    }
+    
+    return {
+      success: true,
+      analysis: {
+        type: 'document',
+        filename: file.originalName,
+        fileType: file.fileType,
+        fileSize: formatFileSize(file.fileSize),
+        contentType: getContentTypeDescription(file.fileType),
+        textPreview: textPreview || "Document text extraction requires content processing",
+        aiStatus: "AI document analysis will be performed when user requests with proper prompt"
+      }
+    };
+  } catch (error) {
+    console.error('Error processing document:', error);
+    throw new Error('Document processing failed: ' + (error as Error).message);
+  }
+}
+
+// Helper functions
+function formatFileSize(bytes: number): string {
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes === 0) return '0 Bytes';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function getContentTypeDescription(mimeType: string): string {
+  if (mimeType.startsWith('image/jpeg')) return 'JPEG Image';
+  if (mimeType.startsWith('image/png')) return 'PNG Image';
+  if (mimeType.startsWith('image/gif')) return 'GIF Image';
+  if (mimeType.startsWith('image/webp')) return 'WebP Image';
+  if (mimeType.startsWith('image/')) return 'Image';
+  if (mimeType.startsWith('application/pdf')) return 'PDF Document';
+  if (mimeType.startsWith('text/plain')) return 'Text Document';
+  if (mimeType.includes('wordprocessingml')) return 'Word Document';
+  if (mimeType.includes('spreadsheetml')) return 'Spreadsheet';
+  if (mimeType.includes('presentationml')) return 'Presentation';
+  return mimeType;
+}
 
 // Delete a file
 export const deleteFile = async (fileId: number) => {

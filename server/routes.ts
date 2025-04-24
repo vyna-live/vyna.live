@@ -6,7 +6,7 @@ import { getAIResponse as getGeminiResponse } from "./gemini";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
-import { siteConfig, researchSessions, messages, uploadedFiles } from "@shared/schema";
+import { siteConfig, researchSessions, messages, uploadedFiles, users } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
@@ -239,15 +239,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No file uploaded" });
       }
       
-      const userId = 1; // Default for now, replace with actual auth logic later
+      // First check if default user exists, if not create one
+      let userId = 1;
+      try {
+        const [user] = await db.select().from(users).where(eq(users.id, userId));
+        if (!user) {
+          const [newUser] = await db.insert(users).values({
+            username: 'default',
+            password: 'default_password',
+            displayName: 'Default User'
+          }).returning();
+          userId = newUser.id;
+          log(`Created default user with ID: ${userId}`);
+        }
+      } catch (err) {
+        log(`Error checking default user: ${err}`, "error");
+        // Continue with userId = 1 as fallback
+      }
+      
       const sessionId = req.body.sessionId ? parseInt(req.body.sessionId) : null;
       
       const savedFile = await saveUploadedFile(req.file, userId, sessionId);
       
-      // Process the file in the background
-      processUploadedFile(savedFile.id).catch(err => {
-        log(`Error processing file ${savedFile.id}: ${err}`, "error");
-      });
+      // Note: We no longer process the file automatically in the background
+      // The client will need to explicitly request processing
       
       res.json({
         success: true,
@@ -283,6 +298,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       log(`Error getting file: ${error}`, "error");
       res.status(500).json({ error: "Failed to get file" });
+    }
+  });
+  
+  // Endpoint to process a file after user confirmation
+  app.post("/api/files/:id/process", async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.id);
+      
+      try {
+        // Process the file and get analysis
+        const processingResult = await processUploadedFile(fileId);
+        
+        res.json({
+          success: true,
+          result: processingResult
+        });
+      } catch (err) {
+        log(`Error processing file: ${err}`, "error");
+        res.status(404).json({ error: "File not found or processing failed" });
+      }
+    } catch (error) {
+      log(`Error in file processing endpoint: ${error}`, "error");
+      res.status(500).json({ error: "Failed to process file" });
     }
   });
   

@@ -80,17 +80,50 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
           { id: data.file.id, name: data.file.originalName }
         ]);
         
-        // Update message to mention the file
+        // Suggest a more detailed prompt based on file type but let user edit before sending
         if (data.file.fileType.startsWith("image/")) {
-          setMessage(prev => 
-            prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + 
-            `Analyze this image: ${data.file.originalName}`
-          );
+          setMessage(prev => {
+            const basePrompt = "Provide a comprehensive and detailed analysis of this image, including:";
+            const details = [
+              "- Visual elements and composition",
+              "- Main subjects and objects",
+              "- Colors, lighting, and mood",
+              "- Context and potential meaning",
+              "- Technical aspects (if relevant)",
+              `The image filename is: ${data.file.originalName}`
+            ].join("\n");
+            
+            // If there's existing text, append to it
+            if (prev.trim()) {
+              return `${prev}\n\n${basePrompt}\n${details}`;
+            } else {
+              return `${basePrompt}\n${details}`;
+            }
+          });
         } else {
-          setMessage(prev => 
-            prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + 
-            `Extract key information from this document: ${data.file.originalName}`
-          );
+          setMessage(prev => {
+            const basePrompt = "Please extract and analyze the key information from this document, including:";
+            const details = [
+              "- Main topics and themes",
+              "- Important facts, figures, and statistics",
+              "- Key arguments or positions",
+              "- Relevant context and background",
+              "- Critical analysis of the content",
+              `The document filename is: ${data.file.originalName}`
+            ].join("\n");
+            
+            // If there's existing text, append to it
+            if (prev.trim()) {
+              return `${prev}\n\n${basePrompt}\n${details}`;
+            } else {
+              return `${basePrompt}\n${details}`;
+            }
+          });
+        }
+        
+        // Focus the input so the user can edit the prompt before sending
+        if (inputRef.current) {
+          inputRef.current.focus();
         }
       }
     } catch (error) {
