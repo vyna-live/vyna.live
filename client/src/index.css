@@ -3,47 +3,50 @@
 @tailwind utilities;
 
 :root {
-  /* Dark theme by default */
-  --background: 222 47% 11%;
-  --foreground: 0 0% 98%;
-  --muted: 223 47% 18%;
-  --muted-foreground: 215 20% 75%;
-  --popover: 222 47% 11%;
-  --popover-foreground: 0 0% 98%;
-  --card: 222 47% 14%;
-  --card-foreground: 0 0% 98%;
-  --border: 216 34% 19%;
-  --input: 216 34% 19%;
-  --primary: 263 85% 60%;
+  /* Perplexity dark theme */
+  --background: 220 12% 10%;
+  --foreground: 0 0% 95%;
+  --muted: 223 12% 15%;
+  --muted-foreground: 215 10% 65%;
+  --popover: 220 12% 10%;
+  --popover-foreground: 0 0% 95%;
+  --card: 223 12% 13%;
+  --card-foreground: 0 0% 95%;
+  --border: 216 12% 17%;
+  --input: 216 12% 17%;
+  --primary: 180 85% 50%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 222 47% 20%;
+  --secondary: 220 12% 15%;
   --secondary-foreground: 0 0% 98%;
-  --accent: 263 85% 60%;
+  --accent: 180 85% 50%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-  --ring: 263 85% 60%;
-  --radius: 1rem;
+  --ring: 180 85% 50%;
+  --radius: 0.5rem;
 
-  /* Modern dark AI UI colors */
-  --ai-background: 222 47% 11%;
-  --ai-background-gradient-from: 222 47% 11%;
-  --ai-background-gradient-to: 250 38% 16%;
-  --ai-card: 223 47% 16%;
-  --ai-card-glass: 223 47% 16% / 0.85;
-  --ai-border: 216 34% 19%;
-  --ai-accent: 263 85% 60%;
-  --ai-accent-light: 263 85% 20%;
-  --ai-text-primary: 210 40% 98%;
-  --ai-text-secondary: 215 20% 75%;
+  /* Perplexity UI colors */
+  --ai-background: 220 12% 10%;
+  --ai-background-gradient-from: 220 12% 10%;
+  --ai-background-gradient-to: 220 12% 10%;
+  --ai-card: 223 12% 13%;
+  --ai-card-glass: 223 12% 13% / 0.95;
+  --ai-border: 216 12% 17%;
+  --ai-accent: 180 85% 50%;
+  --ai-accent-light: 180 85% 15%;
+  --ai-text-primary: 0 0% 95%;
+  --ai-text-secondary: 215 10% 65%;
   --ai-blue: 210 100% 66%;
   --ai-green: 142 77% 45%;
   --ai-purple: 276 100% 67%;
   --ai-red: 0 79% 63%;
-  --ai-chat-user: 214 70% 20%;
-  --ai-chat-ai: 223 47% 18%;
-  --ai-divider: 216 34% 25%;
-  --ai-glow: 263 85% 60%;
+  --ai-chat-user: 214 12% 15%;
+  --ai-chat-ai: 223 12% 15%;
+  --ai-divider: 216 12% 17%;
+  --ai-glow: 180 85% 50%;
+  
+  /* Perplexity brand colors */
+  --ai-teal: 180 85% 50%;
 }
 
 @layer base {
@@ -168,9 +171,9 @@
   transform: translateY(100%);
 }
 
-/* Glassmorphism */
-.glassmorphic {
-  @apply bg-white/20 backdrop-blur-lg border border-white/20 shadow-lg;
+/* Perplexity-style glassmorphism */
+.perplexity-card {
+  @apply bg-[hsl(var(--ai-card))] border border-[hsl(var(--ai-border))] rounded-xl shadow-sm;
 }
 
 /* Modern animations */

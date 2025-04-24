@@ -1,6 +1,6 @@
 import { MessageType } from "@/pages/Home";
 import InfoGraphicCard from "@/components/InfoGraphicCard";
-import { Loader2, MonitorSmartphone, UserCircle2, BrainCircuit, FileText } from "lucide-react";
+import { Loader2, MonitorSmartphone, FileText } from "lucide-react";
 
 interface ChatInterfaceProps {
   messages: MessageType[];
@@ -15,125 +15,170 @@ export default function ChatInterface({
 }: ChatInterfaceProps) {
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="p-8 text-center animate-fade-in flex flex-col items-center justify-center h-full">
-        <div className="mb-8 flex justify-center">
-          <img 
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=150&h=150&q=80" 
-            alt="AI Assistant" 
-            className="w-28 h-28 rounded-full object-cover border-2 border-[hsl(var(--ai-accent))] shadow-[0_0_15px_rgba(124,58,237,0.5)]"
-          />
+      <div className="flex flex-col items-center justify-center h-full py-20 px-4 text-center">
+        <h1 className="text-4xl font-normal mb-8">What do you want to know?</h1>
+        
+        <div className="w-full max-w-2xl mb-12">
+          <div className="border border-[hsl(var(--ai-border))] bg-[hsl(var(--ai-card))] rounded-xl p-4 text-[hsl(var(--ai-text-secondary))] text-center">
+            Ask for livestreaming tips, scripts, or content ideas
+          </div>
         </div>
-        <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Ready to Improve Your Stream?</h2>
-        <p className="text-[hsl(var(--ai-text-secondary))] text-xl max-w-lg mx-auto mb-10">
-          I can help prepare scripts, generate ideas, and make your content shine.
-        </p>
-        <p className="text-[hsl(var(--ai-text-secondary))] opacity-80 max-w-sm mb-6">
-          Try asking me to create a teleprompter script or suggest topics for your next stream.
-        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl">
+          <div className="perplexity-card p-4">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3">
+                <MonitorSmartphone className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+              </div>
+              <span className="text-sm text-center">Ask for a teleprompter script</span>
+            </div>
+          </div>
+          
+          <div className="perplexity-card p-4">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3">
+                <FileText className="h-6 w-6 text-[hsl(var(--ai-teal))]" />
+              </div>
+              <span className="text-sm text-center">Get content ideas for your stream</span>
+            </div>
+          </div>
+          
+          <div className="perplexity-card p-4">
+            <div className="flex flex-col items-center">
+              <div className="w-12 h-12 rounded-lg bg-[hsl(180,85%,15%)] flex items-center justify-center mb-3">
+                <svg className="h-6 w-6 text-[hsl(var(--ai-teal))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span className="text-sm text-center">Optimize your streaming setup</span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <div className="space-y-6">
-        {messages.map((message) => (
+    <div className="pb-4">
+      <div className="max-w-3xl mx-auto">
+        {messages.map((message, index) => (
           <div key={message.id} className="animate-fade-in">
-            <div className="flex items-start space-x-3 mb-1">
-              {message.role === "user" ? (
-                <div className="ai-avatar overflow-hidden">
-                  <img 
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&h=100&q=80" 
-                    alt="User" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="ai-avatar overflow-hidden">
-                  <img 
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&h=100&q=80" 
-                    alt="AI Assistant" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              
-              <div className="flex-1">
-                <div
-                  className={`${
-                    message.role === "user"
-                      ? "ai-user-bubble"
-                      : "ai-assistant-bubble"
-                  } mb-2`}
-                >
-                  <div className="whitespace-pre-wrap prose prose-sm max-w-none">
-                    {message.content.split('\n').map((line, i) => {
-                      // Check if the line starts with a bullet or number
-                      const isList = line.trim().match(/^(-|\d+\.)\s.+/);
-                      
-                      // For bullet points, add more spacing
-                      if (isList) {
-                        return <p key={i} className="my-1 ml-2">{line}</p>;
-                      }
-                      
-                      // Check if line is a heading (all caps or ends with colon)
-                      const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 3 || 
-                                       line.trim().endsWith(':');
-                      
-                      if (isHeading && line.trim().length > 0) {
-                        return <h4 key={i} className="font-bold mt-3 mb-2">{line}</h4>;
-                      }
-                      
-                      // Regular text line
-                      return line.trim().length > 0 ? (
-                        <p key={i} className="my-1.5">{line}</p>
-                      ) : (
-                        <br key={i} />
-                      );
-                    })}
+            {message.role === "user" ? (
+              <div className="px-4 py-6 text-lg">
+                <div className="flex items-start">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-white font-medium">
+                    U
                   </div>
-
-                  {message.hasInfoGraphic && message.infoGraphicData && (
-                    <div className="mt-4">
-                      <InfoGraphicCard
-                        title={message.infoGraphicData.title}
-                        content={message.infoGraphicData.content}
-                        imageUrl={message.infoGraphicData.imageUrl}
-                      />
+                  <div className="ml-4 flex-1">
+                    <div className="whitespace-pre-wrap leading-relaxed">
+                      {message.content}
                     </div>
-                  )}
-                </div>
-                
-                {message.role === "assistant" && (
-                  <div className="flex justify-end px-1">
-                    <button
-                      className="flex items-center space-x-1.5 text-sm text-[hsl(var(--ai-accent))] hover:underline transition-colors"
-                      onClick={() => onTeleprompterClick(message.content)}
-                    >
-                      <MonitorSmartphone className="h-4 w-4" />
-                      <span>Use as Teleprompter</span>
-                    </button>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="px-4 py-6 bg-[hsl(var(--ai-card))]/30 border-t border-b border-[hsl(var(--ai-border))]">
+                <div className="max-w-3xl mx-auto">
+                  <div className="flex items-start">
+                    <div className="w-8 h-8 flex-shrink-0">
+                      <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
+                        <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                        <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                        <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                        <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                        <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                        <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                        <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                        <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                        <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                        <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                        <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                        <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                        <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
+                      </svg>
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <div className="mb-1 text-sm text-[hsl(var(--ai-text-secondary))]">Livestream AI</div>
+                      <div className="prose prose-invert max-w-none">
+                        {message.content.split('\n').map((line, i) => {
+                          // Check if the line starts with a bullet or number
+                          const isList = line.trim().match(/^(-|\d+\.)\s.+/);
+                          
+                          // For bullet points, add more spacing
+                          if (isList) {
+                            return <p key={i} className="my-1 ml-2">{line}</p>;
+                          }
+                          
+                          // Check if line is a heading (all caps or ends with colon)
+                          const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 3 || 
+                                          line.trim().endsWith(':');
+                          
+                          if (isHeading && line.trim().length > 0) {
+                            return <h4 key={i} className="font-bold mt-4 mb-2">{line}</h4>;
+                          }
+                          
+                          // Regular text line
+                          return line.trim().length > 0 ? (
+                            <p key={i} className="my-3 leading-relaxed">{line}</p>
+                          ) : (
+                            <br key={i} />
+                          );
+                        })}
+                      </div>
+
+                      {message.hasInfoGraphic && message.infoGraphicData && (
+                        <div className="mt-4 perplexity-card p-4">
+                          <InfoGraphicCard
+                            title={message.infoGraphicData.title}
+                            content={message.infoGraphicData.content}
+                            imageUrl={message.infoGraphicData.imageUrl}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          className="flex items-center space-x-1.5 text-sm text-[hsl(var(--ai-accent))] hover:text-[hsl(var(--ai-accent))/80] transition-colors"
+                          onClick={() => onTeleprompterClick(message.content)}
+                        >
+                          <MonitorSmartphone className="h-4 w-4" />
+                          <span>Use as Teleprompter</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ))}
 
         {isLoading && (
-          <div className="animate-fade-in">
-            <div className="flex items-start space-x-3">
-              <div className="ai-avatar overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&h=100&q=80" 
-                  alt="AI Assistant" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="ai-assistant-bubble">
-                <div className="flex items-center space-x-3">
-                  <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--ai-accent))]" />
-                  <span className="text-gray-500">Typing...</span>
+          <div className="animate-fade-in px-4 py-6 bg-[hsl(var(--ai-card))]/30 border-t border-b border-[hsl(var(--ai-border))]">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-start">
+                <div className="w-8 h-8 flex-shrink-0">
+                  <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
+                    <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                    <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                    <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                    <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                    <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                    <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                    <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                    <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                    <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                    <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                    <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                    <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                    <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
+                  </svg>
+                </div>
+                <div className="ml-4 flex-1">
+                  <div className="flex items-center space-x-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--ai-accent))]" />
+                    <span className="text-[hsl(var(--ai-text-secondary))]">Thinking...</span>
+                  </div>
                 </div>
               </div>
             </div>
