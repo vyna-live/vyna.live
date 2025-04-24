@@ -6,7 +6,7 @@ import ChatInterface from "@/components/ChatInterface";
 import InputArea from "@/components/InputArea";
 import Teleprompter from "@/components/Teleprompter";
 import { InfoGraphic } from "@shared/schema";
-import { Video } from "lucide-react";
+import { Video, X } from "lucide-react";
 
 export type MessageType = {
   id: string;
@@ -116,13 +116,21 @@ export default function Home() {
       <InputArea onSubmit={handleSubmit} isLoading={isLoading} />
       
       {teleprompterVisible && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-auto">
-            <div className="h-[60vh] p-6">
-              <Teleprompter 
-                text={teleprompterText} 
-                onClose={() => setTeleprompterVisible(false)} 
-              />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setTeleprompterVisible(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="h-[60vh] p-6 relative">
+              <button 
+                className="absolute top-4 right-4 bg-gray-200 hover:bg-gray-300 p-2 rounded-full"
+                onClick={() => setTeleprompterVisible(false)}
+              >
+                <X className="h-5 w-5 text-gray-700" />
+              </button>
+              <div className="h-full">
+                <Teleprompter 
+                  text={teleprompterText} 
+                  onClose={() => setTeleprompterVisible(false)} 
+                />
+              </div>
             </div>
           </div>
         </div>

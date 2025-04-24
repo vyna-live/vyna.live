@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Paperclip, Image, Globe, ArrowRight } from "lucide-react";
+import { Paperclip, Image, Globe, ArrowRight, Lightbulb, Send, Loader2 } from "lucide-react";
 
 interface InputAreaProps {
   onSubmit: (message: string) => void;
@@ -39,13 +39,16 @@ export default function InputArea({ onSubmit, isLoading }: InputAreaProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-[#1F2937] font-medium">Ask whatever you want....</div>
+    <div className="glass-card p-6 animate-fade-in">
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-[#1F2937] font-medium flex items-center space-x-2">
+          <Lightbulb className="h-4 w-4 text-amber-500" />
+          <span>Ask anything to enhance your stream</span>
+        </div>
         <div className="flex items-center">
-          <button className="flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-600 hover:bg-gray-200 transition-colors">
+          <button className="secondary-button flex items-center text-sm">
             <Globe className="h-4 w-4 mr-1" />
-            All Web
+            <span>Web Search</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-4 w-4 ml-1"
@@ -71,28 +74,32 @@ export default function InputArea({ onSubmit, isLoading }: InputAreaProps) {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           rows={3}
-          className="w-full border border-[#E5E7EB] rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#A259FF] focus:border-transparent resize-none"
+          className="input-field w-full resize-none"
           placeholder="Type your research question here..."
         />
 
         <div className="absolute bottom-3 right-3 flex items-center space-x-3">
-          <div className="text-xs text-[#6B7280]">
+          <div className="text-xs text-[#6B7280] bg-gray-100 px-2 py-1 rounded-md">
             {charCount}/{MAX_CHARS}
           </div>
           <button
             onClick={handleSubmit}
-            className="bg-gradient-to-r from-[#A259FF] to-[#4F46E5] text-white rounded-md w-10 h-10 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed animate-pulse-subtle"
             disabled={!message.trim() || isLoading}
           >
-            <ArrowRight className="h-5 w-5" />
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send className="h-5 w-5" />
+            )}
           </button>
         </div>
 
         <div className="absolute bottom-3 left-3 flex items-center space-x-3">
-          <button className="text-[#6B7280] hover:text-[#A259FF]">
+          <button className="text-gray-500 hover:text-purple-600 transition-colors">
             <Paperclip className="h-5 w-5" />
           </button>
-          <button className="text-[#6B7280] hover:text-[#A259FF]">
+          <button className="text-gray-500 hover:text-purple-600 transition-colors">
             <Image className="h-5 w-5" />
           </button>
         </div>

@@ -1,6 +1,6 @@
 import { MessageType } from "@/pages/Home";
 import InfoGraphicCard from "@/components/InfoGraphicCard";
-import { Loader2 } from "lucide-react";
+import { Loader2, MonitorSmartphone, UserCircle2, BrainCircuit } from "lucide-react";
 
 interface ChatInterfaceProps {
   messages: MessageType[];
@@ -14,71 +14,86 @@ export default function ChatInterface({
   isLoading,
 }: ChatInterfaceProps) {
   if (messages.length === 0 && !isLoading) {
-    return null;
+    return (
+      <div className="glass-card p-8 text-center mb-8 animate-fade-in">
+        <BrainCircuit className="h-16 w-16 mx-auto text-purple-500 mb-4 opacity-50" />
+        <h3 className="text-xl font-semibold text-gray-700 mb-2">Your Livestream Assistant</h3>
+        <p className="text-gray-500 max-w-md mx-auto mb-6">
+          Ask me about topics to discuss, facts to share, or anything else that can enhance your stream!
+        </p>
+        <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-indigo-500 mx-auto rounded-full"></div>
+      </div>
+    );
   }
 
   return (
-    <div className="mb-6">
-      <div className="space-y-4">
-        {messages.map((message) => (
-          <div key={message.id} className="mb-4">
-            <div
-              className={`${
-                message.role === "user"
-                  ? "bg-[#E5E7EB] ml-auto"
-                  : "bg-white shadow-sm border border-[#E5E7EB]"
-              } text-[#1F2937] p-4 rounded-lg inline-block max-w-[80%]`}
-            >
-              <p>{message.content}</p>
-
-              {message.hasInfoGraphic && message.infoGraphicData && (
-                <div className="mt-4">
-                  <InfoGraphicCard
-                    title={message.infoGraphicData.title}
-                    content={message.infoGraphicData.content}
-                    imageUrl={message.infoGraphicData.imageUrl}
-                  />
-                </div>
-              )}
-            </div>
-
-            {message.role === "assistant" && (
-              <div className="flex justify-end mt-2">
-                <button
-                  className="bg-gradient-to-r from-[#A259FF] to-[#4F46E5] text-white text-sm px-4 py-2 rounded-lg flex items-center"
-                  onClick={() => onTeleprompterClick(message.content)}
+    <div className="mb-8">
+      <div className="glass-card p-4 shadow-lg rounded-2xl animate-fade-in">
+        <div className="p-2 space-y-6">
+          {messages.map((message) => (
+            <div key={message.id} className="animate-fade-in">
+              <div className="flex items-start space-x-3">
+                {message.role === "user" ? (
+                  <div className="bg-indigo-100 text-indigo-800 p-1.5 rounded-full">
+                    <UserCircle2 className="h-6 w-6" />
+                  </div>
+                ) : (
+                  <div className="bg-purple-100 text-purple-800 p-1.5 rounded-full">
+                    <BrainCircuit className="h-6 w-6" />
+                  </div>
+                )}
+                
+                <div
+                  className={`${
+                    message.role === "user"
+                      ? "bg-indigo-50 border border-indigo-100"
+                      : "bg-white border border-purple-100 shadow-sm"
+                  } text-gray-800 p-4 rounded-xl flex-1`}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
-                    />
-                  </svg>
-                  Teleprompter Mode
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+                  <p className="whitespace-pre-wrap">{message.content}</p>
 
-        {isLoading && (
-          <div className="mb-4">
-            <div className="bg-white shadow-sm border border-[#E5E7EB] text-[#1F2937] p-4 rounded-lg inline-block">
-              <div className="flex space-x-2">
-                <Loader2 className="h-5 w-5 animate-spin text-[#A259FF]" />
-                <span className="text-[#6B7280]">Vyna is thinking...</span>
+                  {message.hasInfoGraphic && message.infoGraphicData && (
+                    <div className="mt-4">
+                      <InfoGraphicCard
+                        title={message.infoGraphicData.title}
+                        content={message.infoGraphicData.content}
+                        imageUrl={message.infoGraphicData.imageUrl}
+                      />
+                    </div>
+                  )}
+                  
+                  {message.role === "assistant" && (
+                    <div className="mt-3 flex justify-end">
+                      <button
+                        className="primary-button py-1.5 px-3 text-sm flex items-center space-x-1.5 group"
+                        onClick={() => onTeleprompterClick(message.content)}
+                      >
+                        <MonitorSmartphone className="h-4 w-4 group-hover:animate-pulse" />
+                        <span>Use as Teleprompter</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          ))}
+
+          {isLoading && (
+            <div className="animate-fade-in">
+              <div className="flex items-start space-x-3">
+                <div className="bg-purple-100 text-purple-800 p-1.5 rounded-full">
+                  <BrainCircuit className="h-6 w-6" />
+                </div>
+                <div className="bg-white border border-purple-100 shadow-sm text-gray-800 p-4 rounded-xl flex-1">
+                  <div className="flex items-center space-x-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-purple-500" />
+                    <span className="text-gray-500">Generating response...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@
   --card-foreground: 20 14.3% 4.1%;
   --border: 20 5.9% 90%;
   --input: 20 5.9% 90%;
-  --primary: 207 90% 54%;
+  --primary: 269 88% 65%;
   --primary-foreground: 211 100% 99%;
   --secondary: 60 4.8% 95.9%;
   --secondary-foreground: 24 9.8% 10%;
@@ -44,7 +44,7 @@
   --card-foreground: 0 0% 98%;
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
-  --primary: 207 90% 54%;
+  --primary: 269 88% 65%;
   --primary-foreground: 211 100% 99%;
   --secondary: 240 3.7% 15.9%;
   --secondary-foreground: 0 0% 98%;
@@ -62,13 +62,29 @@
   }
 
   body {
-    @apply font-sans antialiased bg-[#f5f5f7] text-[#1f2937];
+    @apply font-sans antialiased bg-gradient-to-br from-[#f6f9fc] to-[#eef1f8] text-[#1f2937] min-h-screen;
   }
 }
 
 @layer components {
   .purple-gradient-text {
     @apply bg-gradient-to-r from-[#A259FF] to-[#4F46E5] bg-clip-text text-transparent;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+  }
+
+  .primary-button {
+    @apply bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg active:shadow-sm;
+  }
+
+  .secondary-button {
+    @apply bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 px-4 py-2 rounded-lg transition-all shadow-sm hover:shadow-md;
+  }
+
+  .input-field {
+    @apply bg-white/90 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all;
   }
 }
 
@@ -90,4 +106,38 @@
 
 .teleprompter-exit-active {
   transform: translateY(100%);
+}
+
+/* Glassmorphism */
+.glassmorphic {
+  @apply bg-white/20 backdrop-blur-lg border border-white/20 shadow-lg;
+}
+
+/* Modern animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes pulseSubtle {
+  0% { box-shadow: 0 0 0 0 rgba(162, 89, 255, 0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(162, 89, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(162, 89, 255, 0); }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s infinite;
 }
