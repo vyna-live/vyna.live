@@ -5,6 +5,7 @@ import GradientText from "./GradientText";
 import Logo from "./Logo";
 import StreamVideoComponent from "./StreamVideo";
 import { useStreamVideoContext } from "../providers/StreamVideoProvider";
+import { DeviceSettings } from "@stream-io/video-react-sdk";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
@@ -269,9 +270,17 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                 showCursor={false}
               />
               
-              <p className="text-gray-300 max-w-md mx-auto mb-8">
-                Click the Start Stream button below to begin. Use the teleprompter button to view your script.
+              <p className="text-gray-300 max-w-md mx-auto mb-4">
+                Configure your camera and microphone below, then click Start Stream to begin.
               </p>
+              
+              {/* Camera preview with DeviceSettings */}
+              {client && (
+                <div className="max-w-lg mx-auto mb-6 bg-[#0f1015]/70 border border-[#A67D44]/20 p-4 rounded-lg">
+                  <h4 className="text-[#CDBCAB] mb-2 font-medium">Camera Preview</h4>
+                  <DeviceSettings />
+                </div>
+              )}
               
               <button 
                 onClick={startLivestream}

@@ -1,20 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Video, X } from 'lucide-react';
 import {
-  Call,
+  StreamVideo,
+  StreamVideoClient,
+  Call, 
   CallControls,
+  DeviceSettings,
   SpeakerLayout,
   CallingState,
-  useCall,
-  ParticipantView,
-  StreamVideoClient,
-  DeviceSettings,
   useStreamVideoClient,
-  StreamVideo as StreamVideoSdk
+  useCall
 } from '@stream-io/video-react-sdk';
 
-// Import styling from the package
+// Import styling
 import '@stream-io/video-react-sdk/dist/css/styles.css';
+
+// Custom CSS for GetStream components
+const customStyles = `
+  :root {
+    --str-video-primary-color: #A67D44;
+    --str-video-secondary-color: #5D1C34;
+    --str-video-text-color: #EFE9E1;
+    --str-video-background-color: #16171d;
+    --str-video-surface-color: #1a1b24;
+  }
+  
+  .str-video__participant {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(205, 188, 171, 0.2);
+  }
+  
+  .str-video__call {
+    background-color: #0f1015;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  
+  .str-video__call-controls {
+    background: rgba(15, 16, 21, 0.6);
+    border-radius: 9999px;
+    padding: 8px;
+    border: 1px solid rgba(205, 188, 171, 0.1);
+    backdrop-filter: blur(8px);
+  }
+`;
 
 interface StreamVideoComponentProps {
   apiKey: string;
@@ -24,108 +55,73 @@ interface StreamVideoComponentProps {
   userName: string;
 }
 
-// This component uses the proper GetStream SDK integration
-export function StreamVideoComponent({ apiKey, token, userId, callId, userName }: StreamVideoComponentProps) {
+export function StreamVideoComponent({ 
+  apiKey, 
+  token, 
+  userId, 
+  callId, 
+  userName 
+}: StreamVideoComponentProps) {
   const [client, setClient] = useState<StreamVideoClient | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Define custom CSS for the GetStream components
-  const customStyles = `
-    .str-video__participant {
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid rgba(205, 188, 171, 0.2);
-    }
-    
-    .str-video__call {
-      background-color: #0f1015;
-      height: 100%;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    
-    .str-video__call-controls {
-      background: rgba(15, 16, 21, 0.6);
-      border-radius: 9999px;
-      padding: 8px;
-      border: 1px solid rgba(205, 188, 171, 0.1);
-      backdrop-filter: blur(8px);
-    }
-    
-    .str-video__button {
-      background: #A67D44;
-      color: #EFE9E1;
-    }
-    
-    .str-video__button:hover {
-      background: #B68D54;
-    }
-    
-    .str-video__button--muted {
-      background: #dd2e44;
-    }
-    
-    .str-video__participant-details {
-      background: linear-gradient(to top, rgba(15, 16, 21, 0.9) 0%, transparent 100%);
-    }
-  `;
 
-  // Initialize Stream client
+  // Step 1: Initialize StreamVideo client
   useEffect(() => {
-    let videoClient: StreamVideoClient | null = null;
+    let streamClient: StreamVideoClient | null = null;
     
-    const initializeClient = async () => {
+    const initClient = async () => {
       try {
+        console.log('Initializing StreamVideo client with:', { apiKey, userId });
         setIsConnecting(true);
         
-        if (!apiKey || !token || !userId) {
-          throw new Error('Missing Stream configuration parameters');
-        }
-        
-        // Create new StreamVideoClient
-        videoClient = new StreamVideoClient({
+        // Create the client
+        streamClient = new StreamVideoClient({
           apiKey,
           user: {
-            id: userId, 
+            id: userId,
             name: userName || 'Livestreamer'
           },
           token,
         });
         
-        // No need to call connectUser - it's already done in the constructor
-        // This fixes TypeScript errors and works with the SDK
-        setClient(videoClient);
+        setClient(streamClient);
         setIsConnecting(false);
       } catch (err) {
-        console.error('Error initializing Stream client:', err);
-        setError(err instanceof Error ? err.message : 'Failed to connect to the streaming service');
+        console.error('StreamVideo client error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize streaming');
         setIsConnecting(false);
       }
     };
     
-    initializeClient();
+    if (apiKey && token && userId) {
+      initClient();
+    } else {
+      setError('Missing required credentials');
+      setIsConnecting(false);
+    }
     
-    // Clean up on unmount
+    // Cleanup function
     return () => {
-      if (videoClient) {
-        videoClient.disconnectUser()
-          .catch(err => console.error('Error disconnecting user:', err));
+      if (streamClient) {
+        streamClient.disconnectUser().catch(console.error);
       }
     };
   }, [apiKey, token, userId, userName]);
   
+  // Loading state
   if (isConnecting) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 text-[#A67D44] animate-spin mb-2" />
-          <p className="text-[#CDBCAB]">Connecting to GetStream...</p>
+          <p className="text-[#CDBCAB]">Connecting to Stream Video...</p>
         </div>
       </div>
     );
   }
   
+  // Error state
   if (error) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -146,17 +142,16 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
     );
   }
   
+  // No client state
   if (!client) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-4">
             <Video className="w-10 h-10 text-[#EFE9E1]" />
           </div>
           <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Stream Client Not Initialized</h3>
-          <p className="text-[#CDBCAB] mb-6 max-w-md mx-auto">
-            There was a problem initializing the streaming client. Please try refreshing the page.
-          </p>
+          <p className="text-[#CDBCAB] mb-6">Could not initialize the streaming client</p>
           <button 
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
@@ -168,45 +163,51 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
     );
   }
   
+  // Main component with StreamVideo SDK
   return (
     <>
       <style>{customStyles}</style>
-      <LivestreamCall client={client} callId={callId} callType="livestream" />
+      <StreamVideoWrapper client={client} callId={callId} />
     </>
   );
 }
 
-// Component to handle the actual livestream call
-function LivestreamCall({ 
-  client, 
-  callId,
-  callType 
-}: { 
-  client: StreamVideoClient; 
-  callId: string;
-  callType: string;
-}) {
-  const [call, setCall] = useState<any>(null);
+// Wrapper component for StreamVideo
+function StreamVideoWrapper({ client, callId }: { client: StreamVideoClient; callId: string }) {
+  return (
+    <StreamVideo client={client}>
+      <CallComponent callId={callId} />
+    </StreamVideo>
+  );
+}
+
+// Component to handle the call
+function CallComponent({ callId }: { callId: string }) {
+  const client = useStreamVideoClient();
+  const [callCreated, setCallCreated] = useState(false);
   
   useEffect(() => {
+    if (!client) return;
+    
     const setupCall = async () => {
       try {
-        // Get call instance
-        const callInstance = client.call(callType, callId);
+        console.log('Creating call with ID:', callId);
         
         // Get or create the call
-        await callInstance.getOrCreate();
+        const call = client.call('livestream', callId);
+        await call.getOrCreate();
         
-        setCall(callInstance);
-      } catch (error) {
-        console.error('Error setting up call:', error);
+        setCallCreated(true);
+        console.log('Call created successfully:', callId);
+      } catch (err) {
+        console.error('Error creating call:', err);
       }
     };
     
     setupCall();
-  }, [client, callId, callType]);
-
-  if (!call) {
+  }, [client, callId]);
+  
+  if (!callCreated) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-[#A67D44] animate-spin" />
@@ -214,58 +215,58 @@ function LivestreamCall({
     );
   }
   
-  return (
-    <div className="h-full">
-      <CallContent call={call} />
-    </div>
-  );
+  return <CallContent callId={callId} />;
 }
 
-// Component to handle the call content once created
-function CallContent({ call }: { call: any }) {
-  const [isJoining, setIsJoining] = useState(false);
+// Component for call content
+function CallContent({ callId }: { callId: string }) {
   const [hasJoined, setHasJoined] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const call = useCall();
   
-  const handleJoinCall = async () => {
+  const joinCall = async () => {
     if (!call) return;
     
     try {
       setIsJoining(true);
+      console.log('Joining call:', callId);
       await call.join();
       setHasJoined(true);
-    } catch (error) {
-      console.error('Error joining call:', error);
+    } catch (err) {
+      console.error('Error joining call:', err);
     } finally {
       setIsJoining(false);
     }
   };
   
-  // Check if already in call state
+  // Check if we're already joined
   useEffect(() => {
     if (call?.state?.callingState === CallingState.JOINED) {
+      console.log('Already joined call:', callId);
       setHasJoined(true);
     }
-  }, [call?.state?.callingState]);
+  }, [call?.state?.callingState, callId]);
   
+  // "Go Live" screen
   if (!hasJoined) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-4">
             <Video className="w-10 h-10 text-[#EFE9E1]" />
           </div>
           <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Ready to Stream</h3>
-          <p className="text-[#CDBCAB] mb-4 max-w-md mx-auto">
-            Your stream is ready to go live. Configure your camera and microphone settings below.
+          <p className="text-[#CDBCAB] mb-4">
+            Configure your camera and microphone below, then click "Go Live" to start streaming.
           </p>
           
-          {/* Add device settings component for camera preview */}
-          <div className="mb-6 max-w-md mx-auto">
+          {/* Device settings */}
+          <div className="mb-6">
             <DeviceSettings />
           </div>
           
           <button 
-            onClick={handleJoinCall}
+            onClick={joinCall}
             disabled={isJoining}
             className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all disabled:opacity-50"
           >
@@ -283,13 +284,13 @@ function CallContent({ call }: { call: any }) {
     );
   }
   
+  // Live streaming view
   return (
     <div className="h-full">
       <div className="h-full flex flex-col relative">
         <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0">
             <div className="h-full w-full">
-              {/* Call participants/video area */}
               <SpeakerLayout />
             </div>
           </div>

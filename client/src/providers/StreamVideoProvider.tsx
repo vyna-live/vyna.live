@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  StreamVideo, 
-  StreamVideoClient,
-  StreamTheme
-} from '@stream-io/video-react-sdk';
+import { StreamVideo, StreamVideoClient } from '@stream-io/video-react-sdk';
 
 interface StreamVideoProviderProps {
   children: React.ReactNode;
@@ -14,7 +10,7 @@ interface StreamVideoProviderProps {
 }
 
 interface StreamVideoContextValue {
-  client: any | null; // Using 'any' to avoid TypeScript issues
+  client: StreamVideoClient | null;
   isInitialized: boolean;
   error: Error | null;
 }
@@ -48,10 +44,13 @@ export function StreamVideoProvider({
   useEffect(() => {
     const fetchCredentials = async () => {
       try {
+        console.log("Fetching Stream credentials...");
+        
         if (!apiKey) {
           const keyResponse = await fetch('/api/stream/key');
           if (!keyResponse.ok) throw new Error('Failed to get Stream API key');
           const keyData = await keyResponse.json();
+          console.log("Fetched API key:", keyData.apiKey);
           setApiKey(keyData.apiKey);
         }
         
@@ -67,6 +66,7 @@ export function StreamVideoProvider({
           
           if (!tokenResponse.ok) throw new Error('Failed to generate Stream token');
           const tokenData = await tokenResponse.json();
+          console.log("Fetched token successfully");
           setToken(tokenData.token);
         }
       } catch (err) {
@@ -82,16 +82,21 @@ export function StreamVideoProvider({
   
   // Initialize client once we have credentials
   useEffect(() => {
-    if (!apiKey || !token || !userId) return;
+    if (!apiKey || !token || !userId) {
+      console.log("Missing required credentials for Stream client initialization");
+      return;
+    }
     
     try {
-      // Initialize the Stream client with latest SDK pattern
+      console.log("Initializing Stream client with credentials");
+      
+      // Initialize the Stream client with the latest SDK patterns
       const streamClient = new StreamVideoClient({
         apiKey,
         user: {
           id: userId,
           name: userName || 'User',
-          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`, // Add user avatar
+          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
         },
         token,
       });
@@ -99,6 +104,7 @@ export function StreamVideoProvider({
       setClient(streamClient);
       setIsInitialized(true);
       setError(null);
+      console.log("Stream client initialized successfully");
       
       // Cleanup on unmount
       return () => {
@@ -115,44 +121,24 @@ export function StreamVideoProvider({
   
   // If we don't have a client yet, render children without the provider
   if (!client) {
+    console.log("No Stream client available yet, rendering children without provider");
     return <>{children}</>;
   }
   
-  // Custom theme colors matching our application's earthy palette
-  const theme = {
+  // Custom theme definition
+  const customTheme = {
     colors: {
       primary: '#A67D44',
       secondary: '#5D1C34',
-      accent: '#899481',
-      background: {
-        dark: '#0f1015',
-        medium: '#16171d', 
-        light: '#1a1b24'
-      },
-      text: {
-        primary: '#EFE9E1',
-        secondary: '#CDBCAB'
-      },
-      status: {
-        error: '#dd2e44',
-        success: '#3ba55c'
-      }
-    },
-    gradients: {
-      primary: 'linear-gradient(to right, #A67D44, #5D1C34)',
-      secondary: 'linear-gradient(to right, #5D1C34, #A67D44)',
-      hover: 'linear-gradient(to right, #B68D54, #6D2C44)',
-      background: 'linear-gradient(to bottom right, #15162c, #1a1b33)'
+      error: '#dd2e44',
+      success: '#3ba55c'
     }
   };
   
   return (
     <StreamVideoContext.Provider value={{ client, isInitialized, error }}>
-      {/* @ts-ignore - to avoid TypeScript errors with the StreamVideo SDK */}
       <StreamVideo client={client}>
-        <StreamTheme>
-          {children}
-        </StreamTheme>
+        {children}
       </StreamVideo>
     </StreamVideoContext.Provider>
   );
