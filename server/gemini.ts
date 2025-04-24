@@ -133,9 +133,16 @@ export async function getAIResponse(message: string) {
       Focus on being:
       1. Clear and direct - Get to the point quickly (use at most 150 words)
       2. Factual and well-researched
-      3. Structured with proper formatting (use bullet points or numbered lists when appropriate)
+      3. Structured with proper formatting
       4. Helpful for someone who needs to communicate this information to an audience
       5. Focused on providing context and depth to topics for educational livestreams
+      
+      FORMAT YOUR RESPONSE PROPERLY:
+      - Use proper paragraph breaks (double line breaks) between paragraphs
+      - When using lists, format them properly with line breaks before and after each item
+      - Don't use asterisks (*) for bullets, use proper formatting with dashes (-) or numbers (1., 2., etc.)
+      - Use headings with line breaks when appropriate
+      - Avoid using any markdown or symbols that might render strangely
       
       Keep your response under 150 words to be easily readable on a teleprompter.
       

@@ -50,7 +50,32 @@ export default function ChatInterface({
                       : "bg-white border border-purple-100 shadow-sm"
                   } text-gray-800 p-4 rounded-xl flex-1`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  <div className="whitespace-pre-wrap prose prose-sm max-w-none">
+                    {message.content.split('\n').map((line, i) => {
+                      // Check if the line starts with a bullet or number
+                      const isList = line.trim().match(/^(-|\d+\.)\s.+/);
+                      
+                      // For bullet points, add more spacing
+                      if (isList) {
+                        return <p key={i} className="my-1 ml-2">{line}</p>;
+                      }
+                      
+                      // Check if line is a heading (all caps or ends with colon)
+                      const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 3 || 
+                                       line.trim().endsWith(':');
+                      
+                      if (isHeading && line.trim().length > 0) {
+                        return <h4 key={i} className="font-bold mt-3 mb-2">{line}</h4>;
+                      }
+                      
+                      // Regular text line
+                      return line.trim().length > 0 ? (
+                        <p key={i} className="my-1.5">{line}</p>
+                      ) : (
+                        <br key={i} />
+                      );
+                    })}
+                  </div>
 
                   {message.hasInfoGraphic && message.infoGraphicData && (
                     <div className="mt-4">
