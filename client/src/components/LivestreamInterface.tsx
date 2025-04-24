@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { BrainCircuit, Mic, Video, Monitor, Volume2, X, Clock, Loader2 } from "lucide-react";
+import { BrainCircuit, Clock, X, Loader2, Video, Mic, Monitor, Volume2 } from "lucide-react";
 import Teleprompter from "./Teleprompter";
 import GradientText from "./GradientText";
 import Logo from "./Logo";
 import StreamVideoComponent from "./StreamVideo";
+import { useStreamVideoContext } from "../providers/StreamVideoProvider";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
@@ -15,59 +16,75 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const [streamTime, setStreamTime] = useState("00:00:00");
   const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 100) + 100);
   
-  // GetStream state
-  const [streamApiKey, setStreamApiKey] = useState<string>("");
-  const [streamToken, setStreamToken] = useState<string>("");
+  // Get stream client from provider context
+  const { client, isInitialized, error: streamError } = useStreamVideoContext();
+  
+  // Additional GetStream state specific to this component
   const [isStreamActive, setIsStreamActive] = useState<boolean>(false);
-  const [userId] = useState<string>(`user-${Math.random().toString(36).substring(2, 9)}`);
   const [callId] = useState<string>(`livestream-${Date.now()}`);
-  const [userName] = useState<string>("Livestreamer");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Fetch the Stream API key and generate a token
+  const [streamApiKey, setStreamApiKey] = useState<string>("");
+  const [streamToken, setStreamToken] = useState<string>("");
+  const [userId, setUserId] = useState<string>("");
+  const [userName, setUserName] = useState<string>("Livestreamer");
+
+  // Get credentials that may not be in context
   useEffect(() => {
-    const initializeStream = async () => {
+    const getStreamCredentials = async () => {
       try {
         setIsLoading(true);
         
-        // Get API key from our backend
-        const keyResponse = await fetch('/api/stream/key');
-        if (!keyResponse.ok) {
-          throw new Error('Failed to get Stream API key');
+        // Get API key from our backend if not already available
+        if (!streamApiKey) {
+          const keyResponse = await fetch('/api/stream/key');
+          if (keyResponse.ok) {
+            const keyData = await keyResponse.json();
+            setStreamApiKey(keyData.apiKey);
+          }
         }
         
-        const keyData = await keyResponse.json();
-        setStreamApiKey(keyData.apiKey);
-        
-        // Generate a token
-        const tokenResponse = await fetch('/api/stream/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId,
-            userName,
-          }),
-        });
-        
-        if (!tokenResponse.ok) {
-          throw new Error('Failed to generate Stream token');
+        // Generate a random user ID if not already set
+        if (!userId) {
+          const randomId = `user-${Math.random().toString(36).substring(2, 9)}`;
+          setUserId(randomId);
+          
+          // Generate a token for this user
+          const tokenResponse = await fetch('/api/stream/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: randomId,
+              userName: userName || 'Livestreamer',
+            }),
+          });
+          
+          if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            setStreamToken(tokenData.token);
+          }
         }
         
-        const tokenData = await tokenResponse.json();
-        setStreamToken(tokenData.token);
-        setIsLoading(false);
+        // Check if we have a stream context initialized and have all needed data
+        if (isInitialized && client) {
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error('Error initializing stream:', err);
         setError('Failed to initialize streaming service');
-        setIsLoading(false);
       }
     };
     
-    initializeStream();
-  }, [userId, userName]);
+    getStreamCredentials();
+  }, [client, isInitialized, streamApiKey, userId, userName]);
+  
+  // Handle any errors from the stream context
+  useEffect(() => {
+    if (streamError) {
+      setError(streamError.message);
+      setIsLoading(false);
+    }
+  }, [streamError]);
   
   // Simulate streaming time counter
   useEffect(() => {
@@ -105,7 +122,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   // Start the livestream
   const startLivestream = useCallback(async () => {
     try {
-      if (!streamApiKey || !streamToken) {
+      if (!streamApiKey || !streamToken || !userId) {
         throw new Error('Stream credentials not available');
       }
       

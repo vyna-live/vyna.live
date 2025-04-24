@@ -92,8 +92,8 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
           token,
         });
         
-        // Connect user (don't need arguments as they're provided in client constructor)
-        await videoClient.connectUser({});
+        // No need to call connectUser - it's already done in the constructor
+        // This fixes TypeScript errors and works with the SDK
         setClient(videoClient);
         setIsConnecting(false);
       } catch (err) {
