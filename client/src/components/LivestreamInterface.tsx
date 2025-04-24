@@ -34,22 +34,29 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
     const getStreamCredentials = async () => {
       try {
         setIsLoading(true);
+        console.log("Starting stream initialization...");
         
         // Get API key from our backend if not already available
         if (!streamApiKey) {
+          console.log("Fetching API key...");
           const keyResponse = await fetch('/api/stream/key');
           if (keyResponse.ok) {
             const keyData = await keyResponse.json();
+            console.log("Got API key:", keyData.apiKey);
             setStreamApiKey(keyData.apiKey);
+          } else {
+            console.error("Failed to get API key");
           }
         }
         
         // Generate a random user ID if not already set
         if (!userId) {
           const randomId = `user-${Math.random().toString(36).substring(2, 9)}`;
+          console.log("Generated user ID:", randomId);
           setUserId(randomId);
           
           // Generate a token for this user
+          console.log("Fetching token...");
           const tokenResponse = await fetch('/api/stream/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -61,12 +68,17 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
           
           if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
+            console.log("Got token:", tokenData.token.substring(0, 20) + "...");
             setStreamToken(tokenData.token);
+          } else {
+            console.error("Failed to get token");
           }
         }
         
-        // Check if we have a stream context initialized and have all needed data
-        if (isInitialized && client) {
+        // Check if we have all needed data
+        console.log("Checking credentials - apiKey:", !!streamApiKey, "token:", !!streamToken, "userId:", !!userId);
+        if (streamApiKey && streamToken && userId) {
+          console.log("All credentials available, moving to ready state");
           setIsLoading(false);
         }
       } catch (err) {
@@ -76,7 +88,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
     };
     
     getStreamCredentials();
-  }, [client, isInitialized, streamApiKey, userId, userName]);
+    
+    // Only run this effect once on component mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Handle any errors from the stream context
   useEffect(() => {
@@ -85,6 +100,15 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       setIsLoading(false);
     }
   }, [streamError]);
+  
+  // Watch for when all data is loaded to set loading state
+  useEffect(() => {
+    console.log("Checking required data availability:", { streamApiKey, streamToken, userId });
+    if (streamApiKey && streamToken && userId) {
+      console.log("All required data is available, moving to ready state");
+      setIsLoading(false);
+    }
+  }, [streamApiKey, streamToken, userId]);
   
   // Simulate streaming time counter
   useEffect(() => {
