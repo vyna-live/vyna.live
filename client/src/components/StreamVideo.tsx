@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Loader2, Video, Mic, Monitor, Share2, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Loader2, Video, Mic, Monitor, Share2, X, Camera, CameraOff, MicOff } from 'lucide-react';
 
 interface StreamVideoComponentProps {
   apiKey: string;
@@ -9,45 +9,183 @@ interface StreamVideoComponentProps {
   userName: string;
 }
 
+// Custom theme in TS object format
+const theme = {
+  colors: {
+    primary: '#A67D44',
+    secondary: '#5D1C34',
+    accent: '#899481',
+    background: {
+      dark: '#0f1015',
+      medium: '#16171d', 
+      light: '#1a1b24'
+    },
+    text: {
+      primary: '#EFE9E1',
+      secondary: '#CDBCAB'
+    },
+    status: {
+      error: '#dd2e44',
+      success: '#3ba55c'
+    }
+  },
+  gradients: {
+    primary: 'linear-gradient(to right, #A67D44, #5D1C34)',
+    secondary: 'linear-gradient(to right, #5D1C34, #A67D44)',
+    hover: 'linear-gradient(to right, #B68D54, #6D2C44)',
+    background: 'linear-gradient(to bottom right, #15162c, #1a1b33)'
+  }
+};
+
 export function StreamVideoComponent({ apiKey, token, userId, callId, userName }: StreamVideoComponentProps) {
   const [isConnecting, setIsConnecting] = useState(true);
-  const [isStreamActive, setIsStreamActive] = useState(false);
-  const [isMicOn, setIsMicOn] = useState(true);
+  const [isLive, setIsLive] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isMicOn, setIsMicOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   
-  // Simulate connection to the Stream API
+  // Simulate connection to API
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!apiKey || !token || !userId || !callId) {
-        setError('Missing stream configuration parameters');
-      } else {
-        setIsConnecting(false);
-      }
+      setIsConnecting(false);
     }, 1500);
     
     return () => clearTimeout(timer);
-  }, [apiKey, token, userId, callId]);
+  }, []);
   
-  const startStream = () => {
-    setIsStreamActive(true);
+  // Handle video stream
+  useEffect(() => {
+    if (!isLive) return;
+    
+    const setupStream = async () => {
+      try {
+        // Get user media
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: isCameraOn,
+          audio: isMicOn
+        });
+        
+        // Save reference to the stream
+        streamRef.current = stream;
+        
+        // Set the stream to the video element
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Error getting media devices:', err);
+        setError('Unable to access camera or microphone. Please check permissions.');
+      }
+    };
+    
+    setupStream();
+    
+    // Clean up
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isLive, isCameraOn, isMicOn]);
+  
+  const startLivestream = () => {
+    setIsLive(true);
   };
   
-  const endStream = () => {
-    setIsStreamActive(false);
-  };
-  
-  const toggleMic = () => {
-    setIsMicOn(!isMicOn);
+  const endLivestream = () => {
+    setIsLive(false);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
   };
   
   const toggleCamera = () => {
+    if (streamRef.current && isLive) {
+      const videoTracks = streamRef.current.getVideoTracks();
+      if (videoTracks.length > 0) {
+        const isEnabled = !isCameraOn;
+        videoTracks.forEach(track => {
+          track.enabled = isEnabled;
+        });
+      }
+    }
     setIsCameraOn(!isCameraOn);
   };
   
-  const toggleScreenShare = () => {
-    setIsScreenSharing(!isScreenSharing);
+  const toggleMic = () => {
+    if (streamRef.current && isLive) {
+      const audioTracks = streamRef.current.getAudioTracks();
+      if (audioTracks.length > 0) {
+        const isEnabled = !isMicOn;
+        audioTracks.forEach(track => {
+          track.enabled = isEnabled;
+        });
+      }
+    }
+    setIsMicOn(!isMicOn);
+  };
+  
+  const toggleScreenShare = async () => {
+    if (!isLive) return;
+    
+    try {
+      if (isScreenSharing) {
+        // Return to camera
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: isCameraOn,
+          audio: isMicOn
+        });
+        
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
+        
+        streamRef.current = stream;
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        
+        setIsScreenSharing(false);
+      } else {
+        // Share screen
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true
+        });
+        
+        if (streamRef.current) {
+          const audioTracks = streamRef.current.getAudioTracks();
+          audioTracks.forEach(track => {
+            screenStream.addTrack(track);
+          });
+          
+          streamRef.current.getTracks().forEach(track => {
+            if (track.kind === 'video') {
+              track.stop();
+            }
+          });
+        }
+        
+        streamRef.current = screenStream;
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = screenStream;
+        }
+        
+        // Add listener for when user stops sharing
+        screenStream.getVideoTracks()[0].onended = () => {
+          toggleScreenShare();
+        };
+        
+        setIsScreenSharing(true);
+      }
+    } catch (err) {
+      console.error('Error sharing screen:', err);
+      setIsScreenSharing(false);
+    }
   };
 
   if (isConnecting) {
@@ -55,12 +193,12 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
       <div className="w-full h-full flex items-center justify-center">
         <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 text-[#A67D44] animate-spin mb-2" />
-          <p className="text-[#CDBCAB]">Connecting to stream...</p>
+          <p className="text-[#CDBCAB]">Connecting to the streaming service...</p>
         </div>
       </div>
     );
   }
-
+  
   if (error) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -80,31 +218,23 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
       </div>
     );
   }
-
+  
   return (
     <div className="getstream-container w-full h-full bg-[#0f1015] rounded-lg overflow-hidden relative">
-      {isStreamActive ? (
+      {isLive ? (
         // Active stream view
         <div className="relative w-full h-full">
           {/* Video container */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#15162c]/90 to-[#1a1b33]/90 flex items-center justify-center">
-            {isCameraOn ? (
-              <div className="relative w-full h-full">
-                {/* Mock video feed with overlays */}
-                <div className="absolute inset-0 bg-[#0a0a0a]">
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#899481] flex items-center justify-center animate-pulse">
-                      <span className="text-xl font-medium text-[#EFE9E1]">{userName.charAt(0)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Video overlay message */}
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <p className="text-[#CDBCAB]">Live preview (GetStream integration simulation)</p>
-                </div>
-              </div>
-            ) : (
+            <video 
+              ref={videoRef}
+              className={`w-full h-full object-cover ${!isCameraOn && 'hidden'}`}
+              autoPlay
+              playsInline
+              muted
+            />
+            
+            {!isCameraOn && (
               <div className="p-6 text-center">
                 <div className="w-20 h-20 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-4">
                   <Video className="w-10 h-10 text-[#EFE9E1] opacity-50" />
@@ -125,7 +255,7 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
           
           {/* Username display */}
           <div className="absolute bottom-20 left-4 bg-black/40 backdrop-blur-sm px-3 py-1 rounded-lg">
-            <span className="text-[#EFE9E1]">{userName}</span>
+            <span className="text-[#EFE9E1]">{userName || 'Streamer'}</span>
           </div>
           
           {/* Stream controls */}
@@ -138,7 +268,11 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
                   : 'bg-red-600 hover:bg-red-700'
               }`}
             >
-              <Mic className={`w-5 h-5 ${isMicOn ? 'text-[#CDBCAB]' : 'text-white'}`} />
+              {isMicOn ? (
+                <Mic className="w-5 h-5 text-[#CDBCAB]" />
+              ) : (
+                <MicOff className="w-5 h-5 text-white" />
+              )}
             </button>
             
             <button 
@@ -149,7 +283,11 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
                   : 'bg-red-600 hover:bg-red-700'
               }`}
             >
-              <Video className={`w-5 h-5 ${isCameraOn ? 'text-[#CDBCAB]' : 'text-white'}`} />
+              {isCameraOn ? (
+                <Camera className="w-5 h-5 text-[#CDBCAB]" />
+              ) : (
+                <CameraOff className="w-5 h-5 text-white" />
+              )}
             </button>
             
             <button 
@@ -164,7 +302,7 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
             </button>
             
             <button 
-              onClick={endStream}
+              onClick={endLivestream}
               className="h-10 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-full flex items-center justify-center text-white font-medium"
             >
               End Stream
@@ -183,7 +321,7 @@ export function StreamVideoComponent({ apiKey, token, userId, callId, userName }
               Your stream is ready to go live. Click the button below to start streaming to your audience.
             </p>
             <button 
-              onClick={startStream}
+              onClick={startLivestream}
               className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
             >
               Go Live
