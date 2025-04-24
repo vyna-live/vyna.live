@@ -86,10 +86,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
         <div className="w-full h-full flex items-center justify-center">
           <div className="text-white text-center">
             <div className="relative mb-6">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center animate-pulse mb-2 mx-auto">
-                <Video className="h-10 w-10" />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#899481] flex items-center justify-center animate-pulse mb-2 mx-auto">
+                <Video className="h-10 w-10 text-[#EFE9E1]" />
               </div>
-              <div className="absolute -bottom-1 right-1/2 transform translate-x-1/2 bg-red-600 px-3 py-0.5 rounded-full text-xs font-medium animate-pulse">
+              <div className="absolute -bottom-1 right-1/2 transform translate-x-1/2 bg-[#5D1C34] px-3 py-0.5 rounded-full text-xs font-medium animate-pulse">
                 LIVE
               </div>
             </div>
@@ -115,20 +115,20 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
         
         {/* Stream controls */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 glassmorphic p-3 rounded-full flex items-center space-x-4 shadow-lg">
-          <button className="w-12 h-12 bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] rounded-full flex items-center justify-center transition-colors">
-            <Mic className="w-5 h-5 text-[hsl(var(--ai-text-primary))]" />
+          <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
+            <Mic className="w-5 h-5 text-[#CDBCAB]" />
           </button>
-          <button className="w-12 h-12 bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] rounded-full flex items-center justify-center transition-colors">
-            <Video className="w-5 h-5 text-[hsl(var(--ai-text-primary))]" />
+          <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
+            <Video className="w-5 h-5 text-[#CDBCAB]" />
           </button>
-          <button className="w-12 h-12 bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] rounded-full flex items-center justify-center transition-colors">
-            <Monitor className="w-5 h-5 text-[hsl(var(--ai-text-primary))]" />
+          <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
+            <Monitor className="w-5 h-5 text-[#CDBCAB]" />
           </button>
-          <button className="w-12 h-12 bg-[hsl(var(--ai-card))] hover:bg-[hsl(var(--ai-card-glass))] rounded-full flex items-center justify-center transition-colors">
-            <Volume2 className="w-5 h-5 text-[hsl(var(--ai-text-primary))]" />
+          <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
+            <Volume2 className="w-5 h-5 text-[#CDBCAB]" />
           </button>
-          <div className="w-28 h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-full flex items-center justify-center shadow-lg transition-colors">
-            <span className="text-white font-medium">END STREAM</span>
+          <div className="w-28 h-12 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] hover:from-[#6D2C44] hover:to-[#B68D54] rounded-full flex items-center justify-center shadow-lg transition-colors">
+            <span className="text-[#EFE9E1] font-medium">END STREAM</span>
           </div>
         </div>
       </div>
@@ -136,11 +136,11 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       {/* AI button (fixed position) */}
       <button 
         onClick={toggleTeleprompter}
-        className={`absolute bottom-24 right-6 z-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 transition-all shadow-lg p-3 rounded-full ${
+        className={`absolute bottom-24 right-6 z-10 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] transition-all shadow-lg p-3 rounded-full ${
           teleprompterVisible ? 'right-[32%]' : 'right-6'
         }`}
       >
-        <BrainCircuit className="h-6 w-6 text-white" />
+        <BrainCircuit className="h-6 w-6 text-[#EFE9E1]" />
       </button>
       
       {/* Teleprompter panel */}
@@ -151,14 +151,13 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
               <div>
                 <GradientText 
                   text="AI Teleprompter" 
-                  gradientFrom="from-blue-400" 
-                  gradientTo="to-teal-400" 
+                  preset="cool"
                   className="text-xl font-bold" 
                   typingSpeed={50}
                   showCursor={false}
                 />
                 <div className="mt-1">
-                  <span className="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-[#5D1C34] text-[#EFE9E1] px-2 py-0.5 rounded-full">
                     STREAMER ONLY VIEW
                   </span>
                 </div>
