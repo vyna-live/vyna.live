@@ -22,15 +22,22 @@
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
   --ring: 20 14.3% 4.1%;
-  --radius: 0.5rem;
+  --radius: 1rem;
 
-  /* Vyna custom colors */
-  --vyna-purple: 276 100% 67%;
-  --vyna-indigo: 240 79% 59%;
-  --vyna-light-gray: 240 12% 96%;
-  --vyna-medium-gray: 220 13% 91%;
-  --vyna-dark-gray: 220 9% 46%;
-  --vyna-text-dark: 220 15% 16%;
+  /* Modern AI UI colors */
+  --ai-background: 220 25% 97%;
+  --ai-card: 0 0% 100%;
+  --ai-border: 220 20% 93%;
+  --ai-accent: 246 93% 63%;
+  --ai-accent-light: 246 93% 93%;
+  --ai-text-primary: 224 35% 18%;
+  --ai-text-secondary: 225 12% 40%;
+  --ai-blue: 210 100% 66%;
+  --ai-green: 142 77% 45%;
+  --ai-purple: 276 100% 67%;
+  --ai-red: 0 79% 63%;
+  --ai-chat-user: 214 100% 97%;
+  --ai-chat-ai: 0 0% 100%;
 }
 
 .dark {
@@ -53,7 +60,7 @@
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
   --ring: 240 4.9% 83.9%;
-  --radius: 0.5rem;
+  --radius: 1rem;
 }
 
 @layer base {
@@ -62,29 +69,62 @@
   }
 
   body {
-    @apply font-sans antialiased bg-gradient-to-br from-[#f6f9fc] to-[#eef1f8] text-[#1f2937] min-h-screen;
+    @apply font-sans antialiased bg-[hsl(var(--ai-background))] text-[hsl(var(--ai-text-primary))] min-h-screen;
   }
 }
 
 @layer components {
-  .purple-gradient-text {
-    @apply bg-gradient-to-r from-[#A259FF] to-[#4F46E5] bg-clip-text text-transparent;
+  .ai-card {
+    @apply bg-[hsl(var(--ai-card))] border border-[hsl(var(--ai-border))] rounded-2xl shadow-sm;
+  }
+  
+  .ai-panel {
+    @apply bg-[hsl(var(--ai-card))] border border-[hsl(var(--ai-border))] rounded-3xl shadow-lg;
+  }
+  
+  .ai-tool-button {
+    @apply flex items-center justify-center bg-white hover:bg-gray-50 border border-[hsl(var(--ai-border))] rounded-xl p-4 text-sm font-medium transition-all shadow-sm hover:shadow-md;
+  }
+  
+  .ai-avatar {
+    @apply w-10 h-10 rounded-full overflow-hidden flex items-center justify-center border border-[hsl(var(--ai-border))];
+  }
+  
+  .ai-user-bubble {
+    @apply bg-[hsl(var(--ai-chat-user))] border border-[hsl(var(--ai-border))] rounded-2xl p-4 text-[hsl(var(--ai-text-primary))];
+  }
+  
+  .ai-assistant-bubble {
+    @apply bg-[hsl(var(--ai-chat-ai))] border border-[hsl(var(--ai-border))] rounded-2xl p-4 text-[hsl(var(--ai-text-primary))];
+  }
+  
+  .ai-input-field {
+    @apply bg-white border border-[hsl(var(--ai-border))] rounded-full px-5 py-3 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ai-accent))] focus:border-transparent transition-all;
+  }
+  
+  .ai-primary-button {
+    @apply bg-[hsl(var(--ai-accent))] hover:bg-[hsl(var(--ai-accent))] text-white rounded-full px-4 py-2 font-medium transition-all shadow-sm hover:shadow-md;
+  }
+  
+  .ai-action-button {
+    @apply p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors;
   }
 
+  /* For backward compatibility */
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+    @apply ai-card;
   }
-
+  
   .primary-button {
-    @apply bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg active:shadow-sm;
+    @apply ai-primary-button;
   }
-
+  
   .secondary-button {
-    @apply bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 px-4 py-2 rounded-lg transition-all shadow-sm hover:shadow-md;
+    @apply ai-tool-button;
   }
-
+  
   .input-field {
-    @apply bg-white/90 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all;
+    @apply ai-input-field;
   }
 }
 
