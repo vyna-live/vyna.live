@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 
 // Import the logo variants
-import logoDefault from '../assets/vp.png';
-import logoColor from '../assets/vpc.png';
-import logoLight from '../assets/vpw.png';
-import logoFullLight from '../assets/vpww.png';
+import logoDefault from '../assets/vp.png'; // Dark logo (dark outline)
+import logoColor from '../assets/vpc.png'; // Colored logo for color mode
+import logoLight from '../assets/vpw.png'; // Light logo for dark backgrounds
+import logoFullLight from '../assets/vpww.png'; // Full logo with text
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'light' | 'color' | 'full' | 'custom';
+  variant?: 'default' | 'light' | 'color' | 'full' | 'custom' | 'auto';
   className?: string;
   showText?: boolean;
 }
@@ -20,6 +21,8 @@ export default function Logo({
   showText = true
 }: LogoProps) {
   const [customLogo, setCustomLogo] = useState<string | null>(null);
+  const { theme, resolvedTheme } = useTheme();
+  const isDarkMode = resolvedTheme === 'dark';
   
   useEffect(() => {
     // Check if a custom logo has been uploaded through API
@@ -51,6 +54,11 @@ export default function Logo({
   const getLogoSrc = () => {
     if (variant === 'custom' && customLogo) {
       return customLogo;
+    }
+    
+    // For auto variant, pick based on theme
+    if (variant === 'auto') {
+      return isDarkMode ? logoColor : logoDefault;
     }
     
     switch (variant) {

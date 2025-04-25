@@ -251,7 +251,7 @@ export default function Home() {
       {/* Left sidebar - research history */}
       <div className="w-64 h-full bg-[hsl(var(--ai-background))] border-r border-[hsl(var(--ai-border))] flex flex-col">
         <div className="py-4 px-4 flex items-center">
-          <Logo size="md" showText={false} variant="color" />
+          <Logo size="md" variant="full" className="h-8 max-w-[120px]" />
         </div>
         
         <div className="px-3 py-4">
@@ -341,7 +341,7 @@ export default function Home() {
         {/* Chat header */}
         <div className="h-14 border-b border-[hsl(var(--ai-border))] flex items-center justify-between px-6">
           <div className="flex items-center">
-            <Logo size="sm" showText={false} variant="color" />
+            <Logo size="sm" showText={false} variant="auto" className="w-auto h-7" />
             <div className="h-6 mx-3 border-r border-[hsl(var(--ai-border))]"></div>
             <GradientText 
               text="AI Research Assistant" 
