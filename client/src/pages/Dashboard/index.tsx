@@ -17,7 +17,7 @@ export default function Dashboard() {
         
         <div className="flex items-center">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-full overflow-hidden">
+            <div className="w-[24px] h-[24px] rounded-full overflow-hidden">
               <img 
                 src="https://randomuser.me/api/portraits/men/32.jpg" 
                 alt="Divine Samuel" 
@@ -83,17 +83,17 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex gap-5 flex-wrap">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-[#1C1C1C] rounded-lg overflow-hidden">
-                <div className="h-44 overflow-hidden">
+              <div key={item} className="bg-[#1C1C1C] rounded-lg overflow-hidden w-[263px] h-[219px] flex flex-col">
+                <div className="h-[150px] overflow-hidden">
                   <img 
                     src={streamCardImage}
                     alt="Jaja Games: Crowns & Chains" 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="p-4">
+                <div className="p-4 flex-1">
                   <div className="text-xs uppercase text-zinc-500 mb-1.5">PUBLIC</div>
                   <h3 className="text-white font-medium">Jaja Games: Crowns & Chains</h3>
                 </div>
@@ -112,17 +112,17 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="flex gap-5 flex-wrap">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-[#1C1C1C] rounded-lg overflow-hidden">
-                <div className="h-44 overflow-hidden">
+              <div key={item} className="bg-[#1C1C1C] rounded-lg overflow-hidden w-[263px] h-[219px] flex flex-col">
+                <div className="h-[150px] overflow-hidden">
                   <img 
                     src={streamCardImage}
                     alt="Jaja Games: Crowns & Chains" 
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="p-4">
+                <div className="p-4 flex-1">
                   <div className="text-xs uppercase text-zinc-500 mb-1.5">PUBLIC</div>
                   <h3 className="text-white font-medium">Jaja Games: Crowns & Chains</h3>
                 </div>
