@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { BrainCircuit, Clock, X, Loader2, Video, Mic, Monitor, Volume2 } from "lucide-react";
+import { Mic, Camera, Smile, Square, ChevronLeft, MoreVertical } from "lucide-react";
 import Teleprompter from "./Teleprompter";
-import GradientText from "./GradientText";
 import Logo from "./Logo";
 import StreamVideoComponent from "./StreamVideo";
 import { useStreamVideoContext } from "../providers/StreamVideoProvider";
@@ -11,76 +10,73 @@ interface LivestreamInterfaceProps {
   initialText?: string;
 }
 
+// Mock chat messages for the right sidebar
+const MOCK_RECENTS = [
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+  "Who is the best CODM gamer in Nigeria?",
+];
+
 export default function LivestreamInterface({ initialText = "" }: LivestreamInterfaceProps) {
-  const [teleprompterVisible, setTeleprompterVisible] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [teleprompterText, setTeleprompterText] = useState(initialText);
-  const [streamTime, setStreamTime] = useState("00:00:00");
-  const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 100) + 100);
+  const [viewerCount, setViewerCount] = useState("123.5k");
   
   // Get stream client from provider context
   const { client, isInitialized, error: streamError } = useStreamVideoContext();
   
   // Additional GetStream state specific to this component
-  const [isStreamActive, setIsStreamActive] = useState<boolean>(false);
+  const [isStreamActive, setIsStreamActive] = useState<boolean>(true); // Set to true for demo
   const [callId] = useState<string>(`livestream-${Date.now()}`);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [streamApiKey, setStreamApiKey] = useState<string>("");
   const [streamToken, setStreamToken] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
-  const [userName, setUserName] = useState<string>("Livestreamer");
+  const [userName, setUserName] = useState<string>("Divine Samuel");
+  const [streamTitle, setStreamTitle] = useState<string>("Jaja Games");
 
   // Get credentials that may not be in context
   useEffect(() => {
     const getStreamCredentials = async () => {
       try {
-        setIsLoading(true);
-        console.log("Starting stream initialization...");
-        
         // Get API key from our backend if not already available
         if (!streamApiKey) {
-          console.log("Fetching API key...");
           const keyResponse = await fetch('/api/stream/key');
           if (keyResponse.ok) {
             const keyData = await keyResponse.json();
-            console.log("Got API key:", keyData.apiKey);
             setStreamApiKey(keyData.apiKey);
-          } else {
-            console.error("Failed to get API key");
-          }
+          } 
         }
         
         // Generate a random user ID if not already set
         if (!userId) {
           const randomId = `user-${Math.random().toString(36).substring(2, 9)}`;
-          console.log("Generated user ID:", randomId);
           setUserId(randomId);
           
           // Generate a token for this user
-          console.log("Fetching token...");
           const tokenResponse = await fetch('/api/stream/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: randomId,
-              userName: userName || 'Livestreamer',
+              userName: userName,
             }),
           });
           
           if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
-            console.log("Got token:", tokenData.token.substring(0, 20) + "...");
             setStreamToken(tokenData.token);
-          } else {
-            console.error("Failed to get token");
           }
-        }
-        
-        // Check if we have all needed data
-        console.log("Checking credentials - apiKey:", !!streamApiKey, "token:", !!streamToken, "userId:", !!userId);
-        if (streamApiKey && streamToken && userId) {
-          console.log("All credentials available, moving to ready state");
-          setIsLoading(false);
         }
       } catch (err) {
         console.error('Error initializing stream:', err);
@@ -90,7 +86,6 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
     
     getStreamCredentials();
     
-    // Only run this effect once on component mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
@@ -98,277 +93,238 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   useEffect(() => {
     if (streamError) {
       setError(streamError.message);
-      setIsLoading(false);
     }
   }, [streamError]);
   
-  // Watch for when all data is loaded to set loading state
-  useEffect(() => {
-    console.log("Checking required data availability:", { streamApiKey, streamToken, userId });
-    if (streamApiKey && streamToken && userId) {
-      console.log("All required data is available, moving to ready state");
-      setIsLoading(false);
-    }
-  }, [streamApiKey, streamToken, userId]);
-  
-  // Simulate streaming time counter
-  useEffect(() => {
-    let hours = 0;
-    let minutes = 0;
-    let seconds = 0;
-    
-    const interval = setInterval(() => {
-      seconds++;
-      if (seconds >= 60) {
-        seconds = 0;
-        minutes++;
-        if (minutes >= 60) {
-          minutes = 0;
-          hours++;
-        }
-      }
-      
-      const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      setStreamTime(formattedTime);
-      
-      // Randomly update viewer count occasionally
-      if (Math.random() < 0.1) {
-        setViewerCount(prev => prev + Math.floor(Math.random() * 5) - 2);
-      }
-    }, 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
-  
-  const toggleTeleprompter = useCallback(() => {
-    setTeleprompterVisible(prev => !prev);
-  }, []);
-  
-  // Start the livestream
-  const startLivestream = useCallback(async () => {
-    try {
-      if (!streamApiKey || !streamToken || !userId) {
-        throw new Error('Stream credentials not available');
-      }
-      
-      // Create a livestream call
-      const response = await fetch('/api/stream/livestream', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          callId,
-          userId,
-          token: streamToken,
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create livestream');
-      }
-      
-      setIsStreamActive(true);
-    } catch (err) {
-      console.error('Error starting livestream:', err);
-      setError('Failed to start the livestream');
-    }
-  }, [streamApiKey, streamToken, callId, userId]);
-  
-  // End the livestream
-  const endLivestream = useCallback(() => {
-    setIsStreamActive(false);
+  // Toggle the side drawer
+  const toggleDrawer = useCallback(() => {
+    setDrawerVisible(prev => !prev);
   }, []);
 
-  return (
-    <div className="w-full h-screen relative overflow-hidden bg-gradient-to-br from-[#15162c] to-[#1a1b33]">
-      {/* Livestream header */}
-      <div className="absolute top-0 left-0 right-0 h-16 glassmorphic flex items-center justify-between px-6 z-10">
-        <div className="flex items-center">
-          <Logo size="sm" variant="full" className="h-6 max-w-[120px]" />
-          <div className="h-6 mx-3 border-r border-white/20"></div>
-          <div className="bg-gradient-to-r from-[#EFE9E1] to-[#CDBCAB] text-transparent bg-clip-text text-base font-bold">
-            LIVE STREAM
-          </div>
+  // Render chat participants
+  const renderChatParticipants = () => {
+    return (
+      <div className="space-y-2 mt-4">
+        <div className="flex items-center space-x-2 py-1">
+          <div className="w-6 h-6 rounded-full bg-orange-500 overflow-hidden"></div>
+          <div className="text-white text-sm">Innocent Dive</div>
+          <div className="text-gray-400 text-xs">How far my guys wetin dey happen</div>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-black/30 px-3 py-1 rounded-full">
-            <div className="w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse"></div>
-            <span className="text-white text-sm">{viewerCount} viewers</span>
+        <div className="flex items-center space-x-2 py-1">
+          <div className="w-6 h-6 rounded-full bg-blue-500 overflow-hidden flex items-center justify-center">
+            <span className="text-xs text-white font-bold">G</span>
           </div>
-          
-          <div className="flex items-center bg-black/30 px-3 py-1 rounded-full">
-            <Clock className="w-4 h-4 text-white mr-2" />
-            <span className="text-white text-sm">{streamTime}</span>
+          <div className="text-white text-sm">Godknows Ukari</div>
+          <div className="text-gray-400 text-xs">How far my guys wetin dey happen</div>
+        </div>
+        
+        <div className="flex items-center space-x-2 py-1">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 overflow-hidden flex items-center justify-center">
+            <span className="text-xs text-white font-bold">G</span>
+          </div>
+          <div className="text-white text-sm">Godknows Ukari</div>
+          <div className="text-gray-400 text-xs">How far my guys wetin dey happen</div>
+        </div>
+        
+        <div className="flex items-center space-x-2 py-1">
+          <div className="w-6 h-6 rounded-full bg-red-500 overflow-hidden flex items-center justify-center">
+            <span className="text-xs text-white">❤️</span>
+          </div>
+          <div className="text-white text-sm">Goddess</div>
+          <div className="text-red-400 text-xs ml-1">joined</div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-full h-screen relative overflow-hidden bg-black">
+      {/* Top Navbar */}
+      <div className="absolute top-0 left-0 right-0 h-12 z-30 bg-black/70 backdrop-blur-sm flex items-center justify-between px-4">
+        <div className="flex items-center">
+          <Logo variant="light" size="sm" className="h-7" />
+        </div>
+        
+        <div className="flex items-center">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden mr-2"></div>
+            <span className="text-white font-medium mr-1">{userName}</span>
+            <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
       </div>
-    
-      {/* Livestream content */}
-      <div 
-        className={`transition-all duration-300 ease-in-out h-full ${
-          teleprompterVisible ? "w-[70%]" : "w-full"
-        }`}
-      >
-        {isLoading ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center">
-              <Loader2 className="h-10 w-10 text-[#A67D44] animate-spin mx-auto mb-3" />
-              <p className="text-[#CDBCAB] text-lg">Initializing stream...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center max-w-md">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mx-auto mb-4">
-                <span className="text-[#EFE9E1] text-2xl">!</span>
-              </div>
-              <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Stream Error</h3>
-              <p className="text-[hsl(var(--ai-text-secondary))] mb-6">{error}</p>
-              <button 
-                onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        ) : isStreamActive ? (
-          <div className="w-full h-full p-0 md:p-4 flex items-center justify-center">
-            <div className="relative w-full h-full rounded-lg overflow-hidden">
-              <StreamVideoComponent 
-                apiKey={streamApiKey}
-                token={streamToken}
-                userId={userId}
-                callId={callId}
-                userName={userName}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-white text-center">
-              <div className="relative mb-6">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#899481] flex items-center justify-center animate-pulse mb-2 mx-auto">
-                  <Video className="h-10 w-10 text-[#EFE9E1]" />
-                </div>
-                <div className="absolute -bottom-1 right-1/2 transform translate-x-1/2 bg-[#5D1C34] px-3 py-0.5 rounded-full text-xs font-medium animate-pulse">
-                  LIVE
-                </div>
+      
+      {/* Main Content Area */}
+      <div className="h-full pt-12">
+        <div className="flex h-full">
+          {/* Main livestream view */}
+          <div className={`h-full ${drawerVisible ? 'w-[70%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative`}>
+            {/* Streamer header */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 z-20">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden mr-2"></div>
+                <span className="text-white font-medium">{userName}</span>
               </div>
               
-              <GradientText 
-                text="Ready to Start Streaming" 
-                preset="warm"
-                className="text-3xl font-bold mb-3" 
-                typingSpeed={50}
-                showCursor={false}
-              />
+              <div className="text-white text-lg font-medium">{streamTitle}</div>
               
-              <p className="text-gray-300 max-w-md mx-auto mb-4">
-                Configure your camera and microphone below, then click Start Stream to begin.
-              </p>
-              
-              {/* Camera preview with DeviceSettings */}
-              {client && (
-                <div className="max-w-lg mx-auto mb-6 bg-[#0f1015]/70 border border-[#A67D44]/20 p-4 rounded-lg">
-                  <h4 className="text-[#CDBCAB] mb-2 font-medium">Camera Preview</h4>
-                  <DeviceSettings />
+              <div className="flex items-center">
+                <div className="flex items-center bg-black/50 backdrop-blur-sm rounded-full px-3 py-1 mr-2">
+                  <span className="text-white">{viewerCount}</span>
+                </div>
+                <button 
+                  onClick={toggleDrawer} 
+                  className={`w-8 h-8 flex items-center justify-center rounded ${drawerVisible ? 'text-white bg-gray-600' : 'text-white'}`}
+                >
+                  {drawerVisible ? <ChevronLeft className="w-5 h-5" /> : <MoreVertical className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+            
+            {/* Stream content */}
+            <div className="w-full h-full">
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center bg-black">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+                </div>
+              ) : error ? (
+                <div className="w-full h-full flex items-center justify-center bg-black">
+                  <div className="text-white text-center">
+                    <div className="text-xl mb-4">Error: {error}</div>
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="px-4 py-2 bg-white text-black rounded-md"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Stream video content
+                <div className="w-full h-full">
+                  {/* Placeholder for StreamVideoComponent - this is where the actual video goes */}
+                  <div className="w-full h-full bg-black">
+                    {/* In a real implementation, this would be the StreamVideoComponent */}
+                    <StreamVideoComponent 
+                      apiKey={streamApiKey}
+                      token={streamToken}
+                      userId={userId}
+                      callId={callId}
+                      userName={userName}
+                    />
+                  </div>
                 </div>
               )}
               
-              <button 
-                onClick={startLivestream}
-                className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-full text-[#EFE9E1] shadow-lg hover:shadow-xl transition-all"
-              >
-                START STREAM
-              </button>
+              {/* Stream controls at bottom */}
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 z-20">
+                <button className="w-10 h-10 bg-gray-800/80 hover:bg-gray-700 rounded-full flex items-center justify-center text-white">
+                  <Mic className="w-5 h-5" />
+                </button>
+                <button className="w-10 h-10 bg-gray-800/80 hover:bg-gray-700 rounded-full flex items-center justify-center text-white">
+                  <Camera className="w-5 h-5" />
+                </button>
+                <button className="w-10 h-10 bg-gray-800/80 hover:bg-gray-700 rounded-full flex items-center justify-center text-white">
+                  <Smile className="w-5 h-5" />
+                </button>
+                <button className="w-10 h-10 bg-gray-800/80 hover:bg-gray-700 rounded-full flex items-center justify-center text-white">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+                <button className="w-10 h-10 bg-gray-800/80 hover:bg-gray-700 rounded-full flex items-center justify-center text-white">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+                <button className="w-10 h-10 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white">
+                  <Square className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Chat messages overlay */}
+              <div className="absolute left-0 bottom-24 w-72 max-h-64 overflow-hidden px-4">
+                {renderChatParticipants()}
+              </div>
             </div>
           </div>
-        )}
-        
-        {/* Stream controls (only show when not streaming through GetStream) */}
-        {!isStreamActive && (
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 glassmorphic p-3 rounded-full flex items-center space-x-4 shadow-lg">
-            <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
-              <Mic className="w-5 h-5 text-[#CDBCAB]" />
-            </button>
-            <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
-              <Video className="w-5 h-5 text-[#CDBCAB]" />
-            </button>
-            <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
-              <Monitor className="w-5 h-5 text-[#CDBCAB]" />
-            </button>
-            <button className="w-12 h-12 bg-[#11100F]/80 hover:bg-[#11100F] rounded-full flex items-center justify-center transition-colors border border-[#CDBCAB]/20">
-              <Volume2 className="w-5 h-5 text-[#CDBCAB]" />
-            </button>
-            {isStreamActive ? (
-              <button 
-                onClick={endLivestream}
-                className="w-28 h-12 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] hover:from-[#6D2C44] hover:to-[#B68D54] rounded-full flex items-center justify-center shadow-lg transition-colors"
-              >
-                <span className="text-[#EFE9E1] font-medium">END STREAM</span>
-              </button>
-            ) : (
-              <button 
-                onClick={startLivestream}
-                className="w-28 h-12 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-full flex items-center justify-center shadow-lg transition-colors"
-              >
-                <span className="text-[#EFE9E1] font-medium">START STREAM</span>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-      
-      {/* AI button (fixed position) */}
-      <button 
-        onClick={toggleTeleprompter}
-        className={`absolute bottom-24 right-6 z-10 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] transition-all shadow-lg p-3 rounded-full ${
-          teleprompterVisible ? 'right-[32%]' : 'right-6'
-        }`}
-      >
-        <BrainCircuit className="h-6 w-6 text-[#EFE9E1]" />
-      </button>
-      
-      {/* Teleprompter panel */}
-      {teleprompterVisible && (
-        <div className="absolute top-0 right-0 h-full w-[30%] bg-[#16171d]/90 backdrop-blur-md shadow-2xl z-20">
-          <div className="h-full flex flex-col p-4">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <GradientText 
-                  text="AI Teleprompter" 
-                  preset="earthy"
-                  className="text-xl font-bold" 
-                  typingSpeed={50}
-                  showCursor={false}
-                />
-                <div className="mt-1">
-                  <span className="text-xs bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[#EFE9E1] px-2 py-0.5 rounded-full">
-                    STREAMER ONLY VIEW
-                  </span>
+          
+          {/* Right drawer for AI/Notepad */}
+          {drawerVisible && (
+            <div className="w-[30%] h-full bg-zinc-900 overflow-hidden flex flex-col">
+              {/* Drawer header with tabs */}
+              <div className="flex items-center justify-between p-3 border-b border-zinc-800">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setActiveTab('vynaai')}
+                    className={`px-3 py-1 text-sm rounded ${
+                      activeTab === 'vynaai' 
+                        ? 'bg-zinc-800 text-white' 
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    VynaAI
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('notepad')}
+                    className={`px-3 py-1 text-sm rounded ${
+                      activeTab === 'notepad' 
+                        ? 'bg-zinc-800 text-white' 
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Notepad
+                  </button>
                 </div>
               </div>
               
-              <button 
-                onClick={toggleTeleprompter}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-r from-[#A67D44] to-[#5D1C34] text-[#EFE9E1] transition-all hover:shadow-md"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Drawer content */}
+              <div className="flex-1 overflow-auto">
+                {activeTab === 'vynaai' ? (
+                  <div className="p-3">
+                    <div className="text-white text-sm font-medium mb-2">RECENTS</div>
+                    <div className="space-y-2">
+                      {MOCK_RECENTS.map((question, index) => (
+                        <div key={index} className="flex justify-between group">
+                          <div className="text-zinc-200 text-sm hover:text-white transition-colors">
+                            {question}
+                          </div>
+                          <button className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3">
+                    <div className="text-zinc-400 text-sm">
+                      <Teleprompter
+                        text={teleprompterText || "Add notes here for your livestream. This is only visible to you."}
+                        onClose={() => {}}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Chat input */}
+              <div className="p-3 border-t border-zinc-800">
+                <button
+                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-md text-white text-sm flex items-center justify-center"
+                >
+                  <span>+ New chat</span>
+                </button>
+              </div>
             </div>
-            
-            <div className="flex-1 overflow-auto bg-[#0f1015] rounded-lg p-4">
-              <Teleprompter 
-                text={teleprompterText || "No teleprompter text available. Try asking the AI assistant for help with creating a script for your livestream."} 
-                onClose={() => setTeleprompterVisible(false)} 
-              />
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
