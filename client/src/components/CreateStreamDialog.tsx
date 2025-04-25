@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Upload, Calendar } from 'lucide-react';
 import { Youtube } from 'react-feather';
+import { format } from 'date-fns';
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface CreateStreamDialogProps {
   isOpen: boolean;
@@ -28,6 +30,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
   
   const [scheduleForLater, setScheduleForLater] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   if (!isOpen) return null;
   
@@ -47,10 +50,9 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     }
   };
   
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value) {
-      setFormData(prev => ({ ...prev, scheduledDate: new Date(e.target.value) }));
-    }
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData(prev => ({ ...prev, scheduledDate: date }));
+    setShowDatePicker(false);
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -266,24 +268,30 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
               </label>
               
               {scheduleForLater && (
-                <div className="mt-2">
+                <div className="mt-2 relative">
                   <button
                     type="button"
-                    onClick={() => document.getElementById('date-picker')?.click()}
+                    onClick={() => setShowDatePicker(!showDatePicker)}
                     className="flex items-center w-full p-2.5 bg-[#242424] text-zinc-300 border border-zinc-700 rounded"
                   >
                     <Calendar size={18} className="mr-2" />
                     {formData.scheduledDate 
-                      ? formData.scheduledDate.toLocaleDateString() 
+                      ? format(formData.scheduledDate, 'PPP')
                       : 'Pick a date'
                     }
-                    <input
-                      type="date"
-                      id="date-picker"
-                      onChange={handleDateChange}
-                      className="hidden"
-                    />
                   </button>
+                  
+                  {showDatePicker && (
+                    <div className="absolute z-10 mt-2 bg-[#1C1C1C] p-2 rounded-md border border-zinc-700 shadow-lg">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.scheduledDate}
+                        onSelect={handleDateChange}
+                        className="bg-[#1C1C1C] border-zinc-700 rounded-md text-white"
+                        disabled={(date) => date < new Date()}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
