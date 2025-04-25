@@ -45,9 +45,11 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
+  const [showChatHistory, setShowChatHistory] = useState<boolean>(true);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
   const [viewerCount, setViewerCount] = useState("123.5k");
   const [chatMessages, setChatMessages] = useState<typeof CHAT_MESSAGES>(CHAT_MESSAGES.slice(0, 5));
+  const [inputValue, setInputValue] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -140,6 +142,16 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const toggleDrawer = useCallback(() => {
     setDrawerVisible(prev => !prev);
   }, []);
+  
+  // Handle sending a message
+  const sendMessage = useCallback(() => {
+    if (inputValue.trim()) {
+      setShowChatHistory(true);
+      // In a real app, this would call the API to send the message
+      // and get a response from the AI
+      setInputValue("");
+    }
+  }, [inputValue]);
 
   // Simulate incoming chat messages
   useEffect(() => {
@@ -448,8 +460,8 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                     </div>
                   </div>
                 ) : (
-                  <div className="p-2 flex flex-col h-full">
-                    <div className="flex items-center mb-4">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center p-2 border-b border-zinc-800">
                       <button 
                         onClick={() => setShowNewChat(false)}
                         className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 mr-2"
@@ -458,34 +470,121 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
-                      <span className="text-white text-sm font-medium">New Chat</span>
+                      <span className="text-white text-sm font-medium truncate pr-6">Who is the best CODM gamer in Nigeria as of March 2025?</span>
+                      <button className="ml-auto text-zinc-400 hover:text-white">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
                     </div>
                     
                     {/* Chat messages area */}
-                    <div className="flex-1 overflow-y-auto mb-4">
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
-                          <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 8.1 19.33 6.66 18.12C7.55 16.8 9.08 16 12 16C14.92 16 16.45 16.8 17.34 18.12C15.9 19.33 14.03 20 12 20Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                    <div className="flex-1 overflow-y-auto px-2 py-4">
+                      {/* Empty state with star icon */}
+                      {!showChatHistory ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center">
+                          <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M11.0489 3.92705C11.3483 3.00574 12.6517 3.00574 12.9511 3.92705L14.2451 7.90983C14.379 8.32185 14.763 8.60081 15.1962 8.60081H19.3839C20.3527 8.60081 20.7554 9.84043 19.9717 10.4098L16.5838 12.8713C16.2333 13.126 16.0866 13.5773 16.2205 13.9894L17.5146 17.9721C17.8139 18.8934 16.7595 19.6596 15.9757 19.0902L12.5878 16.6287C12.2373 16.374 11.7627 16.374 11.4122 16.6287L8.02426 19.0902C7.24054 19.6596 6.18607 18.8934 6.48542 17.9721L7.77948 13.9894C7.91338 13.5773 7.76668 13.126 7.41623 12.8713L4.02827 10.4098C3.24455 9.84043 3.64732 8.60081 4.61606 8.60081H8.8038C9.23703 8.60081 9.621 8.32185 9.75489 7.90983L11.0489 3.92705Z" fill="currentColor"/>
+                            </svg>
+                          </div>
+                          <div className="text-white text-xl font-medium mb-2">VynaAI</div>
+                          <div className="text-zinc-400 text-sm max-w-xs">
+                            Ask questions to quickly research topics while streaming
+                          </div>
                         </div>
-                        <div className="text-white text-sm text-center mb-2">VynaAI Assistant</div>
-                        <div className="text-zinc-400 text-xs text-center">Ask a question to get help from VynaAI during your livestream.</div>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col space-y-4">
+                          {/* User message */}
+                          <div className="flex flex-col items-end">
+                            <div className="max-w-[85%] rounded-lg bg-zinc-800 text-white px-4 py-2 text-sm">
+                              Who is the best CODM gamer in Nigeria as of March 2025?
+                            </div>
+                          </div>
+                          
+                          {/* AI response */}
+                          <div className="flex items-start space-x-2">
+                            <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 8.1 19.33 6.66 18.12C7.55 16.8 9.08 16 12 16C14.92 16 16.45 16.8 17.34 18.12C15.9 19.33 14.03 20 12 20Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </div>
+                            <div className="max-w-[85%] flex flex-col">
+                              <div className="rounded-lg bg-zinc-700 text-white px-4 py-2 text-sm">
+                                I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.
+                              </div>
+                              <div className="flex space-x-1 mt-1">
+                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M3 10H13C15.2091 10 17 8.20914 17 6C17 3.79086 15.2091 2 13 2H7M3 10L7 6M3 10L7 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M21 14H11C8.79086 14 7 15.7909 7 18C7 20.2091 8.79086 22 11 22H17M21 14L17 10M21 14L17 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7 11L12 6L17 11M12 6V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7 13L12 18L17 13M12 18V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </button>
+                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                                    <path d="M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                    <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                  </svg>
+                                </button>
+                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 5C7.23858 5 5 7.23858 5 10C5 12.7614 7.23858 15 10 15H14C16.7614 15 19 12.7614 19 10C19 7.23858 16.7614 5 14 5H10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M10 9C9.44772 9 9 9.44772 9 10C9 10.5523 9.44772 11 10 11V9ZM14 11C14.5523 11 15 10.5523 15 10C15 9.44772 14.5523 9 14 9V11ZM10 11H14V9H10V11Z" fill="currentColor"/>
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Chat input */}
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        placeholder="Ask a question..."
-                        className="w-full px-4 py-2 bg-zinc-800 text-white placeholder-zinc-400 text-sm rounded-lg outline-none"
-                      />
-                      <button className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-zinc-700 text-white">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
+                    <div className="px-2 py-3 border-t border-zinc-800">
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                          placeholder={!showChatHistory ? "Who is the best gamer in Nigeria as of April 2025?" : "Type a new note"}
+                          className="w-full px-10 py-2 bg-zinc-800 text-white placeholder-zinc-400 text-sm rounded-lg outline-none"
+                        />
+                        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex space-x-1 text-zinc-400">
+                          <button className="w-6 h-6 flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V12V10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M16 3L19 6M19 6L22 9M19 6L16 9M19 6L22 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                          <button className="w-6 h-6 flex items-center justify-center">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" fill="currentColor"/>
+                              <path d="M19 14C20.1046 14 21 13.1046 21 12C21 10.8954 20.1046 10 19 10C17.8954 10 17 10.8954 17 12C17 13.1046 17.8954 14 19 14Z" fill="currentColor"/>
+                              <path d="M5 14C6.10457 14 7 13.1046 7 12C7 10.8954 6.10457 10 5 10C3.89543 10 3 10.8954 3 12C3 13.1046 3.89543 14 5 14Z" fill="currentColor"/>
+                            </svg>
+                          </button>
+                          <button 
+                            onClick={sendMessage}
+                            className="w-6 h-6 flex items-center justify-center"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M15 10L19 14M19 14L15 18M19 14H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -506,7 +605,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
             <div className="p-3 border-t border-zinc-800">
               {!showNewChat && activeTab === 'vynaai' && (
                 <button
-                  onClick={() => setShowNewChat(true)}
+                  onClick={() => {
+                    setShowNewChat(true);
+                    setShowChatHistory(false); // Show the empty star state when opening a new chat
+                  }}
                   className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white text-xs flex items-center justify-center transition-colors"
                 >
                   <span className="font-medium">+ New chat</span>
