@@ -22,6 +22,14 @@ export default function Dashboard() {
     }
   };
 
+  // Custom CSS for exactly 16px spacing between cards
+  const cardContainerStyle = {
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    justifyContent: 'center',
+    gap: '16px'
+  };
+
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col">
       {/* Header */}
@@ -103,27 +111,32 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-            {[1, 2, 3].map((item, index) => {
-              const content = getContentType(index);
-              return (
-                <div key={item} className="overflow-hidden w-[263px] h-[219px] rounded-sm relative">
-                  <img 
-                    src={getImageForIndex(index)}
-                    alt={content.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="bg-black/30 backdrop-blur-[2px] absolute bottom-0 left-0 right-0 p-4">
-                    <div className="text-xs uppercase text-zinc-300 mb-1">
-                      {content.label}
+          <div className="flex justify-center">
+            <div style={cardContainerStyle}>
+              {[1, 2, 3].map((item, index) => {
+                const content = getContentType(index);
+                return (
+                  <div 
+                    key={item} 
+                    className="overflow-hidden w-[263px] h-[219px] rounded-sm relative"
+                  >
+                    <img 
+                      src={getImageForIndex(index)}
+                      alt={content.title} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="bg-black/30 backdrop-blur-[2px] absolute bottom-0 left-0 right-0 p-4">
+                      <div className="text-xs uppercase text-zinc-300 mb-1">
+                        {content.label}
+                      </div>
+                      <h3 className="text-white text-sm font-medium">
+                        {content.title}
+                      </h3>
                     </div>
-                    <h3 className="text-white text-sm font-medium">
-                      {content.title}
-                    </h3>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </section>
         
@@ -137,28 +150,33 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-            {[1, 2, 3].map((item, index) => {
-              // Reverse the image pattern for the saved section
-              const content = getContentType(index + 1);
-              return (
-                <div key={item} className="overflow-hidden w-[263px] h-[219px] rounded-sm relative">
-                  <img 
-                    src={getImageForIndex(index + 1)}
-                    alt={content.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="bg-black/30 backdrop-blur-[2px] absolute bottom-0 left-0 right-0 p-4">
-                    <div className="text-xs uppercase text-zinc-300 mb-1">
-                      {content.label}
+          <div className="flex justify-center">
+            <div style={cardContainerStyle}>
+              {[1, 2, 3].map((item, index) => {
+                // Reverse the image pattern for the saved section
+                const content = getContentType(index + 1);
+                return (
+                  <div 
+                    key={item} 
+                    className="overflow-hidden w-[263px] h-[219px] rounded-sm relative"
+                  >
+                    <img 
+                      src={getImageForIndex(index + 1)}
+                      alt={content.title} 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="bg-black/30 backdrop-blur-[2px] absolute bottom-0 left-0 right-0 p-4">
+                      <div className="text-xs uppercase text-zinc-300 mb-1">
+                        {content.label}
+                      </div>
+                      <h3 className="text-white text-sm font-medium">
+                        {content.title}
+                      </h3>
                     </div>
-                    <h3 className="text-white text-sm font-medium">
-                      {content.title}
-                    </h3>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </section>
       </main>
