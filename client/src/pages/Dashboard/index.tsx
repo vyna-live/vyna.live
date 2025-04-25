@@ -44,7 +44,7 @@ export default function Dashboard() {
       <main className="flex-1 max-w-7xl mx-auto w-full">
         {/* Hero section */}
         <section className="mb-16 text-center mt-12">
-          <h1 className="text-[48px] font-bold text-white mb-4 tracking-tight">Research first, go live next!</h1>
+          <h1 className="text-[48px] font-bold mb-4 tracking-tight bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#CDBCAB] text-transparent bg-clip-text">Research first, go live next!</h1>
           <p className="text-zinc-400 text-base max-w-2xl mx-auto mb-10">
             Start your own live stream with AI-powered research tools or join 
             other creators' streams to learn and engage.
@@ -90,25 +90,26 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
             {[1, 2, 3].map((item, index) => (
               <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
-                <div className="h-[150px] overflow-hidden">
+                <div className="h-[150px] overflow-hidden relative">
                   <img 
                     src={index % 2 === 0 
-                      ? "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" 
-                      : "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80"}
+                      ? "/images/re.jpg" 
+                      : "/images/view.jpg"}
                     alt={index % 2 === 0 ? "Family bonding session" : "Gaming setup"} 
                     className="w-full h-full object-cover"
                   />
-                </div>
-                <div className="p-4 flex-1">
-                  <div className="text-xs uppercase text-zinc-500 mb-1.5">
-                    {index % 2 === 0 ? "FAMILY" : "GAMING"}
+                  <div className="bg-black/30 backdrop-blur-sm absolute bottom-0 left-0 right-0 p-4">
+                    <div className="text-xs uppercase text-zinc-300 mb-1.5">
+                      {index % 2 === 0 ? "FAMILY" : "GAMING"}
+                    </div>
+                    <h3 className="text-white text-sm font-medium">
+                      {index % 2 === 0 
+                        ? "Family Fun Activities & Games" 
+                        : "Gaming Setup & Controller Review"}
+                    </h3>
                   </div>
-                  <h3 className="text-white text-sm font-medium">
-                    {index % 2 === 0 
-                      ? "Family Fun Activities & Games" 
-                      : "Gaming Setup & Controller Review"}
-                  </h3>
                 </div>
+                <div className="p-4 flex-1"></div>
               </div>
             ))}
           </div>
@@ -127,25 +128,26 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
             {[1, 2, 3].map((item, index) => (
               <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
-                <div className="h-[150px] overflow-hidden">
+                <div className="h-[150px] overflow-hidden relative">
                   <img 
                     src={index % 2 === 0 
-                      ? "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" 
-                      : "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80"}
-                    alt={index % 2 === 0 ? "Gaming setup" : "Family bonding session"} 
+                      ? "/images/view.jpg" 
+                      : "/images/images.jpeg"}
+                    alt={index % 2 === 0 ? "Gaming setup" : "Creative workspace"} 
                     className="w-full h-full object-cover"
                   />
-                </div>
-                <div className="p-4 flex-1">
-                  <div className="text-xs uppercase text-zinc-500 mb-1.5">
-                    {index % 2 === 0 ? "GAMING" : "FAMILY"}
+                  <div className="bg-black/30 backdrop-blur-sm absolute bottom-0 left-0 right-0 p-4">
+                    <div className="text-xs uppercase text-zinc-300 mb-1.5">
+                      {index % 2 === 0 ? "GAMING" : "WORKSPACE"}
+                    </div>
+                    <h3 className="text-white text-sm font-medium">
+                      {index % 2 === 0 
+                        ? "RGB Setup & PS5 Controller Review" 
+                        : "Creative Workspace & Productivity"}
+                    </h3>
                   </div>
-                  <h3 className="text-white text-sm font-medium">
-                    {index % 2 === 0 
-                      ? "RGB Setup & PS5 Controller Review" 
-                      : "Family Playtime & Parent Tips"}
-                  </h3>
                 </div>
+                <div className="p-4 flex-1"></div>
               </div>
             ))}
           </div>
