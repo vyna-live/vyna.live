@@ -244,10 +244,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
         <div className="flex h-full gap-3">
           {/* Main livestream view */}
           <div 
-            className={`h-full ${drawerVisible ? 'w-[69%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative`}
+            className={`h-full ${drawerVisible ? 'w-[69%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative rounded-lg`}
             style={{
-              borderTopRightRadius: drawerVisible ? '12px' : '0',
-              borderBottomRightRadius: drawerVisible ? '12px' : '0',
+              borderTopRightRadius: drawerVisible ? '12px' : '12px',
+              borderBottomRightRadius: drawerVisible ? '12px' : '12px',
               overflow: 'hidden'
             }}
           >
