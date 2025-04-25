@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Video, X, AlertTriangle } from 'lucide-react';
+import { Loader2, Video, X, AlertTriangle, Camera, Mic } from 'lucide-react';
 import {
   StreamVideo,
   StreamVideoClient,
@@ -241,6 +241,21 @@ function CallComponent({ callId }: { callId: string }) {
 }
 
 // Component for call content
+// Helper function to check browser compatibility
+function checkBrowserCompatibility(): { supported: boolean; reason?: string } {
+  // Check for basic WebRTC support
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return { supported: false, reason: "Your browser doesn't support camera/microphone access" };
+  }
+  
+  // Check for secure context
+  if (!window.isSecureContext) {
+    return { supported: false, reason: "Streaming requires a secure connection (HTTPS)" };
+  }
+  
+  return { supported: true };
+}
+
 function CallContent({ callId }: { callId: string }) {
   const [hasJoined, setHasJoined] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -252,70 +267,122 @@ function CallContent({ callId }: { callId: string }) {
   const [cameraReady, setCameraReady] = useState(false);
   const [micReady, setMicReady] = useState(false);
   
+  // Check browser compatibility on component mount
+  useEffect(() => {
+    const compatibility = checkBrowserCompatibility();
+    if (!compatibility.supported) {
+      const message = compatibility.reason ?? "Browser compatibility issue detected";
+      setErrorMessage(message);
+    }
+  }, []);
+  
   const joinCall = async () => {
     if (!call) {
       console.error('No call object available');
+      setErrorMessage('Stream service not available');
       return;
     }
     
     try {
       setIsJoining(true);
+      setErrorMessage(null);
       console.log('Joining call:', callId);
       
       // Log the call object to debug
       console.log('Call object:', call);
       
-      // First try to join without enabling devices
+      // Try a more reliable approach - check if devices are available first
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasVideoInput = devices.some(device => device.kind === 'videoinput');
+      const hasAudioInput = devices.some(device => device.kind === 'audioinput');
+      
+      console.log('Available devices:', {
+        video: hasVideoInput,
+        audio: hasAudioInput
+      });
+      
+      // First, try to get user media to ensure permissions are granted
       try {
-        // Set call options to auto-accept any device permission requests
-        const options = {
-          camera: true,
-          microphone: true
+        console.log('Requesting media permissions...');
+        // Only request what's available
+        const constraints = {
+          video: hasVideoInput,
+          audio: hasAudioInput
         };
         
-        console.log('Attempting to join call with options:', options);
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('Media permissions granted, received stream:', stream);
+        
+        // Stop the stream immediately as we'll use GetStream's SDK to manage it
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Now we can join the call
+        console.log('Joining call with permissions granted');
         await call.join({ create: true });
         console.log('Successfully joined call');
         
         // Now enable camera and microphone after joining
-        try {
-          console.log('Enabling camera...');
-          await call.camera.enable();
-          console.log('Camera enabled');
-          
-          console.log('Enabling microphone...');
-          await call.microphone.enable();
-          console.log('Microphone enabled');
-        } catch (deviceErr) {
-          console.warn('Could not enable camera/microphone:', deviceErr);
-          // Continue anyway - the user can enable devices later
+        if (hasVideoInput) {
+          try {
+            console.log('Enabling camera...');
+            await call.camera.enable();
+            console.log('Camera enabled');
+            setCameraReady(true);
+          } catch (cameraErr) {
+            console.warn('Could not enable camera:', cameraErr);
+            // Continue anyway - the user can enable camera later
+          }
         }
         
-        setHasJoined(true);
-      } catch (joinErr) {
-        console.error('Error joining call:', joinErr);
-        
-        // Try using the client directly as a fallback
-        if (client) {
+        if (hasAudioInput) {
           try {
-            console.log('Trying fallback with direct client reference');
-            const newCall = client.call('livestream', callId);
-            
-            // Try to join the call directly
-            console.log('Attempting to join with fallback call');
-            await newCall.join({ create: true });
-            console.log('Successfully joined with fallback');
-            setHasJoined(true);
-          } catch (fallbackErr) {
-            console.error('Fallback approach also failed:', fallbackErr);
-          setErrorMessage('Could not start livestream. Please try again later.');
+            console.log('Enabling microphone...');
+            await call.microphone.enable();
+            console.log('Microphone enabled');
+            setMicReady(true);
+          } catch (micErr) {
+            console.warn('Could not enable microphone:', micErr);
+            // Continue anyway - the user can enable microphone later
           }
-        } else {
-          console.error('No client available for fallback');
+        }
+        
+        // Mark as joined even if device enabling failed
+        setHasJoined(true);
+        
+      } catch (mediaErr) {
+        console.error('Error getting user media:', mediaErr);
+        
+        // If media permissions failed, try joining without cameras
+        try {
+          console.log('Trying to join call without media permissions');
+          await call.join({ create: true });
+          console.log('Successfully joined call without media');
+          setHasJoined(true);
+          
+          // Show warning to user
+          setErrorMessage('Joined without camera/microphone access. Please grant permissions and reload.');
+        } catch (joinErr) {
+          console.error('Failed to join call without media:', joinErr);
+          
+          // As a last resort, try using client directly
+          if (client) {
+            try {
+              console.log('Using emergency fallback with direct client');
+              const newCall = client.call('livestream', callId);
+              await newCall.join({ create: true });
+              console.log('Emergency fallback succeeded');
+              setHasJoined(true);
+            } catch (lastErr) {
+              console.error('All join attempts failed:', lastErr);
+              setErrorMessage('Could not start streaming. Please check camera/mic permissions and try again.');
+            }
+          } else {
+            setErrorMessage('Streaming service unavailable. Please refresh the page.');
+          }
         }
       }
     } catch (err) {
-      console.error('All attempts to join call failed:', err);
+      console.error('Unexpected error in join process:', err);
       setErrorMessage('Could not join the livestream. Please try again.');
     } finally {
       setIsJoining(false);
@@ -382,6 +449,26 @@ function CallContent({ callId }: { callId: string }) {
   return (
     <div className="h-full">
       <div className="h-full flex flex-col relative">
+        {/* Status indicators for debugging */}
+        <div className="absolute top-3 left-3 z-10 flex gap-2">
+          <div className={`px-2 py-1 rounded-full text-xs flex items-center ${cameraReady ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}`}>
+            <Camera className="h-3 w-3 mr-1" />
+            {cameraReady ? 'Camera ON' : 'Camera OFF'}
+          </div>
+          <div className={`px-2 py-1 rounded-full text-xs flex items-center ${micReady ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}`}>
+            <Mic className="h-3 w-3 mr-1" />
+            {micReady ? 'Mic ON' : 'Mic OFF'}
+          </div>
+        </div>
+        
+        {/* Live indicator */}
+        <div className="absolute top-3 right-3 z-10">
+          <div className="px-2 py-1 rounded-full text-xs bg-red-500 text-white flex items-center">
+            <span className="h-2 w-2 rounded-full bg-white mr-1 animate-pulse"></span>
+            LIVE
+          </div>
+        </div>
+        
         <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0">
             <div className="h-full w-full">
