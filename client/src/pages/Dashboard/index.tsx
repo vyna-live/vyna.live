@@ -64,8 +64,23 @@ export default function Dashboard() {
     // Close the dialog
     setIsStreamDialogOpen(false);
     
+    // Prepare query parameters
+    const queryParams = new URLSearchParams();
+    
+    // Add teleprompter text if available
+    if (formData.description) {
+      queryParams.append('text', formData.description);
+    }
+    
+    // Add egress settings if available
+    if (formData.egressSettings && formData.egressSettings.enabled) {
+      // Stringify the egress settings and encode them for URL
+      const encodedEgress = encodeURIComponent(JSON.stringify(formData.egressSettings));
+      queryParams.append('egress', encodedEgress);
+    }
+    
     // Navigate to the livestream page after submitting
-    navigate('/livestream');
+    navigate(`/livestream${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
   };
   
   // Define a function to handle join stream submit
