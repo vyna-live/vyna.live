@@ -102,10 +102,10 @@ export default function Dashboard() {
         </section>
         
         {/* Upcoming streams section */}
-        <section className="mb-16 px-6">
-          <div className="flex items-center justify-between mb-5">
+        <section className="mb-16 px-6 max-w-[min(100%,840px)] mx-auto">
+          <div className="flex items-center justify-between mb-5 w-full">
             <h2 className="text-lg font-semibold text-white">Upcoming</h2>
-            <Link href="/streams/upcoming" className="flex items-center text-zinc-400 hover:text-white transition-colors">
+            <Link href="/streams/upcoming" className="flex items-center text-zinc-400 hover:text-white transition-colors ml-auto">
               <span className="text-sm">See all</span>
               <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
@@ -141,10 +141,10 @@ export default function Dashboard() {
         </section>
         
         {/* Saved streams section */}
-        <section className="px-6">
-          <div className="flex items-center justify-between mb-5">
+        <section className="px-6 max-w-[min(100%,840px)] mx-auto">
+          <div className="flex items-center justify-between mb-5 w-full">
             <h2 className="text-lg font-semibold text-white">Saved</h2>
-            <Link href="/streams/saved" className="flex items-center text-zinc-400 hover:text-white transition-colors">
+            <Link href="/streams/saved" className="flex items-center text-zinc-400 hover:text-white transition-colors ml-auto">
               <span className="text-sm">See all</span>
               <ChevronRight className="w-4 h-4 ml-1" />
             </Link>
