@@ -29,6 +29,46 @@ const MOCK_RECENTS = [
   "Who is the best CODM gamer in Nigeria?",
 ];
 
+// Mock notes for the notepad tab
+const MOCK_NOTES = [
+  {
+    id: "note1",
+    title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025.",
+    date: new Date("2025-03-15")
+  },
+  {
+    id: "note2",
+    title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025.",
+    date: new Date("2025-03-14")
+  },
+  {
+    id: "note3",
+    title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025.",
+    date: new Date("2025-03-13")
+  },
+  {
+    id: "note4",
+    title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025.",
+    date: new Date("2025-03-12")
+  },
+  {
+    id: "note5",
+    title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025.",
+    date: new Date("2025-03-11")
+  },
+  {
+    id: "note6",
+    title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025.",
+    date: new Date("2025-03-10")
+  }
+];
+
 // Mock incoming chat messages to simulate live chat
 const CHAT_MESSAGES = [
   { userId: "user1", name: "Innocent Dive", message: "How far my guys wetin dey happen", color: "bg-orange-500" },
@@ -52,6 +92,13 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Array<{id: string; content: string; role: "user" | "assistant"}>>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  
+  // Notepad functionality
+  const [showNewNote, setShowNewNote] = useState<boolean>(false);
+  const [showNoteView, setShowNoteView] = useState<boolean>(false);
+  const [currentNote, setCurrentNote] = useState<typeof MOCK_NOTES[0] | null>(null);
+  const [noteInput, setNoteInput] = useState("");
+  
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -139,6 +186,43 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       variant: "destructive",
     });
   };
+  
+  // Handle opening a new note
+  const handleNewNote = useCallback(() => {
+    setShowNewNote(true);
+    setShowNoteView(false);
+    setCurrentNote(null);
+  }, []);
+  
+  // Handle viewing a note
+  const handleViewNote = useCallback((note: typeof MOCK_NOTES[0]) => {
+    setCurrentNote(note);
+    setShowNoteView(true);
+    setShowNewNote(false);
+  }, []);
+  
+  // Handle creating a new note
+  const handleCreateNote = useCallback(() => {
+    if (!noteInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Note content cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // In a real app, you would save this to your database
+    // and get back the created note with an ID
+    toast({
+      title: "Note created",
+      description: "Your note has been saved",
+    });
+    
+    // Reset state
+    setNoteInput("");
+    setShowNewNote(false);
+  }, [noteInput, toast]);
 
   // Toggle the side drawer
   const toggleDrawer = useCallback(() => {
@@ -721,14 +805,133 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                 )}
                 </>
               ) : (
-                <div className="p-3">
-                  <div className="text-zinc-300 text-sm max-h-full overflow-auto">
-                    <Teleprompter
-                      text={teleprompterText || "Add notes here for your livestream. This is only visible to you."}
-                      onClose={() => {}}
-                    />
+                <>
+                {!showNewNote && !showNoteView && (
+                  /* Notes list view - first mockup */
+                  <div className="p-3">
+                    <div className="text-white text-xs font-medium mb-2 uppercase">RECENTS</div>
+                    <div className="space-y-1">
+                      {MOCK_NOTES.map((note, index) => (
+                        <div key={note.id}>
+                          <div 
+                            onClick={() => handleViewNote(note)}
+                            className="flex justify-between items-center p-2 rounded-[8px] hover:bg-zinc-800/50 group transition-colors cursor-pointer"
+                          >
+                            <div className="flex-1">
+                              <div className="text-zinc-200 text-xs hover:text-white transition-colors truncate pr-2">
+                                {note.title}
+                              </div>
+                              <div className="text-zinc-500 text-xs truncate">
+                                {note.content}
+                              </div>
+                            </div>
+                            <button className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" fill="currentColor"/>
+                                <path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" fill="currentColor"/>
+                                <path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" fill="currentColor"/>
+                              </svg>
+                            </button>
+                          </div>
+                          {index < MOCK_NOTES.length - 1 && (
+                            <div className="border-t border-zinc-800/40 mx-2 mt-1"></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+                
+                {showNewNote && (
+                  /* New note view - second mockup */
+                  <div className="flex flex-col h-full">
+                    {/* Empty state with Research Notes */}
+                    <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col">
+                      <div className="flex-1 flex flex-col items-center justify-center text-center mb-auto">
+                        <div className="text-white text-xl font-medium mb-2">Research Notes</div>
+                        <div className="text-zinc-400 text-sm max-w-xs">
+                          Save important information for your stream
+                        </div>
+                      </div>
+                      
+                      {/* Note input */}
+                      <div className="mt-auto">
+                        <div className="relative">
+                          <textarea 
+                            value={noteInput}
+                            onChange={(e) => setNoteInput(e.target.value)}
+                            placeholder="Type a new note"
+                            className="w-full px-3 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none resize-none min-h-[80px] max-h-[150px] overflow-auto"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex space-x-3 text-zinc-400">
+                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+                              </svg>
+                            </button>
+                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                              </svg>
+                            </button>
+                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                              </svg>
+                            </button>
+                          </div>
+                          <button 
+                            onClick={handleCreateNote}
+                            className="flex items-center justify-center bg-white text-black px-3 py-1.5 rounded-full text-xs font-medium hover:bg-gray-200 transition-colors"
+                          >
+                            <span className="mr-1">+</span> Add note
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {showNoteView && currentNote && (
+                  /* View note content - third mockup */
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center p-2 border-b border-zinc-800">
+                      <button 
+                        onClick={() => {
+                          setShowNoteView(false);
+                          setCurrentNote(null);
+                        }}
+                        className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 mr-2"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <span className="text-white text-sm font-medium truncate pr-6">{currentNote.title}</span>
+                      <button className="ml-auto text-zinc-400 hover:text-white">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Note content */}
+                    <div className="flex-1 overflow-y-auto px-3 py-4">
+                      <div className="text-zinc-200 text-xs whitespace-pre-line">
+                        {currentNote.content}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </div>
             
@@ -743,6 +946,15 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                   className="w-full py-2 bg-[#2A2A2D] hover:bg-zinc-700 rounded-[14px] text-white text-xs flex items-center justify-center transition-colors"
                 >
                   <span className="font-medium">+ New chat</span>
+                </button>
+              )}
+              
+              {!showNewNote && !showNoteView && activeTab === 'notepad' && (
+                <button
+                  onClick={handleNewNote}
+                  className="w-full py-2 bg-[#2A2A2D] hover:bg-zinc-700 rounded-[14px] text-white text-xs flex items-center justify-center transition-colors"
+                >
+                  <span className="font-medium">+ New note</span>
                 </button>
               )}
             </div>
