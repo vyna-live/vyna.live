@@ -561,7 +561,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                               {msg.role === 'user' ? (
                                 /* User message */
                                 <div className="flex flex-col items-end">
-                                  <div className="max-w-[85%] rounded-xl bg-zinc-800 text-white px-4 py-2 text-xs">
+                                  <div className="max-w-[85%] rounded-[14px] bg-zinc-800 text-white px-4 py-2 text-xs">
                                     {msg.content}
                                   </div>
                                 </div>
@@ -579,7 +579,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                                     </svg>
                                   </div>
                                   <div className="max-w-[85%] flex flex-col">
-                                    <div className="rounded-xl bg-[#2A2A2D] text-white px-4 py-2 text-xs">
+                                    <div className="rounded-[14px] bg-[#2A2A2D] text-white px-4 py-2 text-xs">
                                       {msg.content}
                                     </div>
                                     <div className="flex space-x-4 mt-2">
@@ -640,7 +640,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                                 </svg>
                               </div>
                               <div className="max-w-[85%] flex flex-col">
-                                <div className="rounded-xl bg-[#2A2A2D] text-zinc-400 px-4 py-2 text-xs flex items-center space-x-2">
+                                <div className="rounded-[14px] bg-[#2A2A2D] text-zinc-400 px-4 py-2 text-xs flex items-center space-x-2">
                                   <span className="animate-pulse">Thinking</span>
                                   <span className="animate-ellipsis">...</span>
                                 </div>
