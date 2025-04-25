@@ -541,12 +541,21 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                       {/* Empty state with star icon */}
                       {!showChatHistory ? (
                         <div className="flex flex-col items-center justify-center h-full text-center">
-                          <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
-                            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
-                              <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
-                              <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
-                              <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          <div className="w-14 h-14 rounded-[14px] bg-zinc-800 flex items-center justify-center mb-4">
+                            <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+                              <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                              <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                              <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                              <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                              <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                              <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                              <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                              <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                              <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                              <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                              <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                              <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                              <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
                             </svg>
                           </div>
                           <div className="text-white text-xl font-medium mb-2">VynaAI</div>
@@ -561,25 +570,32 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                               {msg.role === 'user' ? (
                                 /* User message */
                                 <div className="flex flex-col items-end">
-                                  <div className="max-w-[85%] rounded-[14px] bg-zinc-800 text-white px-4 py-2 text-xs">
+                                  <div className="max-w-[85%] rounded-[14px] bg-zinc-800 text-white px-3 py-2.5 text-xs">
                                     {msg.content}
                                   </div>
                                 </div>
                               ) : (
                                 /* AI response */
                                 <div className="flex items-start space-x-2">
-                                  <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-zinc-300" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                      <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
-                                      <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
-                                      <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
-                                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                      <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                  <div className="w-6 h-6 rounded-[6px] bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    <svg width="16" height="16" viewBox="0 0 36 36" fill="none">
+                                      <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                                      <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                                      <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                                      <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                                      <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                                      <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                                      <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                                      <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                                      <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                                      <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                                      <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                                      <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                                      <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
                                     </svg>
                                   </div>
                                   <div className="max-w-[85%] flex flex-col">
-                                    <div className="rounded-[14px] bg-[#2A2A2D] text-white px-4 py-2 text-xs">
+                                    <div className="rounded-[14px] bg-[#2A2A2D] text-white px-3 py-2.5 text-xs">
                                       {msg.content}
                                     </div>
                                     <div className="flex space-x-4 mt-2">
@@ -629,18 +645,25 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
 
                           {isAiLoading && (
                             <div className="flex items-start space-x-2">
-                              <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-zinc-300" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                  <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
-                                  <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
-                                  <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
-                                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                              <div className="w-6 h-6 rounded-[6px] bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 36 36" fill="none">
+                                  <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                                  <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                                  <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                                  <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                                  <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                                  <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                                  <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                                  <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                                  <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                                  <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                                  <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                                  <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                                  <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
                                 </svg>
                               </div>
                               <div className="max-w-[85%] flex flex-col">
-                                <div className="rounded-[14px] bg-[#2A2A2D] text-zinc-400 px-4 py-2 text-xs flex items-center space-x-2">
+                                <div className="rounded-[14px] bg-[#2A2A2D] text-zinc-400 px-3 py-2.5 text-xs flex items-center space-x-2">
                                   <span className="animate-pulse">Thinking</span>
                                   <span className="animate-ellipsis">...</span>
                                 </div>
@@ -658,7 +681,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           value={inputValue}
                           onChange={(e) => setInputValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-                          placeholder="Type a new note"
+                          placeholder=""
                           className="w-full pl-10 pr-10 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none resize-none min-h-[40px] max-h-[120px] overflow-auto"
                           rows={1}
                         />
