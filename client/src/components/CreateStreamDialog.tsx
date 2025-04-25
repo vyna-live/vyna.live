@@ -86,13 +86,27 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     onSubmit(formData);
   };
   
-  // No need for click outside handler with native input
+  // Add click outside handler to close the modal
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('modal-overlay')) {
+        onClose();
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 modal-overlay">
       <div 
         className="bg-[#1C1C1C] w-full max-w-md rounded-lg shadow-lg overflow-hidden"
         style={{ maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
