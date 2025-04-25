@@ -766,39 +766,43 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           onChange={(e) => setInputValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
                           placeholder=""
-                          className="w-full pl-10 pr-10 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none resize-none min-h-[40px] max-h-[120px] overflow-auto"
+                          className="w-full px-3 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none resize-none min-h-[40px] max-h-[120px] overflow-auto"
                           rows={1}
                         />
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex space-x-2 text-zinc-500">
-                          <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      </div>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex space-x-3 text-zinc-400">
+                          <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
                             </svg>
                           </button>
-                        </div>
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-2 text-zinc-500">
-                          <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                               <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                               <line x1="12" y1="19" x2="12" y2="23"></line>
                               <line x1="8" y1="23" x2="16" y2="23"></line>
                             </svg>
                           </button>
-                          <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                               <circle cx="8.5" cy="8.5" r="1.5"></circle>
                               <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
                           </button>
-                          <button onClick={sendMessage} className="w-5 h-5 ml-1 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <line x1="22" y1="2" x2="11" y2="13"></line>
-                              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                          </button>
                         </div>
+                        <button 
+                          onClick={sendMessage}
+                          className="flex items-center justify-center text-zinc-200 hover:text-white px-3 py-1.5 rounded-full text-xs font-medium hover:bg-zinc-800/50 transition-colors"
+                        >
+                          Send
+                          <svg className="ml-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -845,17 +849,29 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                 {showNewNote && (
                   /* New note view - second mockup */
                   <div className="flex flex-col h-full">
-                    {/* Empty state with Research Notes */}
-                    <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col">
-                      <div className="flex-1 flex flex-col items-center justify-center text-center mb-auto">
-                        <div className="text-white text-xl font-medium mb-2">Research Notes</div>
-                        <div className="text-zinc-400 text-sm max-w-xs">
-                          Save important information for your stream
+                    <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col h-full">
+                      <div className="flex-1">
+                        {/* Title block */}
+                        <div className="text-center mb-6">
+                          <div className="text-white text-xl font-medium mb-2">Research Notes</div>
+                          <div className="text-zinc-400 text-sm max-w-xs mx-auto">
+                            Save important information for your stream
+                          </div>
                         </div>
+                        
+                        {/* Live preview of note */}
+                        {noteInput.trim() !== "" && (
+                          <div className="mb-4">
+                            <div className="text-white text-xs font-medium mb-1">Preview:</div>
+                            <div className="bg-zinc-800/50 rounded-[14px] p-3 text-zinc-200 text-xs whitespace-pre-line overflow-hidden">
+                              {noteInput}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Note input */}
-                      <div className="mt-auto">
+                      <div className="mt-4">
                         <div className="relative">
                           <textarea 
                             value={noteInput}
