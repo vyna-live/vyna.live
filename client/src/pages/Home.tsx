@@ -250,8 +250,8 @@ export default function Home() {
     <div className="h-screen flex overflow-hidden">
       {/* Left sidebar - research history */}
       <div className="w-64 h-full bg-[hsl(var(--ai-background))] border-r border-[hsl(var(--ai-border))] flex flex-col">
-        <div className="py-4 px-4 flex items-center">
-          <Logo size="md" variant="full" className="h-8 max-w-[120px]" />
+        <div className="py-4 px-4 flex items-center justify-center">
+          <Logo size="lg" variant="full" className="h-10 max-w-[180px]" />
         </div>
         
         <div className="px-3 py-4">
@@ -341,7 +341,7 @@ export default function Home() {
         {/* Chat header */}
         <div className="h-14 border-b border-[hsl(var(--ai-border))] flex items-center justify-between px-6">
           <div className="flex items-center">
-            <Logo size="sm" showText={false} variant="auto" className="w-auto h-7" />
+            <Logo size="md" showText={false} variant="color" className="w-auto h-8" />
             <div className="h-6 mx-3 border-r border-[hsl(var(--ai-border))]"></div>
             <GradientText 
               text="AI Research Assistant" 
@@ -410,7 +410,7 @@ export default function Home() {
             <div className="max-w-2xl w-full text-center">
               <div className="mb-6">
                 <GradientText 
-                  text="Welcome to vyna.live" 
+                  text="Welcome to Vyna.live" 
                   preset="earthy"
                   className="text-4xl font-bold" 
                   typingSpeed={70}

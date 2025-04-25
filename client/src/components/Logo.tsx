@@ -111,7 +111,7 @@ export default function Logo({
         <span className={`ml-2 ${textSizes[size]} font-semibold ${
           variant === 'light' ? 'text-[#EFE9E1]' : 'text-[hsl(var(--ai-text-primary))]'
         }`}>
-          vyna<span className="text-[#5D1C34]">.live</span>
+          Vyna<span className="text-[#5D1C34]">.live</span>
         </span>
       )}
     </div>
