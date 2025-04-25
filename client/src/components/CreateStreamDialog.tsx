@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload, Calendar } from 'lucide-react';
 import { Youtube } from 'react-feather';
-import { format } from 'date-fns';
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface CreateStreamDialogProps {
   isOpen: boolean;
@@ -30,8 +28,6 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
   
   const [scheduleForLater, setScheduleForLater] = useState(false);
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  
   if (!isOpen) return null;
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -50,9 +46,10 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     }
   };
   
-  const handleDateChange = (date: Date | undefined) => {
-    setFormData(prev => ({ ...prev, scheduledDate: date }));
-    setShowDatePicker(false);
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value) {
+      setFormData(prev => ({ ...prev, scheduledDate: new Date(e.target.value) }));
+    }
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,20 +86,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     onSubmit(formData);
   };
   
-  // Close date picker when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (showDatePicker && !target.closest('.date-picker-container')) {
-        setShowDatePicker(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDatePicker]);
+  // No need for click outside handler with native input
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
@@ -283,41 +267,16 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
               </label>
               
               {scheduleForLater && (
-                <div className="mt-2 relative date-picker-container">
-                  <button
-                    type="button"
-                    onClick={() => setShowDatePicker(!showDatePicker)}
-                    className="flex items-center w-full p-2.5 bg-[#242424] text-zinc-300 border border-zinc-700 rounded"
-                  >
-                    <Calendar size={18} className="mr-2" />
-                    {formData.scheduledDate 
-                      ? format(new Date(formData.scheduledDate), 'PPP')
-                      : 'Pick a date'
-                    }
-                  </button>
-                  
-                  {showDatePicker && (
-                    <div className="absolute z-10 bottom-full mb-2 bg-[#1C1C1C] p-2 rounded-md border border-zinc-700 shadow-lg date-picker-container">
-                      <CalendarComponent
-                        mode="single"
-                        selected={formData.scheduledDate}
-                        onSelect={handleDateChange}
-                        className="bg-[#1C1C1C] border-zinc-700 rounded-md text-white"
-                        disabled={(date) => date < new Date()}
-                        classNames={{
-                          day_selected: "bg-[#D8C6AF] text-black",
-                          day_today: "bg-zinc-800 text-white",
-                          button: "hover:bg-zinc-700",
-                          nav_button: "hover:bg-zinc-700",
-                          nav_button_previous: "absolute left-1",
-                          nav_button_next: "absolute right-1",
-                          caption: "flex justify-center py-2 relative items-center",
-                          caption_label: "text-sm font-medium",
-                          cell: "text-center p-0 relative [&:has([aria-selected])]:bg-zinc-800 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
-                        }}
-                      />
-                    </div>
-                  )}
+                <div className="mt-2 relative">
+                  <div className="flex items-center w-full">
+                    <Calendar size={18} className="mr-2 absolute left-3 text-zinc-400" />
+                    <input
+                      type="datetime-local"
+                      min={new Date().toISOString().slice(0, 16)}
+                      onChange={handleDateChange}
+                      className="w-full p-2.5 pl-10 bg-[#242424] text-zinc-300 border border-zinc-700 rounded focus:outline-none focus:border-zinc-500"
+                    />
+                  </div>
                 </div>
               )}
             </div>
