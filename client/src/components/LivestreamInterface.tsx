@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Mic, Camera, Smile, X, ChevronRight, MoreHorizontal } from "lucide-react";
+import { Mic, Camera, Smile, X, ChevronRight, MoreHorizontal, Menu } from "lucide-react";
 import Teleprompter from "./Teleprompter";
 import Logo from "./Logo";
 import StreamVideoComponent from "./StreamVideo";
@@ -8,7 +8,7 @@ import { DeviceSettings } from "@stream-io/video-react-sdk";
 import { useToast } from "@/hooks/use-toast";
 
 // Arena background image
-const arenaImage = "/attached_assets/image_fx (10) 1.png";
+const arenaImage = "/assets/arena.png";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
@@ -238,12 +238,16 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                 </div>
                 <button 
                   onClick={toggleDrawer} 
-                  className={`w-8 h-8 flex items-center justify-center rounded-full ${drawerVisible ? 'text-white bg-gray-600' : 'text-white'}`}
+                  className={`w-8 h-8 flex items-center justify-center rounded ${drawerVisible ? 'text-white bg-gray-700' : 'text-white'}`}
                 >
                   {drawerVisible ? (
                     <ChevronRight className="w-5 h-5" />
                   ) : (
-                    <MoreHorizontal className="w-5 h-5" />
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 11C10.5523 11 11 10.5523 11 10C11 9.44772 10.5523 9 10 9C9.44772 9 9 9.44772 9 10C9 10.5523 9.44772 11 10 11Z" fill="currentColor"/>
+                      <path d="M3 11C3.55228 11 4 10.5523 4 10C4 9.44772 3.55228 9 3 9C2.44772 9 2 9.44772 2 10C2 10.5523 2.44772 11 3 11Z" fill="currentColor"/>
+                      <path d="M17 11C17.5523 11 18 10.5523 18 10C18 9.44772 17.5523 9 17 9C16.4477 9 16 9.44772 16 10C16 10.5523 16.4477 11 17 11Z" fill="currentColor"/>
+                    </svg>
                   )}
                 </button>
               </div>
@@ -326,9 +330,11 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                   </svg>
                 </button>
                 <button 
-                  className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center text-white shadow-md hover:shadow-lg transition-all"
+                  className="w-14 h-14 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all"
                 >
-                  <X className="w-5 h-5" />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </button>
               </div>
               
