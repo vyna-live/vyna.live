@@ -11,7 +11,7 @@ import { eq, desc } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 import { log } from "./vite";
-import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
+import { getStreamToken, createLivestream, getStreamApiKey, updateEgressConfig } from "./getstream";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -414,6 +414,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/stream/token", getStreamToken);
   
   app.post("/api/stream/livestream", createLivestream);
+  
+  // Update egress configuration for multiplatform streaming
+  app.post("/api/stream/egress", updateEgressConfig);
   
   // Get GetStream API key for frontend
   app.get("/api/stream/key", getStreamApiKey);

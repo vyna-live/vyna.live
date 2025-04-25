@@ -16,6 +16,32 @@ interface LivestreamInterfaceProps {
   streamId?: string;
   isJoiningMode?: boolean;
   streamLink?: string | null;
+  egressSettings?: {
+    enabled: boolean;
+    platforms: {
+      youtube?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+      };
+      twitch?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+      };
+      facebook?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+      };
+      custom?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+        name?: string;
+      };
+    };
+  };
 }
 
 // Mock chat messages for the right sidebar
@@ -89,7 +115,8 @@ export default function LivestreamInterface({
   initialText = "", 
   streamId, 
   isJoiningMode = false, 
-  streamLink = null 
+  streamLink = null,
+  egressSettings
 }: LivestreamInterfaceProps) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
@@ -128,6 +155,84 @@ export default function LivestreamInterface({
   const [userName, setUserName] = useState<string>("Divine Samuel");
   const [streamTitle, setStreamTitle] = useState<string>(streamLink ? `Stream: ${streamLink}` : "Jaja Games");
 
+  // Function to create a call with egress settings
+  const createCallWithEgress = async (userId: string, callId: string) => {
+    try {
+      const response = await fetch('/api/stream/livestream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          callId,
+          token: streamToken,
+          egressSettings: egressSettings
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create call with egress');
+      }
+      
+      const data = await response.json();
+      console.log('Call created with egress:', data);
+      
+      // If the call has egress enabled, show a toast notification
+      if (data.egress && egressSettings?.enabled) {
+        toast({
+          title: "Multistream Enabled",
+          description: `Your stream is being sent to ${data.egress.targets?.length || 0} platform(s)`,
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error creating call with egress:', error);
+      showErrorToast('Failed to set up multistreaming');
+      return null;
+    }
+  };
+  
+  // Function to update egress configuration for an existing call
+  const updateEgressConfig = async (userId: string, callId: string) => {
+    try {
+      const response = await fetch('/api/stream/egress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          callId,
+          egressSettings: egressSettings
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update egress configuration');
+      }
+      
+      const data = await response.json();
+      console.log('Egress configuration updated:', data);
+      
+      // Show a toast notification
+      if (data.egress && egressSettings?.enabled) {
+        toast({
+          title: "Multistream Updated",
+          description: `Your stream is now being sent to ${data.egress.targets?.length || 0} platform(s)`,
+        });
+      } else {
+        toast({
+          title: "Multistream Disabled",
+          description: "Your stream is no longer being sent to external platforms",
+        });
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating egress config:', error);
+      showErrorToast('Failed to update multistreaming settings');
+      return null;
+    }
+  };
+  
   // Get credentials that may not be in context
   useEffect(() => {
     const getStreamCredentials = async () => {
@@ -161,6 +266,12 @@ export default function LivestreamInterface({
           if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
             setStreamToken(tokenData.token);
+            
+            // Create the call with egress settings if provided
+            if (!isJoiningMode && egressSettings) {
+              console.log('Creating new call with egress settings');
+              await createCallWithEgress(randomId, callId);
+            }
           } else {
             showErrorToast("Failed to get stream token");
           }

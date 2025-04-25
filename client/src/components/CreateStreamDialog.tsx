@@ -51,6 +51,32 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     destination: ['youtube'],
     privacy: 'unlisted',
     scheduledDate: undefined,
+    egressSettings: {
+      enabled: false,
+      platforms: {
+        youtube: {
+          enabled: false,
+          streamKey: '',
+          streamUrl: 'rtmp://a.rtmp.youtube.com/live2'
+        },
+        twitch: {
+          enabled: false,
+          streamKey: '',
+          streamUrl: 'rtmp://live.twitch.tv/app'
+        },
+        facebook: {
+          enabled: false,
+          streamKey: '',
+          streamUrl: 'rtmps://live-api-s.facebook.com:443/rtmp'
+        },
+        custom: {
+          enabled: false,
+          streamKey: '',
+          streamUrl: '',
+          name: 'Custom RTMP'
+        }
+      }
+    }
   });
   
   const [scheduleForLater, setScheduleForLater] = useState(false);
@@ -284,6 +310,348 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
               </div>
             </div>
             
+            {/* Multiplatform Streaming Section */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-white text-sm font-medium">
+                  Multiplatform Streaming
+                </label>
+                <div className="relative inline-block w-10 align-middle select-none">
+                  <input
+                    type="checkbox"
+                    id="multiplatform-toggle"
+                    checked={formData.egressSettings?.enabled}
+                    onChange={(e) => {
+                      const isEnabled = e.target.checked;
+                      setFormData(prev => ({
+                        ...prev,
+                        egressSettings: {
+                          ...prev.egressSettings!,
+                          enabled: isEnabled
+                        }
+                      }));
+                    }}
+                    className="sr-only"
+                  />
+                  <label
+                    htmlFor="multiplatform-toggle"
+                    className={`block h-6 overflow-hidden rounded-full cursor-pointer ${
+                      formData.egressSettings?.enabled ? 'bg-[#A67D44]' : 'bg-zinc-600'
+                    }`}
+                  >
+                    <span
+                      className={`block h-6 w-6 rounded-full bg-white transform transition-transform ${
+                        formData.egressSettings?.enabled ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    ></span>
+                  </label>
+                </div>
+              </div>
+              
+              {formData.egressSettings?.enabled && (
+                <div className="space-y-3 mt-3 bg-[#242424] p-3 rounded-md">
+                  <p className="text-zinc-300 text-xs mb-2">
+                    Stream simultaneously to multiple platforms by connecting your accounts
+                  </p>
+                  
+                  {/* YouTube */}
+                  <div className="border-b border-zinc-700 pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <span className="bg-red-600 p-1 rounded-sm mr-2">
+                          <Youtube size={16} className="text-white" />
+                        </span>
+                        <span className="text-white text-sm">YouTube</span>
+                      </div>
+                      <div className="relative inline-block w-8 align-middle select-none">
+                        <input
+                          type="checkbox"
+                          id="youtube-toggle"
+                          checked={formData.egressSettings?.platforms.youtube?.enabled}
+                          onChange={(e) => {
+                            const isEnabled = e.target.checked;
+                            setFormData(prev => ({
+                              ...prev,
+                              egressSettings: {
+                                ...prev.egressSettings!,
+                                platforms: {
+                                  ...prev.egressSettings!.platforms,
+                                  youtube: {
+                                    ...prev.egressSettings!.platforms.youtube!,
+                                    enabled: isEnabled
+                                  }
+                                }
+                              }
+                            }));
+                          }}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor="youtube-toggle"
+                          className={`block h-4 overflow-hidden rounded-full cursor-pointer ${
+                            formData.egressSettings?.platforms.youtube?.enabled ? 'bg-[#A67D44]' : 'bg-zinc-600'
+                          }`}
+                        >
+                          <span
+                            className={`block h-4 w-4 rounded-full bg-white transform transition-transform ${
+                              formData.egressSettings?.platforms.youtube?.enabled ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          ></span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {formData.egressSettings?.platforms.youtube?.enabled && (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-zinc-400 text-xs mb-1">
+                            Stream Key
+                          </label>
+                          <input
+                            type="password"
+                            placeholder="Enter your YouTube stream key"
+                            value={formData.egressSettings?.platforms.youtube?.streamKey || ''}
+                            onChange={(e) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                egressSettings: {
+                                  ...prev.egressSettings!,
+                                  platforms: {
+                                    ...prev.egressSettings!.platforms,
+                                    youtube: {
+                                      ...prev.egressSettings!.platforms.youtube!,
+                                      streamKey: e.target.value
+                                    }
+                                  }
+                                }
+                              }));
+                            }}
+                            className="w-full p-2 bg-[#1A1A1A] text-white rounded border border-zinc-800 focus:border-zinc-600 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Twitch */}
+                  <div className="border-b border-zinc-700 pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <span className="bg-purple-600 p-1 rounded-sm mr-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white">
+                            <path d="M2.149 0l-1.612 4.119v16.836h5.731v3.045h3.224l3.045-3.045h4.657l6.269-6.269v-14.686h-21.314zm19.164 13.612l-3.582 3.582h-5.731l-3.045 3.045v-3.045h-4.836v-15.045h17.194v11.463zm-3.582-7.731v6.628h-2.149v-6.628h2.149zm-5.731 0v6.628h-2.149v-6.628h2.149z" />
+                          </svg>
+                        </span>
+                        <span className="text-white text-sm">Twitch</span>
+                      </div>
+                      <div className="relative inline-block w-8 align-middle select-none">
+                        <input
+                          type="checkbox"
+                          id="twitch-toggle"
+                          checked={formData.egressSettings?.platforms.twitch?.enabled}
+                          onChange={(e) => {
+                            const isEnabled = e.target.checked;
+                            setFormData(prev => ({
+                              ...prev,
+                              egressSettings: {
+                                ...prev.egressSettings!,
+                                platforms: {
+                                  ...prev.egressSettings!.platforms,
+                                  twitch: {
+                                    ...prev.egressSettings!.platforms.twitch!,
+                                    enabled: isEnabled
+                                  }
+                                }
+                              }
+                            }));
+                          }}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor="twitch-toggle"
+                          className={`block h-4 overflow-hidden rounded-full cursor-pointer ${
+                            formData.egressSettings?.platforms.twitch?.enabled ? 'bg-[#A67D44]' : 'bg-zinc-600'
+                          }`}
+                        >
+                          <span
+                            className={`block h-4 w-4 rounded-full bg-white transform transition-transform ${
+                              formData.egressSettings?.platforms.twitch?.enabled ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          ></span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {formData.egressSettings?.platforms.twitch?.enabled && (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-zinc-400 text-xs mb-1">
+                            Stream Key
+                          </label>
+                          <input
+                            type="password"
+                            placeholder="Enter your Twitch stream key"
+                            value={formData.egressSettings?.platforms.twitch?.streamKey || ''}
+                            onChange={(e) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                egressSettings: {
+                                  ...prev.egressSettings!,
+                                  platforms: {
+                                    ...prev.egressSettings!.platforms,
+                                    twitch: {
+                                      ...prev.egressSettings!.platforms.twitch!,
+                                      streamKey: e.target.value
+                                    }
+                                  }
+                                }
+                              }));
+                            }}
+                            className="w-full p-2 bg-[#1A1A1A] text-white rounded border border-zinc-800 focus:border-zinc-600 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Custom RTMP */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <span className="bg-zinc-500 p-1 rounded-sm mr-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                            <polyline points="17 2 12 7 7 2"></polyline>
+                          </svg>
+                        </span>
+                        <span className="text-white text-sm">Custom RTMP</span>
+                      </div>
+                      <div className="relative inline-block w-8 align-middle select-none">
+                        <input
+                          type="checkbox"
+                          id="custom-toggle"
+                          checked={formData.egressSettings?.platforms.custom?.enabled}
+                          onChange={(e) => {
+                            const isEnabled = e.target.checked;
+                            setFormData(prev => ({
+                              ...prev,
+                              egressSettings: {
+                                ...prev.egressSettings!,
+                                platforms: {
+                                  ...prev.egressSettings!.platforms,
+                                  custom: {
+                                    ...prev.egressSettings!.platforms.custom!,
+                                    enabled: isEnabled
+                                  }
+                                }
+                              }
+                            }));
+                          }}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor="custom-toggle"
+                          className={`block h-4 overflow-hidden rounded-full cursor-pointer ${
+                            formData.egressSettings?.platforms.custom?.enabled ? 'bg-[#A67D44]' : 'bg-zinc-600'
+                          }`}
+                        >
+                          <span
+                            className={`block h-4 w-4 rounded-full bg-white transform transition-transform ${
+                              formData.egressSettings?.platforms.custom?.enabled ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          ></span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {formData.egressSettings?.platforms.custom?.enabled && (
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-zinc-400 text-xs mb-1">
+                            RTMP URL
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="rtmp://your-server-url/live"
+                            value={formData.egressSettings?.platforms.custom?.streamUrl || ''}
+                            onChange={(e) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                egressSettings: {
+                                  ...prev.egressSettings!,
+                                  platforms: {
+                                    ...prev.egressSettings!.platforms,
+                                    custom: {
+                                      ...prev.egressSettings!.platforms.custom!,
+                                      streamUrl: e.target.value
+                                    }
+                                  }
+                                }
+                              }));
+                            }}
+                            className="w-full p-2 bg-[#1A1A1A] text-white rounded border border-zinc-800 focus:border-zinc-600 focus:outline-none text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-zinc-400 text-xs mb-1">
+                            Stream Key
+                          </label>
+                          <input
+                            type="password"
+                            placeholder="Enter the stream key"
+                            value={formData.egressSettings?.platforms.custom?.streamKey || ''}
+                            onChange={(e) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                egressSettings: {
+                                  ...prev.egressSettings!,
+                                  platforms: {
+                                    ...prev.egressSettings!.platforms,
+                                    custom: {
+                                      ...prev.egressSettings!.platforms.custom!,
+                                      streamKey: e.target.value
+                                    }
+                                  }
+                                }
+                              }));
+                            }}
+                            className="w-full p-2 bg-[#1A1A1A] text-white rounded border border-zinc-800 focus:border-zinc-600 focus:outline-none text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-zinc-400 text-xs mb-1">
+                            Platform Name
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Periscope, Instagram, etc."
+                            value={formData.egressSettings?.platforms.custom?.name || ''}
+                            onChange={(e) => {
+                              setFormData(prev => ({
+                                ...prev,
+                                egressSettings: {
+                                  ...prev.egressSettings!,
+                                  platforms: {
+                                    ...prev.egressSettings!.platforms,
+                                    custom: {
+                                      ...prev.egressSettings!.platforms.custom!,
+                                      name: e.target.value
+                                    }
+                                  }
+                                }
+                              }));
+                            }}
+                            className="w-full p-2 bg-[#1A1A1A] text-white rounded border border-zinc-800 focus:border-zinc-600 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Schedule for Later */}
             <div className="mb-6">
               <label className="flex items-center">
                 <input
