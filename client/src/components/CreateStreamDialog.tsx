@@ -88,6 +88,21 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     e.preventDefault();
     onSubmit(formData);
   };
+  
+  // Close date picker when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (showDatePicker && !target.closest('.date-picker-container')) {
+        setShowDatePicker(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDatePicker]);
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
@@ -268,7 +283,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
               </label>
               
               {scheduleForLater && (
-                <div className="mt-2 relative">
+                <div className="mt-2 relative date-picker-container">
                   <button
                     type="button"
                     onClick={() => setShowDatePicker(!showDatePicker)}
@@ -282,7 +297,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
                   </button>
                   
                   {showDatePicker && (
-                    <div className="absolute z-10 mt-2 bg-[#1C1C1C] p-2 rounded-md border border-zinc-700 shadow-lg">
+                    <div className="absolute z-10 bottom-full mb-2 bg-[#1C1C1C] p-2 rounded-md border border-zinc-700 shadow-lg date-picker-container">
                       <CalendarComponent
                         mode="single"
                         selected={formData.scheduledDate}
