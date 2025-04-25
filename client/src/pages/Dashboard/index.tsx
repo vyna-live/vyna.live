@@ -5,6 +5,10 @@ import { ChevronRight } from 'lucide-react';
 import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
 import JoinStreamDialog from '@/components/JoinStreamDialog';
 
+// Import images
+import reImagePath from '@assets/re.jpg';
+import viewImagePath from '@assets/view.jpg';
+
 export default function Dashboard() {
   const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
   const [isJoinStreamDialogOpen, setIsJoinStreamDialogOpen] = useState(false);
@@ -13,9 +17,9 @@ export default function Dashboard() {
   // Alternating between the two image types
   const getImageForIndex = (index: number) => {
     if (index % 2 === 0) {
-      return "/attached_assets/re.jpg";
+      return reImagePath;
     } else {
-      return "/attached_assets/view.jpg";
+      return viewImagePath;
     }
   };
 
