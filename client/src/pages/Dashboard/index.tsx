@@ -88,8 +88,8 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center">
-            {[1, 2].map((item) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+            {[1, 2, 3].map((item) => (
               <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
                 <div className="h-[150px] overflow-hidden">
                   <img 
@@ -117,8 +117,8 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center">
-            {[1, 2].map((item) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+            {[1, 2, 3].map((item) => (
               <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
                 <div className="h-[150px] overflow-hidden">
                   <img 
