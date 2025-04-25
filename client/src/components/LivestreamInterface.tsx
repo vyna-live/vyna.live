@@ -398,8 +398,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                   }`}
                 >
                   <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 8.1 19.33 6.66 18.12C7.55 16.8 9.08 16 12 16C14.92 16 16.45 16.8 17.34 18.12C15.9 19.33 14.03 20 12 20Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M18 5L21 8M21 5L18 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
+                    <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
+                    <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
+                    <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                   VynaAI
                 </button>
@@ -485,7 +487,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                         <div className="flex flex-col items-center justify-center h-full text-center">
                           <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
                             <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.0489 3.92705C11.3483 3.00574 12.6517 3.00574 12.9511 3.92705L14.2451 7.90983C14.379 8.32185 14.763 8.60081 15.1962 8.60081H19.3839C20.3527 8.60081 20.7554 9.84043 19.9717 10.4098L16.5838 12.8713C16.2333 13.126 16.0866 13.5773 16.2205 13.9894L17.5146 17.9721C17.8139 18.8934 16.7595 19.6596 15.9757 19.0902L12.5878 16.6287C12.2373 16.374 11.7627 16.374 11.4122 16.6287L8.02426 19.0902C7.24054 19.6596 6.18607 18.8934 6.48542 17.9721L7.77948 13.9894C7.91338 13.5773 7.76668 13.126 7.41623 12.8713L4.02827 10.4098C3.24455 9.84043 3.64732 8.60081 4.61606 8.60081H8.8038C9.23703 8.60081 9.621 8.32185 9.75489 7.90983L11.0489 3.92705Z" fill="currentColor"/>
+                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
+                              <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
+                              <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
+                              <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                             </svg>
                           </div>
                           <div className="text-white text-xl font-medium mb-2">VynaAI</div>
@@ -497,7 +502,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                         <div className="flex flex-col space-y-4">
                           {/* User message */}
                           <div className="flex flex-col items-end">
-                            <div className="max-w-[85%] rounded-lg bg-zinc-800 text-white px-4 py-2 text-sm">
+                            <div className="max-w-[85%] rounded-xl bg-zinc-800 text-white px-4 py-2 text-xs">
                               Who is the best CODM gamer in Nigeria as of March 2025?
                             </div>
                           </div>
@@ -506,11 +511,14 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           <div className="flex items-start space-x-2">
                             <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                               <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.93 6 15.5 7.57 15.5 9.5C15.5 11.43 13.93 13 12 13C10.07 13 8.5 11.43 8.5 9.5C8.5 7.57 10.07 6 12 6ZM12 20C9.97 20 8.1 19.33 6.66 18.12C7.55 16.8 9.08 16 12 16C14.92 16 16.45 16.8 17.34 18.12C15.9 19.33 14.03 20 12 20Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
+                                <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
+                                <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
+                                <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                               </svg>
                             </div>
                             <div className="max-w-[85%] flex flex-col">
-                              <div className="rounded-lg bg-zinc-700 text-white px-4 py-2 text-sm">
+                              <div className="rounded-xl bg-zinc-700 text-white px-4 py-2 text-xs">
                                 I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.
                               </div>
                               <div className="flex space-x-1 mt-1">
@@ -559,28 +567,27 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           onChange={(e) => setInputValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                           placeholder={!showChatHistory ? "Who is the best gamer in Nigeria as of April 2025?" : "Type a new note"}
-                          className="w-full px-10 py-2 bg-zinc-800 text-white placeholder-zinc-400 text-sm rounded-lg outline-none"
+                          className="w-full px-12 py-3 bg-zinc-900 text-white placeholder-zinc-500 text-xs rounded-xl outline-none border border-zinc-800"
                         />
-                        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 flex space-x-1 text-zinc-400">
-                          <button className="w-6 h-6 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M13.5 3H12H8C6.34315 3 5 4.34315 5 6V18C5 19.6569 6.34315 21 8 21H16C17.6569 21 19 19.6569 19 18V12V10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M16 3L19 6M19 6L22 9M19 6L16 9M19 6L22 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex space-x-3 text-zinc-400">
+                          <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
                           </button>
-                          <button className="w-6 h-6 flex items-center justify-center">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" fill="currentColor"/>
-                              <path d="M19 14C20.1046 14 21 13.1046 21 12C21 10.8954 20.1046 10 19 10C17.8954 10 17 10.8954 17 12C17 13.1046 17.8954 14 19 14Z" fill="currentColor"/>
-                              <path d="M5 14C6.10457 14 7 13.1046 7 12C7 10.8954 6.10457 10 5 10C3.89543 10 3 10.8954 3 12C3 13.1046 3.89543 14 5 14Z" fill="currentColor"/>
+                          <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                              <line x1="12" y1="19" x2="12" y2="23"></line>
+                              <line x1="8" y1="23" x2="16" y2="23"></line>
                             </svg>
                           </button>
-                          <button 
-                            onClick={sendMessage}
-                            className="w-6 h-6 flex items-center justify-center"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M15 10L19 14M19 14L15 18M19 14H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                              <polyline points="21 15 16 10 5 21"></polyline>
                             </svg>
                           </button>
                         </div>
@@ -609,7 +616,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                     setShowNewChat(true);
                     setShowChatHistory(false); // Show the empty star state when opening a new chat
                   }}
-                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white text-xs flex items-center justify-center transition-colors"
+                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-white text-xs flex items-center justify-center transition-colors"
                 >
                   <span className="font-medium">+ New chat</span>
                 </button>
