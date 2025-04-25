@@ -185,15 +185,11 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       {/* Livestream header */}
       <div className="absolute top-0 left-0 right-0 h-16 glassmorphic flex items-center justify-between px-6 z-10">
         <div className="flex items-center">
-          <Logo size="sm" variant="light" />
+          <Logo size="sm" variant="full" className="h-6 max-w-[120px]" />
           <div className="h-6 mx-3 border-r border-white/20"></div>
-          <GradientText 
-            text="LIVE STREAM" 
-            preset="earthy"
-            className="text-base font-bold" 
-            typingSpeed={70}
-            showCursor={false}
-          />
+          <div className="bg-gradient-to-r from-[#EFE9E1] to-[#CDBCAB] text-transparent bg-clip-text text-base font-bold">
+            LIVE STREAM
+          </div>
         </div>
         
         <div className="flex items-center space-x-4">
