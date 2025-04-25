@@ -537,11 +537,20 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
-                    <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
-                    <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
-                    <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <svg className="w-3.5 h-3.5 mr-1" viewBox="0 0 36 36" fill="none">
+                    <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="currentColor"/>
+                    <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="currentColor"/>
+                    <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="currentColor"/>
+                    <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="currentColor"/>
+                    <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="currentColor"/>
+                    <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="currentColor"/>
+                    <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="currentColor"/>
+                    <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="currentColor"/>
+                    <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="currentColor"/>
+                    <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="currentColor"/>
+                    <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="currentColor"/>
+                    <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="currentColor"/>
+                    <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="currentColor" opacity="0.5"/>
                   </svg>
                   VynaAI
                 </button>
@@ -626,8 +635,20 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                       {!showChatHistory ? (
                         <div className="flex flex-col items-center justify-center h-full text-center">
                           <div className="w-14 h-14 rounded-[14px] bg-zinc-800 flex items-center justify-center mb-4">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#65D3DC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
+                              <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                              <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                              <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                              <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                              <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                              <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                              <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                              <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                              <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                              <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                              <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                              <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                              <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
                             </svg>
                           </div>
                           <div className="text-white text-xl font-medium mb-2">VynaAI</div>
@@ -650,8 +671,20 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                                 /* AI response */
                                 <div className="flex items-start space-x-2">
                                   <div className="w-6 h-6 rounded-[6px] bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#65D3DC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    <svg width="16" height="16" viewBox="0 0 36 36" fill="none">
+                                      <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                                      <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                                      <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                                      <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                                      <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                                      <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                                      <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                                      <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                                      <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                                      <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                                      <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                                      <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                                      <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
                                     </svg>
                                   </div>
                                   <div className="max-w-[85%] flex flex-col">
@@ -706,8 +739,20 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           {isAiLoading && (
                             <div className="flex items-start space-x-2">
                               <div className="w-6 h-6 rounded-[6px] bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#65D3DC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse">
-                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                <svg width="16" height="16" viewBox="0 0 36 36" fill="none" className="animate-pulse">
+                                  <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
+                                  <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
+                                  <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
+                                  <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
+                                  <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
+                                  <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
+                                  <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
+                                  <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
+                                  <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
+                                  <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
+                                  <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
+                                  <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
+                                  <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
                                 </svg>
                               </div>
                               <div className="max-w-[85%] flex flex-col">
