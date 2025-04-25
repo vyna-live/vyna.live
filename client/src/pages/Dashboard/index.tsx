@@ -103,7 +103,7 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
             {[1, 2, 3].map((item, index) => {
               const content = getContentType(index);
               return (
@@ -137,7 +137,7 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
             {[1, 2, 3].map((item, index) => {
               // Reverse the image pattern for the saved section
               const content = getContentType(index + 1);
