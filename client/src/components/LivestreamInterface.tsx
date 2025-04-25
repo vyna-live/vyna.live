@@ -413,10 +413,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
         <div className="flex h-full gap-3 rounded-[14px] overflow-hidden">
           {/* Main livestream view */}
           <div 
-            className={`h-full ${drawerVisible ? 'w-[69%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative rounded-lg`}
+            className={`h-full ${!isMobile && drawerVisible ? 'w-[69%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative rounded-lg`}
             style={{
-              borderTopRightRadius: drawerVisible ? '12px' : '12px',
-              borderBottomRightRadius: drawerVisible ? '12px' : '12px',
+              borderTopRightRadius: !isMobile && drawerVisible ? '12px' : '12px',
+              borderBottomRightRadius: !isMobile && drawerVisible ? '12px' : '12px',
               overflow: 'hidden'
             }}
           >
@@ -552,8 +552,15 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
           
           {/* Right drawer for AI/Notepad */}
           <div 
-            className={`h-full ${drawerVisible ? 'w-[30%] opacity-100' : 'w-0 opacity-0 pointer-events-none'} 
-              transition-all duration-300 ease-in-out bg-zinc-900 overflow-hidden flex flex-col rounded-l-xl border-l border-zinc-800`}
+            className={`h-full ${
+              isMobile 
+                ? (drawerVisible 
+                    ? 'fixed inset-0 z-50 w-full opacity-100' 
+                    : 'fixed -right-full opacity-0 pointer-events-none')
+                : (drawerVisible 
+                    ? 'w-[30%] opacity-100' 
+                    : 'w-0 opacity-0 pointer-events-none')
+            } transition-all duration-300 ease-in-out bg-zinc-900 overflow-hidden flex flex-col ${!isMobile ? 'rounded-l-xl border-l border-zinc-800' : ''}`}
           >
             {/* Drawer header with tabs */}
             <div className="flex items-center justify-between p-2 border-b border-zinc-800">
