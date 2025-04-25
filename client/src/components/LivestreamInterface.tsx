@@ -181,18 +181,23 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
     return (
       <div 
         ref={chatContainerRef}
-        className="space-y-1.5 overflow-y-auto max-h-full flex flex-col-reverse pb-2"
+        className="overflow-y-auto max-h-full flex flex-col-reverse pb-2"
       >
         {chatMessages.map((chatMsg, index) => (
-          <div key={index} className="flex items-center space-x-1.5 py-0.5 animate-slideInUp">
-            <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
-              {chatMsg.name.charAt(0)}
+          <div key={index} className="animate-slideInUp">
+            <div className="flex items-center space-x-1.5 py-1">
+              <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
+                {chatMsg.name.charAt(0)}
+              </div>
+              <div className="text-white text-xs font-medium">{chatMsg.name}</div>
+              {chatMsg.isJoined ? (
+                <div className="text-red-400 text-xs ml-0.5">joined</div>
+              ) : (
+                <div className="text-gray-400 text-xs">{chatMsg.message}</div>
+              )}
             </div>
-            <div className="text-white text-xs font-medium">{chatMsg.name}</div>
-            {chatMsg.isJoined ? (
-              <div className="text-red-400 text-xs ml-0.5">joined</div>
-            ) : (
-              <div className="text-gray-400 text-xs">{chatMsg.message}</div>
+            {index > 0 && (
+              <div className="border-t border-gray-800/30 my-1"></div>
             )}
           </div>
         ))}
@@ -223,10 +228,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       
       {/* Main Content Area */}
       <div className="h-full pt-12">
-        <div className="flex h-full">
+        <div className="flex h-full gap-3">
           {/* Main livestream view */}
           <div 
-            className={`h-full ${drawerVisible ? 'w-[70%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative`}
+            className={`h-full ${drawerVisible ? 'w-[69%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative`}
             style={{
               borderTopRightRadius: drawerVisible ? '12px' : '0',
               borderBottomRightRadius: drawerVisible ? '12px' : '0',
@@ -400,6 +405,14 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                   Notepad
                 </button>
               </div>
+              <button
+                onClick={toggleDrawer}
+                className="w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
             
             {/* Drawer content */}
@@ -407,22 +420,26 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
               {activeTab === 'vynaai' ? (
                 <div className="p-2">
                   <div className="text-white text-xs font-medium mb-2 uppercase">RECENTS</div>
-                  <div className="space-y-1">
+                  <div>
                     {MOCK_RECENTS.map((question, index) => (
-                      <div 
-                        key={index} 
-                        className="flex justify-between items-center p-2 rounded hover:bg-zinc-800/50 group transition-colors"
-                      >
-                        <div className="text-zinc-200 text-xs hover:text-white transition-colors truncate pr-2">
-                          {question}
+                      <div key={index}>
+                        <div 
+                          className="flex justify-between items-center p-2 rounded hover:bg-zinc-800/50 group transition-colors"
+                        >
+                          <div className="text-zinc-200 text-xs hover:text-white transition-colors truncate pr-2">
+                            {question}
+                          </div>
+                          <button className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" fill="currentColor"/>
+                              <path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" fill="currentColor"/>
+                              <path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" fill="currentColor"/>
+                            </svg>
+                          </button>
                         </div>
-                        <button className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" fill="currentColor"/>
-                            <path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" fill="currentColor"/>
-                            <path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" fill="currentColor"/>
-                          </svg>
-                        </button>
+                        {index < MOCK_RECENTS.length - 1 && (
+                          <div className="border-t border-zinc-800/40 mx-2"></div>
+                        )}
                       </div>
                     ))}
                   </div>
