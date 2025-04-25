@@ -107,23 +107,20 @@ export default function Dashboard() {
             {[1, 2, 3].map((item, index) => {
               const content = getContentType(index);
               return (
-                <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
-                  <div className="h-[150px] overflow-hidden relative">
-                    <img 
-                      src={getImageForIndex(index)}
-                      alt={content.title} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="bg-black/30 backdrop-blur-sm absolute bottom-0 left-0 right-0 p-4">
-                      <div className="text-xs uppercase text-zinc-300 mb-1.5">
-                        {content.label}
-                      </div>
-                      <h3 className="text-white text-sm font-medium">
-                        {content.title}
-                      </h3>
+                <div key={item} className="overflow-hidden w-[263px] h-[219px] rounded-sm relative">
+                  <img 
+                    src={getImageForIndex(index)}
+                    alt={content.title} 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="bg-black/30 backdrop-blur-[2px] absolute bottom-0 left-0 right-0 p-4">
+                    <div className="text-xs uppercase text-zinc-300 mb-1">
+                      {content.label}
                     </div>
+                    <h3 className="text-white text-sm font-medium">
+                      {content.title}
+                    </h3>
                   </div>
-                  <div className="p-4 flex-1"></div>
                 </div>
               );
             })}
@@ -145,23 +142,20 @@ export default function Dashboard() {
               // Reverse the image pattern for the saved section
               const content = getContentType(index + 1);
               return (
-                <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
-                  <div className="h-[150px] overflow-hidden relative">
-                    <img 
-                      src={getImageForIndex(index + 1)}
-                      alt={content.title} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="bg-black/30 backdrop-blur-sm absolute bottom-0 left-0 right-0 p-4">
-                      <div className="text-xs uppercase text-zinc-300 mb-1.5">
-                        {content.label}
-                      </div>
-                      <h3 className="text-white text-sm font-medium">
-                        {content.title}
-                      </h3>
+                <div key={item} className="overflow-hidden w-[263px] h-[219px] rounded-sm relative">
+                  <img 
+                    src={getImageForIndex(index + 1)}
+                    alt={content.title} 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="bg-black/30 backdrop-blur-[2px] absolute bottom-0 left-0 right-0 p-4">
+                    <div className="text-xs uppercase text-zinc-300 mb-1">
+                      {content.label}
                     </div>
+                    <h3 className="text-white text-sm font-medium">
+                      {content.title}
+                    </h3>
                   </div>
-                  <div className="p-4 flex-1"></div>
                 </div>
               );
             })}
