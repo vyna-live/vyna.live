@@ -640,7 +640,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                     </div>
                     
                     {/* Chat input */}
-                    <div className="px-2 py-3 border-t border-zinc-800">
+                    <div className="px-2 py-3">
                       <div className="relative">
                         <input 
                           type="text" 
@@ -648,16 +648,18 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           onChange={(e) => setInputValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                           placeholder={!showChatHistory ? "Who is the best gamer in Nigeria as of April 2025?" : "Type a new note"}
-                          className="w-full px-[42px] py-[14px] bg-zinc-900/90 text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none border border-zinc-800/50"
+                          className="w-full pl-10 pr-10 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none"
                         />
                         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex space-x-2 text-zinc-500">
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
                             </svg>
                           </button>
+                        </div>
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-2 text-zinc-500">
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                               <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                               <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -665,10 +667,16 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                             </svg>
                           </button>
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                               <circle cx="8.5" cy="8.5" r="1.5"></circle>
                               <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                          </button>
+                          <button onClick={sendMessage} className="w-5 h-5 ml-1 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="22" y1="2" x2="11" y2="13"></line>
+                              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                             </svg>
                           </button>
                         </div>
@@ -690,14 +698,14 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
             </div>
             
             {/* Chat input */}
-            <div className="p-3 border-t border-zinc-800">
+            <div className="p-3">
               {!showNewChat && activeTab === 'vynaai' && (
                 <button
                   onClick={() => {
                     setShowNewChat(true);
                     setShowChatHistory(false); // Show the empty star state when opening a new chat
                   }}
-                  className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-xl text-white text-xs flex items-center justify-center transition-colors"
+                  className="w-full py-2 bg-[#2A2A2D] hover:bg-zinc-700 rounded-[14px] text-white text-xs flex items-center justify-center transition-colors"
                 >
                   <span className="font-medium">+ New chat</span>
                 </button>
