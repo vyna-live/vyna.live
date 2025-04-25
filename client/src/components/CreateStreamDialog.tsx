@@ -15,6 +15,33 @@ export interface StreamFormData {
   coverImage?: File;
   privacy: 'public' | 'unlisted' | 'private';
   scheduledDate?: Date;
+  // Egress settings for multiplatform streaming
+  egressSettings?: {
+    enabled: boolean;
+    platforms: {
+      youtube?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+      };
+      twitch?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+      };
+      facebook?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+      };
+      custom?: {
+        enabled: boolean;
+        streamKey?: string;
+        streamUrl?: string;
+        name?: string;
+      };
+    };
+  };
 }
 
 export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: CreateStreamDialogProps) {
