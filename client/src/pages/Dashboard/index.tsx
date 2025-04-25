@@ -3,11 +3,11 @@ import { Link } from 'wouter';
 import Logo from '@/components/Logo';
 import { ChevronRight } from 'lucide-react';
 
-// Use online images directly
-
 export default function Dashboard() {
+  const gameImageUrl = "https://cdn.cloudflare.steamstatic.com/steam/apps/1586970/header.jpg?t=1716553280";
+
   return (
-    <div className="min-h-screen bg-[#070709] flex flex-col">
+    <div className="min-h-screen bg-[#000000] flex flex-col">
       {/* Header */}
       <header className="px-6 py-4 flex items-center justify-between">
         <Link href="/" className="transition-opacity hover:opacity-80">
@@ -88,28 +88,23 @@ export default function Dashboard() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
-            {[1, 2, 3].map((item, index) => (
-              <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="bg-[#000000] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
                 <div className="h-[150px] overflow-hidden relative">
                   <img 
-                    src={index % 2 === 0 
-                      ? "/images/re.jpg" 
-                      : "/images/view.jpg"}
-                    alt={index % 2 === 0 ? "Family bonding session" : "Gaming setup"} 
+                    src={gameImageUrl}
+                    alt="Jaja Games: Crowns & Chains" 
                     className="w-full h-full object-cover"
                   />
-                  <div className="bg-black/30 backdrop-blur-sm absolute bottom-0 left-0 right-0 p-4">
-                    <div className="text-xs uppercase text-zinc-300 mb-1.5">
-                      {index % 2 === 0 ? "FAMILY" : "GAMING"}
-                    </div>
-                    <h3 className="text-white text-sm font-medium">
-                      {index % 2 === 0 
-                        ? "Family Fun Activities & Games" 
-                        : "Gaming Setup & Controller Review"}
-                    </h3>
-                  </div>
                 </div>
-                <div className="p-4 flex-1"></div>
+                <div className="p-4 flex-1 bg-[#000000]">
+                  <div className="text-xs uppercase text-zinc-500 mb-1.5">
+                    PUBLIC
+                  </div>
+                  <h3 className="text-white text-sm font-medium">
+                    Jaja Games: Crowns & Chains
+                  </h3>
+                </div>
               </div>
             ))}
           </div>
@@ -126,28 +121,23 @@ export default function Dashboard() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
-            {[1, 2, 3].map((item, index) => (
-              <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="bg-[#000000] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
                 <div className="h-[150px] overflow-hidden relative">
                   <img 
-                    src={index % 2 === 0 
-                      ? "/images/view.jpg" 
-                      : "/images/images.jpeg"}
-                    alt={index % 2 === 0 ? "Gaming setup" : "Creative workspace"} 
+                    src={gameImageUrl}
+                    alt="Jaja Games: Crowns & Chains" 
                     className="w-full h-full object-cover"
                   />
-                  <div className="bg-black/30 backdrop-blur-sm absolute bottom-0 left-0 right-0 p-4">
-                    <div className="text-xs uppercase text-zinc-300 mb-1.5">
-                      {index % 2 === 0 ? "GAMING" : "WORKSPACE"}
-                    </div>
-                    <h3 className="text-white text-sm font-medium">
-                      {index % 2 === 0 
-                        ? "RGB Setup & PS5 Controller Review" 
-                        : "Creative Workspace & Productivity"}
-                    </h3>
-                  </div>
                 </div>
-                <div className="p-4 flex-1"></div>
+                <div className="p-4 flex-1 bg-[#000000]">
+                  <div className="text-xs uppercase text-zinc-500 mb-1.5">
+                    PUBLIC
+                  </div>
+                  <h3 className="text-white text-sm font-medium">
+                    Jaja Games: Crowns & Chains
+                  </h3>
+                </div>
               </div>
             ))}
           </div>
