@@ -1,9 +1,13 @@
-import React from 'react';
-import { Link } from 'wouter';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import Logo from '@/components/Logo';
 import { ChevronRight } from 'lucide-react';
+import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
 
 export default function Dashboard() {
+  const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
+  const [, navigate] = useLocation();
+  
   // Alternating between the two image types
   const getImageForIndex = (index: number) => {
     if (index % 2 === 0) {
@@ -48,8 +52,25 @@ export default function Dashboard() {
     marginBottom: '20px'
   };
 
+  // Define a function to handle submit form data
+  const handleStreamFormSubmit = (formData: StreamFormData) => {
+    console.log('Stream form submitted:', formData);
+    // Close the dialog
+    setIsStreamDialogOpen(false);
+    
+    // Navigate to the livestream page after submitting
+    navigate('/livestream');
+  };
+
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col">
+      {/* Stream Dialog */}
+      <CreateStreamDialog 
+        isOpen={isStreamDialogOpen} 
+        onClose={() => setIsStreamDialogOpen(false)}
+        onSubmit={handleStreamFormSubmit}
+      />
+      
       {/* Header */}
       <header className="px-6 py-4 flex items-center justify-between">
         <Link href="/" className="transition-opacity hover:opacity-80">
@@ -93,15 +114,16 @@ export default function Dashboard() {
           </p>
           
           <div className="flex items-center justify-center space-x-4">
-            <Link href="/livestream">
-              <button className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity rounded-sm">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 7l-7 5 7 5V7z" />
-                  <rect x="1" y="5" width="15" height="14" />
-                </svg>
-                <span>Start streaming</span>
-              </button>
-            </Link>
+            <button 
+              onClick={() => setIsStreamDialogOpen(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity rounded-sm"
+            >
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 7l-7 5 7 5V7z" />
+                <rect x="1" y="5" width="15" height="14" />
+              </svg>
+              <span>Start streaming</span>
+            </button>
             
             <button className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
