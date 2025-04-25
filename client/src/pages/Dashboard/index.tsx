@@ -3,8 +3,7 @@ import { Link } from 'wouter';
 import Logo from '@/components/Logo';
 import { ChevronRight } from 'lucide-react';
 
-// Import images
-import streamCardImage from '@/assets/stream-card.jpg';
+// Use online images directly
 
 export default function Dashboard() {
   return (
@@ -89,18 +88,26 @@ export default function Dashboard() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
-            {[1, 2, 3].map((item) => (
+            {[1, 2, 3].map((item, index) => (
               <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
                 <div className="h-[150px] overflow-hidden">
                   <img 
-                    src={streamCardImage}
-                    alt="Jaja Games: Crowns & Chains" 
+                    src={index % 2 === 0 
+                      ? "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" 
+                      : "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80"}
+                    alt={index % 2 === 0 ? "Family bonding session" : "Gaming setup"} 
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-4 flex-1">
-                  <div className="text-xs uppercase text-zinc-500 mb-1.5">PUBLIC</div>
-                  <h3 className="text-white text-sm font-medium">Jaja Games: Crowns & Chains</h3>
+                  <div className="text-xs uppercase text-zinc-500 mb-1.5">
+                    {index % 2 === 0 ? "FAMILY" : "GAMING"}
+                  </div>
+                  <h3 className="text-white text-sm font-medium">
+                    {index % 2 === 0 
+                      ? "Family Fun Activities & Games" 
+                      : "Gaming Setup & Controller Review"}
+                  </h3>
                 </div>
               </div>
             ))}
@@ -118,18 +125,26 @@ export default function Dashboard() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
-            {[1, 2, 3].map((item) => (
+            {[1, 2, 3].map((item, index) => (
               <div key={item} className="bg-[#1C1C1C] overflow-hidden w-[263px] h-[219px] flex flex-col rounded-sm">
                 <div className="h-[150px] overflow-hidden">
                   <img 
-                    src={streamCardImage}
-                    alt="Jaja Games: Crowns & Chains" 
+                    src={index % 2 === 0 
+                      ? "https://images.unsplash.com/photo-1593305841991-05c297ba4575?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80" 
+                      : "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1024&q=80"}
+                    alt={index % 2 === 0 ? "Gaming setup" : "Family bonding session"} 
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-4 flex-1">
-                  <div className="text-xs uppercase text-zinc-500 mb-1.5">PUBLIC</div>
-                  <h3 className="text-white text-sm font-medium">Jaja Games: Crowns & Chains</h3>
+                  <div className="text-xs uppercase text-zinc-500 mb-1.5">
+                    {index % 2 === 0 ? "GAMING" : "FAMILY"}
+                  </div>
+                  <h3 className="text-white text-sm font-medium">
+                    {index % 2 === 0 
+                      ? "RGB Setup & PS5 Controller Review" 
+                      : "Family Playtime & Parent Tips"}
+                  </h3>
                 </div>
               </div>
             ))}
