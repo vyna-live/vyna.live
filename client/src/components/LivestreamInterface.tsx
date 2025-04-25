@@ -6,6 +6,7 @@ import StreamVideoComponent from "./StreamVideo";
 import { useStreamVideoContext } from "../providers/StreamVideoProvider";
 import { DeviceSettings } from "@stream-io/video-react-sdk";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Arena background image
 const arenaImage = "/assets/arena.png";
@@ -92,6 +93,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Array<{id: string; content: string; role: "user" | "assistant"}>>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const isMobile = useIsMobile();
   
   // Notepad functionality
   const [showNewNote, setShowNewNote] = useState<boolean>(false);
@@ -388,7 +390,9 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       {/* Top Navbar */}
       <div className="absolute top-4 left-4 right-4 h-12 z-30 bg-black/70 backdrop-blur-sm flex items-center justify-between px-4 rounded-lg">
         <div className="flex items-center">
-          <Logo variant="light" size="sm" className="h-7" />
+          <a href="/" className="transition-opacity hover:opacity-80">
+            <Logo variant="light" size="sm" className="h-7" />
+          </a>
         </div>
         
         <div className="flex items-center">
