@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'wouter';
 import Logo from '@/components/Logo';
-import { ChevronRight, Video, Monitor } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 // Import images
 import streamCardImage from '@/assets/stream-card.jpg';
@@ -10,21 +10,21 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-black flex flex-col">
       {/* Header */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-zinc-800/50">
+      <header className="px-6 py-4 flex items-center justify-between">
         <Link href="/" className="transition-opacity hover:opacity-80">
-          <Logo variant="light" size="sm" className="h-8" />
+          <Logo variant="light" size="sm" className="h-6" />
         </Link>
         
         <div className="flex items-center">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full overflow-hidden">
+            <div className="w-6 h-6 rounded-full overflow-hidden">
               <img 
                 src="https://randomuser.me/api/portraits/men/32.jpg" 
                 alt="Divine Samuel" 
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-white font-medium text-sm">Divine Samuel</span>
+            <span className="text-white text-sm font-medium">Divine Samuel</span>
             <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -42,33 +42,40 @@ export default function Dashboard() {
       </div>
       
       {/* Main content */}
-      <main className="flex-1 px-6 py-8 max-w-6xl mx-auto w-full">
+      <main className="flex-1 max-w-7xl mx-auto w-full">
         {/* Hero section */}
-        <section className="mb-12 text-center">
-          <h1 className="text-5xl font-bold text-white mb-4">Go Live or Join a stream</h1>
-          <p className="text-zinc-400 max-w-2xl mx-auto">
+        <section className="mb-16 text-center mt-12">
+          <h1 className="text-[56px] font-bold text-white mb-4 tracking-tight">Go Live or Join a stream</h1>
+          <p className="text-zinc-400 text-lg max-w-2xl mx-auto mb-10">
             Start your own live stream with AI-powered research tools or join 
             other creators' streams to learn and engage.
           </p>
           
-          <div className="flex items-center justify-center space-x-4 mt-8">
+          <div className="flex items-center justify-center space-x-4">
             <Link href="/livestream">
-              <button className="flex items-center space-x-2 px-6 py-3 bg-[#d7c4ad] text-black font-medium rounded-md hover:bg-[#e2d1bd] transition-colors">
-                <Video className="w-5 h-5" />
+              <button className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium rounded-lg hover:opacity-90 transition-opacity">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+                  <rect x="8" y="10" width="8" height="4" rx="1" stroke="currentColor" strokeWidth="2" />
+                </svg>
                 <span>Start streaming</span>
               </button>
             </Link>
             
-            <button className="flex items-center space-x-2 px-6 py-3 bg-zinc-800 text-white font-medium rounded-md hover:bg-zinc-700 transition-colors">
-              <Monitor className="w-5 h-5" />
+            <button className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium rounded-lg hover:opacity-90 transition-opacity">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
+                <path d="M12 16V20" stroke="currentColor" strokeWidth="2" />
+                <path d="M8 20H16" stroke="currentColor" strokeWidth="2" />
+              </svg>
               <span>Join stream</span>
             </button>
           </div>
         </section>
         
         {/* Upcoming streams section */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-4">
+        <section className="mb-16 px-6">
+          <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold text-white">Upcoming</h2>
             <Link href="/streams/upcoming" className="flex items-center text-zinc-400 hover:text-white transition-colors">
               <span className="text-sm">See all</span>
@@ -76,10 +83,10 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-zinc-900 rounded-lg overflow-hidden">
-                <div className="h-40 overflow-hidden">
+              <div key={item} className="bg-[#1C1C1C] rounded-lg overflow-hidden">
+                <div className="h-44 overflow-hidden">
                   <img 
                     src={streamCardImage}
                     alt="Jaja Games: Crowns & Chains" 
@@ -87,7 +94,7 @@ export default function Dashboard() {
                   />
                 </div>
                 <div className="p-4">
-                  <div className="text-xs text-zinc-500 mb-1">PUBLIC</div>
+                  <div className="text-xs uppercase text-zinc-500 mb-1.5">PUBLIC</div>
                   <h3 className="text-white font-medium">Jaja Games: Crowns & Chains</h3>
                 </div>
               </div>
@@ -96,8 +103,8 @@ export default function Dashboard() {
         </section>
         
         {/* Saved streams section */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
+        <section className="px-6">
+          <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-semibold text-white">Saved</h2>
             <Link href="/streams/saved" className="flex items-center text-zinc-400 hover:text-white transition-colors">
               <span className="text-sm">See all</span>
@@ -105,10 +112,10 @@ export default function Dashboard() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="bg-zinc-900 rounded-lg overflow-hidden">
-                <div className="h-40 overflow-hidden">
+              <div key={item} className="bg-[#1C1C1C] rounded-lg overflow-hidden">
+                <div className="h-44 overflow-hidden">
                   <img 
                     src={streamCardImage}
                     alt="Jaja Games: Crowns & Chains" 
@@ -116,7 +123,7 @@ export default function Dashboard() {
                   />
                 </div>
                 <div className="p-4">
-                  <div className="text-xs text-zinc-500 mb-1">PUBLIC</div>
+                  <div className="text-xs uppercase text-zinc-500 mb-1.5">PUBLIC</div>
                   <h3 className="text-white font-medium">Jaja Games: Crowns & Chains</h3>
                 </div>
               </div>
