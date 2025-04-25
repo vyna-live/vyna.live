@@ -23,11 +23,29 @@ export default function Dashboard() {
   };
 
   // Custom CSS for exactly 16px spacing between cards
-  const cardContainerStyle = {
+  const containerStyle = {
+    width: '100%',
+    maxWidth: '821px', // Width for 3 cards of 263px each + 16px gaps
+    margin: '0 auto',
     display: 'flex',
+    flexDirection: 'column' as const,
+
+  };
+
+  const cardsContainerStyle = {
+    display: 'flex' as const,
     flexWrap: 'wrap' as const,
-    justifyContent: 'center',
-    gap: '16px'
+    gap: '16px',
+    width: '100%',
+    justifyContent: 'center' as const,
+  };
+
+  const headerStyle = {
+    display: 'flex' as const,
+    justifyContent: 'space-between' as const, 
+    alignItems: 'center' as const,
+    width: '100%',
+    marginBottom: '20px'
   };
 
   return (
@@ -65,7 +83,7 @@ export default function Dashboard() {
       </div>
       
       {/* Main content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full">
+      <main className="flex-1 max-w-[1024px] mx-auto w-full">
         {/* Hero section */}
         <section className="mb-16 text-center mt-12">
           <h1 className="text-[48px] font-bold mb-4 tracking-tight bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#CDBCAB] text-transparent bg-clip-text">Research first, go live next!</h1>
@@ -102,17 +120,17 @@ export default function Dashboard() {
         </section>
         
         {/* Upcoming streams section */}
-        <section className="mb-16 px-6 max-w-[min(100%,840px)] mx-auto">
-          <div className="flex items-center justify-between mb-5 w-full">
-            <h2 className="text-lg font-semibold text-white">Upcoming</h2>
-            <Link href="/streams/upcoming" className="flex items-center text-zinc-400 hover:text-white transition-colors ml-auto">
-              <span className="text-sm">See all</span>
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-          
-          <div className="flex justify-center">
-            <div style={cardContainerStyle}>
+        <section className="mb-16">
+          <div style={containerStyle}>
+            <div style={headerStyle}>
+              <h2 className="text-lg font-semibold text-white">Upcoming</h2>
+              <Link href="/streams/upcoming" className="flex items-center text-zinc-400 hover:text-white transition-colors">
+                <span className="text-sm">See all</span>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Link>
+            </div>
+            
+            <div style={cardsContainerStyle}>
               {[1, 2, 3].map((item, index) => {
                 const content = getContentType(index);
                 return (
@@ -141,17 +159,17 @@ export default function Dashboard() {
         </section>
         
         {/* Saved streams section */}
-        <section className="px-6 max-w-[min(100%,840px)] mx-auto">
-          <div className="flex items-center justify-between mb-5 w-full">
-            <h2 className="text-lg font-semibold text-white">Saved</h2>
-            <Link href="/streams/saved" className="flex items-center text-zinc-400 hover:text-white transition-colors ml-auto">
-              <span className="text-sm">See all</span>
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Link>
-          </div>
-          
-          <div className="flex justify-center">
-            <div style={cardContainerStyle}>
+        <section>
+          <div style={containerStyle}>
+            <div style={headerStyle}>
+              <h2 className="text-lg font-semibold text-white">Saved</h2>
+              <Link href="/streams/saved" className="flex items-center text-zinc-400 hover:text-white transition-colors">
+                <span className="text-sm">See all</span>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Link>
+            </div>
+            
+            <div style={cardsContainerStyle}>
               {[1, 2, 3].map((item, index) => {
                 // Reverse the image pattern for the saved section
                 const content = getContentType(index + 1);
