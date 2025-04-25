@@ -45,11 +45,13 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
-  const [showChatHistory, setShowChatHistory] = useState<boolean>(true);
+  const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
   const [viewerCount, setViewerCount] = useState("123.5k");
   const [chatMessages, setChatMessages] = useState<typeof CHAT_MESSAGES>(CHAT_MESSAGES.slice(0, 5));
   const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<Array<{id: string; content: string; role: "user" | "assistant"}>>([]);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -144,12 +146,66 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   }, []);
   
   // Handle sending a message
-  const sendMessage = useCallback(() => {
-    if (inputValue.trim()) {
-      setShowChatHistory(true);
-      // In a real app, this would call the API to send the message
-      // and get a response from the AI
-      setInputValue("");
+  const sendMessage = useCallback(async () => {
+    if (!inputValue.trim()) return;
+    
+    // Create user message
+    const userMessageId = Date.now().toString();
+    const userMessage = {
+      id: userMessageId,
+      content: inputValue,
+      role: "user" as const,
+    };
+    
+    // Add user message to the chat
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Show the chat history view after sending a message
+    setShowChatHistory(true);
+    
+    // Clear the input
+    setInputValue("");
+    
+    // Set loading state
+    setIsAiLoading(true);
+    
+    try {
+      // Call the API to get a response
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: userMessage.content }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+      
+      // Add AI response message
+      const aiMessage = {
+        id: Date.now().toString(),
+        content: data.text,
+        role: "assistant" as const,
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      
+      // Add error message as AI response
+      const errorMessage = {
+        id: Date.now().toString(),
+        content: "Sorry, I couldn't process your request at the moment. Please try again later.",
+        role: "assistant" as const,
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAiLoading(false);
     }
   }, [inputValue]);
 
@@ -500,60 +556,85 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                         </div>
                       ) : (
                         <div className="flex flex-col space-y-4">
-                          {/* User message */}
-                          <div className="flex flex-col items-end">
-                            <div className="max-w-[85%] rounded-xl bg-zinc-800 text-white px-4 py-2 text-xs">
-                              Who is the best CODM gamer in Nigeria as of March 2025?
+                          {messages.map((msg) => (
+                            <div key={msg.id}>
+                              {msg.role === 'user' ? (
+                                /* User message */
+                                <div className="flex flex-col items-end">
+                                  <div className="max-w-[85%] rounded-xl bg-zinc-800 text-white px-4 py-2 text-xs">
+                                    {msg.content}
+                                  </div>
+                                </div>
+                              ) : (
+                                /* AI response */
+                                <div className="flex items-start space-x-2">
+                                  <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
+                                      <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
+                                      <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
+                                      <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                    </svg>
+                                  </div>
+                                  <div className="max-w-[85%] flex flex-col">
+                                    <div className="rounded-xl bg-zinc-700 text-white px-4 py-2 text-xs">
+                                      {msg.content}
+                                    </div>
+                                    <div className="flex space-x-1 mt-1">
+                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M3 10H13C15.2091 10 17 8.20914 17 6C17 3.79086 15.2091 2 13 2H7M3 10L7 6M3 10L7 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          <path d="M21 14H11C8.79086 14 7 15.7909 7 18C7 20.2091 8.79086 22 11 22H17M21 14L17 10M21 14L17 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                      </button>
+                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M7 11L12 6L17 11M12 6V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                      </button>
+                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M7 13L12 18L17 13M12 18V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                      </button>
+                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                                          <path d="M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                          <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        </svg>
+                                      </button>
+                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M10 5C7.23858 5 5 7.23858 5 10C5 12.7614 7.23858 15 10 15H14C16.7614 15 19 12.7614 19 10C19 7.23858 16.7614 5 14 5H10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                          <path d="M10 9C9.44772 9 9 9.44772 9 10C9 10.5523 9.44772 11 10 11V9ZM14 11C14.5523 11 15 10.5523 15 10C15 9.44772 14.5523 9 14 9V11ZM10 11H14V9H10V11Z" fill="currentColor"/>
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                          
-                          {/* AI response */}
-                          <div className="flex items-start space-x-2">
-                            <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-                              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
-                                <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
-                                <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
-                                <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                              </svg>
-                            </div>
-                            <div className="max-w-[85%] flex flex-col">
-                              <div className="rounded-xl bg-zinc-700 text-white px-4 py-2 text-xs">
-                                I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.
+                          ))}
+
+                          {isAiLoading && (
+                            <div className="flex items-start space-x-2">
+                              <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
+                                  <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
+                                  <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
+                                  <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                </svg>
                               </div>
-                              <div className="flex space-x-1 mt-1">
-                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M3 10H13C15.2091 10 17 8.20914 17 6C17 3.79086 15.2091 2 13 2H7M3 10L7 6M3 10L7 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M21 14H11C8.79086 14 7 15.7909 7 18C7 20.2091 8.79086 22 11 22H17M21 14L17 10M21 14L17 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </button>
-                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M7 11L12 6L17 11M12 6V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </button>
-                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M7 13L12 18L17 13M12 18V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                </button>
-                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                                    <path d="M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                    <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                  </svg>
-                                </button>
-                                <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M10 5C7.23858 5 5 7.23858 5 10C5 12.7614 7.23858 15 10 15H14C16.7614 15 19 12.7614 19 10C19 7.23858 16.7614 5 14 5H10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M10 9C9.44772 9 9 9.44772 9 10C9 10.5523 9.44772 11 10 11V9ZM14 11C14.5523 11 15 10.5523 15 10C15 9.44772 14.5523 9 14 9V11ZM10 11H14V9H10V11Z" fill="currentColor"/>
-                                  </svg>
-                                </button>
+                              <div className="max-w-[85%] flex flex-col">
+                                <div className="rounded-xl bg-zinc-700 text-zinc-400 px-4 py-2 text-xs flex items-center space-x-2">
+                                  <span className="animate-pulse">Thinking</span>
+                                  <span className="animate-ellipsis">...</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -567,16 +648,16 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                           onChange={(e) => setInputValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                           placeholder={!showChatHistory ? "Who is the best gamer in Nigeria as of April 2025?" : "Type a new note"}
-                          className="w-full px-12 py-3 bg-zinc-900 text-white placeholder-zinc-500 text-xs rounded-xl outline-none border border-zinc-800"
+                          className="w-full px-[42px] py-[14px] bg-zinc-900/90 text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none border border-zinc-800/50"
                         />
-                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex space-x-3 text-zinc-400">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex space-x-2 text-zinc-500">
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                             </svg>
                           </button>
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                               <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                               <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -584,7 +665,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                             </svg>
                           </button>
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                               <circle cx="8.5" cy="8.5" r="1.5"></circle>
                               <polyline points="21 15 16 10 5 21"></polyline>

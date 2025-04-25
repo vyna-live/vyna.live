@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes ellipsis {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+  100% { content: ""; }
+}
+
+.animate-ellipsis::after {
+  content: "";
+  display: inline-block;
+  animation: ellipsis 1.5s infinite;
+  width: 16px;
+}
+
 :root {
   /* Perplexity dark theme */
   --background: 220 12% 10%;
