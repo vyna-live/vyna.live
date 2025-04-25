@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Video, X } from 'lucide-react';
+import { Loader2, Video, X, AlertTriangle } from 'lucide-react';
 import {
   StreamVideo,
   StreamVideoClient,
@@ -343,8 +343,18 @@ function CallContent({ callId }: { callId: string }) {
             Click "Go Live" to start streaming. You'll be prompted for camera and microphone permissions.
           </p>
           
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-100/20 border border-red-300 rounded-lg text-red-300 text-sm">
+              <AlertTriangle className="h-4 w-4 inline-block mr-2" />
+              {errorMessage}
+            </div>
+          )}
+          
           <button 
-            onClick={joinCall}
+            onClick={() => {
+              setErrorMessage(null);
+              joinCall();
+            }}
             disabled={isJoining}
             className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all disabled:opacity-50"
           >
@@ -357,6 +367,12 @@ function CallContent({ callId }: { callId: string }) {
               'Go Live'
             )}
           </button>
+          
+          {errorMessage && (
+            <p className="mt-4 text-xs text-[#CDBCAB]/70">
+              Having trouble? Make sure your camera and microphone are connected and you've granted permission to access them.
+            </p>
+          )}
         </div>
       </div>
     );
