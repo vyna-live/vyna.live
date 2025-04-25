@@ -568,46 +568,56 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                               ) : (
                                 /* AI response */
                                 <div className="flex items-start space-x-2">
-                                  <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
-                                      <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
-                                      <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
-                                      <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                  <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-zinc-300" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                      <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+                                      <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+                                      <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+                                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                      <line x1="12" y1="22.08" x2="12" y2="12"></line>
                                     </svg>
                                   </div>
                                   <div className="max-w-[85%] flex flex-col">
-                                    <div className="rounded-xl bg-zinc-700 text-white px-4 py-2 text-xs">
+                                    <div className="rounded-xl bg-[#2A2A2D] text-white px-4 py-2 text-xs">
                                       {msg.content}
                                     </div>
-                                    <div className="flex space-x-1 mt-1">
-                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                          <path d="M3 10H13C15.2091 10 17 8.20914 17 6C17 3.79086 15.2091 2 13 2H7M3 10L7 6M3 10L7 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                          <path d="M21 14H11C8.79086 14 7 15.7909 7 18C7 20.2091 8.79086 22 11 22H17M21 14L17 10M21 14L17 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <div className="flex space-x-4 mt-2">
+                                      {/* Reload button */}
+                                      <button className="flex items-center justify-center text-zinc-400 hover:text-white">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M21 12a9 9 0 01-9 9"></path>
+                                          <path d="M3 12a9 9 0 019-9"></path>
+                                          <path d="M12 21a9 9 0 01-9-9"></path>
+                                          <path d="M12 3a9 9 0 019 9"></path>
+                                          <path d="M14 15l-3-3 3-3"></path>
                                         </svg>
                                       </button>
-                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                          <path d="M7 11L12 6L17 11M12 6V18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      
+                                      {/* Like button */}
+                                      <button className="flex items-center justify-center text-zinc-400 hover:text-white">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
                                         </svg>
                                       </button>
-                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                          <path d="M7 13L12 18L17 13M12 18V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      
+                                      {/* Dislike button */}
+                                      <button className="flex items-center justify-center text-zinc-400 hover:text-white">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm10-13h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
                                         </svg>
                                       </button>
-                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                                          <path d="M12 8V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                          <path d="M8 12H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                                        </svg>
+                                      
+                                      {/* Teleprompter button */}
+                                      <button className="flex items-center justify-center text-zinc-400 hover:text-white font-medium">
+                                        <span className="text-xs">T</span>
                                       </button>
-                                      <button className="p-1 rounded text-zinc-400 hover:text-white hover:bg-zinc-800">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                          <path d="M10 5C7.23858 5 5 7.23858 5 10C5 12.7614 7.23858 15 10 15H14C16.7614 15 19 12.7614 19 10C19 7.23858 16.7614 5 14 5H10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                          <path d="M10 9C9.44772 9 9 9.44772 9 10C9 10.5523 9.44772 11 10 11V9ZM14 11C14.5523 11 15 10.5523 15 10C15 9.44772 14.5523 9 14 9V11ZM10 11H14V9H10V11Z" fill="currentColor"/>
+                                      
+                                      {/* Add note button */}
+                                      <button className="flex items-center justify-center text-zinc-400 hover:text-white">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                                         </svg>
                                       </button>
                                     </div>
@@ -619,16 +629,18 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
 
                           {isAiLoading && (
                             <div className="flex items-start space-x-2">
-                              <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="currentColor" opacity="0.3"/>
-                                  <path d="M12 6c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6zm0 2c2.2 0 4 1.8 4 4s-1.8 4-4 4-4-1.8-4-4 1.8-4 4-4z" fill="currentColor"/>
-                                  <path d="M12 8c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z" fill="currentColor"/>
-                                  <path d="M18.6 18.6c-1.8 1.8-4.2 2.8-6.6 2.8-2.4 0-4.8-1-6.6-2.8-1.8-1.8-2.8-4.2-2.8-6.6 0-2.4 1-4.8 2.8-6.6 1.8-1.8 4.2-2.8 6.6-2.8 2.4 0 4.8 1 6.6 2.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                              <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-zinc-300" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                  <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+                                  <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+                                  <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+                                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
                                 </svg>
                               </div>
                               <div className="max-w-[85%] flex flex-col">
-                                <div className="rounded-xl bg-zinc-700 text-zinc-400 px-4 py-2 text-xs flex items-center space-x-2">
+                                <div className="rounded-xl bg-[#2A2A2D] text-zinc-400 px-4 py-2 text-xs flex items-center space-x-2">
                                   <span className="animate-pulse">Thinking</span>
                                   <span className="animate-ellipsis">...</span>
                                 </div>
@@ -642,13 +654,13 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                     {/* Chat input */}
                     <div className="px-2 py-3">
                       <div className="relative">
-                        <input 
-                          type="text" 
+                        <textarea 
                           value={inputValue}
                           onChange={(e) => setInputValue(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                          placeholder={!showChatHistory ? "Who is the best gamer in Nigeria as of April 2025?" : "Type a new note"}
-                          className="w-full pl-10 pr-10 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none"
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                          placeholder="Type a new note"
+                          className="w-full pl-10 pr-10 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none resize-none min-h-[40px] max-h-[120px] overflow-auto"
+                          rows={1}
                         />
                         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex space-x-2 text-zinc-500">
                           <button className="w-5 h-5 flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity">
