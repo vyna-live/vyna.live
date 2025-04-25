@@ -297,7 +297,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       
       {/* Main Content Area */}
       <div className="h-full pt-12">
-        <div className="flex h-full gap-3">
+        <div className="flex h-full gap-3 rounded-[14px] overflow-hidden">
           {/* Main livestream view */}
           <div 
             className={`h-full ${drawerVisible ? 'w-[69%]' : 'w-full'} transition-all duration-300 ease-in-out bg-black relative rounded-lg`}
