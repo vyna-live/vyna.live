@@ -881,57 +881,78 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                 )}
                 
                 {showNewNote && (
-                  /* New note view - second mockup */
+                  /* New note view with back arrow and paragraphs */
                   <div className="flex flex-col h-full">
-                    <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col h-full">
+                    {/* Header with back arrow */}
+                    <div className="flex items-center p-2 border-b border-zinc-800">
+                      <button 
+                        onClick={() => {
+                          // Save the note when going back if there are any lines
+                          if (noteLines.length > 0) {
+                            handleSaveNote();
+                          } else {
+                            setShowNewNote(false);
+                          }
+                        }}
+                        className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 mr-2"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <span className="text-white text-sm font-medium">New Note</span>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col h-full">
                       <div className="flex-1">
-                        {/* Title block */}
-                        <div className="text-center mb-6">
-                          <div className="text-white text-xl font-medium mb-2">Research Notes</div>
-                          <div className="text-zinc-400 text-sm max-w-xs mx-auto">
-                            Save important information for your stream
+                        {/* Saved note lines */}
+                        {noteLines.length > 0 && (
+                          <div className="mb-4 mt-2">
+                            <div className="text-zinc-200 text-[10px] whitespace-pre-line">
+                              {noteLines.map((line, index) => (
+                                <p key={index} className="mb-2">{line}</p>
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                         
-                        {/* Live preview of note */}
-                        {noteInput.trim() !== "" && (
-                          <div className="mb-4">
-                            <div className="text-white text-xs font-medium mb-1">Preview:</div>
-                            <div className="bg-zinc-800/50 rounded-[14px] p-3 text-zinc-200 text-xs whitespace-pre-line overflow-hidden">
-                              {noteInput}
+                        {/* Placeholder text when no lines have been added */}
+                        {noteLines.length === 0 && (
+                          <div className="text-center my-6">
+                            <div className="text-white text-sm font-medium mb-2">Research Notes</div>
+                            <div className="text-zinc-400 text-xs max-w-xs mx-auto">
+                              Type and press Enter to add paragraphs to your note
                             </div>
                           </div>
                         )}
                       </div>
                       
                       {/* Note input */}
-                      <div className="mt-4">
+                      <div className="mt-2">
                         <div className="relative">
                           <textarea 
                             value={noteInput}
                             onChange={(e) => setNoteInput(e.target.value)}
-                            placeholder="Type a new note"
-                            className="w-full px-3 py-3 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[11px] rounded-[14px] outline-none resize-none min-h-[80px] max-h-[150px] overflow-auto"
-                            rows={3}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddNoteLine();
+                              }
+                            }}
+                            placeholder="Type and press Enter to add a paragraph"
+                            className="w-full px-3 py-2 bg-[#2A2A2D] text-white placeholder-zinc-500 text-[10px] rounded-[14px] outline-none resize-none min-h-[40px] max-h-[80px] overflow-auto"
+                            rows={2}
                           />
                         </div>
-                        <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center justify-between mt-2">
                           <div className="flex space-x-3 text-zinc-400">
                             <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
                               </svg>
                             </button>
                             <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                <line x1="12" y1="19" x2="12" y2="23"></line>
-                                <line x1="8" y1="23" x2="16" y2="23"></line>
-                              </svg>
-                            </button>
-                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                 <polyline points="21 15 16 10 5 21"></polyline>
@@ -939,10 +960,14 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                             </button>
                           </div>
                           <button 
-                            onClick={handleCreateNote}
-                            className="flex items-center justify-center bg-white text-black px-3 py-1.5 rounded-full text-xs font-medium hover:bg-gray-200 transition-colors"
+                            onClick={handleAddNoteLine}
+                            className="flex items-center justify-center text-zinc-200 hover:text-white px-3 py-1.5 rounded-full text-xs font-medium hover:bg-zinc-800/50 transition-colors"
                           >
-                            <span className="mr-1">+</span> Add note
+                            Add
+                            <svg className="ml-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="12" y1="5" x2="12" y2="19"></line>
+                              <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
                           </button>
                         </div>
                       </div>
@@ -968,7 +993,8 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                       <span className="text-white text-sm font-medium truncate flex-1 max-w-[70%]">{currentNote.title}</span>
                       <button className="ml-auto text-zinc-400 hover:text-white">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M12 20H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M16.5 3.5C16.8978 3.10217 17.4374 2.87868 18 2.87868C18.5626 2.87868 19.1022 3.10217 19.5 3.5C19.8978 3.89783 20.1213 4.43739 20.1213 5C20.1213 5.56261 19.8978 6.10217 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                     </div>
