@@ -9,7 +9,8 @@ import {
   SpeakerLayout,
   CallingState,
   useStreamVideoClient,
-  useCall
+  useCall,
+  useCallStateHooks
 } from '@stream-io/video-react-sdk';
 
 // Import styling
@@ -224,12 +225,26 @@ function CallContent({ callId }: { callId: string }) {
   const [isJoining, setIsJoining] = useState(false);
   const call = useCall();
   
+  // Initialize empty states to prevent destructuring errors
+  const [cameraReady, setCameraReady] = useState(false);
+  const [micReady, setMicReady] = useState(false);
+  
   const joinCall = async () => {
     if (!call) return;
     
     try {
       setIsJoining(true);
       console.log('Joining call:', callId);
+      
+      // Enable camera and microphone permissions first
+      try {
+        await call.camera.enable();
+        await call.microphone.enable();
+      } catch (deviceErr) {
+        console.warn('Could not enable camera/microphone:', deviceErr);
+        // Continue anyway - the user can enable devices later
+      }
+      
       await call.join();
       setHasJoined(true);
     } catch (err) {
