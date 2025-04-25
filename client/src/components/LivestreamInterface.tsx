@@ -85,7 +85,12 @@ const CHAT_MESSAGES = [
   { userId: "user8", name: "Lebron James", message: "That was sick!", color: "bg-pink-500" },
 ];
 
-export default function LivestreamInterface({ initialText = "" }: LivestreamInterfaceProps) {
+export default function LivestreamInterface({ 
+  initialText = "", 
+  streamId, 
+  isJoiningMode = false, 
+  streamLink = null 
+}: LivestreamInterfaceProps) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
@@ -114,14 +119,14 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   
   // Additional GetStream state specific to this component
   const [isStreamActive, setIsStreamActive] = useState<boolean>(true); // Set to true for demo
-  const [callId] = useState<string>(`livestream-${Date.now()}`);
+  const [callId] = useState<string>(streamId || `livestream-${Date.now()}`);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Set to true to show loading state
   const [error, setError] = useState<string | null>(null);
   const [streamApiKey, setStreamApiKey] = useState<string>("");
   const [streamToken, setStreamToken] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [userName, setUserName] = useState<string>("Divine Samuel");
-  const [streamTitle, setStreamTitle] = useState<string>("Jaja Games");
+  const [streamTitle, setStreamTitle] = useState<string>(streamLink ? `Stream: ${streamLink}` : "Jaja Games");
 
   // Get credentials that may not be in context
   useEffect(() => {
@@ -506,12 +511,21 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                       />
                     </div>
                   ) : (
-                    /* In a real implementation, this would be the StreamVideoComponent */
-                    <img 
-                      src={arenaImage} 
-                      alt="Stream content" 
-                      className="w-full h-full object-cover"
-                    />
+                    streamApiKey && streamToken && userId ? (
+                      <StreamVideoComponent 
+                        apiKey={streamApiKey}
+                        token={streamToken}
+                        userId={userId}
+                        callId={callId}
+                        userName={userName}
+                      />
+                    ) : (
+                      <img 
+                        src={arenaImage} 
+                        alt="Stream content" 
+                        className="w-full h-full object-cover"
+                      />
+                    )
                   )}
                 </div>
               )}
