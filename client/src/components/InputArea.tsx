@@ -13,13 +13,9 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<{id: number, name: string}[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessage(e.target.value);
-  };
 
   const handleSubmit = () => {
     if (message.trim() && !isLoading) {
@@ -35,8 +31,8 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
       setMessage("");
       setUploadedFiles([]);
       
-      if (inputRef.current) {
-        inputRef.current.focus();
+      if (textareaRef.current) {
+        textareaRef.current.focus();
       }
     }
   };
@@ -122,8 +118,8 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
         }
         
         // Focus the input so the user can edit the prompt before sending
-        if (inputRef.current) {
-          inputRef.current.focus();
+        if (textareaRef.current) {
+          textareaRef.current.focus();
         }
       }
     } catch (error) {
@@ -189,29 +185,33 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
         onChange={handleImageChange}
       />
       
-      <div className="relative border border-[hsl(var(--ai-border))] rounded-xl bg-[hsl(var(--ai-card))] overflow-hidden">
-        <div className="flex items-center">
-          <div className="flex-grow flex items-center">
-            <div className="px-3 text-[hsl(var(--ai-text-secondary))]">
+      <div className="relative border border-zinc-800 rounded-[14px] bg-[#2A2A2D] overflow-hidden">
+        <div className="flex items-start">
+          <div className="flex-grow flex items-start pt-3">
+            <div className="px-3 text-zinc-500">
               <SearchIcon className="h-5 w-5" />
             </div>
-            <input
-              ref={inputRef}
-              type="text"
+            <textarea
+              ref={textareaRef}
               value={message}
-              onChange={handleInputChange}
+              onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full py-3 px-1 bg-transparent border-none outline-none text-[hsl(var(--ai-text-primary))]" 
-              placeholder="Ask about your stream or research..."
+              className="w-full py-2 px-1 bg-transparent border-none outline-none text-white resize-none min-h-[48px] max-h-[120px]" 
+              placeholder=""
+              rows={1}
+              style={{
+                overflow: 'auto',
+                height: 'auto'
+              }}
             />
           </div>
           
-          <div className="flex items-center pr-3">
+          <div className="flex items-center pr-3 mt-3">
             <div className="flex space-x-1 mr-2">
               <button 
                 onClick={openDocumentUpload}
                 disabled={uploadingFiles || isLoading}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[#EFE9E1] transition-all disabled:opacity-50 hover:shadow-md"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white transition-colors"
                 title="Upload document"
               >
                 <FileText className="h-5 w-5" />
@@ -220,7 +220,7 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
               <button 
                 onClick={openImageUpload}
                 disabled={uploadingFiles || isLoading}
-                className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#A67D44] to-[#899481] text-[#EFE9E1] transition-all disabled:opacity-50 hover:shadow-md"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white transition-colors"
                 title="Upload image"
               >
                 <ImageIcon className="h-5 w-5" />
@@ -229,7 +229,7 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
             
             <button
               onClick={handleSubmit}
-              className="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-[#899481] to-[#5D1C34] rounded-lg text-[#EFE9E1] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md transition-all"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               disabled={!message.trim() || isLoading || uploadingFiles}
             >
               {isLoading || uploadingFiles ? (
@@ -243,13 +243,13 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
         
         {/* Uploaded files display */}
         {uploadedFiles.length > 0 && (
-          <div className="px-4 py-2 border-t border-[hsl(var(--ai-border))] bg-[hsl(var(--ai-background))]">
-            <div className="text-xs text-[hsl(var(--ai-text-secondary))] mb-1">Attached files:</div>
+          <div className="px-4 py-2 border-t border-zinc-800 bg-zinc-900">
+            <div className="text-xs text-zinc-400 mb-1">Attached files:</div>
             <div className="flex flex-wrap gap-2">
               {uploadedFiles.map(file => (
-                <div key={file.id} className="flex items-center space-x-1 px-2 py-1 bg-[hsl(var(--ai-card-glass))] rounded text-xs">
-                  <FileText className="h-3 w-3 text-[hsl(var(--ai-teal))]" />
-                  <span className="max-w-[150px] truncate">{file.name}</span>
+                <div key={file.id} className="flex items-center space-x-1 px-2 py-1 bg-zinc-800 rounded text-xs">
+                  <FileText className="h-3 w-3 text-zinc-300" />
+                  <span className="max-w-[150px] truncate text-white">{file.name}</span>
                 </div>
               ))}
             </div>
@@ -264,9 +264,8 @@ export default function InputArea({ onSubmit, isLoading, sessionId }: InputAreaP
         </div>
       )}
       
-      <div className="mt-2 text-xs text-center text-[hsl(var(--ai-text-secondary))]">
-        <span className="mr-1">Research</span>
-        <span className="px-1.5 py-0.5 rounded border border-[hsl(var(--ai-border))] bg-[hsl(var(--ai-card))]">Tab</span>
+      <div className="mt-2 text-xs text-center text-zinc-500">
+        <span className="mr-1">Press Enter to send</span>
       </div>
     </div>
   );

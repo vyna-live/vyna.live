@@ -70,14 +70,14 @@ export default function ChatInterface({
                     U
                   </div>
                   <div className="ml-4 flex-1">
-                    <div className="whitespace-pre-wrap leading-relaxed">
+                    <div className="whitespace-pre-wrap leading-relaxed bg-gray-100 dark:bg-zinc-800 p-3 rounded-[14px]">
                       {message.content}
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="px-4 py-6 bg-[hsl(var(--ai-card))]/30 border-t border-b border-[hsl(var(--ai-border))]">
+              <div className="px-4 py-6 bg-[#2A2A2D] border-t border-b border-zinc-800 rounded-[14px]">
                 <div className="max-w-3xl mx-auto">
                   <div className="flex items-start">
                     <div className="w-8 h-8 flex-shrink-0">
@@ -136,13 +136,42 @@ export default function ChatInterface({
                         </div>
                       )}
                       
-                      <div className="mt-4 flex justify-end">
+                      <div className="mt-4 flex items-center justify-end space-x-3">
                         <button
-                          className="flex items-center space-x-1.5 text-sm text-[hsl(var(--ai-accent))] hover:text-[hsl(var(--ai-accent))/80] transition-colors"
+                          className="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 4v16h16V4H4zm2 14V6h12v12H6z" fill="currentColor"/>
+                            <path d="M8 8h8v8H8V8z" fill="currentColor"/>
+                          </svg>
+                        </button>
+                        <button
+                          className="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 14l6-6l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <button
+                          className="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 10l6 6l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <button
+                          className="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-white transition-colors"
                           onClick={() => onTeleprompterClick(message.content)}
                         >
-                          <MonitorSmartphone className="h-4 w-4" />
-                          <span>Use as Teleprompter</span>
+                          <span className="font-bold">T</span>
+                        </button>
+                        <button
+                          className="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-white transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
                         </button>
                       </div>
                     </div>
@@ -154,7 +183,7 @@ export default function ChatInterface({
         ))}
 
         {isLoading && (
-          <div className="animate-fade-in px-4 py-6 bg-[hsl(var(--ai-card))]/30 border-t border-b border-[hsl(var(--ai-border))]">
+          <div className="animate-fade-in px-4 py-6 bg-[#2A2A2D] border-t border-b border-zinc-800 rounded-[14px]">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-start">
                 <div className="w-8 h-8 flex-shrink-0">
@@ -177,7 +206,7 @@ export default function ChatInterface({
                 <div className="ml-4 flex-1">
                   <div className="flex items-center space-x-3">
                     <Loader2 className="h-5 w-5 animate-spin text-[hsl(var(--ai-accent))]" />
-                    <span className="text-[hsl(var(--ai-text-secondary))]">Thinking...</span>
+                    <span className="text-white">Thinking...</span>
                   </div>
                 </div>
               </div>
