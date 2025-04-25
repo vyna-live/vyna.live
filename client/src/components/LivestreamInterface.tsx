@@ -13,6 +13,9 @@ const arenaImage = "/assets/arena.png";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
+  streamId?: string;
+  isJoiningMode?: boolean;
+  streamLink?: string | null;
 }
 
 // Mock chat messages for the right sidebar
