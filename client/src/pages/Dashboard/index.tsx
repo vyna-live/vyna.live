@@ -8,7 +8,7 @@ import streamCardImage from '@/assets/stream-card.jpg';
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="min-h-screen bg-[#070709] flex flex-col">
       {/* Header */}
       <header className="px-6 py-4 flex items-center justify-between">
         <Link href="/" className="transition-opacity hover:opacity-80">
@@ -45,7 +45,7 @@ export default function Dashboard() {
       <main className="flex-1 max-w-7xl mx-auto w-full">
         {/* Hero section */}
         <section className="mb-16 text-center mt-12">
-          <h1 className="text-[56px] font-bold text-white mb-4 tracking-tight">Go Live or Join a stream</h1>
+          <h1 className="text-[56px] font-bold text-white mb-4 tracking-tight">Research first, go live next!</h1>
           <p className="text-zinc-400 text-lg max-w-2xl mx-auto mb-10">
             Start your own live stream with AI-powered research tools or join 
             other creators' streams to learn and engage.
@@ -53,20 +53,25 @@ export default function Dashboard() {
           
           <div className="flex items-center justify-center space-x-4">
             <Link href="/livestream">
-              <button className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium rounded-lg hover:opacity-90 transition-opacity">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="2" y="6" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-                  <rect x="8" y="10" width="8" height="4" rx="1" stroke="currentColor" strokeWidth="2" />
+              <button className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 7l-7 5 7 5V7z" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" />
                 </svg>
                 <span>Start streaming</span>
               </button>
             </Link>
             
-            <button className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium rounded-lg hover:opacity-90 transition-opacity">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="4" width="20" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-                <path d="M12 16V20" stroke="currentColor" strokeWidth="2" />
-                <path d="M8 20H16" stroke="currentColor" strokeWidth="2" />
+            <button className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="6" width="20" height="12" rx="2" />
+                <line x1="6" y1="10" x2="6" y2="10" />
+                <line x1="10" y1="10" x2="10" y2="10" />
+                <line x1="14" y1="10" x2="14" y2="10" />
+                <line x1="18" y1="10" x2="18" y2="10" />
+                <line x1="6" y1="14" x2="6" y2="14" />
+                <line x1="10" y1="14" x2="14" y2="14" strokeWidth="4" />
+                <line x1="18" y1="14" x2="18" y2="14" />
               </svg>
               <span>Join stream</span>
             </button>
