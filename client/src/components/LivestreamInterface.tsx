@@ -98,6 +98,8 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const [showNoteView, setShowNoteView] = useState<boolean>(false);
   const [currentNote, setCurrentNote] = useState<typeof MOCK_NOTES[0] | null>(null);
   const [noteInput, setNoteInput] = useState("");
+  const [savedNotes, setSavedNotes] = useState<typeof MOCK_NOTES>(MOCK_NOTES);
+  const [noteLines, setNoteLines] = useState<string[]>([]);
   
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -201,9 +203,22 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
     setShowNewNote(false);
   }, []);
   
-  // Handle creating a new note
-  const handleCreateNote = useCallback(() => {
+  // Handle adding a line to the current note
+  const handleAddNoteLine = useCallback(() => {
     if (!noteInput.trim()) {
+      return;
+    }
+    
+    // Add the line to the note lines
+    setNoteLines(prev => [...prev, noteInput.trim()]);
+    
+    // Reset input
+    setNoteInput("");
+  }, [noteInput]);
+  
+  // Handle saving the note and going back to notes list
+  const handleSaveNote = useCallback(() => {
+    if (noteLines.length === 0) {
       toast({
         title: "Error",
         description: "Note content cannot be empty",
@@ -212,17 +227,27 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
       return;
     }
     
-    // In a real app, you would save this to your database
-    // and get back the created note with an ID
-    toast({
-      title: "Note created",
-      description: "Your note has been saved",
-    });
+    // Create a new note object
+    const newNote = {
+      id: `note-${Date.now()}`,
+      title: noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? '...' : ''),
+      content: noteLines.join('\n'),
+      date: new Date()
+    };
+    
+    // Add the new note to the beginning of saved notes
+    setSavedNotes(prev => [newNote, ...prev]);
     
     // Reset state
+    setNoteLines([]);
     setNoteInput("");
     setShowNewNote(false);
-  }, [noteInput, toast]);
+    
+    toast({
+      title: "Note saved",
+      description: "Your note has been saved",
+    });
+  }, [noteLines, toast]);
 
   // Toggle the side drawer
   const toggleDrawer = useCallback(() => {
@@ -404,10 +429,10 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
               
               <div className="flex items-center">
                 <div className="flex items-center bg-black/50 backdrop-blur-sm rounded-full px-3 py-1 mr-2">
-                  <div className="w-5 h-5 rounded-full bg-gray-100 mr-1.5 flex items-center justify-center overflow-hidden">
+                  <div className="w-5 h-5 rounded-full mr-1.5 flex items-center justify-center">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
                   <span className="text-white text-sm">{viewerCount}</span>
