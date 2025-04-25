@@ -3,17 +3,19 @@ import { Link, useLocation } from 'wouter';
 import Logo from '@/components/Logo';
 import { ChevronRight } from 'lucide-react';
 import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
+import JoinStreamDialog from '@/components/JoinStreamDialog';
 
 export default function Dashboard() {
   const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
+  const [isJoinStreamDialogOpen, setIsJoinStreamDialogOpen] = useState(false);
   const [, navigate] = useLocation();
   
   // Alternating between the two image types
   const getImageForIndex = (index: number) => {
     if (index % 2 === 0) {
-      return "/images/re.jpg";
+      return "/attached_assets/re.jpg";
     } else {
-      return "/images/view.jpg";
+      return "/attached_assets/view.jpg";
     }
   };
 
@@ -61,14 +63,30 @@ export default function Dashboard() {
     // Navigate to the livestream page after submitting
     navigate('/livestream');
   };
+  
+  // Define a function to handle join stream submit
+  const handleJoinStreamSubmit = (streamLink: string) => {
+    console.log('Joining stream:', streamLink);
+    // Close the dialog
+    setIsJoinStreamDialogOpen(false);
+    
+    // Navigate to the livestream page with the stream link
+    navigate(`/livestream?stream=${encodeURIComponent(streamLink)}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col">
-      {/* Stream Dialog */}
+      {/* Stream Dialogs */}
       <CreateStreamDialog 
         isOpen={isStreamDialogOpen} 
         onClose={() => setIsStreamDialogOpen(false)}
         onSubmit={handleStreamFormSubmit}
+      />
+      
+      <JoinStreamDialog
+        isOpen={isJoinStreamDialogOpen}
+        onClose={() => setIsJoinStreamDialogOpen(false)}
+        onSubmit={handleJoinStreamSubmit}
       />
       
       {/* Header */}
@@ -125,7 +143,10 @@ export default function Dashboard() {
               <span>Start streaming</span>
             </button>
             
-            <button className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm">
+            <button 
+              onClick={() => setIsJoinStreamDialogOpen(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm"
+            >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="2" y="6" width="20" height="12" />
                 <line x1="6" y1="10" x2="6" y2="10" />
