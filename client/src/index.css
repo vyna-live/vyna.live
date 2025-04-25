@@ -244,7 +244,8 @@
 
 /* Custom scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -252,10 +253,31 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2A2A2D;
-  border-radius: 6px;
+  background: #3A3A3D;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: #4A4A4D;
+}
+
+/* Custom scrollbar for textarea */
+textarea {
+  scrollbar-width: thin;
+  scrollbar-color: #3A3A3D transparent;
+}
+
+/* Tailwind scrollbar utilities */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-zinc-700 {
+    scrollbar-color: #3A3A3D transparent;
+  }
+  
+  .scrollbar-track-transparent {
+    scrollbar-track-color: transparent;
+  }
 }

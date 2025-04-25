@@ -491,13 +491,13 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
               {activeTab === 'vynaai' ? (
                 <>
                 {!showNewChat ? (
-                  <div className="p-2">
+                  <div className="p-3">
                     <div className="text-white text-xs font-medium mb-2 uppercase">RECENTS</div>
-                    <div>
+                    <div className="space-y-1">
                       {MOCK_RECENTS.map((question, index) => (
                         <div key={index}>
                           <div 
-                            className="flex justify-between items-center p-2 rounded hover:bg-zinc-800/50 group transition-colors"
+                            className="flex justify-between items-center p-2 rounded-[8px] hover:bg-zinc-800/50 group transition-colors"
                           >
                             <div className="text-zinc-200 text-xs hover:text-white transition-colors truncate pr-2">
                               {question}
@@ -511,7 +511,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                             </button>
                           </div>
                           {index < MOCK_RECENTS.length - 1 && (
-                            <div className="border-t border-zinc-800/40 mx-2"></div>
+                            <div className="border-t border-zinc-800/40 mx-2 mt-1"></div>
                           )}
                         </div>
                       ))}
