@@ -5,12 +5,10 @@ import {
   StreamVideoClient,
   Call, 
   CallControls,
-  DeviceSettings,
   SpeakerLayout,
   CallingState,
   useStreamVideoClient,
-  useCall,
-  useCallStateHooks
+  useCall
 } from '@stream-io/video-react-sdk';
 
 // Import styling
@@ -271,14 +269,9 @@ function CallContent({ callId }: { callId: string }) {
             <Video className="w-10 h-10 text-[#EFE9E1]" />
           </div>
           <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Ready to Stream</h3>
-          <p className="text-[#CDBCAB] mb-4">
-            Configure your camera and microphone below, then click "Go Live" to start streaming.
+          <p className="text-[#CDBCAB] mb-6">
+            Click "Go Live" to start streaming. You'll be prompted for camera and microphone permissions.
           </p>
-          
-          {/* Device settings */}
-          <div className="mb-6">
-            <DeviceSettings />
-          </div>
           
           <button 
             onClick={joinCall}
