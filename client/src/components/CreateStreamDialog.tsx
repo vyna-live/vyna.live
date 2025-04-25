@@ -291,7 +291,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
                   >
                     <Calendar size={18} className="mr-2" />
                     {formData.scheduledDate 
-                      ? format(formData.scheduledDate, 'PPP')
+                      ? format(new Date(formData.scheduledDate), 'PPP')
                       : 'Pick a date'
                     }
                   </button>
@@ -304,6 +304,17 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
                         onSelect={handleDateChange}
                         className="bg-[#1C1C1C] border-zinc-700 rounded-md text-white"
                         disabled={(date) => date < new Date()}
+                        classNames={{
+                          day_selected: "bg-[#D8C6AF] text-black",
+                          day_today: "bg-zinc-800 text-white",
+                          button: "hover:bg-zinc-700",
+                          nav_button: "hover:bg-zinc-700",
+                          nav_button_previous: "absolute left-1",
+                          nav_button_next: "absolute right-1",
+                          caption: "flex justify-center py-2 relative items-center",
+                          caption_label: "text-sm font-medium",
+                          cell: "text-center p-0 relative [&:has([aria-selected])]:bg-zinc-800 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md",
+                        }}
                       />
                     </div>
                   )}
