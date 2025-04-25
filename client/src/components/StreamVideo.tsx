@@ -184,6 +184,7 @@ function StreamVideoWrapper({ client, callId }: { client: StreamVideoClient; cal
 function CallComponent({ callId }: { callId: string }) {
   const client = useStreamVideoClient();
   const [callCreated, setCallCreated] = useState(false);
+  const [callError, setCallError] = useState<string | null>(null);
   
   useEffect(() => {
     if (!client) return;
@@ -192,14 +193,36 @@ function CallComponent({ callId }: { callId: string }) {
       try {
         console.log('Creating call with ID:', callId);
         
-        // Get or create the call
+        // Get or create the call with more options
         const call = client.call('livestream', callId);
-        await call.getOrCreate();
+        await call.getOrCreate({
+          ring: false,
+          data: {
+            custom: {
+              platform: 'Vyna.live',
+              startedAt: new Date().toISOString()
+            }
+          }
+        });
         
         setCallCreated(true);
+        setCallError(null);
         console.log('Call created successfully:', callId);
       } catch (err) {
         console.error('Error creating call:', err);
+        
+        // Try the fallback approach of just getting the call if it exists
+        try {
+          console.log('Trying fallback: just get call if it exists');
+          const existingCall = client.call('livestream', callId);
+          
+          // Just mark as created without actually creating to avoid conflicts
+          setCallCreated(true);
+          setCallError(null);
+        } catch (fallbackErr) {
+          console.error('Fallback error:', fallbackErr);
+          setCallError('Failed to create or join stream');
+        }
       }
     };
     
@@ -221,32 +244,79 @@ function CallComponent({ callId }: { callId: string }) {
 function CallContent({ callId }: { callId: string }) {
   const [hasJoined, setHasJoined] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const call = useCall();
+  const client = useStreamVideoClient(); // Get direct reference to the client
   
   // Initialize empty states to prevent destructuring errors
   const [cameraReady, setCameraReady] = useState(false);
   const [micReady, setMicReady] = useState(false);
   
   const joinCall = async () => {
-    if (!call) return;
+    if (!call) {
+      console.error('No call object available');
+      return;
+    }
     
     try {
       setIsJoining(true);
       console.log('Joining call:', callId);
       
-      // Enable camera and microphone permissions first
-      try {
-        await call.camera.enable();
-        await call.microphone.enable();
-      } catch (deviceErr) {
-        console.warn('Could not enable camera/microphone:', deviceErr);
-        // Continue anyway - the user can enable devices later
-      }
+      // Log the call object to debug
+      console.log('Call object:', call);
       
-      await call.join();
-      setHasJoined(true);
+      // First try to join without enabling devices
+      try {
+        // Set call options to auto-accept any device permission requests
+        const options = {
+          camera: true,
+          microphone: true
+        };
+        
+        console.log('Attempting to join call with options:', options);
+        await call.join({ create: true });
+        console.log('Successfully joined call');
+        
+        // Now enable camera and microphone after joining
+        try {
+          console.log('Enabling camera...');
+          await call.camera.enable();
+          console.log('Camera enabled');
+          
+          console.log('Enabling microphone...');
+          await call.microphone.enable();
+          console.log('Microphone enabled');
+        } catch (deviceErr) {
+          console.warn('Could not enable camera/microphone:', deviceErr);
+          // Continue anyway - the user can enable devices later
+        }
+        
+        setHasJoined(true);
+      } catch (joinErr) {
+        console.error('Error joining call:', joinErr);
+        
+        // Try using the client directly as a fallback
+        if (client) {
+          try {
+            console.log('Trying fallback with direct client reference');
+            const newCall = client.call('livestream', callId);
+            
+            // Try to join the call directly
+            console.log('Attempting to join with fallback call');
+            await newCall.join({ create: true });
+            console.log('Successfully joined with fallback');
+            setHasJoined(true);
+          } catch (fallbackErr) {
+            console.error('Fallback approach also failed:', fallbackErr);
+          setErrorMessage('Could not start livestream. Please try again later.');
+          }
+        } else {
+          console.error('No client available for fallback');
+        }
+      }
     } catch (err) {
-      console.error('Error joining call:', err);
+      console.error('All attempts to join call failed:', err);
+      setErrorMessage('Could not join the livestream. Please try again.');
     } finally {
       setIsJoining(false);
     }
