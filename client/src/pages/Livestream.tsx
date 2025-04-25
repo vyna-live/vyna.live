@@ -4,6 +4,7 @@ import LivestreamInterface from "@/components/LivestreamInterface";
 import { MessageType } from "./Home";
 import { StreamVideoProvider } from "@/providers/StreamVideoProvider";
 import { useToast } from "@/hooks/use-toast";
+import { StreamFormData } from "@/components/CreateStreamDialog";
 
 export default function Livestream() {
   const [location, setLocation] = useLocation();
@@ -11,9 +12,10 @@ export default function Livestream() {
   const [streamLink, setStreamLink] = useState<string | null>(null);
   const [isJoiningStream, setIsJoiningStream] = useState<boolean>(false);
   const [streamId, setStreamId] = useState<string | null>(null);
+  const [egressSettings, setEgressSettings] = useState<StreamFormData['egressSettings']>();
   const { toast } = useToast();
   
-  // Get teleprompter text and stream link from query params if available
+  // Get teleprompter text, stream link, and egress settings from query params if available
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     
@@ -21,6 +23,22 @@ export default function Livestream() {
     const text = params.get("text");
     if (text) {
       setTeleprompterText(decodeURIComponent(text));
+    }
+    
+    // Check for egress settings
+    const egress = params.get("egress");
+    if (egress) {
+      try {
+        const egressConfig = JSON.parse(decodeURIComponent(egress));
+        setEgressSettings(egressConfig);
+      } catch (error) {
+        console.error("Error parsing egress settings:", error);
+        toast({
+          title: "Warning",
+          description: "Could not parse egress settings. Multiplatform streaming will be disabled.",
+          variant: "destructive",
+        });
+      }
     }
     
     // Check for stream link
@@ -73,6 +91,7 @@ export default function Livestream() {
         streamId={streamId}
         isJoiningMode={isJoiningStream}
         streamLink={streamLink}
+        egressSettings={egressSettings}
       />
     </StreamVideoProvider>
   );
