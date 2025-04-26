@@ -269,8 +269,14 @@ export default function LivestreamInterface({
             
             // Create the call with egress settings if provided
             if (!isJoiningMode && egressSettings) {
-              console.log('Creating new call with egress settings');
-              await createCallWithEgress(randomId, callId);
+              console.log('Creating new call with egress settings', egressSettings);
+              try {
+                const result = await createCallWithEgress(randomId, callId);
+                console.log('Call created successfully:', result);
+              } catch (error) {
+                console.error('Error creating call:', error);
+                showErrorToast('Failed to set up streaming with multiplatform configuration');
+              }
             }
           } else {
             showErrorToast("Failed to get stream token");
