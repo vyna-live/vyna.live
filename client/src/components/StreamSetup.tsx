@@ -84,6 +84,8 @@ export default function StreamSetup({ onComplete, onCancel }: StreamSetupProps) 
   // Handle form submission
   const onSubmit = (data: StreamSetupFormValues) => {
     try {
+      console.log('Form submitted with data:', data);
+      
       // Only include enabled platforms when multiplatform is enabled
       let processedData = { ...data };
       if (!data.multiplatform) {
@@ -92,6 +94,14 @@ export default function StreamSetup({ onComplete, onCancel }: StreamSetupProps) 
         processedData.platforms = data.platforms?.filter(p => p.enabled) || [];
       }
       
+      // Show success toast
+      toast({
+        title: 'Starting stream',
+        description: 'Preparing your livestream...',
+        variant: 'default',
+      });
+      
+      // Pass the processed data to the parent component
       onComplete(processedData);
     } catch (error) {
       console.error('Error processing form data:', error);
@@ -383,7 +393,17 @@ export default function StreamSetup({ onComplete, onCancel }: StreamSetupProps) 
                     >
                       Cancel
                     </Button>
-                    <Button type="submit">Go Live</Button>
+                    <Button 
+                      type="submit"
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 flex items-center gap-2"
+                      disabled={form.formState.isSubmitting}
+                    >
+                      {form.formState.isSubmitting ? (
+                        <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : null}
+                      Go Live
+                    </Button>
                   </div>
                 </form>
               </Form>

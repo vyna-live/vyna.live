@@ -153,9 +153,30 @@ export function useAgora(config: AgoraConfig = {}) {
           });
         }
         
-        // Create local tracks
-        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        const videoTrack = await AgoraRTC.createCameraVideoTrack();
+        // Create local tracks with explicit configurations
+        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+          encoderConfig: {
+            sampleRate: 48000,
+            stereo: true,
+            bitrate: 128 // Higher quality audio
+          }
+        });
+        
+        // Explicitly enable the audio track
+        audioTrack.setEnabled(true);
+        
+        const videoTrack = await AgoraRTC.createCameraVideoTrack({
+          encoderConfig: {
+            width: 1280,
+            height: 720,
+            frameRate: 30,
+            bitrateMin: 600,
+            bitrateMax: 1500
+          }
+        });
+        
+        // Explicitly enable the video track
+        videoTrack.setEnabled(true);
         
         // Update state with initial tracks
         setState(prev => ({
@@ -163,7 +184,9 @@ export function useAgora(config: AgoraConfig = {}) {
           localAudioTrack: audioTrack,
           localVideoTrack: videoTrack,
           isLoading: false,
-          isConnected: false
+          isConnected: false,
+          isAudioEnabled: true,
+          isVideoEnabled: true
         }));
         
         initializedRef.current = true;
@@ -261,8 +284,17 @@ export function useAgora(config: AgoraConfig = {}) {
             }
             
             if (mediaType === 'audio') {
-              // Play audio
-              user.audioTrack?.play();
+              // Play audio explicitly with higher volume
+              if (user.audioTrack) {
+                try {
+                  // Use a higher volume setting (between 0-100, default is 100)
+                  user.audioTrack.setVolume(100); 
+                  user.audioTrack.play();
+                  console.log('Playing remote audio track');
+                } catch (error) {
+                  console.error('Failed to play remote audio track:', error);
+                }
+              }
             }
           });
           
