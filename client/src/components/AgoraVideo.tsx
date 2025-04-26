@@ -60,7 +60,7 @@ export default function AgoraVideo({
     role: mode === 'livestream' ? 'host' : 'audience'
   });
   
-  // Initialize Agora on component mount with proper memoization
+  // Initialize Agora on component mount with proper memoization and error handling
   useEffect(() => {
     // Prevent multiple initializations and API calls
     if (isReady) return;
@@ -68,21 +68,44 @@ export default function AgoraVideo({
     // Track if the component is still mounted
     let isMounted = true;
     const controller = new AbortController();
+    let initializationAttempts = 0;
+    const maxAttempts = 3;
     
     const setupAgora = async () => {
+      // Check if we've tried too many times
+      if (initializationAttempts >= maxAttempts) {
+        if (!isMounted) return;
+        
+        const errorMsg = `Failed to connect after ${maxAttempts} attempts. Please check your connection and try again.`;
+        console.error(errorMsg);
+        setInitError(errorMsg);
+        
+        if (onError) {
+          onError(errorMsg);
+        }
+        return;
+      }
+      
+      initializationAttempts++;
+      
       try {
+        console.log(`Attempting to initialize Agora (attempt ${initializationAttempts}/${maxAttempts})...`);
+        
         // Initialize Agora with channel name if provided
-        await agora.init({ channelName });
+        const initResult = await agora.init({ channelName });
+        console.log("Agora initialization result:", initResult);
         
         // Check if component is still mounted before proceeding
         if (!isMounted) return;
         
         // Join the channel
-        await agora.join();
+        const joinResult = await agora.join();
+        console.log("Agora join result:", joinResult);
         
         // Only update state if component is still mounted
         if (isMounted) {
           setIsReady(true);
+          console.log("Agora successfully connected and ready");
         }
       } catch (error) {
         // Only update error state if component is still mounted
@@ -90,6 +113,14 @@ export default function AgoraVideo({
         
         console.error('Error setting up Agora:', error);
         const errorMsg = error instanceof Error ? error.message : 'Unknown error setting up livestream';
+        
+        // If we haven't reached max attempts, try again after a delay
+        if (initializationAttempts < maxAttempts) {
+          console.log(`Retrying in 2 seconds... (attempt ${initializationAttempts}/${maxAttempts})`);
+          setTimeout(setupAgora, 2000);
+          return;
+        }
+        
         setInitError(errorMsg);
         
         if (onError) {
