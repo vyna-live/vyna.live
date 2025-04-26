@@ -148,6 +148,61 @@ export default function LivestreamInterface({
   const [isStreamActive, setIsStreamActive] = useState<boolean>(true); // Set to true for demo
   const [callId] = useState<string>(streamId || `livestream-${Date.now()}`);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Set to true to show loading state
+  const [wsConnection, setWsConnection] = useState<WebSocket | null>(null);
+  
+  // Initialize WebSocket connection for real-time streaming updates
+  useEffect(() => {
+    // Create WebSocket connection
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    const socket = new WebSocket(wsUrl);
+    
+    socket.onopen = () => {
+      console.log('WebSocket connection established');
+      setWsConnection(socket);
+    };
+    
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log('WebSocket message received:', message);
+        
+        // Handle different message types
+        if (message.type === 'status_update') {
+          if (message.data.error) {
+            showErrorToast(message.data.error);
+          } else if (message.data.status === 'stream_started') {
+            toast({
+              title: "Stream Started",
+              description: "Your livestream has successfully started",
+            });
+          } else if (message.data.status === 'egress_started') {
+            toast({
+              title: "Multiplatform Streaming",
+              description: `Your stream is now live on ${message.data.platforms || 'multiple platforms'}`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+      }
+    };
+    
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    socket.onclose = () => {
+      console.log('WebSocket connection closed');
+      setWsConnection(null);
+    };
+    
+    // Clean up WebSocket on component unmount
+    return () => {
+      socket.close();
+    };
+  }, [toast]);
   const [error, setError] = useState<string | null>(null);
   const [streamApiKey, setStreamApiKey] = useState<string>("");
   const [streamToken, setStreamToken] = useState<string>("");
@@ -182,6 +237,19 @@ export default function LivestreamInterface({
           title: "Multistream Enabled",
           description: `Your stream is being sent to ${data.egress.targets?.length || 0} platform(s)`,
         });
+        
+        // Also send WebSocket message about egress status for other connected clients
+        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+          wsConnection.send(JSON.stringify({
+            type: 'stream_status',
+            data: {
+              status: 'egress_started',
+              userId,
+              callId,
+              platforms: data.egress.targets?.map((target: any) => target.name).join(', ') || 'multiple platforms'
+            }
+          }));
+        }
       }
       
       return data;
@@ -218,11 +286,36 @@ export default function LivestreamInterface({
           title: "Multistream Updated",
           description: `Your stream is now being sent to ${data.egress.targets?.length || 0} platform(s)`,
         });
+        
+        // Notify other connected clients via WebSocket
+        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+          wsConnection.send(JSON.stringify({
+            type: 'stream_status',
+            data: {
+              status: 'egress_updated',
+              userId,
+              callId,
+              platforms: data.egress.targets?.map((target: any) => target.name).join(', ') || 'multiple platforms'
+            }
+          }));
+        }
       } else {
         toast({
           title: "Multistream Disabled",
           description: "Your stream is no longer being sent to external platforms",
         });
+        
+        // Notify other connected clients via WebSocket that egress was disabled
+        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+          wsConnection.send(JSON.stringify({
+            type: 'stream_status',
+            data: {
+              status: 'egress_disabled',
+              userId,
+              callId
+            }
+          }));
+        }
       }
       
       return data;
@@ -296,6 +389,19 @@ export default function LivestreamInterface({
                     title: "Multistream Enabled",
                     description: `Your stream is being sent to ${result.egress.targets?.length || 0} platform(s)`,
                   });
+                  
+                  // Notify other connected clients via WebSocket
+                  if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                    wsConnection.send(JSON.stringify({
+                      type: 'stream_status',
+                      data: {
+                        status: 'egress_started',
+                        userId: randomId,
+                        callId,
+                        platforms: result.egress.targets?.map((target: any) => target.name).join(', ') || 'multiple platforms'
+                      }
+                    }));
+                  }
                 }
               } catch (error) {
                 console.error('Error creating call:', error);

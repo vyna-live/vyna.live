@@ -12,6 +12,7 @@ import path from "path";
 import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey, updateEgressConfig } from "./getstream";
+import { WebSocketServer, WebSocket } from "ws";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -425,7 +426,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Add WebSocket server for real-time communication
   try {
-    const { WebSocketServer } = require('ws');
     const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
     
     wss.on('connection', (ws) => {
@@ -433,14 +433,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       ws.on('message', (message) => {
         try {
-          const parsedMessage = JSON.parse(message);
+          const messageStr = message.toString();
+          const parsedMessage = JSON.parse(messageStr);
           console.log('Received message:', parsedMessage);
           
           // Handle different message types
           if (parsedMessage.type === 'stream_status') {
             // Broadcast status to all clients
             wss.clients.forEach((client) => {
-              if (client.readyState === ws.OPEN) {
+              if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({
                   type: 'status_update',
                   data: parsedMessage.data
