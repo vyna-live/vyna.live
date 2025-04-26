@@ -14,6 +14,7 @@ import {
 // Import styling
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { useToast } from '@/hooks/use-toast';
+import { useStreamVideo } from '@/hooks/useStreamVideo';
 
 // Custom CSS for GetStream components
 const customStyles = `
@@ -48,68 +49,20 @@ const customStyles = `
 `;
 
 interface StreamVideoComponentProps {
-  apiKey: string;
-  token: string;
-  userId: string;
   callId: string;
-  userName: string;
+  useExistingClient?: boolean;
 }
 
 export function StreamVideoComponent({ 
-  apiKey, 
-  token, 
-  userId, 
-  callId, 
-  userName 
+  callId,
+  useExistingClient = true
 }: StreamVideoComponentProps) {
-  const [client, setClient] = useState<StreamVideoClient | null>(null);
-  const [isConnecting, setIsConnecting] = useState(true);
+  const { client, isDemoMode, userId, userName } = useStreamVideo();
+  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Step 1: Initialize StreamVideo client
-  useEffect(() => {
-    let streamClient: StreamVideoClient | null = null;
-    
-    const initClient = async () => {
-      try {
-        console.log('Initializing StreamVideo client with:', { apiKey, userId });
-        setIsConnecting(true);
-        
-        // Create the client
-        streamClient = new StreamVideoClient({
-          apiKey,
-          user: {
-            id: userId,
-            name: userName || 'Livestreamer'
-          },
-          token,
-        });
-        
-        setClient(streamClient);
-        setIsConnecting(false);
-      } catch (err) {
-        console.error('StreamVideo client error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize streaming');
-        setIsConnecting(false);
-      }
-    };
-    
-    if (apiKey && token && userId) {
-      initClient();
-    } else {
-      setError('Missing required credentials');
-      setIsConnecting(false);
-    }
-    
-    // Cleanup function
-    return () => {
-      if (streamClient) {
-        streamClient.disconnectUser().catch(console.error);
-      }
-    };
-  }, [apiKey, token, userId, userName]);
+  const { toast } = useToast();
   
-  // Loading state
+  // Loading state - show only if explicitly connecting
   if (isConnecting) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -142,6 +95,28 @@ export function StreamVideoComponent({
     );
   }
   
+  // Demo mode state
+  if (isDemoMode) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-900 rounded-lg">
+        <div className="text-center max-w-md px-4">
+          <div className="w-20 h-20 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-4">
+            <Video className="w-10 h-10 text-[#EFE9E1]" />
+          </div>
+          <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Demo Mode Activated</h3>
+          <p className="text-[#CDBCAB] mb-6">
+            This is a demonstration of the streaming interface without actual streaming capabilities.
+            To use real streaming, make sure your GetStream API credentials are properly configured.
+          </p>
+          <div className="mt-4 px-4 py-3 bg-black/40 rounded-lg text-sm text-gray-400">
+            <p>Demo User: {userName}</p>
+            <p>Demo Call ID: {callId}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   // No client state
   if (!client) {
     return (
@@ -167,7 +142,13 @@ export function StreamVideoComponent({
   return (
     <>
       <style>{customStyles}</style>
-      <StreamVideoWrapper client={client} callId={callId} />
+      {useExistingClient ? (
+        // Use existing client from provider
+        <CallComponent callId={callId} />
+      ) : (
+        // Create a new StreamVideo wrapper with client
+        <StreamVideoWrapper client={client} callId={callId} />
+      )}
     </>
   );
 }
