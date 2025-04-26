@@ -41,10 +41,52 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
     );
   }
   
+  // Create a call instance with initialization
+  const [call, setCall] = useState<any>(null);
+  
+  useEffect(() => {
+    const initCall = async () => {
+      try {
+        // Get or create the call
+        const callInstance = client.call('livestream', callId);
+        
+        // Always try to create the call - GetStream SDK will handle if it already exists
+        try {
+          console.log('Creating call:', callId);
+          await callInstance.create();
+        } catch (error) {
+          console.log('Error creating call, might already exist:', error);
+          // Call might already exist, that's fine
+        }
+        
+        setCall(callInstance);
+      } catch (error) {
+        console.error('Error initializing call:', error);
+      }
+    };
+    
+    if (client) {
+      initCall();
+    }
+  }, [client, callId]);
+  
+  // If call is not initialized yet, show a loading screen
+  if (!call) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black">
+        <div className="flex flex-col items-center text-center">
+          <Logo variant="light" size="lg" className="mb-8" />
+          <div className="animate-spin h-10 w-10 border-4 border-[#A67D44] border-t-transparent rounded-full"></div>
+          <div className="mt-4 text-gray-300 text-xl">Initializing stream session...</div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-black">
       <StreamVideo client={client}>
-        <StreamCall callId={callId}>
+        <StreamCall call={call}>
           <SetupContent setIsSetupComplete={setIsSetupComplete} />
         </StreamCall>
       </StreamVideo>
