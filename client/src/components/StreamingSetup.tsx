@@ -21,51 +21,30 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
   setIsSetupComplete,
   callId
 }) => {
-  const { client, isDemoMode } = useStreamVideo();
+  const { client } = useStreamVideo();
   const [, setLocation] = useLocation();
-  
-  // If we're in demo mode, we should show a simplified setup
-  if (isDemoMode) {
-    return <DemoSetupScreen setIsSetupComplete={setIsSetupComplete} />;
-  }
+  const { toast } = useToast();
   
   // If the client is not ready, show a loading screen
   if (!client) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black">
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center text-center">
           <Logo variant="light" size="lg" className="mb-8" />
           <div className="animate-spin h-10 w-10 border-4 border-[#A67D44] border-t-transparent rounded-full"></div>
           <div className="mt-4 text-gray-300 text-xl">Connecting to streaming service...</div>
+          <div className="mt-2 text-gray-400 max-w-md px-4">
+            Make sure you have provided valid GetStream API credentials
+          </div>
         </div>
       </div>
     );
   }
   
-  // Get a call from Stream or create one if it doesn't exist
-  const getOrCreateCall = async (callType = 'livestream') => {
-    try {
-      console.log(`Creating or joining call: ${callId}`);
-      const call = client.call(callType, callId);
-      
-      const callExists = await call.exists();
-      
-      if (!callExists) {
-        console.log('Call does not exist, creating new call');
-        await call.create();
-      }
-      
-      return call;
-    } catch (error) {
-      console.error('Error in getOrCreateCall:', error);
-      throw error;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-black">
       <StreamVideo client={client}>
-        <StreamCall call={getOrCreateCall}>
+        <StreamCall callId={callId}>
           <SetupContent setIsSetupComplete={setIsSetupComplete} />
         </StreamCall>
       </StreamVideo>
