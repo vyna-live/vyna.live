@@ -84,13 +84,24 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
         // Create and initialize the Stream Video client
         const videoClient = new StreamVideoClient({
           apiKey,
-          user: { id: userId, name: userName },
+          user: { 
+            id: userId, 
+            name: userName,
+            image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
+          },
           token,
           // Add some options to help with debugging
           options: {
-            logLevel: 'info',
+            logLevel: 'debug',
           }
         });
+        
+        // Explicitly connect the user
+        await videoClient.connectUser({
+          id: userId,
+          name: userName,
+          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
+        }, token);
         
         if (isMounted) {
           setClient(videoClient);

@@ -41,37 +41,28 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
     );
   }
   
-  // Create a call instance with initialization
-  const [call, setCall] = useState<any>(null);
-  
+  // Create a call directly without state
   useEffect(() => {
-    const initCall = async () => {
+    const connectToCall = async () => {
+      if (!client) return;
+      
       try {
-        // Get or create the call
-        const callInstance = client.call('livestream', callId);
-        
-        // Always try to create the call - GetStream SDK will handle if it already exists
-        try {
-          console.log('Creating call:', callId);
-          await callInstance.create();
-        } catch (error) {
-          console.log('Error creating call, might already exist:', error);
-          // Call might already exist, that's fine
-        }
-        
-        setCall(callInstance);
+        // Log current state
+        console.log('Initializing call with GetStream SDK...', { 
+          callId, 
+          clientReady: !!client,
+          clientConnected: client.connectionState === 'connected'
+        });
       } catch (error) {
-        console.error('Error initializing call:', error);
+        console.error('Error connecting to call:', error);
       }
     };
     
-    if (client) {
-      initCall();
-    }
+    connectToCall();
   }, [client, callId]);
   
-  // If call is not initialized yet, show a loading screen
-  if (!call) {
+  // If client is not initialized yet, show a loading screen
+  if (!client) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black">
         <div className="flex flex-col items-center text-center">
@@ -82,6 +73,9 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
       </div>
     );
   }
+  
+  // Create a call instance for the StreamCall component
+  const call = client.call('livestream', callId);
   
   return (
     <div className="min-h-screen bg-black">
