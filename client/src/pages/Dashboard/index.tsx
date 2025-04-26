@@ -175,6 +175,14 @@ export default function Dashboard() {
               <Keyboard className="w-6 h-6" />
               <span>Join stream</span>
             </button>
+            
+            <Link
+              to="/livestream" 
+              className="flex items-center space-x-2 px-6 py-3 bg-[#5D1C34] text-white font-medium hover:opacity-90 transition-opacity rounded-sm"
+            >
+              <Video className="w-6 h-6" />
+              <span>Direct to Livestream</span>
+            </Link>
           </div>
         </section>
         

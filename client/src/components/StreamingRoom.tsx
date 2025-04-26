@@ -9,21 +9,7 @@ import { MessageSquare, Clipboard, X, Copy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import GradientText from './GradientText';
-
-interface InfoGraphic {
-  title: string;
-  content: string;
-  imageUrl?: string;
-}
-
-interface MessageType {
-  id: string;
-  content: string;
-  role: 'user' | 'assistant' | 'system';
-  timestamp: Date;
-  hasInfoGraphic?: boolean;
-  infoGraphicData?: InfoGraphic;
-}
+import { MessageType, InfoGraphic } from '@/types/chat';
 
 interface StreamingRoomProps {
   channelName: string;

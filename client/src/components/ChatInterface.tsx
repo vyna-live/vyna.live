@@ -1,4 +1,4 @@
-import { MessageType } from "@/pages/Home";
+import { MessageType } from "@/types/chat";
 import InfoGraphicCard from "@/components/InfoGraphicCard";
 import { Loader2, MonitorSmartphone, FileText } from "lucide-react";
 
