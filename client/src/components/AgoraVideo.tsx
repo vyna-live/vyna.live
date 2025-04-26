@@ -53,73 +53,59 @@ export default function AgoraVideo({
   const localVideoRef = useRef<HTMLDivElement>(null);
   const remoteVideosRef = useRef<HTMLDivElement>(null);
 
-  // Get Agora client from hook
+  // Setup flag to track initialization attempt
+  const initAttemptedRef = useRef(false);
+  
+  // Get Agora client from hook with memoized configuration
   const agora = useAgora({
     mode: 'rtc',
     codec: 'h264',
     role: mode === 'livestream' ? 'host' : 'audience'
   });
   
-  // Initialize Agora on component mount with proper memoization and error handling
+  // Simple initialization that relies on the improved useAgora hook
   useEffect(() => {
-    // Prevent multiple initializations and API calls
-    if (isReady) return;
+    // Stop if we've already tried to initialize
+    if (initAttemptedRef.current || isReady) return;
+    
+    // Mark that we've attempted initialization to prevent repeated attempts
+    initAttemptedRef.current = true;
     
     // Track if the component is still mounted
     let isMounted = true;
-    const controller = new AbortController();
-    let initializationAttempts = 0;
-    const maxAttempts = 3;
     
     const setupAgora = async () => {
-      // Check if we've tried too many times
-      if (initializationAttempts >= maxAttempts) {
-        if (!isMounted) return;
-        
-        const errorMsg = `Failed to connect after ${maxAttempts} attempts. Please check your connection and try again.`;
-        console.error(errorMsg);
-        setInitError(errorMsg);
-        
-        if (onError) {
-          onError(errorMsg);
-        }
-        return;
-      }
-      
-      initializationAttempts++;
+      if (!isMounted) return;
       
       try {
-        console.log(`Attempting to initialize Agora (attempt ${initializationAttempts}/${maxAttempts})...`);
+        console.log('Setting up Agora video...');
         
-        // Initialize Agora with channel name if provided
-        const initResult = await agora.init({ channelName });
-        console.log("Agora initialization result:", initResult);
-        
-        // Check if component is still mounted before proceeding
+        // Initialize once
+        await agora.init({ channelName });
         if (!isMounted) return;
         
         // Join the channel
-        const joinResult = await agora.join();
-        console.log("Agora join result:", joinResult);
+        await agora.join();
         
-        // Only update state if component is still mounted
+        // Mark as ready
         if (isMounted) {
           setIsReady(true);
           console.log("Agora successfully connected and ready");
         }
       } catch (error) {
-        // Only update error state if component is still mounted
         if (!isMounted) return;
         
-        console.error('Error setting up Agora:', error);
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error setting up livestream';
-        
-        // If we haven't reached max attempts, try again after a delay
-        if (initializationAttempts < maxAttempts) {
-          console.log(`Retrying in 2 seconds... (attempt ${initializationAttempts}/${maxAttempts})`);
-          setTimeout(setupAgora, 2000);
+        // Handle "already connected" errors gracefully
+        if (error instanceof Error && 
+            error.message?.includes('already in connected/connecting state')) {
+          console.log('Already connected to Agora, continuing...');
+          setIsReady(true);
           return;
         }
+        
+        console.error('Error setting up Agora:', error);
+        const errorMsg = error instanceof Error ? 
+          error.message : 'Unknown error setting up livestream';
         
         setInitError(errorMsg);
         
@@ -129,19 +115,15 @@ export default function AgoraVideo({
       }
     };
     
-    // Use a debounced initialization to prevent rapid consecutive calls
-    const timeoutId = setTimeout(() => {
-      setupAgora();
-    }, 300);
+    // Setup immediately
+    setupAgora();
     
-    // Clean up on unmount or when dependencies change
+    // Clean up properly
     return () => {
       isMounted = false;
-      controller.abort();
-      clearTimeout(timeoutId);
       
-      // Only leave the channel if we were actually connected
-      if (isReady) {
+      // Only need to leave if we were connected
+      if (isReady && agora.isConnected) {
         agora.leave();
       }
     };

@@ -54,20 +54,29 @@ export function useAgora(config: AgoraConfig = {}) {
   const uidRef = useRef<string | null>(null);
   const initializedRef = useRef<boolean>(false);
   const apiRequestInProgressRef = useRef<boolean>(false);
+  const isJoiningChannelRef = useRef<boolean>(false);
+  const lastConnectionAttemptRef = useRef<number>(0);
   
   /**
    * Initialize Agora RTC client with caching to prevent duplicate API calls
    */
   const init = useCallback(async (options: InitOptions = {}) => {
     try {
-      // If we're already making a request, don't make another one
-      if (apiRequestInProgressRef.current) {
+      // Strict throttling - only allow one request per 2 seconds to prevent API flooding
+      const now = Date.now();
+      const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
+      
+      // If we're already making a request or we've made one too recently, return existing data
+      if (apiRequestInProgressRef.current || timeSinceLastAttempt < 2000) {
+        console.log(`Throttling API call - ${apiRequestInProgressRef.current ? 'request in progress' : `${timeSinceLastAttempt}ms since last call`}`);
         return {
           channelName: channelNameRef.current || '',
           uid: uidRef.current || '',
           appId: appIdRef.current || ''
         };
       }
+      
+      lastConnectionAttemptRef.current = now;
       
       // If already initialized with the same channel, just return the existing config
       if (
@@ -77,6 +86,7 @@ export function useAgora(config: AgoraConfig = {}) {
         channelNameRef.current === options.channelName &&
         uidRef.current
       ) {
+        console.log('Using cached Agora configuration');
         return {
           channelName: channelNameRef.current,
           uid: uidRef.current,
@@ -179,10 +189,40 @@ export function useAgora(config: AgoraConfig = {}) {
   }, [mode, codec, role]);
   
   /**
-   * Join a channel
+   * Join a channel with protection against multiple simultaneous join attempts
    */
   const join = useCallback(async (channelName?: string) => {
     try {
+      // Check if we're already joining or if we've recently attempted to join
+      if (isJoiningChannelRef.current) {
+        console.log('Already joining a channel, ignoring duplicate call');
+        return { channelName: channelNameRef.current };
+      }
+      
+      // Throttle connection attempts - no more than one attempt every 2 seconds
+      const now = Date.now();
+      const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
+      if (timeSinceLastAttempt < 2000) {
+        console.log(`Throttling connection attempt (${timeSinceLastAttempt}ms since last attempt)`);
+        return { channelName: channelNameRef.current };
+      }
+      
+      lastConnectionAttemptRef.current = now;
+      isJoiningChannelRef.current = true;
+      
+      // Check if client is already connected to avoid "already connected" errors
+      if (clientRef.current?.connectionState === 'CONNECTED') {
+        console.log('Client already connected, returning current state');
+        setState(prev => ({
+          ...prev,
+          isConnected: true,
+          isLoading: false,
+          error: null
+        }));
+        isJoiningChannelRef.current = false;
+        return { channelName: channelNameRef.current };
+      }
+      
       if (!clientRef.current) {
         throw new Error('Agora client not created. Call init() first.');
       }
@@ -200,74 +240,125 @@ export function useAgora(config: AgoraConfig = {}) {
       
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      // Set up event handlers
-      client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
-        await client.subscribe(user, mediaType);
-        
-        if (mediaType === 'video') {
-          // Add the new user to the remoteUsers array
-          setState(prev => ({
-            ...prev,
-            remoteUsers: [...prev.remoteUsers, user]
-          }));
+      try {
+        // Only set up event handlers once - we'll use a simple approach by setting
+        // a flag directly on the object
+        const clientAny = client as any;
+        const hasHandlers = clientAny._hasSetupEventHandlers === true;
+        if (!hasHandlers) {
+          // Set flag to indicate we've set up handlers
+          clientAny._hasSetupEventHandlers = true;
+          // Set up event handlers
+          client.on('user-published', async (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
+            await client.subscribe(user, mediaType);
+            
+            if (mediaType === 'video') {
+              // Add the new user to the remoteUsers array
+              setState(prev => ({
+                ...prev,
+                remoteUsers: [...prev.remoteUsers.filter(u => u.uid !== user.uid), user]
+              }));
+            }
+            
+            if (mediaType === 'audio') {
+              // Play audio
+              user.audioTrack?.play();
+            }
+          });
+          
+          client.on('user-unpublished', (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
+            if (mediaType === 'video') {
+              // Remove the user from remoteUsers array
+              setState(prev => ({
+                ...prev,
+                remoteUsers: prev.remoteUsers.filter(u => u.uid !== user.uid)
+              }));
+            }
+          });
+          
+          client.on('user-left', (user: IAgoraRTCRemoteUser) => {
+            // Remove the user from remoteUsers array
+            setState(prev => ({
+              ...prev,
+              remoteUsers: prev.remoteUsers.filter(u => u.uid !== user.uid)
+            }));
+          });
+          
+          // Handle connection state changes
+          client.on('connection-state-change', (state) => {
+            console.log('Connection state changed to:', state);
+            setState(prev => ({
+              ...prev,
+              isConnected: state === 'CONNECTED',
+              isLoading: state === 'CONNECTING',
+              error: state === 'DISCONNECTED' ? 'Disconnected from channel' : null
+            }));
+          });
         }
         
-        if (mediaType === 'audio') {
-          // Play audio
-          user.audioTrack?.play();
-        }
-      });
-      
-      client.on('user-unpublished', (user: IAgoraRTCRemoteUser, mediaType: 'audio' | 'video') => {
-        if (mediaType === 'video') {
-          // Remove the user from remoteUsers array
+        // Join the channel - fix for Agora join parameter format
+        // Convert the string UID to a number (Agora SDK requires number UIDs)
+        const uidStr = uidRef.current || '';
+        const uidNumber = uidStr ? parseInt(uidStr, 10) : null;
+        
+        console.log('Joining channel with params:', { 
+          appId: appIdRef.current, 
+          channel: finalChannelName, 
+          token: null, 
+          uidStr,
+          uidNumber,
+          connectionState: client.connectionState
+        });
+        
+        try {
+          // Check connection state again to be extra safe
+          if (client.connectionState !== 'CONNECTED') {
+            await client.join(appIdRef.current, finalChannelName, null, uidNumber);
+            console.log('Successfully joined channel');
+          }
+          
+          // Publish local tracks if in host mode
+          if (role === 'host' && state.localAudioTrack && state.localVideoTrack) {
+            // Only publish if we're connected and not already publishing
+            if (client.connectionState === 'CONNECTED') {
+              await client.publish([state.localAudioTrack, state.localVideoTrack]);
+              console.log('Published local tracks');
+            }
+          }
+          
           setState(prev => ({
             ...prev,
-            remoteUsers: prev.remoteUsers.filter(u => u.uid !== user.uid)
+            isLoading: false,
+            isConnected: true,
+            error: null
           }));
+          
+          return {
+            channelName: finalChannelName
+          };
+        } catch (joinError: any) {
+          // Handle 'already connected' errors gracefully
+          if (joinError.code === 'INVALID_OPERATION' && 
+              joinError.message?.includes('already in connected/connecting state')) {
+            console.log('Client already connected or connecting, treating as success');
+            setState(prev => ({
+              ...prev,
+              isLoading: false,
+              isConnected: true,
+              error: null
+            }));
+            return { channelName: finalChannelName };
+          } else {
+            throw joinError;
+          }
         }
-      });
-      
-      client.on('user-left', (user: IAgoraRTCRemoteUser) => {
-        // Remove the user from remoteUsers array
-        setState(prev => ({
-          ...prev,
-          remoteUsers: prev.remoteUsers.filter(u => u.uid !== user.uid)
-        }));
-      });
-      
-      // Join the channel - fix for Agora join parameter format
-      // Convert the string UID to a number (Agora SDK requires number UIDs)
-      const uidStr = uidRef.current || '';
-      const uidNumber = uidStr ? parseInt(uidStr, 10) : null;
-      
-      console.log('Joining channel with params:', { 
-        appId: appIdRef.current, 
-        channel: finalChannelName, 
-        token: null, 
-        uidStr,
-        uidNumber 
-      });
-      
-      await client.join(appIdRef.current, finalChannelName, null, uidNumber);
-      
-      // Publish local tracks if in host mode
-      if (role === 'host' && state.localAudioTrack && state.localVideoTrack) {
-        await client.publish([state.localAudioTrack, state.localVideoTrack]);
+      } finally {
+        isJoiningChannelRef.current = false;
       }
-      
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        isConnected: true,
-        error: null
-      }));
-      
-      return {
-        channelName: finalChannelName
-      };
     } catch (error: any) {
       console.error('Error joining channel:', error);
+      isJoiningChannelRef.current = false;
+      
       setState(prev => ({
         ...prev,
         isLoading: false,
