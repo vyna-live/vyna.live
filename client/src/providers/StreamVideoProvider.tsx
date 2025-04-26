@@ -40,68 +40,62 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
   
   useEffect(() => {
     let isMounted = true;
-    let timeoutId: NodeJS.Timeout;
     
     async function initClient() {
       try {
-        // Set a timeout for the API calls
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          timeoutId = setTimeout(() => {
-            reject(new Error('Connection timed out'));
-          }, 5000);
-        });
+        console.log('Initializing Stream Video client...');
         
-        // Try to fetch Stream credentials with a timeout
-        const tokenPromise = fetch('/api/stream/token', {
+        // Fetch API key first
+        const keyResponse = await fetch('/api/stream/key');
+        if (!keyResponse.ok) {
+          throw new Error(`Failed to fetch Stream API key: ${keyResponse.status}`);
+        }
+        const { apiKey } = await keyResponse.json();
+        
+        if (!apiKey) {
+          throw new Error('Invalid or missing Stream API key');
+        }
+        
+        console.log('Fetched Stream API key:', apiKey);
+        
+        // Generate token
+        const tokenResponse = await fetch('/api/stream/token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId, userName }),
         });
         
-        const response = await Promise.race([tokenPromise, timeoutPromise]);
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch Stream tokens: ${response.status}`);
+        if (!tokenResponse.ok) {
+          throw new Error(`Failed to fetch Stream tokens: ${tokenResponse.status}`);
         }
         
-        const { token } = await response.json();
+        const { token } = await tokenResponse.json();
         
-        // Also fetch the API key separately
-        const keyResponse = await fetch('/api/stream/key');
-        if (!keyResponse.ok) {
-          throw new Error(`Failed to fetch Stream API key: ${keyResponse.status}`);
+        if (!token) {
+          throw new Error('Invalid or missing Stream token');
         }
         
-        const { apiKey } = await keyResponse.json();
+        console.log('Fetched Stream token successfully');
         
-        if (!apiKey || !token) {
-          throw new Error('Invalid Stream credentials received');
-        }
+        // Create the Stream Video client
+        const userInfo = { 
+          id: userId, 
+          name: userName,
+          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
+        };
         
-        console.log('Successfully retrieved GetStream credentials');
+        console.log('Creating StreamVideoClient with:', { apiKey, userInfo });
         
-        // Create and initialize the Stream Video client
         const videoClient = new StreamVideoClient({
           apiKey,
-          user: { 
-            id: userId, 
-            name: userName,
-            image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
-          },
           token,
-          // Add some options to help with debugging
+          user: userInfo,
           options: {
             logLevel: 'debug',
           }
         });
         
-        // Explicitly connect the user
-        await videoClient.connectUser({
-          id: userId,
-          name: userName,
-          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
-        }, token);
+        console.log('StreamVideoClient created, attempting to connect...');
         
         if (isMounted) {
           setClient(videoClient);
@@ -109,15 +103,23 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
           setIsDemoMode(false);
           
           console.log('Stream Video client initialized successfully');
+          
+          // Show toast for successful connection
+          toast({
+            title: "Connected to Streaming Service",
+            description: "You're now ready to create or join a livestream.",
+            duration: 3000,
+          });
         }
         
-        // Cleanup function
+        // Return cleanup function
         return () => {
-          console.log('Disconnecting Stream Video client');
-          videoClient.disconnectUser();
+          if (videoClient) {
+            console.log('Disconnecting Stream Video client');
+            videoClient.disconnectUser();
+          }
         };
       } catch (err) {
-        clearTimeout(timeoutId);
         const error = err instanceof Error ? err : new Error('Unknown error initializing Stream Video');
         console.error('Error initializing Stream Video client:', error);
         
@@ -126,11 +128,11 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
           setIsDemoMode(true);
           setIsInitialized(true); // Mark as initialized so the app can proceed
           
-          // Show more user-friendly toast
+          // Show error in toast
           toast({
-            title: "Streaming API Unavailable",
-            description: "Using demo mode for preview purposes. Actual streaming features will be limited.",
-            variant: "default",
+            title: "Streaming Service Unavailable",
+            description: "Unable to connect to streaming service. Using demo mode instead.",
+            variant: "destructive",
             duration: 5000,
           });
           
@@ -139,13 +141,12 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
       }
     }
     
-    // Initialize client
+    // Initialize client and store cleanup function
     const cleanupPromise = initClient();
     
     // Cleanup on unmount
     return () => {
       isMounted = false;
-      clearTimeout(timeoutId);
       cleanupPromise.then(cleanup => cleanup && cleanup());
     };
   }, [toast, userId, userName]);

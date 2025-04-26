@@ -41,34 +41,52 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
     );
   }
   
-  // Create a call directly without state
+  // Create and track call state
+  const [callReady, setCallReady] = useState(false);
+  
   useEffect(() => {
     const connectToCall = async () => {
       if (!client) return;
       
       try {
-        // Log current state
-        console.log('Initializing call with GetStream SDK...', { 
+        console.log('Call setup starting...', { 
           callId, 
           clientReady: !!client,
-          clientConnected: client.connectionState === 'connected'
+          clientState: client.connectionState
         });
+        
+        // Wait for client to be fully connected
+        if (client.connectionState !== 'connected') {
+          console.log('Waiting for client to connect...');
+          // We'll handle this at the component level
+          return;
+        }
+        
+        setCallReady(true);
+        console.log('Call setup complete, client is connected and ready');
       } catch (error) {
-        console.error('Error connecting to call:', error);
+        console.error('Error in call setup:', error);
       }
     };
     
     connectToCall();
-  }, [client, callId]);
+  }, [client, callId, client?.connectionState]);
   
-  // If client is not initialized yet, show a loading screen
-  if (!client) {
+  // If client is not initialized yet or not fully connected, show a loading screen
+  if (!client || client.connectionState !== 'connected' || !callReady) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black">
         <div className="flex flex-col items-center text-center">
           <Logo variant="light" size="lg" className="mb-8" />
           <div className="animate-spin h-10 w-10 border-4 border-[#A67D44] border-t-transparent rounded-full"></div>
-          <div className="mt-4 text-gray-300 text-xl">Initializing stream session...</div>
+          <div className="mt-4 text-gray-300 text-xl">
+            {!client ? "Initializing stream session..." : 
+             client.connectionState !== 'connected' ? "Connecting to stream service..." :
+             "Preparing stream environment..."}
+          </div>
+          <div className="mt-2 text-gray-500 text-sm">
+            {client ? `Connection state: ${client.connectionState}` : 'Waiting for client...'}
+          </div>
         </div>
       </div>
     );
