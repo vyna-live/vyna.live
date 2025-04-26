@@ -13,6 +13,7 @@ import {
 } from '@stream-io/video-react-sdk';
 import { Users, Video, VideoOff, Mic, MicOff, PhoneOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useStreamVideo } from '@/hooks/useStreamVideo';
 import Logo from '@/components/Logo';
 
 type CallLayoutType = 'grid' | 'speaker-left' | 'speaker-right';
@@ -20,12 +21,28 @@ type CallLayoutType = 'grid' | 'speaker-left' | 'speaker-right';
 interface StreamingRoomProps {
   isPersonalRoom?: boolean;
   initialTeleprompterText?: string;
+  callId?: string;
 }
 
-const StreamingRoom: React.FC<StreamingRoomProps> = ({ isPersonalRoom = false, initialTeleprompterText = '' }) => {
-  // Always use the real streaming component for production
+const StreamingRoom: React.FC<StreamingRoomProps> = ({ 
+  isPersonalRoom = false, 
+  initialTeleprompterText = '',
+  callId
+}) => {
+  const { isDemoMode } = useStreamVideo();
+  
+  // Choose the appropriate streaming room based on demo mode
+  if (isDemoMode) {
+    return <DemoStreamingRoom initialTeleprompterText={initialTeleprompterText} />;
+  }
+  
+  // Use the actual streaming component for production
   return (
-    <ActualStreamingRoom isPersonalRoom={isPersonalRoom} initialTeleprompterText={initialTeleprompterText} />
+    <ActualStreamingRoom 
+      isPersonalRoom={isPersonalRoom} 
+      initialTeleprompterText={initialTeleprompterText}
+      callId={callId}
+    />
   );
 };
 
@@ -205,7 +222,11 @@ const DemoStreamingRoom: React.FC<{ initialTeleprompterText?: string }> = ({ ini
 };
 
 // Actual Stream SDK implementation of the streaming room
-const ActualStreamingRoom: React.FC<StreamingRoomProps> = ({ isPersonalRoom = false, initialTeleprompterText = '' }) => {
+const ActualStreamingRoom: React.FC<StreamingRoomProps> = ({ 
+  isPersonalRoom = false, 
+  initialTeleprompterText = '',
+  callId
+}) => {
   const [layout, setLayout] = useState<CallLayoutType>('speaker-left');
   const [showParticipant, setShowParticipant] = useState(false);
   const [wsConnection, setWsConnection] = useState<WebSocket | null>(null);
@@ -216,6 +237,7 @@ const ActualStreamingRoom: React.FC<StreamingRoomProps> = ({ isPersonalRoom = fa
   const [teleprompterPosition, setTeleprompterPosition] = useState<number>(0);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { client, userId } = useStreamVideo();
   
   // Initialize WebSocket connection
   useEffect(() => {

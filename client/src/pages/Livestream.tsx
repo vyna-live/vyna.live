@@ -178,7 +178,8 @@ export default function Livestream() {
         ) : (
           <StreamingRoom 
             isPersonalRoom={isJoiningStream} 
-            initialTeleprompterText={teleprompterText} 
+            initialTeleprompterText={teleprompterText}
+            callId={streamId} 
           />
         )}
       </div>
