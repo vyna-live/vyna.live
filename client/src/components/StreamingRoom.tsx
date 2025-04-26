@@ -118,9 +118,9 @@ export default function StreamingRoom({
 
   return (
     <div className="h-screen overflow-hidden bg-black">
-      {/* Top navigation bar exactly as in mockup */}
-      <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent z-30 px-6 py-3">
-        <div className="flex items-center justify-between">
+      {/* Top navigation bar - exactly matching navbar.png */}
+      <div className="absolute top-0 left-0 right-0 bg-black/50 backdrop-blur-sm z-30">
+        <div className="flex items-center justify-between p-3 px-6">
           <div>
             <svg width="70" height="24" viewBox="0 0 70 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M39.3711 15.4668C39.3711 17.2559 38.1758 18.4336 36.1211 18.4336C34.082 18.4336 32.957 17.2949 32.9336 15.5059H35.0898C35.1367 16.1934 35.5625 16.5898 36.1211 16.5898C36.6914 16.5898 37.0938 16.1699 37.0938 15.4668V7.72656H39.3711V15.4668ZM40.4551 11.2227C40.4551 8.80859 42.168 7.55859 44.4395 7.55859C46.7227 7.55859 48.4355 8.80859 48.4355 11.2227V14.7852C48.4355 17.1992 46.7227 18.4492 44.4395 18.4492C42.168 18.4492 40.4551 17.1992 40.4551 14.7852V11.2227ZM46.1582 11.2227C46.1582 10.0391 45.5645 9.39844 44.4395 9.39844C43.3262 9.39844 42.7324 10.0391 42.7324 11.2227V14.7852C42.7324 15.9688 43.3262 16.6094 44.4395 16.6094C45.5645 16.6094 46.1582 15.9688 46.1582 14.7852V11.2227ZM50.6426 7.72656H53.0097L54.9355 15.4668H55.0176L56.9434 7.72656H59.3047V18.2812H57.1074V10.4062H57.0254L55.1699 18.2812H54.7832L52.9278 10.4062H52.8457V18.2812H50.6426V7.72656ZM67.6856 9.53906H64.8066V18.2812H62.5293V9.53906H59.6504V7.72656H67.6856V9.53906Z" fill="white"/>
@@ -142,47 +142,44 @@ export default function StreamingRoom({
         </div>
       </div>
       
-      {/* Second row header with stream info - exactly as in mockup */}
-      <div className="absolute top-12 left-0 right-0 z-20 px-6 py-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full overflow-hidden border border-white/10">
-                <img src="https://i.pravatar.cc/100" alt="Profile" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-white text-sm">Divine Samuel</span>
+      {/* Second row header with stream info - exactly as in navbar.png */}
+      <div className="absolute top-[49px] left-0 right-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent px-6 py-3">
+        <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full overflow-hidden border border-white/10">
+              <img src="https://i.pravatar.cc/100" alt="Profile" className="w-full h-full object-cover" />
             </div>
-            
-            <div className="flex items-center mx-3">
-              <span className="text-white/40 text-sm">•</span>
-            </div>
-            
-            <span className="text-white text-sm">Jaja Games</span>
+            <span className="text-white text-sm">Divine Samuel</span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm py-0.5 px-2 rounded-full">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12.7692 4.92308C12.7692 7.07692 10.9231 8.46154 10 8.46154C9.07692 8.46154 7.23077 7.07692 7.23077 4.92308C7.23077 2.76923 8.41538 1 10 1C11.5846 1 12.7692 2.76923 12.7692 4.92308Z" fill="white"/>
-                <path d="M15 12.8077C15 15.1538 12.6538 15 10 15C7.34615 15 5 15.1538 5 12.8077C5 10.4615 7.34615 8.61548 10 8.61548C12.6538 8.61548 15 10.4615 15 12.8077Z" fill="white"/>
-              </svg>
-              <span className="text-white text-xs">123.5k</span>
-            </div>
-            
-            {!isDrawerOpen && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-white p-1"
-                onClick={() => setIsDrawerOpen(true)}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M13.3333 5L5 5C3.61929 5 2.5 6.11929 2.5 7.5V15.8333C2.5 17.214 3.61929 18.3333 5 18.3333H13.3333C14.714 18.3333 15.8333 17.214 15.8333 15.8333V7.5C15.8333 6.11929 14.714 5 13.3333 5Z" stroke="white" strokeWidth="1.5"/>
-                  <path d="M17.5 14.1666L15.8333 12.5V10.8333" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </Button>
-            )}
+          <div className="flex items-center mx-4">
+            <span className="text-white/40 text-sm">•</span>
           </div>
+          
+          <span className="text-white text-sm">Jaja Games</span>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="white"/>
+              <path d="M14 14C14 11.2385 11.3137 9 8 9C4.68629 9 2 11.2385 2 14V15C2 15.5523 2.44772 16 3 16H13C13.5523 16 14 15.5523 14 15V14Z" fill="white"/>
+            </svg>
+            <span className="text-white text-xs">123.5k</span>
+          </div>
+          
+          {!isDrawerOpen && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="text-white p-0 h-auto"
+              onClick={() => setIsDrawerOpen(true)}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 13L11 8L6 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Button>
+          )}
         </div>
       </div>
       
