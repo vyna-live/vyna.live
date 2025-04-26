@@ -289,8 +289,24 @@ export function useAgora(config: AgoraConfig = {}) {
                 try {
                   // Use a higher volume setting (between 0-100, default is 100)
                   user.audioTrack.setVolume(100); 
-                  user.audioTrack.play();
-                  console.log('Playing remote audio track');
+                  
+                  // Try to play audio multiple times with increasing delays
+                  const playAudio = () => {
+                    try {
+                      user.audioTrack?.play();
+                      console.log('Playing remote audio track');
+                    } catch (err) {
+                      console.error('Error playing remote audio:', err);
+                    }
+                  };
+                  
+                  // Try immediately
+                  playAudio();
+                  
+                  // And retry a few times with delay
+                  setTimeout(playAudio, 500);
+                  setTimeout(playAudio, 1000);
+                  setTimeout(playAudio, 2000);
                 } catch (error) {
                   console.error('Failed to play remote audio track:', error);
                 }

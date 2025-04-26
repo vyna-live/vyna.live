@@ -56,12 +56,23 @@ export default function AgoraVideo({
   // Setup flag to track initialization attempt
   const initAttemptedRef = useRef(false);
   
+  // Track audio retry attempts
+  const audioRetryAttemptsRef = useRef(0);
+  
   // Get Agora client from hook with memoized configuration
   const agora = useAgora({
     mode: 'rtc',
     codec: 'h264',
     role: mode === 'livestream' ? 'host' : 'audience'
   });
+  
+  // Log audio state for debugging
+  useEffect(() => {
+    if (agora.localAudioTrack) {
+      console.log('Audio track enabled:', agora.isAudioEnabled);
+      console.log('Audio track state:', agora.localAudioTrack.getStats());
+    }
+  }, [agora.localAudioTrack, agora.isAudioEnabled]);
   
   // Simple initialization that relies on the improved useAgora hook
   useEffect(() => {
@@ -177,6 +188,40 @@ export default function AgoraVideo({
       };
     }
   }, [agora.localVideoTrack]);
+  
+  // Repeated attempts to ensure audio works
+  useEffect(() => {
+    if (!agora.localAudioTrack || !isReady) return;
+    
+    // Force enable audio track multiple times
+    const forceEnableAudio = () => {
+      if (agora.localAudioTrack) {
+        try {
+          agora.localAudioTrack.setEnabled(true);
+          agora.localAudioTrack.setVolume(100); // Maximum volume
+          console.log('Forced audio enable attempt:', audioRetryAttemptsRef.current);
+          audioRetryAttemptsRef.current++;
+        } catch (err) {
+          console.error('Error enabling audio:', err);
+        }
+      }
+    };
+    
+    // Immediately try once
+    forceEnableAudio();
+    
+    // Try several more times with increasing delays
+    const timers = [
+      setTimeout(forceEnableAudio, 1000),
+      setTimeout(forceEnableAudio, 2000),
+      setTimeout(forceEnableAudio, 3000),
+      setTimeout(forceEnableAudio, 5000)
+    ];
+    
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
+  }, [agora.localAudioTrack, isReady]);
   
   // Render remote videos when users join
   useEffect(() => {
