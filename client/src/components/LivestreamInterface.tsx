@@ -271,8 +271,32 @@ export default function LivestreamInterface({
             if (!isJoiningMode && egressSettings) {
               console.log('Creating new call with egress settings', egressSettings);
               try {
-                const result = await createCallWithEgress(randomId, callId);
+                // Call the endpoint to create a livestream with egress
+                const createResponse = await fetch('/api/stream/livestream', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: randomId,
+                    callId: callId,
+                    token: tokenData.token,
+                    egressSettings: egressSettings
+                  }),
+                });
+                
+                if (!createResponse.ok) {
+                  throw new Error('Failed to create livestream with egress');
+                }
+                
+                const result = await createResponse.json();
                 console.log('Call created successfully:', result);
+                
+                // If the call has egress enabled, show a toast notification
+                if (result.egress && egressSettings.enabled) {
+                  toast({
+                    title: "Multistream Enabled",
+                    description: `Your stream is being sent to ${result.egress.targets?.length || 0} platform(s)`,
+                  });
+                }
               } catch (error) {
                 console.error('Error creating call:', error);
                 showErrorToast('Failed to set up streaming with multiplatform configuration');

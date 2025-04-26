@@ -422,6 +422,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stream/key", getStreamApiKey);
 
   const httpServer = createServer(app);
+  
+  // Add WebSocket server for real-time communication
+  try {
+    const { WebSocketServer } = require('ws');
+    const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+    
+    wss.on('connection', (ws) => {
+      console.log('WebSocket client connected');
+      
+      ws.on('message', (message) => {
+        try {
+          const parsedMessage = JSON.parse(message);
+          console.log('Received message:', parsedMessage);
+          
+          // Handle different message types
+          if (parsedMessage.type === 'stream_status') {
+            // Broadcast status to all clients
+            wss.clients.forEach((client) => {
+              if (client.readyState === ws.OPEN) {
+                client.send(JSON.stringify({
+                  type: 'status_update',
+                  data: parsedMessage.data
+                }));
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error handling WebSocket message:', error);
+        }
+      });
+      
+      ws.on('close', () => {
+        console.log('WebSocket client disconnected');
+      });
+      
+      // Send initial connection confirmation
+      ws.send(JSON.stringify({ type: 'connected' }));
+    });
+    
+    console.log('WebSocket server initialized');
+  } catch (error) {
+    console.error('Error setting up WebSocket server:', error);
+  }
 
   return httpServer;
 }
