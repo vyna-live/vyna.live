@@ -12,6 +12,7 @@ import path from "path";
 import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey, updateEgressConfig } from "./getstream";
+import { getAgoraAppId, initializeChannel, addRtmpDestination, getActiveChannels } from "./agora";
 import { WebSocketServer, WebSocket } from "ws";
 
 // Configure multer for file uploads
@@ -421,6 +422,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get GetStream API key for frontend
   app.get("/api/stream/key", getStreamApiKey);
+  
+  // Agora API endpoints for livestreaming
+  app.get("/api/agora/app-id", getAgoraAppId);
+  
+  app.post("/api/agora/channel", initializeChannel);
+  
+  app.post("/api/agora/rtmp", addRtmpDestination);
+  
+  app.get("/api/agora/channels", getActiveChannels);
 
   const httpServer = createServer(app);
   
