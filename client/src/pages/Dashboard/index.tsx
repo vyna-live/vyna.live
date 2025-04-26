@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import Logo from '@/components/Logo';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Video, Keyboard } from 'lucide-react';
 import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
 import JoinStreamDialog from '@/components/JoinStreamDialog';
 
@@ -145,20 +145,26 @@ export default function Dashboard() {
         {/* Hero section */}
         <section className="mb-16 text-center mt-12">
           <h1 className="text-[48px] font-bold mb-4 tracking-tight bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#CDBCAB] text-transparent bg-clip-text">Research first, go live next!</h1>
-          <p className="text-zinc-400 text-base max-w-2xl mx-auto mb-10">
+          <p className="text-zinc-400 text-base max-w-2xl mx-auto mb-6">
             Start your own live stream with AI-powered research tools or join 
             other creators' streams to learn and engage.
           </p>
+          
+          <div className="mb-10">
+            <Link 
+              to="/research" 
+              className="text-blue-400 hover:text-blue-300 transition-colors underline"
+            >
+              Go to AI Research →
+            </Link>
+          </div>
           
           <div className="flex items-center justify-center space-x-4">
             <button 
               onClick={() => setIsStreamDialogOpen(true)}
               className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity rounded-sm"
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 7l-7 5 7 5V7z" />
-                <rect x="1" y="5" width="15" height="14" />
-              </svg>
+              <Video className="w-6 h-6" />
               <span>Start streaming</span>
             </button>
             
@@ -166,16 +172,7 @@ export default function Dashboard() {
               onClick={() => setIsJoinStreamDialogOpen(true)}
               className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm"
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="6" width="20" height="12" />
-                <line x1="6" y1="10" x2="6" y2="10" />
-                <line x1="10" y1="10" x2="10" y2="10" />
-                <line x1="14" y1="10" x2="14" y2="10" />
-                <line x1="18" y1="10" x2="18" y2="10" />
-                <line x1="6" y1="14" x2="6" y2="14" />
-                <line x1="10" y1="14" x2="14" y2="14" strokeWidth="4" />
-                <line x1="18" y1="14" x2="18" y2="14" />
-              </svg>
+              <Keyboard className="w-6 h-6" />
               <span>Join stream</span>
             </button>
           </div>

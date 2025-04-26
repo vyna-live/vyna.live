@@ -3,7 +3,7 @@ import { Mic, Camera, Smile, X, ChevronRight, MoreHorizontal, Menu } from "lucid
 import Teleprompter from "./Teleprompter";
 import Logo from "./Logo";
 import StreamVideoComponent from "./StreamVideo";
-import { useStreamVideoContext } from "../providers/StreamVideoProvider";
+import { useStreamVideoContext } from "@/providers/StreamVideoProvider";
 import { DeviceSettings } from "@stream-io/video-react-sdk";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
