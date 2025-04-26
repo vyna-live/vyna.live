@@ -25,6 +25,22 @@ export function useStreamVideoContext() {
   return useContext(StreamVideoContext);
 }
 
+// Function to generate token via API
+const tokenProvider = async (userId: string, userName: string) => {
+  const response = await fetch('/api/stream/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, userName }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to get stream token: ${response.status}`);
+  }
+  
+  const { token } = await response.json();
+  return token;
+};
+
 interface StreamVideoProviderProps {
   children: ReactNode;
 }
@@ -45,7 +61,7 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
       try {
         console.log('Initializing Stream Video client...');
         
-        // Fetch API key first
+        // Fetch API key first - this is simpler than the token
         const keyResponse = await fetch('/api/stream/key');
         if (!keyResponse.ok) {
           throw new Error(`Failed to fetch Stream API key: ${keyResponse.status}`);
@@ -58,59 +74,40 @@ const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) =
         
         console.log('Fetched Stream API key:', apiKey);
         
-        // Generate token
-        const tokenResponse = await fetch('/api/stream/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, userName }),
-        });
-        
-        if (!tokenResponse.ok) {
-          throw new Error(`Failed to fetch Stream tokens: ${tokenResponse.status}`);
-        }
-        
-        const { token } = await tokenResponse.json();
-        
-        if (!token) {
-          throw new Error('Invalid or missing Stream token');
-        }
-        
-        console.log('Fetched Stream token successfully');
-        
-        // Create the Stream Video client
+        // Create the user info
         const userInfo = { 
           id: userId, 
           name: userName,
           image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
         };
         
-        console.log('Creating StreamVideoClient with:', { apiKey, userInfo });
+        // Create the client with a token provider function instead of a token directly
+        // This is more reliable as it will automatically refresh tokens when needed
+        console.log('Creating StreamVideoClient with tokenProvider...');
         
         const videoClient = new StreamVideoClient({
           apiKey,
-          token,
           user: userInfo,
-          options: {
-            logLevel: 'debug',
-          }
+          tokenProvider: () => tokenProvider(userId, userName),
         });
         
-        console.log('StreamVideoClient created, attempting to connect...');
-        
-        if (isMounted) {
-          setClient(videoClient);
-          setIsInitialized(true);
-          setIsDemoMode(false);
-          
-          console.log('Stream Video client initialized successfully');
-          
-          // Show toast for successful connection
-          toast({
-            title: "Connected to Streaming Service",
-            description: "You're now ready to create or join a livestream.",
-            duration: 3000,
-          });
-        }
+        // Wait a moment to ensure client initialization
+        setTimeout(() => {
+          if (isMounted) {
+            setClient(videoClient);
+            setIsInitialized(true);
+            setIsDemoMode(false);
+            
+            console.log('Stream Video client initialized successfully');
+            
+            // Show toast for successful connection
+            toast({
+              title: "Connected to Streaming Service",
+              description: "You're now ready to create or join a livestream.",
+              duration: 3000,
+            });
+          }
+        }, 1000);
         
         // Return cleanup function
         return () => {

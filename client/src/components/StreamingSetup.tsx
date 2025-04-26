@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/Logo';
-import { useStreamVideo } from '@/hooks/useStreamVideo';
+import { useStreamVideoContext } from '@/providers/StreamVideoProvider';
 import { 
   DeviceSettings, 
   StreamCall,
@@ -10,6 +10,7 @@ import {
   StreamVideo,
 } from '@stream-io/video-react-sdk';
 import { useLocation } from 'wouter';
+import { useGetCallById } from '@/hooks/useGetCallById';
 
 interface StreamingSetupProps {
   setIsSetupComplete: (value: boolean) => void;
@@ -21,9 +22,34 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
   setIsSetupComplete,
   callId
 }) => {
-  const { client } = useStreamVideo();
+  const { client, isInitialized, isDemoMode: globalDemoMode } = useStreamVideoContext();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Local state for demo mode (combines with global)
+  const [localDemoMode, setLocalDemoMode] = useState(false);
+  const isDemoMode = globalDemoMode || localDemoMode;
+  
+  // If demo mode is active, show a simplified setup
+  if (isDemoMode) {
+    return <DemoSetupScreen setIsSetupComplete={setIsSetupComplete} />;
+  }
+  
+  // If client is not initialized, show a loading screen
+  if (!isInitialized) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black">
+        <div className="flex flex-col items-center text-center">
+          <Logo variant="light" size="lg" className="mb-8" />
+          <div className="animate-spin h-10 w-10 border-4 border-[#A67D44] border-t-transparent rounded-full"></div>
+          <div className="mt-4 text-gray-300 text-xl">Initializing streaming service...</div>
+          <div className="mt-2 text-gray-400 max-w-md px-4">
+            Connecting to GetStream API...
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // If the client is not ready, show a loading screen
   if (!client) {
@@ -36,78 +62,8 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
           <div className="mt-2 text-gray-400 max-w-md px-4">
             Make sure you have provided valid GetStream API credentials
           </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Create and track call state and demo mode
-  const [callReady, setCallReady] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
-  
-  useEffect(() => {
-    const connectToCall = async () => {
-      if (!client) return;
-      
-      try {
-        console.log('Call setup starting...', { 
-          callId, 
-          clientReady: !!client,
-        });
-        
-        // Since we can't check connectionState property, assume call readiness
-        // after a short delay
-        setTimeout(() => {
-          setCallReady(true);
-          console.log('Call setup complete, client should be ready now');
-        }, 1000);
-      } catch (error) {
-        console.error('Error in call setup:', error);
-      }
-    };
-    
-    connectToCall();
-  }, [client, callId]);
-  
-  // Separate effect for auto-switching to demo mode after timeout
-  useEffect(() => {
-    if (!client || !callReady) {
-      const connectionTimeout = 3000; // 3 seconds timeout
-      
-      console.log('Starting connection timeout check');
-      const timer = setTimeout(() => {
-        // If still not connected after timeout, fallback to demo mode
-        if (!callReady) {
-          console.log('Connection timeout, switching to demo mode');
-          setIsDemoMode(true);
-        }
-      }, connectionTimeout);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [client, callReady]);
-  
-  // Show connection screen with fallback to demo mode
-  if (!client || !callReady) {
-    // If demo mode is activated, show demo setup screen
-    if (isDemoMode) {
-      return <DemoSetupScreen setIsSetupComplete={setIsSetupComplete} />;
-    }
-    
-    // Otherwise, show loading screen
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-gradient-to-b from-gray-900 to-black">
-        <div className="flex flex-col items-center text-center">
-          <Logo variant="light" size="lg" className="mb-8" />
-          <div className="animate-spin h-10 w-10 border-4 border-[#A67D44] border-t-transparent rounded-full"></div>
-          <div className="mt-4 text-gray-300 text-xl">
-            {!client ? "Initializing stream session..." : "Connecting to stream service..."}
-          </div>
-          <div className="mt-2 text-gray-500 text-sm">
-            Connection is being established...
-          </div>
           <button 
-            onClick={() => setIsDemoMode(true)}
+            onClick={() => setLocalDemoMode(true)}
             className="mt-8 px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white"
           >
             Use Demo Mode Instead
@@ -117,25 +73,109 @@ const StreamingSetup: React.FC<StreamingSetupProps> = ({
     );
   }
   
-  // We have a connected client, create a call instance
-  try {
-    const call = client.call('livestream', callId);
+  // Setup timeout for fallback to demo mode
+  useEffect(() => {
+    const connectionTimeout = 8000; // 8 seconds timeout
+    const timer = setTimeout(() => {
+      if (client && !isDemoMode) {
+        console.log('Connection timeout, offering demo mode');
+        toast({
+          title: "Connection Taking Too Long",
+          description: "The connection to the streaming service is taking longer than expected. You can continue waiting or use demo mode.",
+          duration: 8000,
+        });
+      }
+    }, connectionTimeout);
     
+    return () => clearTimeout(timer);
+  }, [client, isDemoMode, toast]);
+  
+  return (
+    <LiveStreamSetup 
+      client={client} 
+      callId={callId} 
+      setIsSetupComplete={setIsSetupComplete}
+      onError={() => setLocalDemoMode(true)}
+    />
+  );
+};
+
+// Component that handles the actual Stream SDK setup
+const LiveStreamSetup: React.FC<{ 
+  client: any, 
+  callId: string, 
+  setIsSetupComplete: (value: boolean) => void,
+  onError: () => void
+}> = ({ client, callId, setIsSetupComplete, onError }) => {
+  const [isCreatingCall, setIsCreatingCall] = useState(true);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    // Create the call when the component mounts
+    const setupCall = async () => {
+      try {
+        console.log('Setting up livestream call with ID:', callId);
+        const callInstance = client.call('livestream', callId);
+        
+        try {
+          await callInstance.getOrCreate({
+            data: {
+              starts_at: new Date().toISOString(),
+              custom: {
+                title: 'Vyna.live Stream',
+                description: 'Interactive livestream with AI assistant',
+              },
+            },
+          });
+          console.log('Call created or retrieved successfully');
+          setIsCreatingCall(false);
+        } catch (error) {
+          console.error('Error creating/getting call:', error);
+          toast({
+            title: "Error Setting Up Stream",
+            description: "Failed to create or join the stream. Please try again.",
+            variant: "destructive",
+          });
+          onError();
+        }
+      } catch (error) {
+        console.error('Error setting up call:', error);
+        toast({
+          title: "Error Setting Up Call",
+          description: "There was an error setting up your stream.",
+          variant: "destructive",
+        });
+        onError();
+      }
+    };
+    
+    setupCall();
+  }, [client, callId, onError, toast]);
+  
+  if (isCreatingCall) {
     return (
-      <div className="min-h-screen bg-black">
-        <StreamVideo client={client}>
-          <StreamCall call={call}>
-            <SetupContent setIsSetupComplete={setIsSetupComplete} />
-          </StreamCall>
-        </StreamVideo>
+      <div className="flex h-screen w-full items-center justify-center bg-black">
+        <div className="flex flex-col items-center">
+          <Logo variant="light" size="lg" className="mb-8" />
+          <div className="animate-spin h-10 w-10 border-4 border-[#A67D44] border-t-transparent rounded-full"></div>
+          <div className="mt-4 text-gray-300 text-xl">Creating livestream room...</div>
+        </div>
       </div>
     );
-  } catch (error) {
-    console.error('Error creating call:', error);
-    
-    // If there's an error creating the call, fallback to demo mode
-    return <DemoSetupScreen setIsSetupComplete={setIsSetupComplete} />;
   }
+  
+  // Create the call instance
+  const call = client.call('livestream', callId);
+  
+  return (
+    <div className="min-h-screen bg-black">
+      <StreamVideo client={client}>
+        <StreamCall call={call}>
+          <SetupContent setIsSetupComplete={setIsSetupComplete} />
+        </StreamCall>
+      </StreamVideo>
+    </div>
+  );
 };
 
 // Demo mode setup screen without Stream SDK components
