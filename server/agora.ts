@@ -1,17 +1,9 @@
 import { Request, Response } from 'express';
-import { randomUUID } from 'crypto';
+import crypto from 'crypto';
 
-/**
- * Agora API handling for livestreaming
- */
+// In-memory store for active channels (in a real app, use your database)
+const activeChannels: Map<string, ChannelConfig> = new Map();
 
-// Check if the app ID is set
-const AGORA_APP_ID = process.env.AGORA_APP_ID;
-if (!AGORA_APP_ID) {
-  console.warn('Warning: AGORA_APP_ID environment variable is not set. Agora functionality will be limited.');
-}
-
-// Store active channels with their configurations
 interface ChannelConfig {
   uid: string;
   channelName: string;
@@ -20,19 +12,17 @@ interface ChannelConfig {
   rtmpDestinations?: string[];
 }
 
-const activeChannels = new Map<string, ChannelConfig>();
-
 /**
  * Get Agora App ID (public endpoint)
  */
 export async function getAgoraAppId(req: Request, res: Response) {
-  if (!AGORA_APP_ID) {
-    return res.status(500).json({ 
-      error: 'Agora App ID not configured on server' 
-    });
+  const appId = process.env.AGORA_APP_ID;
+  
+  if (!appId) {
+    return res.status(500).json({ error: 'Agora App ID not configured' });
   }
   
-  res.json({ appId: AGORA_APP_ID });
+  res.json({ appId });
 }
 
 /**
@@ -40,44 +30,37 @@ export async function getAgoraAppId(req: Request, res: Response) {
  */
 export async function initializeChannel(req: Request, res: Response) {
   try {
-    const { 
-      channelName = `channel-${Date.now()}`,
-      role = 'host'
-    } = req.body;
+    const { channelName, role = 'host' } = req.body;
     
-    if (!AGORA_APP_ID) {
-      return res.status(500).json({ 
-        error: 'Agora App ID not configured on server' 
-      });
+    if (!channelName) {
+      return res.status(400).json({ error: 'Channel name is required' });
     }
     
-    // Generate a unique ID for this user in this channel
-    const uid = randomUUID().replace(/-/g, '').slice(0, 16);
+    // Generate a random user ID for this channel
+    const uid = crypto.randomBytes(8).toString('hex');
     
-    // Save the channel config
+    // Create channel configuration
     const channelConfig: ChannelConfig = {
       uid,
       channelName,
       role,
       created: new Date(),
+      rtmpDestinations: []
     };
     
+    // Store channel configuration
     activeChannels.set(channelName, channelConfig);
     
-    // Return the necessary information to join the channel
+    // Return necessary information
     res.json({
-      appId: AGORA_APP_ID,
-      channel: channelName,
       uid,
-      // In a production environment, we would generate a token here
-      // token: generateToken(channelName, uid, role),
+      channelName,
+      appId: process.env.AGORA_APP_ID,
+      role,
     });
-  } catch (error: any) {
-    console.error('Error initializing Agora channel:', error);
-    res.status(500).json({ 
-      error: 'Failed to initialize streaming channel',
-      details: error.message || String(error)
-    });
+  } catch (error) {
+    console.error('Error initializing channel:', error);
+    res.status(500).json({ error: 'Failed to initialize channel' });
   }
 }
 
@@ -89,40 +72,37 @@ export async function addRtmpDestination(req: Request, res: Response) {
     const { channelName, rtmpUrl } = req.body;
     
     if (!channelName || !rtmpUrl) {
-      return res.status(400).json({ 
-        error: 'Missing required parameters: channelName, rtmpUrl' 
-      });
+      return res.status(400).json({ error: 'Channel name and RTMP URL are required' });
     }
     
-    const channelConfig = activeChannels.get(channelName);
-    if (!channelConfig) {
-      return res.status(404).json({ 
-        error: 'Channel not found' 
-      });
+    const channel = activeChannels.get(channelName);
+    
+    if (!channel) {
+      return res.status(404).json({ error: 'Channel not found' });
     }
     
-    // Add the RTMP destination
-    if (!channelConfig.rtmpDestinations) {
-      channelConfig.rtmpDestinations = [];
+    // Add RTMP URL to channel configuration
+    if (!channel.rtmpDestinations) {
+      channel.rtmpDestinations = [];
     }
     
-    channelConfig.rtmpDestinations.push(rtmpUrl);
-    activeChannels.set(channelName, channelConfig);
+    // Don't add duplicates
+    if (!channel.rtmpDestinations.includes(rtmpUrl)) {
+      channel.rtmpDestinations.push(rtmpUrl);
+    }
     
-    // In a real implementation, we would call Agora's Cloud Recording API
-    // to start recording and streaming to RTMP destinations
+    // Update channel in store
+    activeChannels.set(channelName, channel);
     
     res.json({
       success: true,
       message: 'RTMP destination added',
-      destinations: channelConfig.rtmpDestinations
+      rtmpUrl,
+      channelName
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error adding RTMP destination:', error);
-    res.status(500).json({ 
-      error: 'Failed to add RTMP destination',
-      details: error.message || String(error)
-    });
+    res.status(500).json({ error: 'Failed to add RTMP destination' });
   }
 }
 
@@ -130,15 +110,14 @@ export async function addRtmpDestination(req: Request, res: Response) {
  * Get all active channels (for debugging)
  */
 export async function getActiveChannels(req: Request, res: Response) {
-  const channels = Array.from(activeChannels.entries()).map(([name, config]) => ({
-    name,
-    ...config,
-    // Don't expose the full uid for security
-    uid: config.uid.substring(0, 4) + '...',
-  }));
+  const channels = Array.from(activeChannels.values());
   
   res.json({
-    channels,
-    count: channels.length
+    count: channels.length,
+    channels: channels.map(c => ({
+      channelName: c.channelName,
+      created: c.created,
+      rtmpDestinations: c.rtmpDestinations || []
+    }))
   });
 }

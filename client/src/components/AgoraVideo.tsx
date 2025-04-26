@@ -62,6 +62,9 @@ export default function AgoraVideo({
   
   // Initialize Agora on component mount
   useEffect(() => {
+    // Prevent multiple initializations
+    if (isReady) return;
+    
     const setupAgora = async () => {
       try {
         // Initialize Agora with channel name if provided
@@ -88,28 +91,40 @@ export default function AgoraVideo({
     return () => {
       agora.leave();
     };
-  }, [channelName, onError, agora]);
+  }, [channelName, onError, agora, isReady]);
   
   // Add RTMP destinations for multiplatform streaming
   useEffect(() => {
+    // Skip if not ready or if no destinations
+    if (!isReady || !enableMultiplatform || rtmpDestinations.length === 0) {
+      return;
+    }
+    
+    // Track which destinations have been added to prevent duplicate calls
+    const addedDestinations = new Set<string>();
+    
     const addRtmpDestinations = async () => {
-      if (enableMultiplatform && isReady && rtmpDestinations.length > 0) {
-        for (const destination of rtmpDestinations) {
-          try {
-            await agora.addRtmpDestination(destination);
-            toast({
-              title: 'Multiplatform streaming enabled',
-              description: `Successfully connected to streaming destination`,
-              variant: 'default',
-            });
-          } catch (error) {
-            console.error('Error adding RTMP destination:', error);
-            toast({
-              title: 'Multiplatform streaming failed',
-              description: 'Failed to connect to streaming destination',
-              variant: 'destructive',
-            });
-          }
+      for (const destination of rtmpDestinations) {
+        // Skip if already added
+        if (addedDestinations.has(destination)) {
+          continue;
+        }
+        
+        try {
+          await agora.addRtmpDestination(destination);
+          addedDestinations.add(destination);
+          toast({
+            title: 'Multiplatform streaming enabled',
+            description: `Successfully connected to streaming destination`,
+            variant: 'default',
+          });
+        } catch (error) {
+          console.error('Error adding RTMP destination:', error);
+          toast({
+            title: 'Multiplatform streaming failed',
+            description: 'Failed to connect to streaming destination',
+            variant: 'destructive',
+          });
         }
       }
     };
