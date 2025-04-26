@@ -87,10 +87,6 @@ export function useAgora(config: AgoraConfig = {}) {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       apiRequestInProgressRef.current = true;
       
-      let appId = appIdRef.current;
-      let uid = uidRef.current;
-      let channelName = options.channelName || `channel-${Date.now()}`;
-      
       try {
         // Create Agora client if it doesn't exist
         if (!clientRef.current) {
@@ -98,7 +94,7 @@ export function useAgora(config: AgoraConfig = {}) {
         }
         
         // Get app ID from server if we don't have it cached
-        if (!appId) {
+        if (!appIdRef.current) {
           const appIdResponse = await fetch('/api/agora/app-id');
           const appIdData = await appIdResponse.json();
           
@@ -106,15 +102,15 @@ export function useAgora(config: AgoraConfig = {}) {
             throw new Error('Failed to get Agora App ID from server');
           }
           
-          appId = appIdData.appId;
-          appIdRef.current = appId;
+          appIdRef.current = appIdData.appId;
         }
         
-        // Store channel name in ref
+        // Initialize channel from server
+        const channelName = options.channelName || `channel-${Date.now()}`;
         channelNameRef.current = channelName;
         
         // Only make the channel API call if we need a new channel
-        if (!uid || channelNameRef.current !== options.channelName) {
+        if (!uidRef.current || channelNameRef.current !== options.channelName) {
           const channelResponse = await fetch('/api/agora/channel', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -130,8 +126,7 @@ export function useAgora(config: AgoraConfig = {}) {
             throw new Error('Failed to initialize channel');
           }
           
-          uid = channelData.uid;
-          uidRef.current = uid;
+          uidRef.current = channelData.uid;
         }
         
         // Create local tracks
@@ -150,9 +145,9 @@ export function useAgora(config: AgoraConfig = {}) {
         initializedRef.current = true;
         
         return {
-          channelName,
-          uid,
-          appId
+          channelName: channelNameRef.current,
+          uid: uidRef.current,
+          appId: appIdRef.current
         };
       } finally {
         apiRequestInProgressRef.current = false;

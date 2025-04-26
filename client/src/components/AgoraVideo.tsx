@@ -60,21 +60,34 @@ export default function AgoraVideo({
     role: mode === 'livestream' ? 'host' : 'audience'
   });
   
-  // Initialize Agora on component mount
+  // Initialize Agora on component mount with proper memoization
   useEffect(() => {
-    // Prevent multiple initializations
+    // Prevent multiple initializations and API calls
     if (isReady) return;
+    
+    // Track if the component is still mounted
+    let isMounted = true;
+    const controller = new AbortController();
     
     const setupAgora = async () => {
       try {
         // Initialize Agora with channel name if provided
         await agora.init({ channelName });
         
+        // Check if component is still mounted before proceeding
+        if (!isMounted) return;
+        
         // Join the channel
         await agora.join();
         
-        setIsReady(true);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setIsReady(true);
+        }
       } catch (error) {
+        // Only update error state if component is still mounted
+        if (!isMounted) return;
+        
         console.error('Error setting up Agora:', error);
         const errorMsg = error instanceof Error ? error.message : 'Unknown error setting up livestream';
         setInitError(errorMsg);
@@ -85,11 +98,21 @@ export default function AgoraVideo({
       }
     };
     
-    setupAgora();
+    // Use a debounced initialization to prevent rapid consecutive calls
+    const timeoutId = setTimeout(() => {
+      setupAgora();
+    }, 300);
     
-    // Clean up on unmount
+    // Clean up on unmount or when dependencies change
     return () => {
-      agora.leave();
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timeoutId);
+      
+      // Only leave the channel if we were actually connected
+      if (isReady) {
+        agora.leave();
+      }
     };
   }, [channelName, onError, agora, isReady]);
   
