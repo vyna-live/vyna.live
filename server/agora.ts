@@ -117,11 +117,11 @@ export async function addRtmpDestination(req: Request, res: Response) {
       message: 'RTMP destination added',
       destinations: channelConfig.rtmpDestinations
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error adding RTMP destination:', error);
     res.status(500).json({ 
       error: 'Failed to add RTMP destination',
-      details: error.message
+      details: error.message || String(error)
     });
   }
 }
