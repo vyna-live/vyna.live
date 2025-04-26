@@ -130,8 +130,17 @@ export function useAgora(config: AgoraConfig = {}) {
             throw new Error('Failed to initialize channel');
           }
           
-          uid = channelData.uid;
+          // For AgoraRTC we need to use numbers for UIDs
+          // Convert the string UID to a number by hashing it
+          const uidNumber = parseInt(channelData.uid.substring(0, 8), 16) % 1000000;
+          uid = String(uidNumber);
           uidRef.current = uid;
+          
+          console.log('Channel initialized:', { 
+            channelName, 
+            originalUid: channelData.uid,
+            convertedUid: uid 
+          });
         }
         
         // Create local tracks
@@ -227,9 +236,20 @@ export function useAgora(config: AgoraConfig = {}) {
         }));
       });
       
-      // Join the channel
-      const uid = uidRef.current || undefined;
-      await client.join(appIdRef.current, finalChannelName, null, uid as UID);
+      // Join the channel - fix for Agora join parameter format
+      // Convert the string UID to a number (Agora SDK requires number UIDs)
+      const uidStr = uidRef.current || '';
+      const uidNumber = uidStr ? parseInt(uidStr, 10) : null;
+      
+      console.log('Joining channel with params:', { 
+        appId: appIdRef.current, 
+        channel: finalChannelName, 
+        token: null, 
+        uidStr,
+        uidNumber 
+      });
+      
+      await client.join(appIdRef.current, finalChannelName, null, uidNumber);
       
       // Publish local tracks if in host mode
       if (role === 'host' && state.localAudioTrack && state.localVideoTrack) {
