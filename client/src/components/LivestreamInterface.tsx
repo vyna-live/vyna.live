@@ -433,23 +433,7 @@ export default function LivestreamInterface({
               overflow: 'hidden'
             }}
           >
-            {/* Drawer toggle button */}
-            <div className="absolute top-4 right-4 z-30">
-              <button 
-                onClick={toggleDrawer} 
-                className={`w-10 h-10 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors ${drawerVisible ? 'text-white' : 'text-white'}`}
-              >
-                {drawerVisible ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 17L11 12L16 7M8 17L3 12L8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                )}
-              </button>
-            </div>
+            {/* Drawer is now controlled by button in AgoraVideo component */}
             
             {/* Stream content */}
             <div className="w-full h-full">
@@ -514,6 +498,7 @@ export default function LivestreamInterface({
                         uid={streamInfo.uid || undefined}
                         role={'host'}
                         userName={userName}
+                        onToggleDrawer={toggleDrawer}
                       />
                     ) : (appId && token) ? (
                       <AgoraVideo 
@@ -523,6 +508,7 @@ export default function LivestreamInterface({
                         uid={uid || undefined}
                         role={role}
                         userName={userName}
+                        onToggleDrawer={toggleDrawer}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

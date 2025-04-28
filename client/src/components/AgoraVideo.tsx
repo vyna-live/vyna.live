@@ -454,7 +454,7 @@ export function AgoraVideo({
         LIVE
       </div>
       
-      {/* Username and drawer toggle with viewer count */}
+      {/* Viewer count and drawer toggle */}
       <div className="absolute top-4 right-4 flex items-center space-x-3">
         {/* Viewer count - now next to toggle button */}
         <div className="flex items-center">
@@ -473,11 +473,6 @@ export function AgoraVideo({
             <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        
-        {/* Username badge */}
-        <div className="bg-black/60 text-white px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
-          {userName}
-        </div>
       </div>
       
       {/* Chat container */}
