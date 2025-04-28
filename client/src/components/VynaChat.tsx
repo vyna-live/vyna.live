@@ -179,10 +179,10 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
       {/* Header with tabs - exactly matching attached design */}
       <div className="flex items-center px-2 py-3 border-b border-white/10 bg-[#191919]">
         <div className="flex gap-2 w-full items-center">
-          {/* Collapse button */}
+          {/* Collapse button - fixed to correctly match the design icon and close the drawer */}
           <button 
             className="px-2"
-            onClick={onToggleMinimize}
+            onClick={onClose}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
