@@ -328,8 +328,14 @@ export default function StreamingRoom({
         {isDrawerOpen && (
           <div className="w-[320px] h-full rounded-2xl overflow-hidden">
             <VynaChat 
-              onClose={() => setIsDrawerOpen(false)} 
-              onToggleMinimize={() => setIsDrawerOpen(false)}
+              onClose={() => {
+                console.log("StreamingRoom: Close drawer button clicked");
+                setIsDrawerOpen(false);
+              }} 
+              onToggleMinimize={() => {
+                console.log("StreamingRoom: Minimize button clicked");
+                setIsDrawerOpen(false);
+              }}
             />
           </div>
         )}
