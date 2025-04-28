@@ -151,6 +151,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
 
   // Function to start a new chat
   const handleNewChat = () => {
+    console.log("STARTING NEW CHAT");
     setActiveView('empty');
     setActiveChatId(null);
     setInput('');
@@ -158,12 +159,14 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
 
   // Function to view a specific chat
   const handleViewChat = (chatId: string) => {
+    console.log(`OPENING CHAT: ${chatId}`);
     setActiveChatId(chatId);
     setActiveView('chat');
   };
 
   // Function to go back to recent chats
   const handleBackToRecents = () => {
+    console.log("GOING BACK TO RECENTS");
     setActiveView('recents');
     setActiveChatId(null);
   };
@@ -183,14 +186,10 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
           {/* Double chevrons close button (>>) */}
           <button 
             className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/10"
-            onClick={() => {
-              if (onClose) {
-                console.log("VynaChat close button clicked");
-                onClose();
-              }
-            }}
+            onClick={onClose}
             style={{cursor: 'pointer'}}
             aria-label="Close chat panel"
+            id="closeButton"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -204,7 +203,12 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                 ? 'bg-white text-black' 
                 : 'bg-transparent text-white/80'
             }`}
-            onClick={() => setActiveTab('ai')}
+            onClick={() => {
+              setActiveTab('ai');
+              setActiveView('recents');
+              console.log("Switching to VynaAI tab");
+            }}
+            id="vynaAiTabButton"
           >
             <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill={activeTab === 'ai' ? 'black' : 'white'} strokeWidth="1.5"/>
@@ -219,7 +223,11 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                 ? 'bg-white text-black' 
                 : 'bg-transparent text-white/80'
             }`}
-            onClick={() => setActiveTab('notepad')}
+            onClick={() => {
+              setActiveTab('notepad');
+              console.log("Switching to Notepad tab");
+            }}
+            id="notepadTabButton"
           >
             <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 4h12v16H6zm0 0h12v16H6z" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
