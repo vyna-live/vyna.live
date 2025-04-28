@@ -433,42 +433,22 @@ export default function LivestreamInterface({
               overflow: 'hidden'
             }}
           >
-            {/* Streamer header */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 py-4 z-20">
-              <div className="flex items-center">
-                <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden mr-2">
-                  <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-white text-sm font-medium">{userName}</span>
-              </div>
-              
-              <div className="text-white text-lg font-medium">{streamTitle}</div>
-              
-              <div className="flex items-center">
-                <div className="flex items-center bg-black/50 backdrop-blur-sm rounded-full px-3 py-1 mr-2">
-                  <div className="w-5 h-5 rounded-full mr-1.5 flex items-center justify-center">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <span className="text-white text-sm">{viewerCount}</span>
-                </div>
-                <button 
-                  onClick={toggleDrawer} 
-                  className={`w-8 h-8 flex items-center justify-center rounded ${drawerVisible ? 'text-white' : 'text-white'}`}
-                >
-                  {drawerVisible ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M16 17L11 12L16 7M8 17L3 12L8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </button>
-              </div>
+            {/* Drawer toggle button */}
+            <div className="absolute top-4 right-4 z-30">
+              <button 
+                onClick={toggleDrawer} 
+                className={`w-10 h-10 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors ${drawerVisible ? 'text-white' : 'text-white'}`}
+              >
+                {drawerVisible ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 17L11 12L16 7M8 17L3 12L8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
             </div>
             
             {/* Stream content */}

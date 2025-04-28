@@ -5,9 +5,12 @@ import AgoraRTC, {
   ICameraVideoTrack, 
   IMicrophoneAudioTrack,
   ConnectionState,
-  ConnectionDisconnectedReason
+  ConnectionDisconnectedReason,
+  IAgoraRTCRemoteUser,
+  IRemoteVideoTrack,
+  IRemoteAudioTrack
 } from "agora-rtc-sdk-ng";
-import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff } from 'lucide-react';
+import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users } from 'lucide-react';
 
 // Define Agora config
 const config: ClientConfig = { 
@@ -54,6 +57,9 @@ export function AgoraVideo({
   const [error, setError] = useState<string | null>(null);
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
+  const [viewers, setViewers] = useState<number>(0);
+  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
+  const [chatMessages, setChatMessages] = useState<{userId: string, name: string, message: string, color: string}[]>([]);
   
   // Client reference
   const clientRef = useRef<IAgoraRTCClient | null>(null);
@@ -87,6 +93,58 @@ export function AgoraVideo({
           if (curState === 'DISCONNECTED') {
             setIsJoined(false);
           }
+        });
+        
+        // Listen for user-joined events
+        agoraClient.on('user-joined', (user) => {
+          console.log("User joined:", user.uid);
+          setRemoteUsers(prev => [...prev, user]);
+          setViewers(prev => prev + 1);
+          
+          // Add a chat message for user joining
+          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+          
+          setChatMessages(prev => {
+            const newMessages = [...prev, {
+              userId: user.uid.toString(),
+              name: `User ${user.uid.toString().slice(-4)}`,
+              message: "joined",
+              color
+            }];
+            
+            // Keep only the latest 5 messages
+            if (newMessages.length > 5) {
+              return newMessages.slice(newMessages.length - 5);
+            }
+            return newMessages;
+          });
+        });
+        
+        // Listen for user-left events
+        agoraClient.on('user-left', (user) => {
+          console.log("User left:", user.uid);
+          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+          setViewers(prev => Math.max(0, prev - 1));
+          
+          // Add a chat message for user leaving
+          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+          
+          setChatMessages(prev => {
+            const newMessages = [...prev, {
+              userId: user.uid.toString(),
+              name: `User ${user.uid.toString().slice(-4)}`,
+              message: "left",
+              color
+            }];
+            
+            // Keep only the latest 5 messages
+            if (newMessages.length > 5) {
+              return newMessages.slice(newMessages.length - 5);
+            }
+            return newMessages;
+          });
         });
         
         // Create tracks if host
@@ -327,9 +385,41 @@ export function AgoraVideo({
         LIVE
       </div>
       
+      {/* Viewer count */}
+      <div className="absolute top-4 left-20 flex items-center bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
+        <div className="w-5 h-5 rounded-full mr-1.5 flex items-center justify-center">
+          <Users size={12} className="text-white" />
+        </div>
+        <span className="text-white text-sm">{viewers}</span>
+      </div>
+      
       {/* Username */}
       <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
         {userName}
+      </div>
+      
+      {/* Chat messages overlay */}
+      <div className="absolute left-4 bottom-24 w-72 max-h-64 overflow-hidden">
+        <div className="overflow-y-auto max-h-full flex flex-col-reverse pb-2">
+          {chatMessages.map((chatMsg, index) => (
+            <div key={index} className="animate-slideInUp">
+              <div className="flex items-center space-x-1.5 py-1">
+                <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
+                  {chatMsg.name.charAt(0)}
+                </div>
+                <div className="text-white text-xs font-medium">{chatMsg.name}</div>
+                {chatMsg.message === "joined" || chatMsg.message === "left" ? (
+                  <div className={`text-${chatMsg.message === "joined" ? "green" : "red"}-400 text-xs ml-0.5`}>{chatMsg.message}</div>
+                ) : (
+                  <div className="text-gray-400 text-xs">{chatMsg.message}</div>
+                )}
+              </div>
+              {index > 0 && (
+                <div className="border-t border-gray-800/30 my-1"></div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
