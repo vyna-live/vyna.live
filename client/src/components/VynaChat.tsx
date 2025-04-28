@@ -22,9 +22,10 @@ interface VynaChatProps {
   onToggleMinimize?: () => void;
   isMinimized?: boolean;
   isInStreamView?: boolean;
+  hideHeader?: boolean;
 }
 
-const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimized = false, isInStreamView = false }) => {
+const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimized = false, isInStreamView = false, hideHeader = false }) => {
   // State for the current view
   const [activeView, setActiveView] = useState<'recents' | 'chat' | 'empty'>('recents');
   // State for the active tab
@@ -185,70 +186,72 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
 
   return (
     <div className="w-full h-full flex flex-col bg-[#121212] text-white rounded-xl overflow-hidden">
-      {/* Header with tabs - exactly matching attached design */}
-      <div className="flex items-center px-2 py-3 border-b border-white/10 bg-[#191919]">
-        <div className="flex gap-2 w-full items-center">
-          {/* Double chevrons close button (>>) */}
-          <button 
-            className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/10"
-            onClick={() => {
-              console.log("CLOSE BUTTON CLICKED IN VYNACHAT - IS IN STREAM VIEW:", isInStreamView);
-              // Force call the onClose handler directly
-              if (onClose) {
-                onClose();
-              }
-            }}
-            style={{cursor: 'pointer'}}
-            aria-label="Close chat panel"
-            id="closeButton"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          
-          {/* VynaAI button - identical to design */}
-          <button
-            className={`px-3 py-1 rounded-md text-sm flex items-center ${
-              activeTab === 'ai' 
-                ? 'bg-white text-black' 
-                : 'bg-transparent text-white/80'
-            }`}
-            onClick={() => {
-              setActiveTab('ai');
-              setActiveView('recents');
-              console.log("Switching to VynaAI tab");
-            }}
-            id="vynaAiTabButton"
-          >
-            <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill={activeTab === 'ai' ? 'black' : 'white'} strokeWidth="1.5"/>
-            </svg>
-            VynaAI
-          </button>
-          
-          {/* Notepad button - identical to design */}
-          <button
-            className={`px-3 py-1 rounded-md text-sm flex items-center ${
-              activeTab === 'notepad' 
-                ? 'bg-white text-black' 
-                : 'bg-transparent text-white/80'
-            }`}
-            onClick={() => {
-              setActiveTab('notepad');
-              setNotepadView('list');
-              console.log("Switching to Notepad tab (list view)");
-            }}
-            id="notepadTabButton"
-          >
-            <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 4h12v16H6zm0 0h12v16H6z" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M9 8h6M9 12h6M9 16h4" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Notepad
-          </button>
+      {/* Header with tabs - only render if not hideHeader */}
+      {!hideHeader && (
+        <div className="flex items-center px-2 py-3 border-b border-white/10 bg-[#191919]">
+          <div className="flex gap-2 w-full items-center">
+            {/* Double chevrons close button (>>) */}
+            <button 
+              className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/10"
+              onClick={() => {
+                console.log("CLOSE BUTTON CLICKED IN VYNACHAT - IS IN STREAM VIEW:", isInStreamView);
+                // Force call the onClose handler directly
+                if (onClose) {
+                  onClose();
+                }
+              }}
+              style={{cursor: 'pointer'}}
+              aria-label="Close chat panel"
+              id="closeButton"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            
+            {/* VynaAI button - identical to design */}
+            <button
+              className={`px-3 py-1 rounded-md text-sm flex items-center ${
+                activeTab === 'ai' 
+                  ? 'bg-white text-black' 
+                  : 'bg-transparent text-white/80'
+              }`}
+              onClick={() => {
+                setActiveTab('ai');
+                setActiveView('recents');
+                console.log("Switching to VynaAI tab");
+              }}
+              id="vynaAiTabButton"
+            >
+              <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill={activeTab === 'ai' ? 'black' : 'white'} strokeWidth="1.5"/>
+              </svg>
+              VynaAI
+            </button>
+            
+            {/* Notepad button - identical to design */}
+            <button
+              className={`px-3 py-1 rounded-md text-sm flex items-center ${
+                activeTab === 'notepad' 
+                  ? 'bg-white text-black' 
+                  : 'bg-transparent text-white/80'
+              }`}
+              onClick={() => {
+                setActiveTab('notepad');
+                setNotepadView('list');
+                console.log("Switching to Notepad tab (list view)");
+              }}
+              id="notepadTabButton"
+            >
+              <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 4h12v16H6zm0 0h12v16H6z" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 8h6M9 12h6M9 16h4" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Notepad
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main content area */}
       <div className="flex-1 overflow-hidden">

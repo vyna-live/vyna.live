@@ -32,6 +32,8 @@ export default function StreamingRoom({
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
   const [isLoading, setIsLoading] = useState(false);
+  // Tab state for drawer
+  const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const { toast } = useToast();
 
   // Message handlers
@@ -324,16 +326,79 @@ export default function StreamingRoom({
           </div>
         </div>
         
-        {/* Sidebar drawer with VynaChat component */}
+        {/* Sidebar drawer with tabs that match the design in screenshot */}
         {isDrawerOpen && (
-          <div className="w-[320px] h-full rounded-2xl overflow-hidden">
-            <VynaChat 
-              onClose={() => {
-                console.log("CLOSE BUTTON CLICKED: CLOSING DRAWER");
-                setIsDrawerOpen(false);
-              }}
-              isInStreamView={true}
-            />
+          <div className="w-[320px] h-full rounded-2xl overflow-hidden bg-black">
+            {/* Custom header with buttons matching the design */}
+            <div className="h-12 flex items-center px-2 border-b border-white/10 bg-black">
+              <div className="flex items-center space-x-2 w-full">
+                {/* Close button */}
+                <button 
+                  onClick={() => {
+                    console.log("CLOSE BUTTON CLICKED: CLOSING DRAWER");
+                    setIsDrawerOpen(false);
+                  }}
+                  className="h-8 w-8 flex items-center justify-center rounded hover:bg-white/10"
+                  aria-label="Close panel"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                
+                {/* VynaAI button */}
+                <button
+                  onClick={() => setActiveTab('vynaai')}
+                  className={`px-3 py-1 rounded-md flex items-center ${
+                    activeTab === 'vynaai' 
+                      ? 'bg-white text-black' 
+                      : 'text-white/80'
+                  }`}
+                  id="vynaAIButton"
+                >
+                  <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill={activeTab === 'vynaai' ? 'black' : 'white'} strokeWidth="1.5"/>
+                  </svg>
+                  VynaAI
+                </button>
+                
+                {/* Notepad button */}
+                <button
+                  onClick={() => setActiveTab('notepad')}
+                  className={`px-3 py-1 rounded-md flex items-center ${
+                    activeTab === 'notepad' 
+                      ? 'bg-white text-black' 
+                      : 'text-white/80'
+                  }`}
+                  id="notepadButton"
+                >
+                  <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 4h12v16H6zm0 0h12v16H6z" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 8h6M9 12h6M9 16h4" stroke={activeTab === 'notepad' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Notepad
+                </button>
+              </div>
+            </div>
+            
+            {/* Tab content */}
+            <div className="h-[calc(100%-48px)] bg-[#121212]">
+              {activeTab === 'vynaai' ? (
+                <VynaChat 
+                  onClose={() => {
+                    console.log("CLOSE BUTTON CLICKED: CLOSING DRAWER");
+                    setIsDrawerOpen(false);
+                  }}
+                  isInStreamView={true}
+                  hideHeader={true} // Hide the header since we have our own
+                />
+              ) : (
+                <div className="h-full flex flex-col p-4">
+                  <h2 className="text-white text-lg font-medium mb-4">Notepad</h2>
+                  <p className="text-white/70">Notepad functionality coming soon...</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
