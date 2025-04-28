@@ -5,6 +5,7 @@ import InputArea from "@/components/InputArea";
 import Teleprompter from "@/components/Teleprompter";
 import Logo from "@/components/Logo";
 import GradientText from "@/components/GradientText";
+import CreateStreamDialog, { StreamFormData } from "@/components/CreateStreamDialog";
 import { InfoGraphic } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -54,6 +55,7 @@ export default function Home() {
   const [currentChat, setCurrentChat] = useState<ChatHistoryItem | null>(null);
   const [, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
+  const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -190,11 +192,57 @@ export default function Home() {
   };
 
   const startLivestream = () => {
-    // Navigate to livestream page with teleprompter text if available
-    const queryParams = teleprompterText 
-      ? `?text=${encodeURIComponent(teleprompterText)}` 
-      : '';
-    setLocation(`/livestream${queryParams}`);
+    // Open the stream dialog
+    setIsStreamDialogOpen(true);
+  };
+
+  const handleStreamDialogSubmit = async (formData: StreamFormData) => {
+    try {
+      // Create a new livestream via API
+      const response = await fetch('/api/agora/livestream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          userName: 'Livestreamer', // Would normally come from user profile
+          privacy: formData.privacy,
+          scheduledDate: formData.scheduledDate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create livestream: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.livestream) {
+        // Close dialog
+        setIsStreamDialogOpen(false);
+        
+        // Navigate to livestream page with stream info and teleprompter text if available
+        const queryParams = new URLSearchParams();
+        
+        if (teleprompterText) {
+          queryParams.append('text', teleprompterText);
+        }
+        
+        // Add stream info to query params
+        queryParams.append('channelName', data.livestream.channelName);
+        queryParams.append('token', data.livestream.token);
+        queryParams.append('appId', data.livestream.appId);
+        queryParams.append('uid', data.livestream.uid.toString());
+        
+        setLocation(`/livestream?${queryParams.toString()}`);
+      } else {
+        console.error('Failed to create livestream:', data);
+      }
+    } catch (error) {
+      console.error('Error starting livestream:', error);
+    }
   };
 
   const startNewChat = () => {
@@ -248,6 +296,13 @@ export default function Home() {
 
   return (
     <div className="h-screen flex overflow-hidden">
+      {/* Stream dialog */}
+      <CreateStreamDialog 
+        isOpen={isStreamDialogOpen}
+        onClose={() => setIsStreamDialogOpen(false)}
+        onSubmit={handleStreamDialogSubmit}
+      />
+      
       {/* Left sidebar - research history */}
       <div className="w-64 h-full bg-[hsl(var(--ai-background))] border-r border-[hsl(var(--ai-border))] flex flex-col">
         <div className="py-4 px-4 flex items-center justify-center">
