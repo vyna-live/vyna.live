@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import AgoraRTC, { 
   ClientConfig, 
   IAgoraRTCClient, 
@@ -10,7 +10,7 @@ import AgoraRTC, {
   IRemoteVideoTrack,
   IRemoteAudioTrack
 } from "agora-rtc-sdk-ng";
-import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users } from 'lucide-react';
+import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send } from 'lucide-react';
 
 // Define Agora config
 const config: ClientConfig = { 
@@ -33,7 +33,29 @@ const customStyles = `
     border: 1px solid rgba(205, 188, 171, 0.1);
     backdrop-filter: blur(8px);
   }
+  
+  .animate-slideInUp {
+    animation: slideInUp 0.3s ease-out forwards;
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 `;
+
+interface ChatMessage {
+  userId: string;
+  name: string;
+  message: string;
+  color: string;
+}
 
 interface AgoraVideoProps {
   appId: string;
@@ -59,7 +81,9 @@ export function AgoraVideo({
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [viewers, setViewers] = useState<number>(0);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
-  const [chatMessages, setChatMessages] = useState<{userId: string, name: string, message: string, color: string}[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [showChat, setShowChat] = useState(true);
   
   // Client reference
   const clientRef = useRef<IAgoraRTCClient | null>(null);
