@@ -56,6 +56,7 @@ interface ChatMessage {
   name: string;
   message: string;
   color: string;
+  isHost?: boolean;
 }
 
 interface AgoraVideoProps {
@@ -95,6 +96,10 @@ export function AgoraVideo({
   const videoTrackRef = useRef<ICameraVideoTrack | null>(null);
   const screenTrackRef = useRef<any | null>(null);
   
+  // RTM (Real-Time Messaging) client and channel
+  const rtmClientRef = useRef<RtmClient | null>(null);
+  const rtmChannelRef = useRef<RtmChannel | null>(null);
+  
   // Create client and tracks on mount
   useEffect(() => {
     const init = async () => {
@@ -108,12 +113,72 @@ export function AgoraVideo({
           return;
         }
         
-        // Create client
+        // Create RTC client for video/audio
         const agoraClient = AgoraRTC.createClient(config);
         clientRef.current = agoraClient;
         
         // Set client role
         await agoraClient.setClientRole(role === 'host' ? 'host' : 'audience');
+        
+        // Create RTM client for chat
+        try {
+          // Create RTM Client
+          const rtmClient = AgoraRTM.createInstance(appId);
+          rtmClientRef.current = rtmClient;
+          
+          // Initialize RTM Client
+          await rtmClient.login({
+            uid: uid.toString()
+          });
+          
+          // Create RTM Channel
+          const rtmChannel = rtmClient.createChannel(channelName);
+          rtmChannelRef.current = rtmChannel;
+          
+          // Register RTM channel events
+          rtmChannel.on('ChannelMessage', (message, senderId) => {
+            try {
+              // Check if message.text is defined before parsing
+              const messageText = message.text;
+              if (!messageText) {
+                console.error("Received empty message");
+                return;
+              }
+              
+              const parsedMsg = JSON.parse(messageText);
+              const { text, name, color } = parsedMsg;
+              
+              console.log(`Channel message received: ${text} from ${name || 'unknown'} (${senderId})`);
+              
+              // Add message to chat
+              setChatMessages(prev => {
+                const newMessages = [...prev, {
+                  userId: senderId,
+                  name: name || `User ${senderId.slice(-4)}`,
+                  message: text || "sent a message",
+                  color: color || 'bg-blue-500',
+                  isHost: parsedMsg.isHost || false
+                }];
+                
+                // Keep only the latest 8 messages
+                if (newMessages.length > 8) {
+                  return newMessages.slice(newMessages.length - 8);
+                }
+                return newMessages;
+              });
+            } catch (err) {
+              console.error("Error parsing RTM message:", err);
+            }
+          });
+          
+          // Join RTM channel
+          await rtmChannel.join();
+          console.log("Joined RTM channel:", channelName);
+          
+        } catch (rtmErr) {
+          console.error("Error initializing RTM client:", rtmErr);
+          // Continue without RTM if it fails
+        }
         
         // Listen for connection state changes
         agoraClient.on('connection-state-change', (curState, prevState, reason) => {
@@ -142,9 +207,9 @@ export function AgoraVideo({
               color
             }];
             
-            // Keep only the latest 5 messages
-            if (newMessages.length > 5) {
-              return newMessages.slice(newMessages.length - 5);
+            // Keep only the latest 8 messages
+            if (newMessages.length > 8) {
+              return newMessages.slice(newMessages.length - 8);
             }
             return newMessages;
           });
@@ -168,9 +233,9 @@ export function AgoraVideo({
               color
             }];
             
-            // Keep only the latest 5 messages
-            if (newMessages.length > 5) {
-              return newMessages.slice(newMessages.length - 5);
+            // Keep only the latest 8 messages
+            if (newMessages.length > 8) {
+              return newMessages.slice(newMessages.length - 8);
             }
             return newMessages;
           });
@@ -207,12 +272,22 @@ export function AgoraVideo({
         videoTrackRef.current = null;
       }
       
-      // Leave channel if joined
+      // Leave RTC channel if joined
       if (clientRef.current && isJoined) {
         clientRef.current.leave();
       }
+      
+      // Leave RTM channel if joined
+      if (rtmChannelRef.current) {
+        rtmChannelRef.current.leave();
+      }
+      
+      // Logout RTM client
+      if (rtmClientRef.current) {
+        rtmClientRef.current.logout();
+      }
     };
-  }, [appId, role]);
+  }, [appId, role, channelName, uid, userName]);
 
   // Join call when ready
   const joinChannel = async () => {
@@ -293,34 +368,61 @@ export function AgoraVideo({
   
   // Send chat message
   const sendChatMessage = async () => {
-    if (!chatInput.trim() || !clientRef.current) return;
+    if (!chatInput.trim()) return;
     
     try {
-      // Using Agora RTM to send message to channel
-      // Instead we're just adding it locally for now
       const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
       const myColor = randomColors[Math.floor(Math.random() * randomColors.length)];
       
-      setChatMessages(prev => {
-        const newMessages = [...prev, {
-          userId: uid.toString(),
-          name: userName,
-          message: chatInput,
-          color: myColor
-        }];
-        
-        // Keep only the latest 5 messages
-        if (newMessages.length > 5) {
-          return newMessages.slice(newMessages.length - 5);
-        }
-        return newMessages;
-      });
+      // Create message object
+      const messageObj = {
+        text: chatInput,
+        name: userName,
+        color: myColor,
+        isHost: role === 'host'
+      };
       
-      // Clear input
+      // Try to send via RTM if available
+      if (rtmChannelRef.current) {
+        try {
+          // Send message via RTM
+          await rtmChannelRef.current.sendMessage({ text: JSON.stringify(messageObj) });
+          console.log("Message sent via RTM");
+        } catch (rtmError) {
+          console.error("Failed to send message via RTM:", rtmError);
+          
+          // If RTM fails, add message locally
+          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+        }
+      } else {
+        // Add message locally if RTM is not available
+        addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+      }
+      
+      // Clear input regardless
       setChatInput('');
     } catch (err) {
       console.error("Error sending message:", err);
     }
+  };
+  
+  // Helper to add a message locally (without RTM)
+  const addLocalMessage = (userId: string, name: string, message: string, color: string, isHost: boolean = false) => {
+    setChatMessages(prev => {
+      const newMessages = [...prev, {
+        userId,
+        name,
+        message,
+        color,
+        isHost
+      }];
+      
+      // Keep only the latest 8 messages
+      if (newMessages.length > 8) {
+        return newMessages.slice(newMessages.length - 8);
+      }
+      return newMessages;
+    });
   };
   
   // Handle chat input submit
@@ -555,11 +657,24 @@ export function AgoraVideo({
                   <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
                     {chatMsg.name.charAt(0)}
                   </div>
-                  <div className="text-white text-xs font-medium">{chatMsg.name}</div>
+                  <div className="flex items-center">
+                    <span className="text-white text-xs font-medium">{chatMsg.name}</span>
+                    
+                    {/* Host badge if applicable */}
+                    {chatMsg.isHost && (
+                      <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[9px] ml-1 px-1 py-0.5 rounded text-white font-medium">
+                        HOST
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Message content */}
                   {chatMsg.message === "joined" || chatMsg.message === "left" ? (
                     <div className={`text-${chatMsg.message === "joined" ? "green" : "red"}-400 text-xs ml-0.5`}>{chatMsg.message}</div>
                   ) : (
-                    <div className="text-gray-300 text-xs">{chatMsg.message}</div>
+                    <div className={`${chatMsg.isHost ? "text-[#CDBCAB]" : "text-gray-300"} text-xs ${chatMsg.isHost ? "font-medium" : ""}`}>
+                      {chatMsg.message}
+                    </div>
                   )}
                 </div>
                 {index > 0 && (
