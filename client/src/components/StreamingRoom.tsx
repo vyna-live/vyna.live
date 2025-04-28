@@ -442,11 +442,12 @@ export default function StreamingRoom({
                 {/* Close button */}
                 <button 
                   onClick={() => {
-                    console.log("CLOSE BUTTON CLICKED: CLOSING DRAWER");
+                    console.log("DRAWER CLOSE BUTTON CLICKED: CLOSING DRAWER");
                     setIsDrawerOpen(false);
                   }}
                   className="h-8 w-8 flex items-center justify-center rounded hover:bg-white/10"
                   aria-label="Close panel"
+                  id="drawerCloseButton"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -455,7 +456,10 @@ export default function StreamingRoom({
                 
                 {/* VynaAI button */}
                 <button
-                  onClick={() => setActiveTab('vynaai')}
+                  onClick={() => {
+                    console.log("VYNA AI BUTTON CLICKED: SETTING ACTIVE TAB TO VYNAAI");
+                    setActiveTab('vynaai');
+                  }}
                   className={`px-3 py-1 rounded-md flex items-center ${
                     activeTab === 'vynaai' 
                       ? 'bg-white text-black' 
@@ -471,7 +475,10 @@ export default function StreamingRoom({
                 
                 {/* Notepad button */}
                 <button
-                  onClick={() => setActiveTab('notepad')}
+                  onClick={() => {
+                    console.log("NOTEPAD BUTTON CLICKED: SETTING ACTIVE TAB TO NOTEPAD");
+                    setActiveTab('notepad');
+                  }}
                   className={`px-3 py-1 rounded-md flex items-center ${
                     activeTab === 'notepad' 
                       ? 'bg-white text-black' 
