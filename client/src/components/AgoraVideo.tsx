@@ -8,7 +8,8 @@ import AgoraRTC, {
   ConnectionDisconnectedReason,
   IAgoraRTCRemoteUser,
   IRemoteVideoTrack,
-  IRemoteAudioTrack
+  IRemoteAudioTrack,
+  ILocalVideoTrack
 } from "agora-rtc-sdk-ng";
 import AgoraRTM, { RtmClient, RtmMessage, RtmChannel } from 'agora-rtm-sdk';
 import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp } from 'lucide-react';
@@ -94,7 +95,7 @@ export function AgoraVideo({
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const audioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const videoTrackRef = useRef<ICameraVideoTrack | null>(null);
-  const screenTrackRef = useRef<any | null>(null);
+  const screenTrackRef = useRef<ICameraVideoTrack | null>(null);
   
   // RTM (Real-Time Messaging) client and channel
   const rtmClientRef = useRef<RtmClient | null>(null);
@@ -607,7 +608,7 @@ export function AgoraVideo({
           {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
         </button>
         <button 
-          onClick={() => toggleScreenSharing()}
+          onClick={toggleScreenSharing}
           className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
         >
           <ScreenShare size={16} />
