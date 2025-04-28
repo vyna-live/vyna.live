@@ -204,8 +204,8 @@ export default function StreamingRoom({
               : "w-full"
           )}
         >
-          {/* Video component */}
-          <div className="h-full w-full">
+          {/* Video component - fullscreen as in 1st view.png */}
+          <div className="absolute inset-0 h-full w-full">
             <AgoraVideo 
               channelName={channelName}
               mode="livestream"
@@ -223,15 +223,17 @@ export default function StreamingRoom({
                   onEnd();
                 }
               }}
-              className="h-full w-full"
+              className="h-full w-full object-cover"
             />
+            {/* Optional overlay gradient for better visibility of UI elements */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
           </div>
           
-          {/* Bottom user chat messages popup - exactly as in mockup */}
-          <div className="absolute left-6 bottom-24 flex flex-col gap-1 z-10 text-white">
-            <div className="flex items-start gap-2">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
-                <img src="https://i.pravatar.cc/100?img=20" alt="User" className="w-full h-full object-cover" style={{backgroundColor: '#F97316'}} />
+          {/* Bottom user chat messages popup - exactly as in 1st view.png */}
+          <div className="absolute left-6 bottom-24 flex flex-col gap-1 z-10 text-white max-w-xs">
+            <div className="flex items-start gap-2 animate-slide-up">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden bg-orange-500/80">
+                <img src="https://i.pravatar.cc/100?img=20" alt="User" className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-medium">Innocent Dive</span>
@@ -239,7 +241,7 @@ export default function StreamingRoom({
               </div>
             </div>
             
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 animate-slide-up animation-delay-100">
               <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
                 <img src="https://i.pravatar.cc/100?img=30" alt="User" className="w-full h-full object-cover" />
               </div>
@@ -249,7 +251,7 @@ export default function StreamingRoom({
               </div>
             </div>
             
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 animate-slide-up animation-delay-200">
               <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
                 <img src="https://i.pravatar.cc/100?img=40" alt="User" className="w-full h-full object-cover opacity-90" />
               </div>
@@ -259,7 +261,7 @@ export default function StreamingRoom({
               </div>
             </div>
             
-            <div className="flex items-center mt-1">
+            <div className="flex items-center mt-1 animate-slide-up animation-delay-300">
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                 <span className="text-xs font-medium text-white/90">Goddess</span>
@@ -268,49 +270,46 @@ export default function StreamingRoom({
             </div>
           </div>
           
-          {/* Bottom control panel exactly as shown in the mockup */}
+          {/* Bottom control panel exactly as shown in the 1st view.png mockup */}
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-            <div className="flex items-center gap-1 bg-[#333333]/80 backdrop-blur-sm rounded-full px-1 py-1">
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-neutral-700/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md rounded-full px-1 py-1">
+              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                   <line x1="12" x2="12" y1="19" y2="22"></line>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-neutral-700/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect width="18" height="12" x="3" y="6" rx="2" ry="2"></rect>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-neutral-700/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <circle cx="12" cy="12" r="4"></circle>
-                  <line x1="21.17" x2="12" y1="8" y2="8"></line>
-                  <line x1="3.95" x2="8.54" y1="6.06" y2="14"></line>
-                  <line x1="10.88" x2="15.46" y1="21.94" y2="14"></line>
+              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-neutral-700/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20.84 4.60999C20.3292 4.099 19.7228 3.69364 19.0554 3.41708C18.3879 3.14052 17.6725 2.99817 16.95 2.99817C16.2275 2.99817 15.5121 3.14052 14.8446 3.41708C14.1772 3.69364 13.5708 4.099 13.06 4.60999L12 5.66999L10.94 4.60999C9.9083 3.5783 8.50903 2.9987 7.05 2.9987C5.59096 2.9987 4.19169 3.5783 3.16 4.60999C2.1283 5.64169 1.54871 7.04096 1.54871 8.49999C1.54871 9.95903 2.1283 11.3583 3.16 12.39L4.22 13.45L12 21.23L19.78 13.45L20.84 12.39C21.351 11.8792 21.7563 11.2728 22.0329 10.6053C22.3095 9.93789 22.4518 9.22248 22.4518 8.49999C22.4518 7.77751 22.3095 7.0621 22.0329 6.39464C21.7563 5.72718 21.351 5.12075 20.84 4.60999V4.60999Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-neutral-700/50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 17.75L5.82796 20.995L7.00696 14.122L2.00696 9.25495L8.90696 8.25495L12 2.00195L15.093 8.25495L21.993 9.25495L16.993 14.122L18.172 20.995L12 17.75Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
               <button className="h-12 w-12 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" x2="6" y1="6" y2="18"></line>
-                  <line x1="6" x2="18" y1="6" y2="18"></line>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M6 6L18 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
