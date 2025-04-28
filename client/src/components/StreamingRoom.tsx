@@ -441,7 +441,9 @@ export default function StreamingRoom({
               <div className="flex items-center space-x-2 w-full">
                 {/* Close button */}
                 <button 
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log("DRAWER CLOSE BUTTON CLICKED: CLOSING DRAWER");
                     setIsDrawerOpen(false);
                   }}
@@ -456,7 +458,9 @@ export default function StreamingRoom({
                 
                 {/* VynaAI button */}
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log("VYNA AI BUTTON CLICKED: SETTING ACTIVE TAB TO VYNAAI");
                     setActiveTab('vynaai');
                   }}
@@ -475,7 +479,9 @@ export default function StreamingRoom({
                 
                 {/* Notepad button */}
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log("NOTEPAD BUTTON CLICKED: SETTING ACTIVE TAB TO NOTEPAD");
                     setActiveTab('notepad');
                   }}
@@ -499,8 +505,12 @@ export default function StreamingRoom({
             <div className="h-[calc(100%-48px)] bg-[#121212]">
               {activeTab === 'vynaai' ? (
                 <VynaChat 
-                  onClose={() => {
-                    console.log("CLOSE BUTTON CLICKED: CLOSING DRAWER");
+                  onClose={(e?: React.MouseEvent) => {
+                    if (e) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                    console.log("VYNACHAT CLOSE HANDLER CALLED: CLOSING DRAWER");
                     setIsDrawerOpen(false);
                   }}
                   isInStreamView={true}

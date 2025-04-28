@@ -18,7 +18,7 @@ type ChatHistoryItem = {
 };
 
 interface VynaChatProps {
-  onClose: () => void;
+  onClose: (e?: React.MouseEvent) => void;
   onToggleMinimize?: () => void;
   isMinimized?: boolean;
   isInStreamView?: boolean;
@@ -193,11 +193,13 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             {/* Double chevrons close button (>>) */}
             <button 
               className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/10"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log("CLOSE BUTTON CLICKED IN VYNACHAT - IS IN STREAM VIEW:", isInStreamView);
                 // Force call the onClose handler directly
                 if (onClose) {
-                  onClose();
+                  onClose(e);
                 }
               }}
               style={{cursor: 'pointer'}}
