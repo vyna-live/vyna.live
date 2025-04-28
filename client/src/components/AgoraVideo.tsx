@@ -547,7 +547,7 @@ export function AgoraVideo({
       {showChat && (
         <div className="absolute left-4 bottom-[80px] w-72 flex flex-col">
           {/* Chat messages */}
-          <div className="mb-4 overflow-y-auto max-h-48 flex flex-col-reverse bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+          <div className="overflow-y-auto max-h-48 flex flex-col-reverse">
             {chatMessages.map((chatMsg, index) => (
               <div key={index} className="animate-slideInUp mb-2">
                 <div className="flex items-center space-x-1.5 py-1">
@@ -568,24 +568,22 @@ export function AgoraVideo({
             ))}
           </div>
           
-          {/* Chat input below messages */}
-          <div className="mt-2">
-            <form onSubmit={handleChatSubmit} className="relative">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Send a message..."
-                className="w-full bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg py-2 pl-3 pr-10 border border-gray-800/50 focus:outline-none focus:ring-1 focus:ring-[#A67D44]/60"
-              />
-              <button 
-                type="submit" 
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#A67D44] hover:text-[#B68D54] transition-colors"
-              >
-                <Send size={14} />
-              </button>
-            </form>
-          </div>
+          {/* Chat input directly below messages */}
+          <form onSubmit={handleChatSubmit} className="relative mt-1">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Send a message..."
+              className="w-full bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg py-2 pl-3 pr-10 border border-gray-800/50 focus:outline-none focus:ring-1 focus:ring-[#A67D44]/60"
+            />
+            <button 
+              type="submit" 
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#A67D44] hover:text-[#B68D54] transition-colors"
+            >
+              <Send size={14} />
+            </button>
+          </form>
         </div>
       )}
       
