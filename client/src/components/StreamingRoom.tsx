@@ -136,8 +136,8 @@ export default function StreamingRoom({
         </div>
       </div>
       
-      {/* Second row with user info, channel name and viewer count - exactly matching navbar.png */}
-      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/40 backdrop-blur-sm">
+      {/* Second row with user info, channel name and viewer count - transparent background */}
+      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-transparent">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full overflow-hidden">
