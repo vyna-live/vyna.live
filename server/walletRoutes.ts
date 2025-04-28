@@ -3,6 +3,24 @@ import { db } from './db';
 import { users, walletTransactions } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
+// This is for type augmentation
+declare module 'express-session' {
+  interface SessionData {
+    userId: number;
+  }
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      session: {
+        userId?: number;
+        [key: string]: any;
+      };
+    }
+  }
+}
+
 // Update user's wallet information
 export async function updateUserWallet(req: Request, res: Response) {
   try {
