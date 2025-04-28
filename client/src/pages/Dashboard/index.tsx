@@ -1,25 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import Logo from '@/components/Logo';
-import { ChevronRight, Video, Keyboard } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
-import JoinStreamDialog from '@/components/JoinStreamDialog';
-
-// Import images
-import reImagePath from '@assets/re.jpg';
-import viewImagePath from '@assets/view.jpg';
 
 export default function Dashboard() {
   const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
-  const [isJoinStreamDialogOpen, setIsJoinStreamDialogOpen] = useState(false);
   const [, navigate] = useLocation();
   
   // Alternating between the two image types
   const getImageForIndex = (index: number) => {
     if (index % 2 === 0) {
-      return reImagePath;
+      return "/images/re.jpg";
     } else {
-      return viewImagePath;
+      return "/images/view.jpg";
     }
   };
 
@@ -64,48 +58,17 @@ export default function Dashboard() {
     // Close the dialog
     setIsStreamDialogOpen(false);
     
-    // Prepare query parameters
-    const queryParams = new URLSearchParams();
-    
-    // Add teleprompter text if available
-    if (formData.description) {
-      queryParams.append('text', formData.description);
-    }
-    
-    // Add egress settings if available
-    if (formData.egressSettings && formData.egressSettings.enabled) {
-      // Stringify the egress settings and encode them for URL
-      const encodedEgress = encodeURIComponent(JSON.stringify(formData.egressSettings));
-      queryParams.append('egress', encodedEgress);
-    }
-    
     // Navigate to the livestream page after submitting
-    navigate(`/livestream${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
-  };
-  
-  // Define a function to handle join stream submit
-  const handleJoinStreamSubmit = (streamLink: string) => {
-    console.log('Joining stream:', streamLink);
-    // Close the dialog
-    setIsJoinStreamDialogOpen(false);
-    
-    // Navigate to the livestream page with the stream link
-    navigate(`/livestream?stream=${encodeURIComponent(streamLink)}`);
+    navigate('/livestream');
   };
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col">
-      {/* Stream Dialogs */}
+      {/* Stream Dialog */}
       <CreateStreamDialog 
         isOpen={isStreamDialogOpen} 
         onClose={() => setIsStreamDialogOpen(false)}
         onSubmit={handleStreamFormSubmit}
-      />
-      
-      <JoinStreamDialog
-        isOpen={isJoinStreamDialogOpen}
-        onClose={() => setIsJoinStreamDialogOpen(false)}
-        onSubmit={handleJoinStreamSubmit}
       />
       
       {/* Header */}
@@ -145,44 +108,36 @@ export default function Dashboard() {
         {/* Hero section */}
         <section className="mb-16 text-center mt-12">
           <h1 className="text-[48px] font-bold mb-4 tracking-tight bg-gradient-to-r from-[#5D1C34] via-[#A67D44] to-[#CDBCAB] text-transparent bg-clip-text">Research first, go live next!</h1>
-          <p className="text-zinc-400 text-base max-w-2xl mx-auto mb-6">
+          <p className="text-zinc-400 text-base max-w-2xl mx-auto mb-10">
             Start your own live stream with AI-powered research tools or join 
             other creators' streams to learn and engage.
           </p>
-          
-          <div className="mb-10">
-            <Link 
-              to="/research" 
-              className="text-blue-400 hover:text-blue-300 transition-colors underline"
-            >
-              Go to AI Research →
-            </Link>
-          </div>
           
           <div className="flex items-center justify-center space-x-4">
             <button 
               onClick={() => setIsStreamDialogOpen(true)}
               className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity rounded-sm"
             >
-              <Video className="w-6 h-6" />
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M23 7l-7 5 7 5V7z" />
+                <rect x="1" y="5" width="15" height="14" />
+              </svg>
               <span>Start streaming</span>
             </button>
             
-            <button 
-              onClick={() => setIsJoinStreamDialogOpen(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm"
-            >
-              <Keyboard className="w-6 h-6" />
+            <button className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="6" width="20" height="12" />
+                <line x1="6" y1="10" x2="6" y2="10" />
+                <line x1="10" y1="10" x2="10" y2="10" />
+                <line x1="14" y1="10" x2="14" y2="10" />
+                <line x1="18" y1="10" x2="18" y2="10" />
+                <line x1="6" y1="14" x2="6" y2="14" />
+                <line x1="10" y1="14" x2="14" y2="14" strokeWidth="4" />
+                <line x1="18" y1="14" x2="18" y2="14" />
+              </svg>
               <span>Join stream</span>
             </button>
-            
-            <Link
-              to="/livestream" 
-              className="flex items-center space-x-2 px-6 py-3 bg-[#5D1C34] text-white font-medium hover:opacity-90 transition-opacity rounded-sm"
-            >
-              <Video className="w-6 h-6" />
-              <span>Direct to Livestream</span>
-            </Link>
           </div>
         </section>
         

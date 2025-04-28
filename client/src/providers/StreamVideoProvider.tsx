@@ -1,167 +1,145 @@
-import React, { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { StreamVideoClient } from '@stream-io/video-client';
-import { useToast } from '@/hooks/use-toast';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { StreamVideo, StreamVideoClient } from '@stream-io/video-react-sdk';
 
-interface StreamVideoContextType {
+interface StreamVideoProviderProps {
+  children: React.ReactNode;
+  apiKey?: string;
+  token?: string;
+  userId?: string;
+  userName?: string;
+}
+
+interface StreamVideoContextValue {
   client: StreamVideoClient | null;
   isInitialized: boolean;
   error: Error | null;
-  isDemoMode: boolean;
-  userId: string;
-  userName: string;
 }
 
-// Create a context with default values
-export const StreamVideoContext = createContext<StreamVideoContextType>({
+const StreamVideoContext = createContext<StreamVideoContextValue>({
   client: null,
   isInitialized: false,
-  error: null,
-  isDemoMode: false,
-  userId: '',
-  userName: ''
+  error: null
 });
 
-export function useStreamVideoContext() {
-  return useContext(StreamVideoContext);
-}
+export const useStreamVideoContext = () => useContext(StreamVideoContext);
 
-// Function to generate token via API
-const tokenProvider = async (userId: string, userName: string) => {
-  const response = await fetch('/api/stream/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, userName }),
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to get stream token: ${response.status}`);
-  }
-  
-  const { token } = await response.json();
-  return token;
-};
-
-interface StreamVideoProviderProps {
-  children: ReactNode;
-}
-
-const StreamVideoProvider: React.FC<StreamVideoProviderProps> = ({ children }) => {
+export function StreamVideoProvider({ 
+  children,
+  apiKey: initialApiKey,
+  token: initialToken,
+  userId: initialUserId,
+  userName: initialUserName
+}: StreamVideoProviderProps) {
   const [client, setClient] = useState<StreamVideoClient | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [isDemoMode, setIsDemoMode] = useState(false);
-  const [userId] = useState(`user-${Math.random().toString(36).substring(2, 9)}`);
-  const [userName] = useState('Livestreamer');
-  const { toast } = useToast();
   
+  // State for API credentials
+  const [apiKey, setApiKey] = useState<string | undefined>(initialApiKey);
+  const [token, setToken] = useState<string | undefined>(initialToken);
+  const [userId, setUserId] = useState<string | undefined>(initialUserId);
+  const [userName, setUserName] = useState<string | undefined>(initialUserName);
+  
+  // Fetch API key and token if not provided
   useEffect(() => {
-    let isMounted = true;
-    
-    async function initClient() {
+    const fetchCredentials = async () => {
       try {
-        console.log('Initializing Stream Video client...');
-        
-        // Fetch API key first - this is simpler than the token
-        const keyResponse = await fetch('/api/stream/key');
-        if (!keyResponse.ok) {
-          throw new Error(`Failed to fetch Stream API key: ${keyResponse.status}`);
-        }
-        const { apiKey } = await keyResponse.json();
+        console.log("Fetching Stream credentials...");
         
         if (!apiKey) {
-          throw new Error('Invalid or missing Stream API key');
+          const keyResponse = await fetch('/api/stream/key');
+          if (!keyResponse.ok) throw new Error('Failed to get Stream API key');
+          const keyData = await keyResponse.json();
+          console.log("Fetched API key:", keyData.apiKey);
+          setApiKey(keyData.apiKey);
         }
         
-        console.log('Fetched Stream API key:', apiKey);
-        
-        // Create the user info
-        const userInfo = { 
-          id: userId, 
-          name: userName,
-          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
-        };
-        
-        // Create the client with a token provider function instead of a token directly
-        // This is more reliable as it will automatically refresh tokens when needed
-        console.log('Creating StreamVideoClient with tokenProvider...');
-        
-        const videoClient = new StreamVideoClient({
-          apiKey,
-          user: userInfo,
-          tokenProvider: () => tokenProvider(userId, userName),
-        });
-        
-        // Wait a moment to ensure client initialization
-        setTimeout(() => {
-          if (isMounted) {
-            setClient(videoClient);
-            setIsInitialized(true);
-            setIsDemoMode(false);
-            
-            console.log('Stream Video client initialized successfully');
-            
-            // Show toast for successful connection
-            toast({
-              title: "Connected to Streaming Service",
-              description: "You're now ready to create or join a livestream.",
-              duration: 3000,
-            });
-          }
-        }, 1000);
-        
-        // Return cleanup function
-        return () => {
-          if (videoClient) {
-            console.log('Disconnecting Stream Video client');
-            videoClient.disconnectUser();
-          }
-        };
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error initializing Stream Video');
-        console.error('Error initializing Stream Video client:', error);
-        
-        if (isMounted) {
-          setError(error);
-          setIsDemoMode(true);
-          setIsInitialized(true); // Mark as initialized so the app can proceed
-          
-          // Show error in toast
-          toast({
-            title: "Streaming Service Unavailable",
-            description: "Unable to connect to streaming service. Using demo mode instead.",
-            variant: "destructive",
-            duration: 5000,
+        if (!token && userId) {
+          const tokenResponse = await fetch('/api/stream/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              userName: userName || 'User',
+            }),
           });
           
-          console.log('Entered demo mode due to connection issues');
+          if (!tokenResponse.ok) throw new Error('Failed to generate Stream token');
+          const tokenData = await tokenResponse.json();
+          console.log("Fetched token successfully");
+          setToken(tokenData.token);
         }
+      } catch (err) {
+        console.error('Error fetching Stream credentials:', err);
+        setError(err instanceof Error ? err : new Error('Unknown error fetching credentials'));
       }
+    };
+    
+    if (!apiKey || (!token && userId)) {
+      fetchCredentials();
+    }
+  }, [apiKey, token, userId, userName]);
+  
+  // Initialize client once we have credentials
+  useEffect(() => {
+    if (!apiKey || !token || !userId) {
+      console.log("Missing required credentials for Stream client initialization");
+      return;
     }
     
-    // Initialize client and store cleanup function
-    const cleanupPromise = initClient();
-    
-    // Cleanup on unmount
-    return () => {
-      isMounted = false;
-      cleanupPromise.then(cleanup => cleanup && cleanup());
-    };
-  }, [toast, userId, userName]);
-
-  const contextValue: StreamVideoContextType = {
-    client,
-    isInitialized,
-    error,
-    isDemoMode,
-    userId,
-    userName
+    try {
+      console.log("Initializing Stream client with credentials");
+      
+      // Initialize the Stream client with the latest SDK patterns
+      const streamClient = new StreamVideoClient({
+        apiKey,
+        user: {
+          id: userId,
+          name: userName || 'User',
+          image: `https://getstream.io/random_svg/?id=${userId}&name=${userName}`,
+        },
+        token,
+      });
+      
+      setClient(streamClient);
+      setIsInitialized(true);
+      setError(null);
+      console.log("Stream client initialized successfully");
+      
+      // Cleanup on unmount
+      return () => {
+        streamClient.disconnectUser().catch(console.error);
+        setClient(null);
+        setIsInitialized(false);
+      };
+    } catch (err) {
+      console.error('Error initializing Stream client:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error initializing client'));
+      setIsInitialized(false);
+    }
+  }, [apiKey, token, userId, userName]);
+  
+  // If we don't have a client yet, render children without the provider
+  if (!client) {
+    console.log("No Stream client available yet, rendering children without provider");
+    return <>{children}</>;
+  }
+  
+  // Custom theme definition
+  const customTheme = {
+    colors: {
+      primary: '#A67D44',
+      secondary: '#5D1C34',
+      error: '#dd2e44',
+      success: '#3ba55c'
+    }
   };
-
+  
   return (
-    <StreamVideoContext.Provider value={contextValue}>
-      {children}
+    <StreamVideoContext.Provider value={{ client, isInitialized, error }}>
+      <StreamVideo client={client}>
+        {children}
+      </StreamVideo>
     </StreamVideoContext.Provider>
   );
-};
-
-export default StreamVideoProvider;
+}

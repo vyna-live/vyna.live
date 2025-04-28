@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Loader2, Video, X, AlertTriangle, Camera, Mic } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Loader2, Video, X } from 'lucide-react';
 import {
   StreamVideo,
   StreamVideoClient,
   Call, 
   CallControls,
+  DeviceSettings,
   SpeakerLayout,
   CallingState,
   useStreamVideoClient,
@@ -13,8 +14,6 @@ import {
 
 // Import styling
 import '@stream-io/video-react-sdk/dist/css/styles.css';
-import { useToast } from '@/hooks/use-toast';
-import { useStreamVideo } from '@/hooks/useStreamVideo';
 
 // Custom CSS for GetStream components
 const customStyles = `
@@ -49,20 +48,68 @@ const customStyles = `
 `;
 
 interface StreamVideoComponentProps {
+  apiKey: string;
+  token: string;
+  userId: string;
   callId: string;
-  useExistingClient?: boolean;
+  userName: string;
 }
 
 export function StreamVideoComponent({ 
-  callId,
-  useExistingClient = true
+  apiKey, 
+  token, 
+  userId, 
+  callId, 
+  userName 
 }: StreamVideoComponentProps) {
-  const { client, isDemoMode, userId, userName } = useStreamVideo();
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [client, setClient] = useState<StreamVideoClient | null>(null);
+  const [isConnecting, setIsConnecting] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+
+  // Step 1: Initialize StreamVideo client
+  useEffect(() => {
+    let streamClient: StreamVideoClient | null = null;
+    
+    const initClient = async () => {
+      try {
+        console.log('Initializing StreamVideo client with:', { apiKey, userId });
+        setIsConnecting(true);
+        
+        // Create the client
+        streamClient = new StreamVideoClient({
+          apiKey,
+          user: {
+            id: userId,
+            name: userName || 'Livestreamer'
+          },
+          token,
+        });
+        
+        setClient(streamClient);
+        setIsConnecting(false);
+      } catch (err) {
+        console.error('StreamVideo client error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize streaming');
+        setIsConnecting(false);
+      }
+    };
+    
+    if (apiKey && token && userId) {
+      initClient();
+    } else {
+      setError('Missing required credentials');
+      setIsConnecting(false);
+    }
+    
+    // Cleanup function
+    return () => {
+      if (streamClient) {
+        streamClient.disconnectUser().catch(console.error);
+      }
+    };
+  }, [apiKey, token, userId, userName]);
   
-  // Loading state - show only if explicitly connecting
+  // Loading state
   if (isConnecting) {
     return (
       <div className="w-full h-full flex items-center justify-center">
@@ -95,28 +142,6 @@ export function StreamVideoComponent({
     );
   }
   
-  // Demo mode state
-  if (isDemoMode) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-900 rounded-lg">
-        <div className="text-center max-w-md px-4">
-          <div className="w-20 h-20 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-4">
-            <Video className="w-10 h-10 text-[#EFE9E1]" />
-          </div>
-          <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Demo Mode Activated</h3>
-          <p className="text-[#CDBCAB] mb-6">
-            This is a demonstration of the streaming interface without actual streaming capabilities.
-            To use real streaming, make sure your GetStream API credentials are properly configured.
-          </p>
-          <div className="mt-4 px-4 py-3 bg-black/40 rounded-lg text-sm text-gray-400">
-            <p>Demo User: {userName}</p>
-            <p>Demo Call ID: {callId}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
   // No client state
   if (!client) {
     return (
@@ -142,13 +167,7 @@ export function StreamVideoComponent({
   return (
     <>
       <style>{customStyles}</style>
-      {useExistingClient ? (
-        // Use existing client from provider
-        <CallComponent callId={callId} />
-      ) : (
-        // Create a new StreamVideo wrapper with client
-        <StreamVideoWrapper client={client} callId={callId} />
-      )}
+      <StreamVideoWrapper client={client} callId={callId} />
     </>
   );
 }
@@ -166,8 +185,6 @@ function StreamVideoWrapper({ client, callId }: { client: StreamVideoClient; cal
 function CallComponent({ callId }: { callId: string }) {
   const client = useStreamVideoClient();
   const [callCreated, setCallCreated] = useState(false);
-  const [callError, setCallError] = useState<string | null>(null);
-  const { toast } = useToast();
   
   useEffect(() => {
     if (!client) return;
@@ -176,84 +193,24 @@ function CallComponent({ callId }: { callId: string }) {
       try {
         console.log('Creating call with ID:', callId);
         
-        // Get or create the call with more options
+        // Get or create the call
         const call = client.call('livestream', callId);
-        await call.getOrCreate({
-          ring: false,
-          data: {
-            custom: {
-              platform: 'Vyna.live',
-              startedAt: new Date().toISOString()
-            }
-          }
-        });
+        await call.getOrCreate();
         
         setCallCreated(true);
-        setCallError(null);
         console.log('Call created successfully:', callId);
       } catch (err) {
         console.error('Error creating call:', err);
-        
-        // Try the fallback approach of just getting the call if it exists
-        try {
-          console.log('Trying fallback: just get call if it exists');
-          const existingCall = client.call('livestream', callId);
-          
-          // Just mark as created without actually creating to avoid conflicts
-          setCallCreated(true);
-          setCallError(null);
-        } catch (fallbackErr) {
-          console.error('Fallback error:', fallbackErr);
-          setCallError('Failed to create or join stream');
-          
-          // In development environment (e.g., Replit), simulate success
-          if (window.location.hostname.includes('replit')) {
-            console.log('DEV MODE: Simulating successful call creation in development environment');
-            setCallCreated(true);
-            setCallError(null);
-          } else {
-            toast({
-              title: "Stream Error",
-              description: "Failed to create or join stream session. Please try again.",
-              variant: "destructive"
-            });
-          }
-        }
       }
     };
     
     setupCall();
   }, [client, callId]);
   
-  // Show error state
-  if (callError && !window.location.hostname.includes('replit')) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mx-auto mb-4">
-            <X className="w-8 h-8 text-[#EFE9E1]" />
-          </div>
-          <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Stream Session Error</h3>
-          <p className="text-[#CDBCAB] mb-4">{callError}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  // Loading state
   if (!callCreated) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 text-[#A67D44] animate-spin mb-2" />
-          <p className="text-[#CDBCAB]">Preparing stream environment...</p>
-        </div>
+        <Loader2 className="h-8 w-8 text-[#A67D44] animate-spin" />
       </div>
     );
   }
@@ -262,142 +219,33 @@ function CallComponent({ callId }: { callId: string }) {
 }
 
 // Component for call content
-// Helper function to check browser compatibility
-function checkBrowserCompatibility(): { supported: boolean; reason?: string } {
-  // Check for basic WebRTC support
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    return { supported: false, reason: "Your browser doesn't support camera/microphone access" };
-  }
-  
-  // Check for secure context
-  if (!window.isSecureContext) {
-    return { supported: false, reason: "Streaming requires a secure connection (HTTPS)" };
-  }
-  
-  return { supported: true };
-}
-
 function CallContent({ callId }: { callId: string }) {
   const [hasJoined, setHasJoined] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const call = useCall();
-  const client = useStreamVideoClient();
-  const { toast } = useToast();
   
-  // State for device status
-  const [cameraReady, setCameraReady] = useState(false);
-  const [micReady, setMicReady] = useState(false);
-  
-  // Create a direct reference to the video/audio elements
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  
-  // Check browser compatibility on mount
-  useEffect(() => {
-    // Check if we're in a development environment
-    const isDev = window.location.hostname === 'localhost' || 
-                 window.location.hostname === '127.0.0.1' ||
-                 window.location.hostname.includes('replit');
-                 
-    // In development, just assume everything is supported
-    if (isDev) {
-      console.log('Development environment detected, bypassing compatibility checks');
-      return;
-    }
-    
-    const compatibility = checkBrowserCompatibility();
-    if (!compatibility.supported) {
-      const message = compatibility.reason ?? "Browser compatibility issue detected";
-      setErrorMessage(message);
-      toast({
-        title: "Browser Compatibility Issue",
-        description: message,
-        variant: "destructive"
-      });
-    }
-  }, []);
-  
-  // SIMPLIFIED: Join the call with a more direct approach
   const joinCall = async () => {
-    if (!call) {
-      setErrorMessage('Stream service not available');
-      return;
-    }
-    
-    setIsJoining(true);
-    setErrorMessage(null);
+    if (!call) return;
     
     try {
-      console.log('Attempting to join call with ID:', callId);
-      
-      // First try simple direct join
+      setIsJoining(true);
+      console.log('Joining call:', callId);
       await call.join();
-      console.log('Successfully joined call');
-      
-      // Attempt to enable camera and microphone
-      try {
-        await call.camera.enable();
-        setCameraReady(true);
-        console.log('Camera enabled successfully');
-      } catch (cameraErr) {
-        console.warn('Could not enable camera:', cameraErr);
-      }
-      
-      try {
-        await call.microphone.enable();
-        setMicReady(true);
-        console.log('Microphone enabled successfully');
-      } catch (micErr) {
-        console.warn('Could not enable microphone:', micErr);
-      }
-      
-      // Even if camera/mic fails, mark as joined
       setHasJoined(true);
-      
-    } catch (error) {
-      console.error('Failed to join call:', error);
-      
-      // For development environment, simulate success
-      if (window.location.hostname.includes('replit')) {
-        console.log('DEV MODE: Simulating successful join in Replit environment');
-        setHasJoined(true);
-        setCameraReady(true);
-        setMicReady(true);
-      } else {
-        setErrorMessage('Could not join the stream. Please check your camera and microphone permissions.');
-        toast({
-          title: "Stream Error",
-          description: "Could not join the stream. Please check your camera and microphone permissions.",
-          variant: "destructive"
-        });
-      }
+    } catch (err) {
+      console.error('Error joining call:', err);
     } finally {
       setIsJoining(false);
     }
   };
   
-  // Auto-join if we detect we're already in the call
+  // Check if we're already joined
   useEffect(() => {
     if (call?.state?.callingState === CallingState.JOINED) {
-      console.log('Already joined call');
+      console.log('Already joined call:', callId);
       setHasJoined(true);
-      
-      // Check device status - safely check if camera/mic is enabled
-      try {
-        // Camera might be enabled if status === 'enabled'
-        const isCameraEnabled = call.camera.state.status === 'enabled';
-        setCameraReady(isCameraEnabled);
-        
-        // Mic might be enabled if status === 'enabled'
-        const isMicEnabled = call.microphone.state.status === 'enabled';
-        setMicReady(isMicEnabled);
-        
-        console.log('Device status:', { camera: isCameraEnabled, mic: isMicEnabled });
-      } catch (err) {
-        console.warn('Error checking device status:', err);
-      }
     }
-  }, [call?.state?.callingState]);
+  }, [call?.state?.callingState, callId]);
   
   // "Go Live" screen
   if (!hasJoined) {
@@ -408,22 +256,17 @@ function CallContent({ callId }: { callId: string }) {
             <Video className="w-10 h-10 text-[#EFE9E1]" />
           </div>
           <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Ready to Stream</h3>
-          <p className="text-[#CDBCAB] mb-6">
-            Click "Go Live" to start streaming. You'll be prompted for camera and microphone permissions.
+          <p className="text-[#CDBCAB] mb-4">
+            Configure your camera and microphone below, then click "Go Live" to start streaming.
           </p>
           
-          {errorMessage && (
-            <div className="mb-4 p-3 bg-red-100/20 border border-red-300 rounded-lg text-red-300 text-sm">
-              <AlertTriangle className="h-4 w-4 inline-block mr-2" />
-              {errorMessage}
-            </div>
-          )}
+          {/* Device settings */}
+          <div className="mb-6">
+            <DeviceSettings />
+          </div>
           
           <button 
-            onClick={() => {
-              setErrorMessage(null);
-              joinCall();
-            }}
+            onClick={joinCall}
             disabled={isJoining}
             className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all disabled:opacity-50"
           >
@@ -436,12 +279,6 @@ function CallContent({ callId }: { callId: string }) {
               'Go Live'
             )}
           </button>
-          
-          {errorMessage && (
-            <p className="mt-4 text-xs text-[#CDBCAB]/70">
-              Having trouble? Make sure your camera and microphone are connected and you've granted permission to access them.
-            </p>
-          )}
         </div>
       </div>
     );
@@ -451,26 +288,6 @@ function CallContent({ callId }: { callId: string }) {
   return (
     <div className="h-full">
       <div className="h-full flex flex-col relative">
-        {/* Status indicators for debugging */}
-        <div className="absolute top-3 left-3 z-10 flex gap-2">
-          <div className={`px-2 py-1 rounded-full text-xs flex items-center ${cameraReady ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}`}>
-            <Camera className="h-3 w-3 mr-1" />
-            {cameraReady ? 'Camera ON' : 'Camera OFF'}
-          </div>
-          <div className={`px-2 py-1 rounded-full text-xs flex items-center ${micReady ? 'bg-green-500/30 text-green-300' : 'bg-red-500/30 text-red-300'}`}>
-            <Mic className="h-3 w-3 mr-1" />
-            {micReady ? 'Mic ON' : 'Mic OFF'}
-          </div>
-        </div>
-        
-        {/* Live indicator */}
-        <div className="absolute top-3 right-3 z-10">
-          <div className="px-2 py-1 rounded-full text-xs bg-red-500 text-white flex items-center">
-            <span className="h-2 w-2 rounded-full bg-white mr-1 animate-pulse"></span>
-            LIVE
-          </div>
-        </div>
-        
         <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0">
             <div className="h-full w-full">

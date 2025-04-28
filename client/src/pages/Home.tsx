@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import ChatInterface from "@/components/ChatInterface";
 import InputArea from "@/components/InputArea";
 import Teleprompter from "@/components/Teleprompter";
@@ -341,16 +341,6 @@ export default function Home() {
         {/* Chat header */}
         <div className="h-14 border-b border-[hsl(var(--ai-border))] flex items-center justify-between px-6">
           <div className="flex items-center">
-            <a 
-              href="/" 
-              className="mr-3 hover:opacity-80 transition-opacity"
-              onClick={(e) => {
-                e.preventDefault();
-                setLocation("/");
-              }}
-            >
-              <ArrowLeft className="w-5 h-5 text-[hsl(var(--ai-text-secondary))]" />
-            </a>
             <Logo size="md" showText={false} variant="color" className="w-auto h-8" />
             <div className="h-6 mx-3 border-r border-[hsl(var(--ai-border))]"></div>
             <GradientText 

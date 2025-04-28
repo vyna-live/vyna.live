@@ -3,7 +3,7 @@ import { Mic, Camera, Smile, X, ChevronRight, MoreHorizontal, Menu } from "lucid
 import Teleprompter from "./Teleprompter";
 import Logo from "./Logo";
 import StreamVideoComponent from "./StreamVideo";
-import { useStreamVideoContext } from "@/providers/StreamVideoProvider";
+import { useStreamVideoContext } from "../providers/StreamVideoProvider";
 import { DeviceSettings } from "@stream-io/video-react-sdk";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,35 +13,6 @@ const arenaImage = "/assets/arena.png";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
-  streamId?: string;
-  isJoiningMode?: boolean;
-  streamLink?: string | null;
-  egressSettings?: {
-    enabled: boolean;
-    platforms: {
-      youtube?: {
-        enabled: boolean;
-        streamKey?: string;
-        streamUrl?: string;
-      };
-      twitch?: {
-        enabled: boolean;
-        streamKey?: string;
-        streamUrl?: string;
-      };
-      facebook?: {
-        enabled: boolean;
-        streamKey?: string;
-        streamUrl?: string;
-      };
-      custom?: {
-        enabled: boolean;
-        streamKey?: string;
-        streamUrl?: string;
-        name?: string;
-      };
-    };
-  };
 }
 
 // Mock chat messages for the right sidebar
@@ -111,13 +82,7 @@ const CHAT_MESSAGES = [
   { userId: "user8", name: "Lebron James", message: "That was sick!", color: "bg-pink-500" },
 ];
 
-export default function LivestreamInterface({ 
-  initialText = "", 
-  streamId, 
-  isJoiningMode = false, 
-  streamLink = null,
-  egressSettings
-}: LivestreamInterfaceProps) {
+export default function LivestreamInterface({ initialText = "" }: LivestreamInterfaceProps) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
@@ -146,186 +111,15 @@ export default function LivestreamInterface({
   
   // Additional GetStream state specific to this component
   const [isStreamActive, setIsStreamActive] = useState<boolean>(true); // Set to true for demo
-  const [callId] = useState<string>(streamId || `livestream-${Date.now()}`);
+  const [callId] = useState<string>(`livestream-${Date.now()}`);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Set to true to show loading state
-  const [wsConnection, setWsConnection] = useState<WebSocket | null>(null);
-  
-  // Initialize WebSocket connection for real-time streaming updates
-  useEffect(() => {
-    // Create WebSocket connection
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    const socket = new WebSocket(wsUrl);
-    
-    socket.onopen = () => {
-      console.log('WebSocket connection established');
-      setWsConnection(socket);
-    };
-    
-    socket.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        console.log('WebSocket message received:', message);
-        
-        // Handle different message types
-        if (message.type === 'status_update') {
-          if (message.data.error) {
-            showErrorToast(message.data.error);
-          } else if (message.data.status === 'stream_started') {
-            toast({
-              title: "Stream Started",
-              description: "Your livestream has successfully started",
-            });
-          } else if (message.data.status === 'egress_started') {
-            toast({
-              title: "Multiplatform Streaming",
-              description: `Your stream is now live on ${message.data.platforms || 'multiple platforms'}`,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error handling WebSocket message:', error);
-      }
-    };
-    
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-    
-    socket.onclose = () => {
-      console.log('WebSocket connection closed');
-      setWsConnection(null);
-    };
-    
-    // Clean up WebSocket on component unmount
-    return () => {
-      socket.close();
-    };
-  }, [toast]);
   const [error, setError] = useState<string | null>(null);
   const [streamApiKey, setStreamApiKey] = useState<string>("");
   const [streamToken, setStreamToken] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [userName, setUserName] = useState<string>("Divine Samuel");
-  const [streamTitle, setStreamTitle] = useState<string>(streamLink ? `Stream: ${streamLink}` : "Jaja Games");
+  const [streamTitle, setStreamTitle] = useState<string>("Jaja Games");
 
-  // Function to create a call with egress settings
-  const createCallWithEgress = async (userId: string, callId: string) => {
-    try {
-      const response = await fetch('/api/stream/livestream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          callId,
-          token: streamToken,
-          egressSettings: egressSettings
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create call with egress');
-      }
-      
-      const data = await response.json();
-      console.log('Call created with egress:', data);
-      
-      // If the call has egress enabled, show a toast notification
-      if (data.egress && egressSettings?.enabled) {
-        toast({
-          title: "Multistream Enabled",
-          description: `Your stream is being sent to ${data.egress.targets?.length || 0} platform(s)`,
-        });
-        
-        // Also send WebSocket message about egress status for other connected clients
-        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-          wsConnection.send(JSON.stringify({
-            type: 'stream_status',
-            data: {
-              status: 'egress_started',
-              userId,
-              callId,
-              platforms: data.egress.targets?.map((target: any) => target.name).join(', ') || 'multiple platforms'
-            }
-          }));
-        }
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error creating call with egress:', error);
-      showErrorToast('Failed to set up multistreaming');
-      return null;
-    }
-  };
-  
-  // Function to update egress configuration for an existing call
-  const updateEgressConfig = async (userId: string, callId: string) => {
-    try {
-      const response = await fetch('/api/stream/egress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          callId,
-          egressSettings: egressSettings
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update egress configuration');
-      }
-      
-      const data = await response.json();
-      console.log('Egress configuration updated:', data);
-      
-      // Show a toast notification
-      if (data.egress && egressSettings?.enabled) {
-        toast({
-          title: "Multistream Updated",
-          description: `Your stream is now being sent to ${data.egress.targets?.length || 0} platform(s)`,
-        });
-        
-        // Notify other connected clients via WebSocket
-        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-          wsConnection.send(JSON.stringify({
-            type: 'stream_status',
-            data: {
-              status: 'egress_updated',
-              userId,
-              callId,
-              platforms: data.egress.targets?.map((target: any) => target.name).join(', ') || 'multiple platforms'
-            }
-          }));
-        }
-      } else {
-        toast({
-          title: "Multistream Disabled",
-          description: "Your stream is no longer being sent to external platforms",
-        });
-        
-        // Notify other connected clients via WebSocket that egress was disabled
-        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-          wsConnection.send(JSON.stringify({
-            type: 'stream_status',
-            data: {
-              status: 'egress_disabled',
-              userId,
-              callId
-            }
-          }));
-        }
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error updating egress config:', error);
-      showErrorToast('Failed to update multistreaming settings');
-      return null;
-    }
-  };
-  
   // Get credentials that may not be in context
   useEffect(() => {
     const getStreamCredentials = async () => {
@@ -359,55 +153,6 @@ export default function LivestreamInterface({
           if (tokenResponse.ok) {
             const tokenData = await tokenResponse.json();
             setStreamToken(tokenData.token);
-            
-            // Create the call with egress settings if provided
-            if (!isJoiningMode && egressSettings) {
-              console.log('Creating new call with egress settings', egressSettings);
-              try {
-                // Call the endpoint to create a livestream with egress
-                const createResponse = await fetch('/api/stream/livestream', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: randomId,
-                    callId: callId,
-                    token: tokenData.token,
-                    egressSettings: egressSettings
-                  }),
-                });
-                
-                if (!createResponse.ok) {
-                  throw new Error('Failed to create livestream with egress');
-                }
-                
-                const result = await createResponse.json();
-                console.log('Call created successfully:', result);
-                
-                // If the call has egress enabled, show a toast notification
-                if (result.egress && egressSettings.enabled) {
-                  toast({
-                    title: "Multistream Enabled",
-                    description: `Your stream is being sent to ${result.egress.targets?.length || 0} platform(s)`,
-                  });
-                  
-                  // Notify other connected clients via WebSocket
-                  if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-                    wsConnection.send(JSON.stringify({
-                      type: 'stream_status',
-                      data: {
-                        status: 'egress_started',
-                        userId: randomId,
-                        callId,
-                        platforms: result.egress.targets?.map((target: any) => target.name).join(', ') || 'multiple platforms'
-                      }
-                    }));
-                  }
-                }
-              } catch (error) {
-                console.error('Error creating call:', error);
-                showErrorToast('Failed to set up streaming with multiplatform configuration');
-              }
-            }
           } else {
             showErrorToast("Failed to get stream token");
           }
@@ -758,21 +503,12 @@ export default function LivestreamInterface({
                       />
                     </div>
                   ) : (
-                    streamApiKey && streamToken && userId ? (
-                      <StreamVideoComponent 
-                        apiKey={streamApiKey}
-                        token={streamToken}
-                        userId={userId}
-                        callId={callId}
-                        userName={userName}
-                      />
-                    ) : (
-                      <img 
-                        src={arenaImage} 
-                        alt="Stream content" 
-                        className="w-full h-full object-cover"
-                      />
-                    )
+                    /* In a real implementation, this would be the StreamVideoComponent */
+                    <img 
+                      src={arenaImage} 
+                      alt="Stream content" 
+                      className="w-full h-full object-cover"
+                    />
                   )}
                 </div>
               )}

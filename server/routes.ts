@@ -11,9 +11,7 @@ import { eq, desc } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 import { log } from "./vite";
-import { getStreamToken, createLivestream, getStreamApiKey, updateEgressConfig } from "./getstream";
-import { getAgoraAppId, initializeChannel, addRtmpDestination, getActiveChannels } from "./agora";
-import { WebSocketServer, WebSocket } from "ws";
+import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -417,65 +415,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/stream/livestream", createLivestream);
   
-  // Update egress configuration for multiplatform streaming
-  app.post("/api/stream/egress", updateEgressConfig);
-  
   // Get GetStream API key for frontend
   app.get("/api/stream/key", getStreamApiKey);
-  
-  // Agora API endpoints for livestreaming
-  app.get("/api/agora/app-id", getAgoraAppId);
-  
-  app.post("/api/agora/channel", initializeChannel);
-  
-  app.post("/api/agora/rtmp", addRtmpDestination);
-  
-  app.get("/api/agora/channels", getActiveChannels);
 
   const httpServer = createServer(app);
-  
-  // Add WebSocket server for real-time communication
-  try {
-    const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-    
-    wss.on('connection', (ws) => {
-      console.log('WebSocket client connected');
-      
-      ws.on('message', (message) => {
-        try {
-          const messageStr = message.toString();
-          const parsedMessage = JSON.parse(messageStr);
-          console.log('Received message:', parsedMessage);
-          
-          // Handle different message types
-          if (parsedMessage.type === 'stream_status') {
-            // Broadcast status to all clients
-            wss.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                  type: 'status_update',
-                  data: parsedMessage.data
-                }));
-              }
-            });
-          }
-        } catch (error) {
-          console.error('Error handling WebSocket message:', error);
-        }
-      });
-      
-      ws.on('close', () => {
-        console.log('WebSocket client disconnected');
-      });
-      
-      // Send initial connection confirmation
-      ws.send(JSON.stringify({ type: 'connected' }));
-    });
-    
-    console.log('WebSocket server initialized');
-  } catch (error) {
-    console.error('Error setting up WebSocket server:', error);
-  }
 
   return httpServer;
 }
