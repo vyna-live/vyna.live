@@ -120,9 +120,9 @@ export default function StreamingRoom({
   return (
     <div className="h-screen w-screen overflow-hidden bg-black relative">
       {/* Top header row with Vyna logo and user - exactly matching navbar.png */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black">
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/60 backdrop-blur-sm">
         <div className="flex items-center">
-          <img src={vpwwLogo} alt="Vyna.live" className="h-7" />
+          <img src={vpwwLogo} alt="Vyna.live" className="h-9" />
         </div>
         
         <div className="flex items-center gap-2">
@@ -137,7 +137,7 @@ export default function StreamingRoom({
       </div>
       
       {/* Second row with user info, channel name and viewer count - exactly matching navbar.png */}
-      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-[#111111]">
+      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/40 backdrop-blur-sm">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full overflow-hidden">
