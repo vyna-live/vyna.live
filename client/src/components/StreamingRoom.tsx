@@ -129,8 +129,8 @@ export default function StreamingRoom({
 
   return (
     <div style={{margin: '8px'}} className="h-[calc(100vh-16px)] w-[calc(100vw-16px)] overflow-hidden bg-black relative rounded-2xl">
-      {/* Top header row with Vyna logo and user with blur effect */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/40 backdrop-blur-md rounded-t-2xl">
+      {/* Top header row with Vyna logo and user with blur effect - transparent background */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-transparent rounded-t-2xl">
         <div className="flex items-center">
           <img src={vpwwLogo} alt="Vyna.live" className="h-9" />
         </div>
@@ -146,8 +146,8 @@ export default function StreamingRoom({
         </div>
       </div>
       
-      {/* Second row with user info, channel name and viewer count - subtle blur */}
-      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/20 backdrop-blur-sm">
+      {/* Second row with user info, channel name and viewer count - transparent background */}
+      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-transparent">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full overflow-hidden">
@@ -161,7 +161,7 @@ export default function StreamingRoom({
           </div>
         </div>
 
-        {/* Center title */}
+        {/* Center title - exactly as shown in the design */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
           <span className="text-white text-xs font-medium">Jaja Games</span>
         </div>
@@ -177,7 +177,7 @@ export default function StreamingRoom({
           
           {!isDrawerOpen && (
             <button 
-              className="flex items-center justify-center"
+              className="flex items-center justify-center hover:bg-white/10 p-1 rounded-md"
               onClick={() => setIsDrawerOpen(true)}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -190,18 +190,18 @@ export default function StreamingRoom({
       </div>
 
       {/* Main content area with video */}
-      <div className="flex h-full">
+      <div className="flex h-full gap-4">
         {/* Main video area */}
         <div 
           className={cn(
-            "transition-all duration-300 ease-in-out relative h-full overflow-hidden",
+            "transition-all duration-300 ease-in-out relative overflow-hidden rounded-2xl",
             isDrawerOpen 
-              ? "w-[calc(100%-320px)]" 
+              ? "w-[calc(100%-336px)]" // 320px width + 16px gap
               : "w-full"
           )}
         >
           {/* Video stream - full screen */}
-          <div className="absolute inset-0 rounded-bl-2xl rounded-br-2xl overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden">
             <AgoraVideo 
               channelName={channelName}
               mode="livestream"
@@ -319,16 +319,19 @@ export default function StreamingRoom({
         
         {/* Sidebar drawer */}
         {isDrawerOpen && (
-          <div className="w-[320px] h-full bg-black text-white border-l border-white/10 rounded-tr-2xl rounded-br-2xl">
+          <div className="w-[320px] h-full bg-black/90 backdrop-blur-sm text-white border border-white/10 rounded-2xl overflow-hidden">
             {/* Tabs header - exactly matching design */}
-            <div className="flex items-center justify-between px-2 py-3 border-b border-white/10">
+            <div className="flex items-center justify-between px-2 py-3 border-b border-white/10 bg-transparent">
               <div className="flex gap-2 w-full items-center">
-                {/* Double arrow expand icon */}
-                <div className="px-2">
+                {/* Double arrow expand icon - clickable to close drawer */}
+                <button 
+                  className="px-2 hover:bg-white/5 rounded-md"
+                  onClick={() => setIsDrawerOpen(false)}
+                >
                   <svg className="mr-1" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                </div>
+                </button>
                 
                 {/* VynaAI button */}
                 <button
