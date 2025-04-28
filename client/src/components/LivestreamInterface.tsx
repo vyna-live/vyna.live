@@ -2,9 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Mic, Camera, Smile, X, ChevronRight, MoreHorizontal, Menu } from "lucide-react";
 import Teleprompter from "./Teleprompter";
 import Logo from "./Logo";
-import StreamVideoComponent from "./StreamVideo";
-import { useStreamVideoContext } from "../providers/StreamVideoProvider";
-import { DeviceSettings } from "@stream-io/video-react-sdk";
+import AgoraVideo from "./AgoraVideo";
+import useAgoraTokens from "@/hooks/useAgoraTokens";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -106,80 +105,75 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
-  // Get stream client from provider context
-  const { client, isInitialized, error: streamError } = useStreamVideoContext();
+  // Use Agora hooks to manage tokens and stream state
+  const {
+    isLoading: agoraLoading,
+    error: agoraError,
+    appId,
+    token,
+    channelName,
+    uid,
+    role,
+    fetchHostToken,
+    fetchAudienceToken,
+    createLivestream
+  } = useAgoraTokens(`channel-${Date.now()}`);
   
-  // Additional GetStream state specific to this component
-  const [isStreamActive, setIsStreamActive] = useState<boolean>(true); // Set to true for demo
-  const [callId] = useState<string>(`livestream-${Date.now()}`);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Set to true to show loading state
+  // State specific to this component
+  const [isStreamActive, setIsStreamActive] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [streamApiKey, setStreamApiKey] = useState<string>("");
-  const [streamToken, setStreamToken] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
   const [userName, setUserName] = useState<string>("Divine Samuel");
   const [streamTitle, setStreamTitle] = useState<string>("Jaja Games");
 
-  // Get credentials that may not be in context
+  // Initialize livestream
   useEffect(() => {
-    const getStreamCredentials = async () => {
+    const initLivestream = async () => {
       try {
-        // Get API key from our backend if not already available
-        if (!streamApiKey) {
-          const keyResponse = await fetch('/api/stream/key');
-          if (keyResponse.ok) {
-            const keyData = await keyResponse.json();
-            setStreamApiKey(keyData.apiKey);
-          } else {
-            showErrorToast("Failed to get stream API key");
-          }
-        }
+        // Create a new livestream or prepare to join an existing one
+        // For demonstration, we'll set up as a host by default
+        await fetchHostToken(channelName);
         
-        // Generate a random user ID if not already set
-        if (!userId) {
-          const randomId = `user-${Math.random().toString(36).substring(2, 9)}`;
-          setUserId(randomId);
-          
-          // Generate a token for this user
-          const tokenResponse = await fetch('/api/stream/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: randomId,
-              userName: userName,
-            }),
-          });
-          
-          if (tokenResponse.ok) {
-            const tokenData = await tokenResponse.json();
-            setStreamToken(tokenData.token);
-          } else {
-            showErrorToast("Failed to get stream token");
-          }
-        }
-
-        // Simulate loading for demo purposes
+        // Set loading to false when everything is ready
+        // In a production app, this would happen automatically in the hook
         setTimeout(() => {
           setIsLoading(false);
         }, 1000);
-        
       } catch (err) {
-        console.error('Error initializing stream:', err);
+        console.error('Error initializing Agora stream:', err);
         showErrorToast('Failed to initialize streaming service');
       }
     };
     
-    getStreamCredentials();
+    initLivestream();
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  // Handle any errors from the stream context
+  // Handle any errors from Agora
   useEffect(() => {
-    if (streamError) {
-      showErrorToast(streamError.message);
+    if (agoraError) {
+      showErrorToast(agoraError.message);
     }
-  }, [streamError]);
+  }, [agoraError]);
+  
+  // Handler for going live
+  const handleGoLive = useCallback(async () => {
+    try {
+      // Create a new livestream with the current title and username
+      const result = await createLivestream(streamTitle, userName);
+      
+      if (result) {
+        setIsStreamActive(true);
+        toast({
+          title: "You're Live!",
+          description: "Your stream is now available to viewers",
+        });
+      }
+    } catch (err) {
+      showErrorToast('Failed to go live');
+    }
+  }, [createLivestream, streamTitle, userName, toast]);
   
   // Function to show error toast
   const showErrorToast = (message: string) => {
@@ -495,20 +489,38 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
                 <div className="w-full h-full">
                   {/* Show background image when not streaming */}
                   {!isStreamActive ? (
-                    <div className="w-full h-full">
+                    <div className="w-full h-full relative">
                       <img 
                         src={arenaImage} 
                         alt="Arena background" 
                         className="w-full h-full object-cover"
                       />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <h2 className="text-white text-xl font-medium mb-4">Ready to go live?</h2>
+                        <button
+                          onClick={handleGoLive}
+                          className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
+                        >
+                          Start Streaming
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    /* In a real implementation, this would be the StreamVideoComponent */
-                    <img 
-                      src={arenaImage} 
-                      alt="Stream content" 
-                      className="w-full h-full object-cover"
-                    />
+                    /* Use Agora for video streaming */
+                    appId && token ? (
+                      <AgoraVideo 
+                        appId={appId}
+                        channelName={channelName}
+                        token={token}
+                        uid={uid || undefined}
+                        role={role}
+                        userName={userName}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-white">Connecting to stream...</div>
+                      </div>
+                    )
                   )}
                 </div>
               )}
