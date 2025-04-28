@@ -183,7 +183,12 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
           {/* Double chevrons close button (>>) */}
           <button 
             className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/10"
-            onClick={onClose}
+            onClick={() => {
+              if (onClose) {
+                console.log("VynaChat close button clicked");
+                onClose();
+              }
+            }}
             style={{cursor: 'pointer'}}
             aria-label="Close chat panel"
           >
