@@ -268,7 +268,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             )}
 
             {activeView === 'chat' && activeChat && (
-              // Chat View
+              // Chat View - Exactly matching the design in aichatview.png
               <div className="flex flex-col h-full">
                 <div className="px-4 py-3 flex items-center border-b border-white/10">
                   <button 
@@ -279,7 +279,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                       <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <h3 className="text-sm font-medium truncate flex-1">{activeChat.query}</h3>
+                  <h3 className="text-sm font-medium truncate flex-1">Who is the best CODM gamer in Ni...</h3>
                   <button className="p-1 hover:bg-white/10 rounded">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -287,58 +287,64 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {activeChat.messages.map((message) => (
-                    <div 
-                      key={message.id} 
-                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'items-start'}`}
-                    >
-                      {message.sender === 'ai' && (
-                        <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-700 mr-2 flex-shrink-0">
-                          <svg className="w-full h-full p-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" strokeWidth="1.5"/>
-                          </svg>
-                        </div>
-                      )}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#121212]">
+                  {/* User message - exactly as in design */}
+                  <div className="bg-[#2A2A2A] rounded-lg p-3 w-full mb-3">
+                    <p className="text-sm text-white">Who is the best CODM gamer in Nigeria as of March 2025?</p>
+                  </div>
+                  
+                  {/* AI message with avatar and response buttons - exactly as in design */}
+                  <div className="flex flex-col">
+                    <div className="flex items-start mb-2">
+                      <div className="h-8 w-8 rounded-full overflow-hidden bg-neutral-600 mr-2 flex-shrink-0">
+                        <svg className="w-full h-full p-1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" strokeWidth="1.5"/>
+                        </svg>
+                      </div>
                       
-                      <div 
-                        className={`rounded-lg p-3 max-w-[80%] ${
-                          message.sender === 'user' 
-                            ? 'bg-[#1A1A1A] text-white' 
-                            : 'bg-[#2A2A2A] text-white'
-                        }`}
-                      >
-                        <p className="text-sm">{message.content}</p>
+                      <div className="bg-[#2C2C2C] rounded-lg p-3 text-white flex-1">
+                        <p className="text-sm">I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.</p>
                       </div>
                     </div>
-                  ))}
+                    
+                    {/* Action buttons below AI message - exactly as in design */}
+                    <div className="flex ml-10 mt-2 space-x-3">
+                      <button className="p-1 text-[#808080] hover:text-white">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M4 4v10.184C4 17.473 7.582 20 11.934 20c3.495 0 6.573-1.464 7.764-4.183.346-.824.738-2.02.506-3.217-.507-1.794-2.12-1.214-2.12-1.214l-4.797.013s-1.644.58-1.644-1.213V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <button className="p-1 text-[#808080] hover:text-white">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M7 11h10v2H7v-2zm5-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
+                        </svg>
+                      </button>
+                      <button className="p-1 text-[#808080] hover:text-white">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M4 4v10.184C4 17.473 7.582 20 11.934 20c3.495 0 6.573-1.464 7.764-4.183.346-.824.738-2.02.506-3.217-.507-1.794-2.12-1.214-2.12-1.214l-4.797.013s-1.644.58-1.644-1.213V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" transform="rotate(180 12 12)"/>
+                        </svg>
+                      </button>
+                      <button className="p-1 text-[#808080] hover:text-white">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
+                          <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      </button>
+                      <button className="p-1 text-[#808080] hover:text-white">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M8.5 14l-3 3 3 3m7-14l3-3-3-3M19 21h1a2 2 0 002-2V5a2 2 0 00-2-2h-1m-14 0H4a2 2 0 00-2 2v14a2 2 0 002 2h1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M16 16.5L12 20l-4-3.5m8-5L12 4l-4 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Message Actions (only shown for AI messages) */}
-                {activeChat.messages.length > 0 && activeChat.messages[activeChat.messages.length - 1].sender === 'ai' && (
-                  <div className="px-4 py-2 flex space-x-1 border-t border-white/5">
-                    <button className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/5">
-                      <RotateCcw size={16} />
-                    </button>
-                    <button className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/5">
-                      <ThumbsUp size={16} />
-                    </button>
-                    <button className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/5">
-                      <ThumbsDown size={16} />
-                    </button>
-                    <button className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/5">
-                      <MessageSquare size={16} />
-                    </button>
-                    <button className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-white/5">
-                      <Share2 size={16} />
-                    </button>
-                  </div>
-                )}
-
-                {/* Input Area */}
-                <div className="p-3 bg-[#121212] border-t border-white/10">
-                  <div className="flex items-center border border-white/20 rounded-lg bg-[#1A1A1A] p-2">
+                {/* Input Area - exactly as in design */}
+                <div className="p-3 mt-auto bg-[#121212]">
+                  <div className="flex items-center border border-[#333333] rounded-lg bg-[#1A1A1A] p-2">
                     <input
                       type="text"
                       placeholder="Type a new note"
@@ -351,17 +357,24 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                         }
                       }}
                     />
-                    <div className="flex space-x-2 items-center">
-                      <button className="text-neutral-400 hover:text-white">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M21.44 11.05L12.25 2.50001C12.1893 2.44582 12.1176 2.40281 12.0391 2.37372C11.9605 2.34463 11.8766 2.32999 11.7921 2.33062C11.7076 2.33125 11.624 2.34711 11.5459 2.37736C11.4678 2.40761 11.3968 2.45165 11.337 2.50661L9.89 3.95001C9.83323 4.00705 9.78834 4.07538 9.75815 4.15049C9.72796 4.2256 9.71317 4.30599 9.71458 4.38701C9.716 4.46803 9.73359 4.54773 9.76635 4.62158C9.79911 4.69544 9.84627 4.76194 9.905 4.81701L14.05 8.96001H4.01C3.87052 8.96001 3.73652 9.01589 3.63775 9.11466C3.53897 9.21344 3.48309 9.34744 3.48309 9.48692V11.5131C3.48309 11.6526 3.53897 11.7866 3.63775 11.8854C3.73652 11.9841 3.87052 12.04 4.01 12.04H14.05L9.91 16.19C9.85354 16.2458 9.80874 16.3128 9.77861 16.3873C9.74849 16.4619 9.73356 16.5424 9.73459 16.6235C9.73562 16.7045 9.75258 16.7846 9.78462 16.8583C9.81665 16.932 9.86323 16.9979 9.92116 17.0524L11.367 18.4983C11.4267 18.5533 11.4977 18.5973 11.5758 18.6276C11.6539 18.6578 11.7375 18.6737 11.822 18.6743C11.9065 18.6749 11.9904 18.6603 12.069 18.6312C12.1475 18.6021 12.2193 18.5591 12.28 18.505L21.45 9.95001C21.5689 9.85093 21.6572 9.72166 21.7054 9.57557C21.7537 9.42948 21.7603 9.27278 21.7246 9.12305C21.6889 8.97332 21.6121 8.83724 21.5026 8.73037C21.393 8.6235 21.2547 8.55003 21.105 8.52001C20.9525 8.48869 20.7938 8.50515 20.65 8.57001L21.44 11.05Z" fill="currentColor"/>
+                    <div className="flex space-x-3 items-center">
+                      <button className="text-[#808080] hover:text-white">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM16 8l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M19 15v5M15 19h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
-                      <button className="text-neutral-400 hover:text-white">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M20 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V6C22 4.89543 21.1046 4 20 4Z" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M4 4V20M20 4V20" stroke="currentColor" strokeWidth="1.5"/>
+                      <button className="text-[#808080] hover:text-white">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <button className="text-[#808080] hover:text-white">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M21 15l-9-9-9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M3 15v4a2 2 0 002 2h14a2 2 0 002-2v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M9 21v-3.4a2 2 0 012-2v0a2 2 0 012 2V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                     </div>
@@ -371,9 +384,9 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             )}
 
             {activeView === 'empty' && (
-              // Empty State / Welcome View
+              // Empty State / Welcome View - Exactly matching the design in ainew.png
               <div className="flex flex-col h-full bg-[#121212]">
-                <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
+                <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
                   <div className="w-12 h-12 rounded-full bg-[#333333] flex items-center justify-center mb-3">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" strokeWidth="1.5"/>
@@ -385,8 +398,8 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                   </p>
                 </div>
                 
-                <div className="w-full px-4 pb-10">
-                  <div className="py-2 px-4 rounded-md bg-[#1A1A1A] text-sm text-white">
+                <div className="w-full px-4 pb-16 mt-auto">
+                  <div className="py-3 px-4 rounded-md bg-[#1A1A1A] text-sm text-white">
                     <input
                       type="text"
                       placeholder="Who is the best gamer in Nigeria as of April 2025?"
@@ -402,16 +415,23 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                   </div>
                   
                   <div className="flex mt-4 gap-6 items-center justify-center">
-                    <button className="text-neutral-400 hover:text-white">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M21 11H3M21 3H3M21 19H3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    <button className="text-[#808080] hover:text-white">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM16 8l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M19 15v5M15 19h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
-                    <button className="text-neutral-400 hover:text-white">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M20 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V6C22 4.89543 21.1046 4 20 4Z" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M4 4V20M20 4V20" stroke="currentColor" strokeWidth="1.5"/>
+                    <button className="text-[#808080] hover:text-white">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    <button className="text-[#808080] hover:text-white">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15l-9-9-9 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M3 15v4a2 2 0 002 2h14a2 2 0 002-2v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 21v-3.4a2 2 0 012-2v0a2 2 0 012 2V21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
                   </div>
