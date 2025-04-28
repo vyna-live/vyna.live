@@ -86,7 +86,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     onSubmit(formData);
   };
   
-  // No need for click outside handler with native input
+
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
