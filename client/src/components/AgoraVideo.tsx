@@ -533,8 +533,10 @@ export function AgoraVideo({
       console.log("Stream ended successfully");
       
       // Navigate to home page
-      setLocation("/");
-      console.log("Navigating to home page");
+      setTimeout(() => {
+        setLocation("/");
+        console.log("Navigating to home page");
+      }, 1000);
       
     } catch (err) {
       console.error("Error ending stream:", err);
@@ -543,8 +545,10 @@ export function AgoraVideo({
       setIsJoined(false);
       
       // Still navigate to home page even if there was an error
-      setLocation("/");
-      console.log("Navigating to home page after error");
+      setTimeout(() => {
+        setLocation("/");
+        console.log("Navigating to home page after error");
+      }, 1000);
     }
   };
   
