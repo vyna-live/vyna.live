@@ -526,7 +526,16 @@ export default function LivestreamInterface({
                     </div>
                   ) : (
                     /* Use Agora for video streaming */
-                    appId && token ? (
+                    (streamInfo?.appId && streamInfo?.token && streamInfo?.channelName) ? (
+                      <AgoraVideo 
+                        appId={streamInfo.appId}
+                        channelName={streamInfo.channelName}
+                        token={streamInfo.token}
+                        uid={streamInfo.uid || undefined}
+                        role={'host'}
+                        userName={userName}
+                      />
+                    ) : (appId && token) ? (
                       <AgoraVideo 
                         appId={appId}
                         channelName={channelName}
