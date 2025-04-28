@@ -118,9 +118,9 @@ export default function StreamingRoom({
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-black relative">
-      {/* Top header row with Vyna logo and user - exactly matching navbar.png */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/60 backdrop-blur-sm">
+    <div className="h-screen w-screen overflow-hidden bg-black relative m-4 rounded-2xl">
+      {/* Top header row with Vyna logo and user with blur effect */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/40 backdrop-blur-md rounded-t-2xl">
         <div className="flex items-center">
           <img src={vpwwLogo} alt="Vyna.live" className="h-9" />
         </div>
@@ -136,8 +136,8 @@ export default function StreamingRoom({
         </div>
       </div>
       
-      {/* Second row with user info, channel name and viewer count - transparent background */}
-      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-transparent">
+      {/* Second row with user info, channel name and viewer count - subtle blur */}
+      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/20 backdrop-blur-sm">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full overflow-hidden">
@@ -191,7 +191,7 @@ export default function StreamingRoom({
           )}
         >
           {/* Video stream - full screen */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 rounded-bl-2xl rounded-br-2xl overflow-hidden">
             <AgoraVideo 
               channelName={channelName}
               mode="livestream"
@@ -309,7 +309,7 @@ export default function StreamingRoom({
         
         {/* Sidebar drawer */}
         {isDrawerOpen && (
-          <div className="w-[320px] h-full bg-black text-white border-l border-white/10">
+          <div className="w-[320px] h-full bg-black text-white border-l border-white/10 rounded-tr-2xl rounded-br-2xl">
             {/* Tabs header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
               <div className="flex gap-2">
