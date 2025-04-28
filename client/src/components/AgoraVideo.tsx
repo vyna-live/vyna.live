@@ -498,6 +498,7 @@ export function AgoraVideo({
     if (isScreenSharing) {
       // Stop screen sharing
       try {
+        console.log("Stopping screen share...");
         if (screenTrackRef.current) {
           await clientRef.current.unpublish(screenTrackRef.current);
           screenTrackRef.current.close();
@@ -506,9 +507,11 @@ export function AgoraVideo({
         // Re-enable camera video
         if (videoTrackRef.current) {
           await videoTrackRef.current.setEnabled(true);
+          await clientRef.current.publish([videoTrackRef.current]);
           setIsVideoOn(true);
         }
         setIsScreenSharing(false);
+        console.log("Screen sharing stopped successfully");
       } catch (error) {
         console.error("Error stopping screen sharing:", error);
       }
@@ -516,51 +519,87 @@ export function AgoraVideo({
       // Start screen sharing
       try {
         console.log("Starting screen share...");
-        const screenTrack = await AgoraRTC.createScreenVideoTrack(
-          {
-            encoderConfig: "1080p_1",
+        
+        // Unpublish camera track first to avoid issues
+        if (videoTrackRef.current && clientRef.current) {
+          await videoTrackRef.current.setEnabled(false);
+          await clientRef.current.unpublish(videoTrackRef.current);
+        }
+        
+        // Create screen track with specific options
+        let screenShare;
+        try {
+          screenShare = await AgoraRTC.createScreenVideoTrack({
+            encoderConfig: "1080p_2",
             optimizationMode: "detail"
-          },
-          "auto"
-        );
+          });
+          console.log("Screen track created successfully");
+        } catch (e) {
+          console.error("Failed to create screen track:", e);
+          // Re-enable camera if screen sharing fails
+          if (videoTrackRef.current && clientRef.current) {
+            await videoTrackRef.current.setEnabled(true);
+            await clientRef.current.publish([videoTrackRef.current]);
+          }
+          return;
+        }
         
         // Handle the different return types from createScreenVideoTrack
-        if (Array.isArray(screenTrack)) {
+        if (Array.isArray(screenShare)) {
           // If an array is returned (contains both video and audio)
-          const [videoTrack] = screenTrack;
+          const [videoTrack] = screenShare;
           screenTrackRef.current = videoTrack;
+          console.log("Screen track is an array, using video track");
         } else {
           // If only video track is returned
-          screenTrackRef.current = screenTrack;
+          screenTrackRef.current = screenShare;
+          console.log("Screen track is a single track");
         }
-          
-        // Disable camera video while screen sharing
-        if (videoTrackRef.current) {
-          await videoTrackRef.current.setEnabled(false);
-        }
-          
+        
         // Publish screen track
-        await clientRef.current.publish(screenTrackRef.current);
-        setIsScreenSharing(true);
+        try {
+          await clientRef.current.publish(screenTrackRef.current);
+          console.log("Published screen track successfully");
+          setIsScreenSharing(true);
           
-        // Handle screen sharing stopped by user through browser UI
-        screenTrackRef.current.on("track-ended", async () => {
+          // Handle screen sharing stopped by user through browser UI
+          screenTrackRef.current.on("track-ended", async () => {
+            console.log("Screen sharing track ended by browser");
+            if (screenTrackRef.current && clientRef.current) {
+              await clientRef.current.unpublish(screenTrackRef.current);
+              screenTrackRef.current.close();
+              screenTrackRef.current = null;
+            }
+              
+            // Re-enable camera
+            if (videoTrackRef.current && clientRef.current) {
+              await videoTrackRef.current.setEnabled(true);
+              await clientRef.current.publish([videoTrackRef.current]);
+              setIsVideoOn(true);
+            }
+              
+            setIsScreenSharing(false);
+          });
+        } catch (pubError) {
+          console.error("Failed to publish screen track:", pubError);
+          // Clean up and re-enable camera if publishing fails
           if (screenTrackRef.current) {
-            await clientRef.current?.unpublish(screenTrackRef.current);
             screenTrackRef.current.close();
             screenTrackRef.current = null;
           }
-            
-          // Re-enable camera
-          if (videoTrackRef.current) {
+          
+          if (videoTrackRef.current && clientRef.current) {
             await videoTrackRef.current.setEnabled(true);
-            setIsVideoOn(true);
+            await clientRef.current.publish([videoTrackRef.current]);
           }
-            
-          setIsScreenSharing(false);
-        });
+        }
       } catch (error) {
-        console.error("Error starting screen sharing:", error);
+        console.error("Error in screen sharing process:", error);
+        // Ensure camera is re-enabled in case of errors
+        if (videoTrackRef.current && clientRef.current) {
+          await videoTrackRef.current.setEnabled(true);
+          await clientRef.current.publish([videoTrackRef.current]);
+        }
       }
     }
   };
@@ -568,10 +607,10 @@ export function AgoraVideo({
   // Loading state
   if (isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center p-4">
         <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 text-[#A67D44] animate-spin mb-2" />
-          <p className="text-[#CDBCAB]">Connecting to stream...</p>
+          <Loader2 className="h-6 w-6 text-[#A67D44] animate-spin mb-2" />
+          <p className="text-sm text-[#CDBCAB]">Connecting to stream...</p>
         </div>
       </div>
     );
@@ -580,16 +619,16 @@ export function AgoraVideo({
   // Error state
   if (error) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mx-auto mb-4">
-            <X className="w-8 h-8 text-[#EFE9E1]" />
+      <div className="w-full h-full flex items-center justify-center p-4">
+        <div className="text-center max-w-md p-4 bg-black/20 rounded-xl backdrop-blur-sm">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mx-auto mb-3">
+            <X className="w-6 h-6 text-[#EFE9E1]" />
           </div>
-          <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Stream Error</h3>
-          <p className="text-[#CDBCAB] mb-4">{error}</p>
+          <h3 className="text-lg font-medium text-[#CDBCAB] mb-1">Stream Error</h3>
+          <p className="text-sm text-[#CDBCAB] mb-3">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
+            className="px-4 py-1.5 text-sm bg-gradient-to-r from-[#A67D44] to-[#5D1C34] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
           >
             Try Again
           </button>
@@ -601,20 +640,20 @@ export function AgoraVideo({
   // Not joined yet - "Go Live" screen
   if (!isJoined) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center p-4">
         <style>{customStyles}</style>
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-4">
-            <Video className="w-10 h-10 text-[#EFE9E1]" />
+        <div className="text-center max-w-md mx-auto p-4">
+          <div className="w-14 h-14 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-3">
+            <Video className="w-7 h-7 text-[#EFE9E1]" />
           </div>
-          <h3 className="text-xl font-medium text-[#CDBCAB] mb-2">Ready to Stream</h3>
-          <p className="text-[#CDBCAB] mb-4">
+          <h3 className="text-lg font-medium text-[#CDBCAB] mb-1">Ready to Stream</h3>
+          <p className="text-sm text-[#CDBCAB] mb-3">
             You're about to go live as <strong>{userName}</strong>. Click "Go Live" to start streaming.
           </p>
           
           {/* Preview of local video */}
           {videoTrackRef.current && (
-            <div className="mb-6 relative rounded-lg overflow-hidden shadow-lg">
+            <div className="mb-4 relative rounded-lg overflow-hidden shadow-lg">
               <div className="w-full pb-[56.25%] relative"> {/* 16:9 aspect ratio */}
                 <div className="absolute inset-0">
                   <VideoPlayer videoTrack={videoTrackRef.current} />
@@ -624,24 +663,24 @@ export function AgoraVideo({
           )}
           
           {/* Controls */}
-          <div className="mb-6 flex justify-center space-x-4">
+          <div className="mb-4 flex justify-center space-x-3">
             <button 
               onClick={toggleAudio}
-              className="p-3 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
+              className="p-2 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
             >
-              {isAudioOn ? <Mic size={20} /> : <MicOff size={20} className="text-red-500" />}
+              {isAudioOn ? <Mic size={16} /> : <MicOff size={16} className="text-red-500" />}
             </button>
             <button 
               onClick={toggleVideo}
-              className="p-3 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
+              className="p-2 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
             >
-              {isVideoOn ? <Camera size={20} /> : <CameraOff size={20} className="text-red-500" />}
+              {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-500" />}
             </button>
           </div>
           
           <button 
             onClick={joinChannel}
-            className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
+            className="px-5 py-2 text-sm bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
           >
             Go Live
           </button>
