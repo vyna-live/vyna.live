@@ -149,19 +149,19 @@ export function AgoraVideo({
               
               console.log(`Channel message received: ${text} from ${name || 'unknown'} (${senderId})`);
               
-              // Add message to chat
+              // Add message to chat - prepend new messages so they show at the bottom
               setChatMessages(prev => {
-                const newMessages = [...prev, {
+                const newMessages = [{
                   userId: senderId,
                   name: name || `User ${senderId.slice(-4)}`,
                   message: text || "sent a message",
                   color: color || 'bg-blue-500',
                   isHost: parsedMsg.isHost || false
-                }];
+                }, ...prev];
                 
                 // Keep only the latest 8 messages
                 if (newMessages.length > 8) {
-                  return newMessages.slice(newMessages.length - 8);
+                  return newMessages.slice(0, 8);
                 }
                 return newMessages;
               });
@@ -199,17 +199,17 @@ export function AgoraVideo({
           const color = randomColors[Math.floor(Math.random() * randomColors.length)];
           
           setChatMessages(prev => {
-            const newMessages = [...prev, {
+            const newMessages = [{
               userId: user.uid.toString(),
               name: `User ${user.uid.toString().slice(-4)}`,
               message: "joined",
               color,
               isHost: user.uid === uid ? role === 'host' : false
-            }];
+            }, ...prev];
             
             // Keep only the latest 8 messages
             if (newMessages.length > 8) {
-              return newMessages.slice(newMessages.length - 8);
+              return newMessages.slice(0, 8);
             }
             return newMessages;
           });
@@ -226,17 +226,17 @@ export function AgoraVideo({
           const color = randomColors[Math.floor(Math.random() * randomColors.length)];
           
           setChatMessages(prev => {
-            const newMessages = [...prev, {
+            const newMessages = [{
               userId: user.uid.toString(),
               name: `User ${user.uid.toString().slice(-4)}`,
               message: "left",
               color,
               isHost: user.uid === uid ? role === 'host' : false
-            }];
+            }, ...prev];
             
             // Keep only the latest 8 messages
             if (newMessages.length > 8) {
-              return newMessages.slice(newMessages.length - 8);
+              return newMessages.slice(0, 8);
             }
             return newMessages;
           });
@@ -410,17 +410,17 @@ export function AgoraVideo({
   // Helper to add a message locally (without RTM)
   const addLocalMessage = (userId: string, name: string, message: string, color: string, isHost: boolean = false) => {
     setChatMessages(prev => {
-      const newMessages = [...prev, {
+      const newMessages = [{
         userId,
         name,
         message,
         color,
         isHost
-      }];
+      }, ...prev];
       
       // Keep only the latest 8 messages
       if (newMessages.length > 8) {
-        return newMessages.slice(newMessages.length - 8);
+        return newMessages.slice(0, 8);
       }
       return newMessages;
     });
