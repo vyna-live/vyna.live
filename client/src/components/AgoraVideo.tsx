@@ -136,16 +136,15 @@ export function AgoraVideo({
           rtmChannelRef.current = rtmChannel;
           
           // Register RTM channel events
-          rtmChannel.on('ChannelMessage', (message, senderId) => {
+          rtmChannel.on('ChannelMessage', (message: any, senderId: string) => {
             try {
               // Check if message.text is defined before parsing
-              const messageText = message.text;
-              if (!messageText) {
-                console.error("Received empty message");
+              if (!message || typeof message.text !== 'string') {
+                console.error("Received invalid message format", message);
                 return;
               }
               
-              const parsedMsg = JSON.parse(messageText);
+              const parsedMsg = JSON.parse(message.text);
               const { text, name, color } = parsedMsg;
               
               console.log(`Channel message received: ${text} from ${name || 'unknown'} (${senderId})`);
@@ -204,7 +203,8 @@ export function AgoraVideo({
               userId: user.uid.toString(),
               name: `User ${user.uid.toString().slice(-4)}`,
               message: "joined",
-              color
+              color,
+              isHost: user.uid === uid ? role === 'host' : false
             }];
             
             // Keep only the latest 8 messages
@@ -230,7 +230,8 @@ export function AgoraVideo({
               userId: user.uid.toString(),
               name: `User ${user.uid.toString().slice(-4)}`,
               message: "left",
-              color
+              color,
+              isHost: user.uid === uid ? role === 'host' : false
             }];
             
             // Keep only the latest 8 messages
@@ -670,7 +671,7 @@ export function AgoraVideo({
                   
                   {/* Message content */}
                   {chatMsg.message === "joined" || chatMsg.message === "left" ? (
-                    <div className={`text-${chatMsg.message === "joined" ? "green" : "red"}-400 text-xs ml-0.5`}>{chatMsg.message}</div>
+                    <div className={`${chatMsg.message === "joined" ? "text-green-400" : "text-red-400"} text-xs ml-0.5`}>{chatMsg.message}</div>
                   ) : (
                     <div className={`${chatMsg.isHost ? "text-[#CDBCAB]" : "text-gray-300"} text-xs ${chatMsg.isHost ? "font-medium" : ""}`}>
                       {chatMsg.message}
