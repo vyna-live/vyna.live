@@ -179,13 +179,11 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
       {/* Header with tabs - exactly matching attached design */}
       <div className="flex items-center px-2 py-3 border-b border-white/10 bg-[#191919]">
         <div className="flex gap-2 w-full items-center">
-          {/* Collapse button - fixed to correctly match the design icon and close the drawer */}
+          {/* Double chevrons close button (>>) */}
           <button 
-            className="px-2"
-            onClick={() => {
-              if (onClose) onClose();
-              console.log('Closing drawer');
-            }}
+            className="h-8 w-8 flex items-center justify-center"
+            onClick={onClose}
+            style={{cursor: 'pointer'}}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -347,7 +345,8 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
 
                 {/* Input Area - exactly as in design with the same icons */}
                 <div className="p-3 mt-auto bg-[#121212]">
-                  <div className="py-3 px-4 rounded-md bg-[#2A2A2A] text-sm text-white flex items-center">
+                  {/* Exact input design from screenshot */}
+                  <div className="py-3 px-4 rounded-md bg-[#2A2A2A] text-sm text-white">
                     <input
                       type="text"
                       value={input}
@@ -357,15 +356,15 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                           handleSendMessage();
                         }
                       }}
-                      className="flex-1 bg-transparent text-white text-sm border-none outline-none"
+                      className="w-full bg-transparent text-white text-sm border-none outline-none"
                     />
                   </div>
                   
-                  {/* Exactly matching the icons from the screenshot */}
+                  {/* Exact icons from screenshot */}
                   <div className="flex mt-4 gap-6 items-center justify-center">
                     <button className="text-[#808080] hover:text-white">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 12l-10-10v5c-7 1-10 6-10 11 2.5-3.5 5-5 10-5v5l10-10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM16 8l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
                     <button className="text-[#808080] hover:text-white">
@@ -402,18 +401,18 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                 </div>
                 
                 <div className="w-full px-4 pb-8 mt-auto">
-                  {/* Exactly matching the input design from the screenshot */}
-                  <div className="py-3 px-4 rounded-md bg-[#2A2A2A] text-sm text-white flex items-center">
+                  {/* Input area with exact design from screenshot */}
+                  <div className="py-3 px-4 rounded-md bg-[#2A2A2A] text-sm text-white">
                     <p className="w-full text-white text-sm font-normal">
                       Who is the best gamer in Nigeria as of April 2025?
                     </p>
                   </div>
                   
-                  {/* Exactly matching the icons from the screenshot */}
+                  {/* Icons with exact design from screenshot */}
                   <div className="flex mt-4 gap-6 items-center justify-center">
                     <button className="text-[#808080] hover:text-white">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 12l-10-10v5c-7 1-10 6-10 11 2.5-3.5 5-5 10-5v5l10-10z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M20.24 12.24a6 6 0 00-8.49-8.49L5 10.5V19h8.5l6.74-6.76zM16 8l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
                     <button className="text-[#808080] hover:text-white">
