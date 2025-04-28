@@ -75,17 +75,8 @@ const MOCK_NOTES = [
   }
 ];
 
-// Mock incoming chat messages to simulate live chat
-const CHAT_MESSAGES = [
-  { userId: "user1", name: "Innocent Dive", message: "How far my guys wetin dey happen", color: "bg-orange-500" },
-  { userId: "user2", name: "Godknows Ukari", message: "How far my guys wetin dey happen", color: "bg-blue-500" },
-  { userId: "user3", name: "Godknows Ukari", message: "How far my guys wetin dey happen", color: "bg-gradient-to-r from-purple-500 to-pink-500" },
-  { userId: "user4", name: "Goddess", message: "joined", color: "bg-red-500", isJoined: true },
-  { userId: "user5", name: "Victor Doe", message: "This stream is amazing!", color: "bg-green-500" },
-  { userId: "user6", name: "Jane Smith", message: "Let's go!", color: "bg-yellow-500" },
-  { userId: "user7", name: "Michael Jordan", message: "Nice game play!", color: "bg-indigo-500" },
-  { userId: "user8", name: "Lebron James", message: "That was sick!", color: "bg-pink-500" },
-];
+// RTM chat messages will be handled by AgoraVideo component now
+// No need for mock messages
 
 export default function LivestreamInterface({ 
   initialText = "", 
@@ -97,7 +88,6 @@ export default function LivestreamInterface({
   const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
   const [viewerCount, setViewerCount] = useState("123.5k");
-  const [chatMessages, setChatMessages] = useState<typeof CHAT_MESSAGES>(CHAT_MESSAGES.slice(0, 2));
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Array<{id: string; content: string; role: "user" | "assistant"}>>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -333,70 +323,7 @@ export default function LivestreamInterface({
     }
   }, [inputValue]);
 
-  // Simulate incoming chat messages
-  useEffect(() => {
-    // Only add chat messages if the chat container is visible
-    if (!chatContainerRef.current) return;
-
-    let messageIndex = 4; // Start from the 5th message
-
-    const addMessage = () => {
-      if (messageIndex < CHAT_MESSAGES.length) {
-        setChatMessages(prev => {
-          // Limit to only 2 messages to prevent overlap with chat input
-          const newMessages = [...prev, CHAT_MESSAGES[messageIndex]];
-          if (newMessages.length > 2) {
-            return newMessages.slice(newMessages.length - 2);
-          }
-          return newMessages;
-        });
-        
-        messageIndex = (messageIndex + 1) % CHAT_MESSAGES.length;
-        
-        // Scroll to bottom
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-      }
-    };
-
-    // Add a new message every 3-5 seconds
-    const interval = setInterval(() => {
-      const randomDelay = Math.floor(Math.random() * 2000) + 3000;
-      setTimeout(addMessage, randomDelay);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Render chat participants
-  const renderChatParticipants = () => {
-    return (
-      <div 
-        ref={chatContainerRef}
-        className="overflow-y-auto max-h-full flex flex-col-reverse pb-2"
-      >
-        {chatMessages.map((chatMsg, index) => (
-          <div key={index} className="animate-slideInUp">
-            <div className="flex items-center space-x-1.5 py-1">
-              <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
-                {chatMsg.name.charAt(0)}
-              </div>
-              <div className="text-white text-xs font-medium">{chatMsg.name}</div>
-              {chatMsg.isJoined ? (
-                <div className="text-red-400 text-xs ml-0.5">joined</div>
-              ) : (
-                <div className="text-gray-400 text-xs">{chatMsg.message}</div>
-              )}
-            </div>
-            {index > 0 && (
-              <div className="border-t border-gray-800/30 my-1"></div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
+  // No more chat simulation - chat is now handled by the AgoraVideo component with RTM
 
   return (
     <div className="w-full h-screen relative overflow-hidden bg-black p-4">
