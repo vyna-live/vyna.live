@@ -101,7 +101,6 @@ export default function LivestreamInterface({
   const [savedNotes, setSavedNotes] = useState<typeof MOCK_NOTES>(MOCK_NOTES);
   const [noteLines, setNoteLines] = useState<string[]>([]);
   
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   // Use Agora hooks to manage tokens and stream state
@@ -448,10 +447,7 @@ export default function LivestreamInterface({
               
               {/* No custom stream controls - using Agora's native controls */}
               
-              {/* Chat messages overlay */}
-              <div className="absolute left-0 bottom-24 w-72 max-h-64 overflow-hidden px-4">
-                {renderChatParticipants()}
-              </div>
+              {/* Chat is now handled by AgoraVideo component through RTM */}
             </div>
           </div>
           
