@@ -13,6 +13,7 @@ import AgoraRTC, {
 } from "agora-rtc-sdk-ng";
 import AgoraRTM, { RtmClient, RtmMessage, RtmChannel } from 'agora-rtm-sdk';
 import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 // Define Agora config
 const config: ClientConfig = { 
@@ -140,6 +141,7 @@ export function AgoraVideo({
   const [chatInput, setChatInput] = useState('');
   const [showChat, setShowChat] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [, setLocation] = useLocation();
   
   // Client reference
   const clientRef = useRef<IAgoraRTCClient | null>(null);
@@ -313,31 +315,96 @@ export function AgoraVideo({
     
     // Cleanup
     return () => {
-      // Clean up tracks
+      console.log("Component unmounting, cleaning up resources...");
+      
+      // Stop and clean up screen sharing if active
+      if (screenTrackRef.current) {
+        try {
+          if (clientRef.current && isJoined) {
+            clientRef.current.unpublish(screenTrackRef.current).catch(err => 
+              console.error("Error unpublishing screen track:", err)
+            );
+          }
+          screenTrackRef.current.close();
+          screenTrackRef.current = null;
+          console.log("Screen track cleaned up");
+        } catch (error) {
+          console.error("Error cleaning up screen track:", error);
+        }
+      }
+      
+      // Clean up audio track
       if (audioTrackRef.current) {
-        audioTrackRef.current.close();
-        audioTrackRef.current = null;
+        try {
+          if (clientRef.current && isJoined) {
+            clientRef.current.unpublish(audioTrackRef.current).catch(err => 
+              console.error("Error unpublishing audio track:", err)
+            );
+          }
+          audioTrackRef.current.close();
+          audioTrackRef.current = null;
+          console.log("Audio track cleaned up");
+        } catch (error) {
+          console.error("Error cleaning up audio track:", error);
+        }
       }
       
+      // Clean up video track
       if (videoTrackRef.current) {
-        videoTrackRef.current.close();
-        videoTrackRef.current = null;
+        try {
+          if (clientRef.current && isJoined) {
+            clientRef.current.unpublish(videoTrackRef.current).catch(err => 
+              console.error("Error unpublishing video track:", err)
+            );
+          }
+          videoTrackRef.current.close();
+          videoTrackRef.current = null;
+          console.log("Video track cleaned up");
+        } catch (error) {
+          console.error("Error cleaning up video track:", error);
+        }
       }
       
-      // Leave RTC channel if joined
+      // Leave RTC channel
       if (clientRef.current && isJoined) {
-        clientRef.current.leave();
+        try {
+          clientRef.current.leave().then(() => {
+            console.log("Left RTC channel on cleanup");
+          }).catch(err => {
+            console.error("Error leaving RTC channel on cleanup:", err);
+          });
+        } catch (error) {
+          console.error("Error leaving RTC channel:", error);
+        }
       }
       
-      // Leave RTM channel if joined
+      // Leave RTM channel
       if (rtmChannelRef.current) {
-        rtmChannelRef.current.leave();
+        try {
+          rtmChannelRef.current.leave().then(() => {
+            console.log("Left RTM channel on cleanup");
+          }).catch(err => {
+            console.error("Error leaving RTM channel on cleanup:", err);
+          });
+        } catch (error) {
+          console.error("Error leaving RTM channel:", error);
+        }
       }
       
       // Logout RTM client
       if (rtmClientRef.current) {
-        rtmClientRef.current.logout();
+        try {
+          rtmClientRef.current.logout().then(() => {
+            console.log("Logged out of RTM client on cleanup");
+          }).catch(err => {
+            console.error("Error logging out of RTM client on cleanup:", err);
+          });
+        } catch (error) {
+          console.error("Error logging out of RTM client:", error);
+        }
       }
+      
+      console.log("All Agora resources cleaned up");
     };
   }, [appId, role, channelName, uid, userName]);
 
@@ -399,22 +466,85 @@ export function AgoraVideo({
     if (!clientRef.current) return;
     
     try {
-      // Unpublish tracks
+      console.log("Ending stream...");
+      
+      // Stop and unpublish screen sharing if active
+      if (isScreenSharing && screenTrackRef.current) {
+        try {
+          await clientRef.current.unpublish(screenTrackRef.current);
+          screenTrackRef.current.close();
+          screenTrackRef.current = null;
+          setIsScreenSharing(false);
+          console.log("Screen sharing stopped");
+        } catch (error) {
+          console.error("Error stopping screen sharing:", error);
+        }
+      }
+      
+      // Unpublish audio track
       if (audioTrackRef.current) {
-        await clientRef.current.unpublish(audioTrackRef.current);
+        try {
+          await clientRef.current.unpublish(audioTrackRef.current);
+          audioTrackRef.current.close();
+          console.log("Audio track unpublished");
+        } catch (error) {
+          console.error("Error unpublishing audio track:", error);
+        }
       }
       
+      // Unpublish video track
       if (videoTrackRef.current) {
-        await clientRef.current.unpublish(videoTrackRef.current);
+        try {
+          await clientRef.current.unpublish(videoTrackRef.current);
+          videoTrackRef.current.close();
+          console.log("Video track unpublished");
+        } catch (error) {
+          console.error("Error unpublishing video track:", error);
+        }
       }
       
-      // Leave channel
-      await clientRef.current.leave();
-      console.log("Left Agora channel");
+      // Leave RTM channel
+      if (rtmChannelRef.current) {
+        try {
+          await rtmChannelRef.current.leave();
+          console.log("Left RTM channel");
+        } catch (error) {
+          console.error("Error leaving RTM channel:", error);
+        }
+      }
       
+      // Leave RTC channel
+      try {
+        await clientRef.current.leave();
+        console.log("Left Agora channel");
+      } catch (error) {
+        console.error("Error leaving RTC channel:", error);
+      }
+      
+      // Reset state
       setIsJoined(false);
+      setViewers(0);
+      setChatMessages([]);
+      
+      // Reset tracks to null
+      audioTrackRef.current = null;
+      videoTrackRef.current = null;
+      
+      console.log("Stream ended successfully");
+      
+      // Navigate to home page
+      setLocation("/");
+      console.log("Navigating to home page");
+      
     } catch (err) {
-      console.error("Error leaving channel:", err);
+      console.error("Error ending stream:", err);
+      
+      // Force state reset in case of error
+      setIsJoined(false);
+      
+      // Still navigate to home page even if there was an error
+      setLocation("/");
+      console.log("Navigating to home page after error");
     }
   };
   
