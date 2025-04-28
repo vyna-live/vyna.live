@@ -21,9 +21,10 @@ interface VynaChatProps {
   onClose: () => void;
   onToggleMinimize?: () => void;
   isMinimized?: boolean;
+  isInStreamView?: boolean;
 }
 
-const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimized = false }) => {
+const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimized = false, isInStreamView = false }) => {
   // State for the current view
   const [activeView, setActiveView] = useState<'recents' | 'chat' | 'empty'>('recents');
   // State for the active tab
@@ -190,7 +191,13 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
           {/* Double chevrons close button (>>) */}
           <button 
             className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-white/10"
-            onClick={onClose}
+            onClick={() => {
+              console.log("CLOSE BUTTON CLICKED IN VYNACHAT - IS IN STREAM VIEW:", isInStreamView);
+              // Force call the onClose handler directly
+              if (onClose) {
+                onClose();
+              }
+            }}
             style={{cursor: 'pointer'}}
             aria-label="Close chat panel"
             id="closeButton"

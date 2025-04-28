@@ -331,7 +331,8 @@ export default function StreamingRoom({
               onClose={() => {
                 console.log("CLOSE BUTTON CLICKED: CLOSING DRAWER");
                 setIsDrawerOpen(false);
-              }} 
+              }}
+              isInStreamView={true}
             />
           </div>
         )}
