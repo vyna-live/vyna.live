@@ -97,7 +97,7 @@ export default function LivestreamInterface({
   const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
   const [viewerCount, setViewerCount] = useState("123.5k");
-  const [chatMessages, setChatMessages] = useState<typeof CHAT_MESSAGES>(CHAT_MESSAGES.slice(0, 5));
+  const [chatMessages, setChatMessages] = useState<typeof CHAT_MESSAGES>(CHAT_MESSAGES.slice(0, 2));
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<Array<{id: string; content: string; role: "user" | "assistant"}>>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -343,10 +343,10 @@ export default function LivestreamInterface({
     const addMessage = () => {
       if (messageIndex < CHAT_MESSAGES.length) {
         setChatMessages(prev => {
-          // Limit to only 5 messages by removing the oldest one if we have 5 already
+          // Limit to only 2 messages to prevent overlap with chat input
           const newMessages = [...prev, CHAT_MESSAGES[messageIndex]];
-          if (newMessages.length > 5) {
-            return newMessages.slice(newMessages.length - 5);
+          if (newMessages.length > 2) {
+            return newMessages.slice(newMessages.length - 2);
           }
           return newMessages;
         });

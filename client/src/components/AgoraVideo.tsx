@@ -139,9 +139,9 @@ export function AgoraVideo({
               color
             }];
             
-            // Keep only the latest 5 messages
-            if (newMessages.length > 5) {
-              return newMessages.slice(newMessages.length - 5);
+            // Keep only the latest 2 messages to prevent overlap with chat input
+            if (newMessages.length > 2) {
+              return newMessages.slice(newMessages.length - 2);
             }
             return newMessages;
           });
@@ -165,9 +165,9 @@ export function AgoraVideo({
               color
             }];
             
-            // Keep only the latest 5 messages
-            if (newMessages.length > 5) {
-              return newMessages.slice(newMessages.length - 5);
+            // Keep only the latest 2 messages to prevent overlap with chat input
+            if (newMessages.length > 2) {
+              return newMessages.slice(newMessages.length - 2);
             }
             return newMessages;
           });
@@ -306,9 +306,9 @@ export function AgoraVideo({
           color: myColor
         }];
         
-        // Keep only the latest 10 messages
-        if (newMessages.length > 10) {
-          return newMessages.slice(newMessages.length - 10);
+        // Keep only the latest 2 messages to prevent overlap with chat input
+        if (newMessages.length > 2) {
+          return newMessages.slice(newMessages.length - 2);
         }
         return newMessages;
       });
