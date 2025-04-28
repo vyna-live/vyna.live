@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { X, ChevronRight, ChevronDown, ThumbsUp, ThumbsDown, RotateCcw, Share2, MessageSquare } from 'lucide-react';
 import PerfectInputArea from './PerfectInputArea';
 
+// Define types for our chat interface
 type MessageType = {
   id: string;
   content: string;
@@ -396,33 +398,52 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
               // Notepad List View - Exactly matching the design in notelist.png
               <div className="flex flex-col h-full bg-[#121212]">
                 <div className="px-4 py-2">
-                  <h3 className="text-xs font-medium text-neutral-400 uppercase">RECENTS</h3>
+                  <h3 className="text-xs font-medium text-neutral-400 uppercase">NOTES</h3>
                 </div>
                 
                 <div className="flex-1 overflow-y-auto bg-[#121212]">
-                  <div className="space-y-0">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div 
-                        key={i} 
-                        className="px-4 py-3 hover:bg-[#1A1A1A] flex flex-col border-b border-[#191919] cursor-pointer"
-                        onClick={() => setNotepadView('view')}
-                      >
-                        <div className="flex justify-between items-center">
-                          <p className="text-sm text-white font-medium">Who is the best CODM gamer in Nigeria...</p>
-                          <button className="text-white/60 p-1">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-                              <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
-                              <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
-                            </svg>
-                          </button>
+                  {/* If no notes, show empty state */}
+                  {true ? (
+                    <div className="h-full flex items-center justify-center text-center p-4">
+                      <div>
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-800 flex items-center justify-center">
+                          <svg width="28" height="28" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.6667 4.66667V12.25H2.33333V4.66667" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M12.8333 1.75H1.16667V4.66667H12.8333V1.75Z" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M5.83333 7H8.16667" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
                         </div>
-                        <p className="text-xs text-gray-500 truncate mt-1">
-                          I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March...
+                        <h4 className="text-lg font-medium mb-2">No notes yet</h4>
+                        <p className="text-sm text-neutral-500">
+                          Create notes to help you remember important information during your stream.
                         </p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className="px-4 py-3 hover:bg-[#1A1A1A] flex flex-col border-b border-[#191919] cursor-pointer"
+                          onClick={() => setNotepadView('view')}
+                        >
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm text-white font-medium">Who is the best CODM gamer in Nigeria...</p>
+                            <button className="text-white/60 p-1">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                                <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
+                                <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
+                              </svg>
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate mt-1">
+                            Last updated: April 28, 2025
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="p-4 bg-[#121212] mt-auto">
@@ -436,64 +457,45 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                 </div>
               </div>
             )}
-            
+
             {notepadView === 'new' && (
               // New Note View - Exactly matching the design in notenew.png
               <div className="flex flex-col h-full bg-[#121212]">
-                <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
-                  <h3 className="text-xl font-medium text-white mb-1">Research Notes</h3>
-                  <p className="text-sm text-neutral-400 text-center">
-                    Save important information for<br/>your stream
-                  </p>
+                <div className="px-4 py-3 flex items-center border-b border-white/10">
+                  <button 
+                    className="mr-2 p-1 hover:bg-white/10 rounded"
+                    onClick={() => setNotepadView('list')}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  <h3 className="text-sm font-medium truncate flex-1">New note</h3>
+                  <button 
+                    className="p-1 hover:bg-white/10 rounded text-[#D6C6AF]"
+                    onClick={() => {
+                      // Save the note and go to view
+                      if (noteInput.trim()) {
+                        setNotepadView('view');
+                      }
+                    }}
+                  >
+                    Save
+                  </button>
                 </div>
-                
-                <div className="w-full px-4 pb-8 mt-auto">
-                  <div className="flex flex-col items-stretch">
-                    <div className="relative mb-3">
-                      <textarea 
-                        className="w-full bg-[#1A1A1A] rounded-lg px-3 py-2.5 resize-none text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#D6C6AF]" 
-                        rows={2} 
-                        placeholder="Type a new note"
-                        value={noteInput}
-                        onChange={(e) => setNoteInput(e.target.value)}
-                      ></textarea>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-white/60 hover:text-white">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                        <button className="p-2 text-white/60 hover:text-white">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                        <button className="p-2 text-white/60 hover:text-white">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-                            <path d="M21 15l-5-5L5 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                      </div>
-                      
-                      <button 
-                        onClick={() => setNotepadView('view')}
-                        className="py-1.5 px-3 bg-white text-black rounded-md flex items-center justify-center text-sm font-medium"
-                      >
-                        <span className="mr-1">+</span>
-                        Add note
-                      </button>
-                    </div>
-                  </div>
+
+                <div className="flex-1 p-4 overflow-y-auto">
+                  <textarea
+                    className="w-full h-full bg-transparent border-none outline-none text-white resize-none"
+                    placeholder="Write your note here..."
+                    value={noteInput}
+                    onChange={(e) => setNoteInput(e.target.value)}
+                    autoFocus
+                  />
                 </div>
               </div>
             )}
-            
+
             {notepadView === 'view' && (
               // Note View - Exactly matching the design in noteview.png
               <div className="flex flex-col h-full bg-[#121212]">
@@ -506,44 +508,35 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                       <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <h3 className="text-sm font-medium truncate flex-1">Who is the best CODM gamer in Ni...</h3>
-                  <button className="p-1 hover:bg-white/10 rounded">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
+                  <h3 className="text-sm font-medium truncate flex-1">Note view</h3>
+                  <div className="flex gap-1">
+                    <button className="p-1 hover:bg-white/10 rounded">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                    <button className="p-1 hover:bg-white/10 rounded">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 18L18 6M6 6l12 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#121212]">
-                  <p className="text-sm text-white">
-                    I don't have definitive information about who the best Call of Duty Mobile (CODM) player in Nigeria is as of March 2025. My knowledge cutoff is October 2024, so I don't have access to current rankings, tournament results, or player statistics from March 2025.
+
+                <div className="flex-1 p-4 overflow-y-auto">
+                  <h4 className="text-lg font-semibold mb-3 text-white">Who is the best CODM gamer in Nigeria</h4>
+                  <p className="text-sm text-gray-300">
+                    Based on my research for the livestream today, I believe the top CODM player in Nigeria right now is RazzyTaG. He's won 3 national tournaments this year, has over 200,000 subscribers on YouTube, and is currently ranked #1 in the Nigerian leaderboards.
                     <br/><br/>
-                    To find accurate information about the top CODM players in Nigeria currently, I'd recommend:
+                    His KD ratio is reportedly 5.2 which is exceptional even by professional standards. He mainly uses the AK-47 and QQ9 loadouts.
                     <br/><br/>
-                    1. Checking official CODM tournament results for any Nigerian championships held in early 2025
-                    <br/>
-                    2. Looking at regional leaderboards within the game
-                    <br/>
-                    3. Following Nigerian esports organizations that field CODM teams
-                    <br/>
-                    4. Checking social media accounts of known Nigerian CODM content creators and competitive players
-                    <br/>
-                    5. Visiting Nigerian gaming forums or communities where this topic might be discussed
-                    <br/><br/>
-                    If you're interested in who was prominent in the Nigerian CODM scene before my knowledge cutoff, I could share information about players who were rising in popularity during 2024, but I can't make claims about who would be considered the best as of March 2025.
+                    For the tournament, I should mention both him and WolverinNG who is the second-best player in the country right now.
                   </p>
-                </div>
-                
-                <div className="p-4 bg-[#121212] mt-auto">
-                  <button 
-                    className="w-full py-2 px-4 bg-[#D6C6AF] hover:bg-[#C6B69F] rounded-lg text-sm text-black flex items-center justify-center"
-                  >
-                    Teleprompt
-                  </button>
                 </div>
               </div>
             )}
           </>
+        )}
         )}
       </div>
     </div>
