@@ -332,6 +332,66 @@ export function AgoraVideo({
   const toggleChat = () => {
     setShowChat(!showChat);
   };
+  
+  // Toggle screen sharing
+  const toggleScreenSharing = async () => {
+    if (isScreenSharing) {
+      // Stop screen sharing
+      try {
+        if (screenTrackRef.current) {
+          await clientRef.current?.unpublish(screenTrackRef.current);
+          screenTrackRef.current.close();
+          screenTrackRef.current = null;
+        }
+        // Re-enable camera video
+        if (videoTrackRef.current) {
+          await videoTrackRef.current.setEnabled(true);
+          setIsVideoOn(true);
+        }
+        setIsScreenSharing(false);
+      } catch (error) {
+        console.error("Error stopping screen sharing:", error);
+      }
+    } else {
+      // Start screen sharing
+      try {
+        const screenTrack = await AgoraRTC.createScreenVideoTrack({
+          encoderConfig: "1080p_1",
+          optimizationMode: "detail"
+        });
+        
+        if (!Array.isArray(screenTrack)) {
+          screenTrackRef.current = screenTrack;
+          
+          // Disable camera video while screen sharing
+          if (videoTrackRef.current) {
+            await videoTrackRef.current.setEnabled(false);
+          }
+          
+          // Publish screen track
+          await clientRef.current?.publish(screenTrack);
+          setIsScreenSharing(true);
+          
+          // Handle screen sharing stopped by user through browser UI
+          screenTrack.on("track-ended", async () => {
+            await clientRef.current?.unpublish(screenTrack);
+            screenTrack.close();
+            screenTrackRef.current = null;
+            
+            // Re-enable camera
+            if (videoTrackRef.current) {
+              await videoTrackRef.current.setEnabled(true);
+              setIsVideoOn(true);
+            }
+            
+            setIsScreenSharing(false);
+          });
+        }
+      } catch (error) {
+        console.error("Error starting screen sharing:", error);
+      }
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -443,58 +503,7 @@ export function AgoraVideo({
           {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
         </button>
         <button 
-          onClick={async () => {
-            if (isScreenSharing) {
-              // Stop screen sharing
-              try {
-                if (screenTrackRef.current) {
-                  await clientRef.current?.unpublish(screenTrackRef.current);
-                  screenTrackRef.current.close();
-                  screenTrackRef.current = null;
-                }
-                // Re-enable camera video
-                if (videoTrackRef.current) {
-                  await videoTrackRef.current.setEnabled(true);
-                  setIsVideoOn(true);
-                }
-                setIsScreenSharing(false);
-              } catch (error) {
-                console.error("Error stopping screen sharing:", error);
-              }
-            } else {
-              // Start screen sharing
-              try {
-                const screenTrack = await AgoraRTC.createScreenVideoTrack();
-                screenTrackRef.current = screenTrack;
-                
-                // Disable camera video while screen sharing
-                if (videoTrackRef.current) {
-                  await videoTrackRef.current.setEnabled(false);
-                }
-                
-                // Publish screen track
-                await clientRef.current?.publish(screenTrack);
-                setIsScreenSharing(true);
-                
-                // Handle screen sharing stopped by user through browser UI
-                screenTrack.on("track-ended", async () => {
-                  await clientRef.current?.unpublish(screenTrack);
-                  screenTrack.close();
-                  screenTrackRef.current = null;
-                  
-                  // Re-enable camera
-                  if (videoTrackRef.current) {
-                    await videoTrackRef.current.setEnabled(true);
-                    setIsVideoOn(true);
-                  }
-                  
-                  setIsScreenSharing(false);
-                });
-              } catch (error) {
-                console.error("Error starting screen sharing:", error);
-              }
-            }
-          }}
+          onClick={() => toggleScreenSharing()}
           className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
         >
           <ScreenShare size={16} />
@@ -515,20 +524,20 @@ export function AgoraVideo({
       
       {/* Viewer count and drawer toggle */}
       <div className="absolute top-4 right-4 flex items-center space-x-3">
-        {/* Viewer count - now next to toggle button */}
-        <div className="flex items-center">
+        {/* Viewer count with glassmorphic background */}
+        <div className="flex items-center bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
           <div className="flex items-center">
             <Users size={12} className="text-white mr-1" />
             <span className="text-white text-xs">{viewers}</span>
           </div>
         </div>
         
-        {/* Drawer toggle button - no background */}
+        {/* Drawer toggle button with glassmorphic background */}
         <button 
           onClick={onToggleDrawer} 
-          className="text-white hover:text-gray-300 transition-colors"
+          className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
@@ -536,11 +545,11 @@ export function AgoraVideo({
       
       {/* Chat container */}
       {showChat && (
-        <div className="absolute left-4 bottom-24 w-72 max-h-72 flex flex-col">
+        <div className="absolute left-4 bottom-[80px] w-72 flex flex-col">
           {/* Chat messages */}
-          <div className="overflow-y-auto max-h-64 flex flex-col-reverse pb-2 mb-2">
+          <div className="mb-4 overflow-y-auto max-h-48 flex flex-col-reverse bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-white/10">
             {chatMessages.map((chatMsg, index) => (
-              <div key={index} className="animate-slideInUp">
+              <div key={index} className="animate-slideInUp mb-2">
                 <div className="flex items-center space-x-1.5 py-1">
                   <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
                     {chatMsg.name.charAt(0)}
@@ -559,30 +568,32 @@ export function AgoraVideo({
             ))}
           </div>
           
-          {/* Chat input */}
-          <form onSubmit={handleChatSubmit} className="relative">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Send a message..."
-              className="w-full bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg py-2 pl-3 pr-10 border border-gray-800/50 focus:outline-none focus:ring-1 focus:ring-[#A67D44]/60"
-            />
-            <button 
-              type="submit" 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#A67D44] hover:text-[#B68D54] transition-colors"
-            >
-              <Send size={14} />
-            </button>
-          </form>
+          {/* Chat input below messages */}
+          <div className="mt-2">
+            <form onSubmit={handleChatSubmit} className="relative">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Send a message..."
+                className="w-full bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg py-2 pl-3 pr-10 border border-gray-800/50 focus:outline-none focus:ring-1 focus:ring-[#A67D44]/60"
+              />
+              <button 
+                type="submit" 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#A67D44] hover:text-[#B68D54] transition-colors"
+              >
+                <Send size={14} />
+              </button>
+            </form>
+          </div>
         </div>
       )}
       
       {/* Chat toggle button */}
-      <div className="absolute left-4 bottom-16">
+      <div className="absolute left-4 bottom-[32px]">
         <button 
           onClick={toggleChat}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white transition-colors border border-white/10"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 10H8.01M12 10H12.01M16 10H16.01M12 18H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12H8C7.46957 12 6.96086 12.2107 6.58579 12.5858C6.21071 12.9609 6 13.4696 6 14V18H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
