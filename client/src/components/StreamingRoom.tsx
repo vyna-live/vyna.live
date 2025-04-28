@@ -116,6 +116,16 @@ export default function StreamingRoom({
       description: 'Teleprompter text has been cleared',
     });
   };
+  
+  // Add streaming-mode class to body when component mounts
+  useEffect(() => {
+    document.body.classList.add('streaming-mode');
+    
+    return () => {
+      // Remove streaming-mode class from body when component unmounts
+      document.body.classList.remove('streaming-mode');
+    };
+  }, []);
 
   return (
     <div style={{margin: '8px'}} className="h-[calc(100vh-16px)] w-[calc(100vw-16px)] overflow-hidden bg-black relative rounded-2xl">
