@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, X } from 'lucide-react';
+import { Copy, X, ChevronLeft, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AgoraVideo from './AgoraVideo';
@@ -8,6 +8,14 @@ import VynaChat from './VynaChat';
 import GradientText from './GradientText';
 import { MessageType } from '../types/chat';
 import vpwwLogo from '@/assets/vpww.png';
+
+// Define Note type
+type Note = {
+  id: string;
+  title: string;
+  content: string;
+  date: Date;
+};
 
 interface StreamingRoomProps {
   channelName: string;
@@ -32,8 +40,53 @@ export default function StreamingRoom({
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
   const [isLoading, setIsLoading] = useState(false);
+  
   // Tab state for drawer
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
+  
+  // Notepad state
+  const [notepadView, setNotepadView] = useState<'list' | 'new' | 'view'>('list');
+  const [currentNote, setCurrentNote] = useState<Note | null>(null);
+  const [noteInput, setNoteInput] = useState('');
+  const [savedNotes, setSavedNotes] = useState<Note[]>([
+    {
+      id: '1',
+      title: 'Who is the best CODM gamer in Nigeria...',
+      content: `I don't have definitive information about who the best Call of Duty Mobile (CODM) player in Nigeria is as of March 2025. My knowledge cutoff is October 2024, so I don't have access to current rankings, tournament results, or player statistics from March 2025.\n\nTo find accurate information about the top CODM players in Nigeria currently, I'd recommend:\n1. Checking official CODM tournament results for any Nigerian championships held in early 2025\n2. Looking at regional leaderboards within the game\n3. Following Nigerian esports organizations that field CODM teams\n4. Checking social media accounts of known Nigerian CODM content creators and competitive players\n5. Visiting Nigerian gaming forums or communities where this topic might be discussed\n\nIf you're interested in who was prominent in the Nigerian CODM scene before my knowledge cutoff, I could share information about players who were rising in popularity during 2024, but I can't make claims about who would be considered the best as of March 2025.`,
+      date: new Date()
+    },
+    {
+      id: '2',
+      title: 'Who is the best CODM gamer in Nigeria...',
+      content: `I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.`,
+      date: new Date()
+    },
+    {
+      id: '3',
+      title: 'Who is the best CODM gamer in Nigeria...',
+      content: `I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.`,
+      date: new Date()
+    },
+    {
+      id: '4',
+      title: 'Who is the best CODM gamer in Nigeria...',
+      content: `I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.`,
+      date: new Date()
+    },
+    {
+      id: '5',
+      title: 'Who is the best CODM gamer in Nigeria...',
+      content: `I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.`,
+      date: new Date()
+    },
+    {
+      id: '6',
+      title: 'Who is the best CODM gamer in Nigeria...',
+      content: `I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge only extends to October 2024.`,
+      date: new Date()
+    }
+  ]);
+  
   const { toast } = useToast();
 
   // Message handlers
@@ -116,6 +169,60 @@ export default function StreamingRoom({
       title: 'Teleprompter cleared',
       description: 'Teleprompter text has been cleared',
     });
+  };
+  
+  // Notepad handlers
+  const handleNewNote = () => {
+    setNotepadView('new');
+    setNoteInput('');
+  };
+  
+  const handleViewNote = (note: Note) => {
+    setCurrentNote(note);
+    setNotepadView('view');
+  };
+  
+  const handleBackToNotesList = () => {
+    setNotepadView('list');
+    setCurrentNote(null);
+  };
+  
+  const handleAddNote = () => {
+    if (!noteInput.trim()) {
+      toast({
+        title: 'Note is empty',
+        description: 'Please enter some text for your note',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const newNote = {
+      id: Date.now().toString(),
+      title: noteInput.length > 40 ? noteInput.substring(0, 40) + '...' : noteInput,
+      content: noteInput,
+      date: new Date()
+    };
+    
+    setSavedNotes(prev => [newNote, ...prev]);
+    setNotepadView('list');
+    setNoteInput('');
+    
+    toast({
+      title: 'Note added',
+      description: 'Your note has been saved',
+    });
+  };
+  
+  const handleSendToTeleprompter = () => {
+    if (currentNote) {
+      setTeleprompterText(currentNote.content);
+      
+      toast({
+        title: 'Added to teleprompter',
+        description: 'Note content has been added to the teleprompter',
+      });
+    }
   };
   
   // Add streaming-mode class to body when component mounts
@@ -393,9 +500,129 @@ export default function StreamingRoom({
                   hideHeader={true} // Hide the header since we have our own
                 />
               ) : (
-                <div className="h-full flex flex-col p-4">
-                  <h2 className="text-white text-lg font-medium mb-4">Notepad</h2>
-                  <p className="text-white/70">Notepad functionality coming soon...</p>
+                <div className="h-full bg-[#121212] flex flex-col">
+                  {/* Notepad Views */}
+                  {notepadView === 'list' && (
+                    <div className="flex flex-col h-full bg-[#121212]">
+                      <div className="px-4 py-2">
+                        <h3 className="text-xs font-medium text-neutral-400 uppercase">RECENTS</h3>
+                      </div>
+                      
+                      <div className="flex-1 overflow-y-auto bg-[#121212]">
+                        <div className="space-y-0">
+                          {savedNotes.map((note) => (
+                            <div 
+                              key={note.id} 
+                              className="px-4 py-3 hover:bg-[#1A1A1A] flex justify-between items-center border-b border-[#191919] cursor-pointer"
+                              onClick={() => handleViewNote(note)}
+                            >
+                              <div className="flex-1">
+                                <p className="text-sm text-white truncate">{note.title}</p>
+                                <p className="text-xs text-white/60 truncate">{note.content.substring(0, 60)}</p>
+                              </div>
+                              <button className="text-white/60 p-1">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                                  <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
+                                  <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 bg-[#121212] mt-auto">
+                        <button 
+                          className="w-full py-2 px-4 bg-[#D6C6AF] hover:bg-[#C6B69F] rounded-lg text-sm text-black flex items-center justify-center"
+                          onClick={handleNewNote}
+                        >
+                          <span className="mr-1">+</span>
+                          New note
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {notepadView === 'new' && (
+                    <div className="flex flex-col h-full bg-[#121212]">
+                      <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
+                        <h3 className="text-xl font-medium text-white mb-1">Research Notes</h3>
+                        <p className="text-sm text-neutral-400 text-center mb-8">
+                          Save important information for<br/>your stream
+                        </p>
+                        
+                        <textarea 
+                          className="w-full h-64 bg-[#1A1A1A] rounded-lg p-3 resize-none text-white border border-white/10 focus:outline-none focus:border-white/30 mb-8"
+                          placeholder="Type a new note"
+                          value={noteInput}
+                          onChange={(e) => setNoteInput(e.target.value)}
+                        ></textarea>
+                        
+                        <div className="w-full flex items-center">
+                          <div className="flex items-center gap-2">
+                            <button className="text-white/60 p-1">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 14l-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h10a3 3 0 013 3v7zm-9-4v8m-4-4h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            <button className="text-white/60 p-1">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 3v18m-9-9h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            <button className="text-white/60 p-1">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 9h18m-18 6h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                          
+                          <button 
+                            className="ml-auto py-1 px-3 bg-[#D6C6AF] hover:bg-[#C6B69F] rounded-md text-sm text-black flex items-center"
+                            onClick={handleAddNote}
+                          >
+                            <span className="mr-1">+</span>
+                            Add note
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {notepadView === 'view' && currentNote && (
+                    <div className="flex flex-col h-full bg-[#121212]">
+                      <div className="px-4 py-3 flex items-center border-b border-white/10">
+                        <button 
+                          className="mr-2 p-1 hover:bg-white/10 rounded"
+                          onClick={handleBackToNotesList}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <h3 className="text-sm font-medium truncate flex-1">{currentNote.title}</h3>
+                        <button className="p-1 hover:bg-white/10 rounded">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 9L12 15L18 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#121212]">
+                        <p className="text-sm text-white whitespace-pre-line">{currentNote.content}</p>
+                      </div>
+                      
+                      <div className="p-4 bg-[#121212] mt-auto">
+                        <button 
+                          className="w-full py-2 px-4 bg-[#D6C6AF] hover:bg-[#C6B69F] rounded-lg text-sm text-black flex items-center justify-center"
+                          onClick={handleSendToTeleprompter}
+                        >
+                          Teleprompter
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
