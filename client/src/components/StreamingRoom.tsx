@@ -8,6 +8,7 @@ import ChatInterface from './ChatInterface';
 import InputArea from './InputArea';
 import GradientText from './GradientText';
 import { MessageType } from '../types/chat';
+import vpwwLogo from '@/assets/vpww.png';
 
 interface StreamingRoomProps {
   channelName: string;
@@ -121,7 +122,7 @@ export default function StreamingRoom({
       {/* Top header row with Vyna logo and user - exactly matching navbar.png */}
       <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black">
         <div className="flex items-center">
-          <img src="/attached_assets/vpww.png" alt="Vyna.live" className="h-7" />
+          <img src={vpwwLogo} alt="Vyna.live" className="h-7" />
         </div>
         
         <div className="flex items-center gap-2">
