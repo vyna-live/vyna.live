@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createClient, createMicrophoneAndCameraTracks, ClientConfig, IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack } from "agora-rtc-react";
+import AgoraRTC, { 
+  ClientConfig, 
+  IAgoraRTCClient, 
+  ICameraVideoTrack, 
+  IMicrophoneAudioTrack,
+  ConnectionState,
+  ConnectionDisconnectedReason
+} from "agora-rtc-sdk-ng";
 import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff } from 'lucide-react';
 
 // Define Agora config
@@ -48,43 +55,95 @@ export function AgoraVideo({
   const [isAudioOn, setIsAudioOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
   
-  // Create Agora client
-  const useClient = createClient(config);
-  const client = useClient();
+  // Client reference
+  const clientRef = useRef<IAgoraRTCClient | null>(null);
+  const audioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
+  const videoTrackRef = useRef<ICameraVideoTrack | null>(null);
   
-  // Create audio and video tracks
-  const { ready, tracks } = createMicrophoneAndCameraTracks();
-  const [audioTrack, videoTrack] = tracks;
-
+  // Create client and tracks on mount
   useEffect(() => {
-    // Don't try to connect if no appId
-    if (!appId) {
-      setError("Missing Agora App ID");
-      setIsLoading(false);
-      return;
-    }
+    const init = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Don't try to connect if no appId
+        if (!appId) {
+          setError("Missing Agora App ID");
+          setIsLoading(false);
+          return;
+        }
+        
+        // Create client
+        const agoraClient = AgoraRTC.createClient(config);
+        clientRef.current = agoraClient;
+        
+        // Set client role
+        await agoraClient.setClientRole(role === 'host' ? 'host' : 'audience');
+        
+        // Listen for connection state changes
+        agoraClient.on('connection-state-change', (curState, prevState, reason) => {
+          console.log("Agora connection state changed:", prevState, "->", curState, "reason:", reason);
+          
+          if (curState === 'DISCONNECTED') {
+            setIsJoined(false);
+          }
+        });
+        
+        // Create tracks if host
+        if (role === 'host') {
+          // Create microphone and camera tracks
+          const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          audioTrackRef.current = micTrack;
+          videoTrackRef.current = camTrack;
+        }
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error initializing Agora:", err);
+        setError(err instanceof Error ? err.message : "Failed to initialize stream");
+        setIsLoading(false);
+      }
+    };
     
-    // Wait for tracks to be ready
-    if (!ready) return;
+    init();
     
-    setIsLoading(false);
-  }, [appId, ready]);
+    // Cleanup
+    return () => {
+      // Clean up tracks
+      if (audioTrackRef.current) {
+        audioTrackRef.current.close();
+        audioTrackRef.current = null;
+      }
+      
+      if (videoTrackRef.current) {
+        videoTrackRef.current.close();
+        videoTrackRef.current = null;
+      }
+      
+      // Leave channel if joined
+      if (clientRef.current && isJoined) {
+        clientRef.current.leave();
+      }
+    };
+  }, [appId, role]);
 
   // Join call when ready
   const joinChannel = async () => {
-    if (!client || !ready || !audioTrack || !videoTrack) return;
+    if (!clientRef.current || !audioTrackRef.current || !videoTrackRef.current) return;
     
     try {
       setIsLoading(true);
-      client.setClientRole(role);
+      const client = clientRef.current;
       
       // Join the channel
       await client.join(appId, channelName, token || null, uid);
       console.log("Joined Agora channel:", channelName);
       
-      // Publish tracks
-      await client.publish([audioTrack, videoTrack]);
-      console.log("Published tracks to Agora channel");
+      // Publish tracks if host
+      if (role === 'host') {
+        await client.publish([audioTrackRef.current, videoTrackRef.current]);
+        console.log("Published tracks to Agora channel");
+      }
       
       setIsJoined(true);
       setIsLoading(false);
@@ -95,25 +154,14 @@ export function AgoraVideo({
     }
   };
 
-  // Leave channel when component unmounts
-  useEffect(() => {
-    return () => {
-      if (isJoined) {
-        client.unpublish();
-        client.leave();
-        console.log("Left Agora channel");
-      }
-    };
-  }, [client, isJoined]);
-
   // Toggle audio
   const toggleAudio = async () => {
-    if (!audioTrack) return;
+    if (!audioTrackRef.current) return;
     
     if (isAudioOn) {
-      await audioTrack.setEnabled(false);
+      await audioTrackRef.current.setEnabled(false);
     } else {
-      await audioTrack.setEnabled(true);
+      await audioTrackRef.current.setEnabled(true);
     }
     
     setIsAudioOn(!isAudioOn);
@@ -121,15 +169,39 @@ export function AgoraVideo({
 
   // Toggle video
   const toggleVideo = async () => {
-    if (!videoTrack) return;
+    if (!videoTrackRef.current) return;
     
     if (isVideoOn) {
-      await videoTrack.setEnabled(false);
+      await videoTrackRef.current.setEnabled(false);
     } else {
-      await videoTrack.setEnabled(true);
+      await videoTrackRef.current.setEnabled(true);
     }
     
     setIsVideoOn(!isVideoOn);
+  };
+
+  // End stream
+  const endStream = async () => {
+    if (!clientRef.current) return;
+    
+    try {
+      // Unpublish tracks
+      if (audioTrackRef.current) {
+        await clientRef.current.unpublish(audioTrackRef.current);
+      }
+      
+      if (videoTrackRef.current) {
+        await clientRef.current.unpublish(videoTrackRef.current);
+      }
+      
+      // Leave channel
+      await clientRef.current.leave();
+      console.log("Left Agora channel");
+      
+      setIsJoined(false);
+    } catch (err) {
+      console.error("Error leaving channel:", err);
+    }
   };
 
   // Loading state
@@ -166,7 +238,7 @@ export function AgoraVideo({
   }
 
   // Not joined yet - "Go Live" screen
-  if (!isJoined && client && ready) {
+  if (!isJoined) {
     return (
       <div className="w-full h-full flex items-center justify-center">
         <style>{customStyles}</style>
@@ -180,11 +252,11 @@ export function AgoraVideo({
           </p>
           
           {/* Preview of local video */}
-          {videoTrack && (
+          {videoTrackRef.current && (
             <div className="mb-6 relative rounded-lg overflow-hidden shadow-lg">
               <div className="w-full pb-[56.25%] relative"> {/* 16:9 aspect ratio */}
                 <div className="absolute inset-0">
-                  <VideoPlayer videoTrack={videoTrack} />
+                  <VideoPlayer videoTrack={videoTrackRef.current} />
                 </div>
               </div>
             </div>
@@ -224,7 +296,7 @@ export function AgoraVideo({
       
       {/* Main video stream */}
       <div className="absolute inset-0 bg-black rounded-lg overflow-hidden">
-        {videoTrack && <VideoPlayer videoTrack={videoTrack} />}
+        {videoTrackRef.current && <VideoPlayer videoTrack={videoTrackRef.current} />}
       </div>
       
       {/* Controls */}
@@ -242,11 +314,7 @@ export function AgoraVideo({
           {isVideoOn ? <Camera size={20} /> : <CameraOff size={20} className="text-red-500" />}
         </button>
         <button 
-          onClick={() => {
-            client?.unpublish();
-            client?.leave();
-            setIsJoined(false);
-          }}
+          onClick={endStream}
           className="p-3 rounded-full bg-red-600 hover:bg-red-700 text-white"
         >
           End Stream

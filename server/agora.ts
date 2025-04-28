@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
-import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
+import * as agoraAccessToken from 'agora-access-token';
+
+// Define constants from the module
+const PUBLISHER_ROLE = 1; // RtcRole.PUBLISHER value 
+const SUBSCRIBER_ROLE = 2; // RtcRole.SUBSCRIBER value
 
 // Agora app credentials from environment variables
 const appId = process.env.AGORA_APP_ID!;
@@ -21,7 +25,7 @@ function generateAgoraToken(channelName: string, uid: number, role: number, expi
   const privilegeExpireTime = currentTime + expirationTimeInSeconds;
 
   // Build the token
-  return RtcTokenBuilder.buildTokenWithUid(
+  return agoraAccessToken.RtcTokenBuilder.buildTokenWithUid(
     appId,
     appCertificate,
     channelName,
@@ -53,7 +57,7 @@ export function getHostToken(req: Request, res: Response) {
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
 
     // Generate a token with host privileges
-    const token = generateAgoraToken(channelName, uidNumber, RtcRole.PUBLISHER);
+    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE);
 
     res.json({
       token,
@@ -81,7 +85,7 @@ export function getAudienceToken(req: Request, res: Response) {
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
 
     // Generate a token with audience privileges
-    const token = generateAgoraToken(channelName, uidNumber, RtcRole.SUBSCRIBER);
+    const token = generateAgoraToken(channelName, uidNumber, SUBSCRIBER_ROLE);
 
     res.json({
       token,
@@ -110,7 +114,7 @@ export async function createLivestream(req: Request, res: Response) {
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
     // Generate a token with host privileges
-    const token = generateAgoraToken(channelName, uidNumber, RtcRole.PUBLISHER);
+    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE);
 
     // In a real implementation, you would save the livestream details to a database
     // For now, we just return the channel details
