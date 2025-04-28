@@ -50,12 +50,7 @@ const customStyles = `
   }
 `;
 
-interface ChatMessage {
-  userId: string;
-  name: string;
-  message: string;
-  color: string;
-}
+// Removed ChatMessage interface as we're using Agora's built-in chat
 
 interface AgoraVideoProps {
   appId: string;
@@ -83,9 +78,7 @@ export function AgoraVideo({
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [viewers, setViewers] = useState<number>(0);
   const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [showChat, setShowChat] = useState(true);
+  // Removed chat-related state as we're using Agora's built-in chat
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   
   // Client reference
@@ -128,25 +121,6 @@ export function AgoraVideo({
           console.log("User joined:", user.uid);
           setRemoteUsers(prev => [...prev, user]);
           setViewers(prev => prev + 1);
-          
-          // Add a chat message for user joining
-          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-          
-          setChatMessages(prev => {
-            const newMessages = [...prev, {
-              userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
-              message: "joined",
-              color
-            }];
-            
-            // Keep only the latest 2 messages to prevent overlap with chat input
-            if (newMessages.length > 2) {
-              return newMessages.slice(newMessages.length - 2);
-            }
-            return newMessages;
-          });
         });
         
         // Listen for user-left events
@@ -154,25 +128,6 @@ export function AgoraVideo({
           console.log("User left:", user.uid);
           setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
           setViewers(prev => Math.max(0, prev - 1));
-          
-          // Add a chat message for user leaving
-          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-          
-          setChatMessages(prev => {
-            const newMessages = [...prev, {
-              userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
-              message: "left",
-              color
-            }];
-            
-            // Keep only the latest 2 messages to prevent overlap with chat input
-            if (newMessages.length > 2) {
-              return newMessages.slice(newMessages.length - 2);
-            }
-            return newMessages;
-          });
         });
         
         // Create tracks if host
@@ -290,48 +245,7 @@ export function AgoraVideo({
     }
   };
   
-  // Send chat message
-  const sendChatMessage = async () => {
-    if (!chatInput.trim() || !clientRef.current) return;
-    
-    try {
-      // Using Agora RTM to send message to channel
-      // Instead we're just adding it locally for now
-      const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-      const myColor = randomColors[Math.floor(Math.random() * randomColors.length)];
-      
-      setChatMessages(prev => {
-        const newMessages = [...prev, {
-          userId: uid.toString(),
-          name: userName,
-          message: chatInput,
-          color: myColor
-        }];
-        
-        // Keep only the latest 2 messages to prevent overlap with chat input
-        if (newMessages.length > 2) {
-          return newMessages.slice(newMessages.length - 2);
-        }
-        return newMessages;
-      });
-      
-      // Clear input
-      setChatInput('');
-    } catch (err) {
-      console.error("Error sending message:", err);
-    }
-  };
-  
-  // Handle chat input submit
-  const handleChatSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    sendChatMessage();
-  };
-  
-  // Toggle chat visibility
-  const toggleChat = () => {
-    setShowChat(!showChat);
-  };
+  // Chat functionality now handled by Agora's built-in UI
   
   // Toggle screen sharing
   const toggleScreenSharing = async () => {
@@ -543,65 +457,7 @@ export function AgoraVideo({
         </button>
       </div>
       
-      {/* Chat container */}
-      {showChat && (
-        <div className="absolute left-4 bottom-[80px] w-72 flex flex-col">
-          {/* Chat messages */}
-          <div className="overflow-y-auto max-h-48 flex flex-col-reverse">
-            {chatMessages.map((chatMsg, index) => (
-              <div key={index} className="animate-slideInUp mb-2">
-                <div className="flex items-center space-x-1.5 py-1">
-                  <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
-                    {chatMsg.name.charAt(0)}
-                  </div>
-                  <div className="text-white text-xs font-medium">{chatMsg.name}</div>
-                  {chatMsg.message === "joined" || chatMsg.message === "left" ? (
-                    <div className={`text-${chatMsg.message === "joined" ? "green" : "red"}-400 text-xs ml-0.5`}>{chatMsg.message}</div>
-                  ) : (
-                    <div className="text-gray-300 text-xs">{chatMsg.message}</div>
-                  )}
-                </div>
-                {index > 0 && (
-                  <div className="border-t border-gray-800/30 my-1"></div>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {/* Chat input directly below messages */}
-          <form onSubmit={handleChatSubmit} className="relative mt-1">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Send a message..."
-              className="w-full bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg py-2 pl-3 pr-10 border border-gray-800/50 focus:outline-none focus:ring-1 focus:ring-[#A67D44]/60"
-            />
-            <button 
-              type="submit" 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#A67D44] hover:text-[#B68D54] transition-colors"
-            >
-              <Send size={14} />
-            </button>
-          </form>
-        </div>
-      )}
-      
-      {/* Chat toggle button */}
-      <div className="absolute left-4 bottom-[32px]">
-        <button 
-          onClick={toggleChat}
-          className="w-8 h-8 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white transition-colors border border-white/10"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 10H8.01M12 10H12.01M16 10H16.01M12 18H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12H8C7.46957 12 6.96086 12.2107 6.58579 12.5858C6.21071 12.9609 6 13.4696 6 14V18H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M18 18C19.0609 18 20.0783 18.4214 20.8284 19.1716C21.5786 19.9217 22 20.9391 22 22H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M6 18C4.93913 18 3.92172 18.4214 3.17157 19.1716C2.42143 19.9217 2 20.9391 2 22H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M17 6.1632C16.9368 7.58343 16.0518 8.87525 14.7213 9.54385C13.3908 10.2125 11.8219 10.0941 10.5973 9.22225C9.3728 8.35044 8.73662 6.87022 8.91891 5.3848C9.1012 3.89938 10.0682 2.62441 11.442 2.12261C12.8158 1.62081 14.3311 1.96011 15.3785 2.97685C16.4259 3.99359 16.8223 5.4947 16.37 6.86" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      </div>
+      {/* We're now using Agora's built-in chat UI so we've removed the custom chat components */}
     </div>
   );
 }
