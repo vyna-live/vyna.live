@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
 import { db } from './db';
 import { users, walletTransactions } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
-// This is for type augmentation
+// Define session types
 declare module 'express-session' {
   interface SessionData {
     userId: number;
   }
 }
 
+// Extend Express request type
 declare global {
   namespace Express {
     interface Request {
@@ -24,44 +25,38 @@ declare global {
 // Update user's wallet information
 export async function updateUserWallet(req: Request, res: Response) {
   try {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { walletAddress, walletProvider } = req.body;
-    if (!walletAddress) {
+    const { address, provider } = req.body;
+
+    if (!address) {
       return res.status(400).json({ error: 'Wallet address is required' });
     }
 
-    // Update user's wallet information
-    const [updatedUser] = await db
+    // Update user record with wallet info
+    await db
       .update(users)
       .set({
-        walletAddress,
-        walletProvider: walletProvider || 'phantom',
+        walletAddress: address,
+        walletProvider: provider || 'phantom',
         walletConnectedAt: new Date(),
       })
-      .where(eq(users.id, userId))
-      .returning();
+      .where(eq(users.id, req.session.userId));
 
-    return res.status(200).json({
-      success: true,
-      walletAddress: updatedUser.walletAddress,
-      walletProvider: updatedUser.walletProvider,
-    });
+    return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error updating wallet:', error);
-    return res.status(500).json({ error: 'Failed to update wallet information' });
+    console.error('Error updating user wallet:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
 // Get user's wallet information
 export async function getUserWallet(req: Request, res: Response) {
   try {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
     const [user] = await db
@@ -71,25 +66,24 @@ export async function getUserWallet(req: Request, res: Response) {
         walletConnectedAt: users.walletConnectedAt,
       })
       .from(users)
-      .where(eq(users.id, userId));
+      .where(eq(users.id, req.session.userId));
 
-    if (!user || !user.walletAddress) {
-      return res.status(404).json({ error: 'Wallet not found' });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
     return res.status(200).json(user);
   } catch (error) {
-    console.error('Error getting wallet:', error);
-    return res.status(500).json({ error: 'Failed to get wallet information' });
+    console.error('Error getting user wallet:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// Record a new wallet transaction
+// Record a new transaction
 export async function recordTransaction(req: Request, res: Response) {
   try {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
     const {
@@ -98,11 +92,9 @@ export async function recordTransaction(req: Request, res: Response) {
       transactionType,
       fromAddress,
       toAddress,
-      livestreamId,
-      metadata,
     } = req.body;
 
-    if (!signature || !amount || !transactionType || !fromAddress || !toAddress) {
+    if (!signature || !amount || !transactionType) {
       return res.status(400).json({ error: 'Missing required transaction information' });
     }
 
@@ -110,77 +102,86 @@ export async function recordTransaction(req: Request, res: Response) {
     const [transaction] = await db
       .insert(walletTransactions)
       .values({
-        userId,
+        userId: req.session.userId,
         signature,
-        amount,
+        amount: amount.toString(),
         transactionType,
         status: 'pending',
-        fromAddress,
-        toAddress,
-        livestreamId: livestreamId || null,
-        metadata: metadata || null,
+        fromAddress: fromAddress,
+        toAddress: toAddress,
         createdAt: new Date(),
       })
       .returning();
 
-    return res.status(201).json({
-      success: true,
-      transaction,
-    });
+    return res.status(201).json(transaction);
   } catch (error) {
     console.error('Error recording transaction:', error);
-    return res.status(500).json({ error: 'Failed to record transaction' });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// Update transaction status (e.g. after confirmation)
+// Update transaction status (confirmed/failed)
 export async function updateTransactionStatus(req: Request, res: Response) {
   try {
-    const { signature, status } = req.body;
-    if (!signature || !status) {
-      return res.status(400).json({ error: 'Signature and status are required' });
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const [updatedTransaction] = await db
+    const { id, status } = req.body;
+
+    if (!id || !status) {
+      return res.status(400).json({ error: 'Transaction ID and status are required' });
+    }
+
+    // Validate status
+    if (!['confirmed', 'failed'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be "confirmed" or "failed"' });
+    }
+
+    // Update transaction record
+    const [transaction] = await db
       .update(walletTransactions)
       .set({
         status,
         confirmedAt: status === 'confirmed' ? new Date() : null,
       })
-      .where(eq(walletTransactions.signature, signature))
+      .where(
+        and(
+          eq(walletTransactions.id, id),
+          eq(walletTransactions.userId, req.session.userId)
+        )
+      )
       .returning();
 
-    if (!updatedTransaction) {
+    if (!transaction) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    return res.status(200).json({
-      success: true,
-      transaction: updatedTransaction,
-    });
+    return res.status(200).json(transaction);
   } catch (error) {
-    console.error('Error updating transaction:', error);
-    return res.status(500).json({ error: 'Failed to update transaction' });
+    console.error('Error updating transaction status:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
 
-// Get user's transactions
+// Get user's transaction history
 export async function getUserTransactions(req: Request, res: Response) {
   try {
-    const userId = req.session.userId;
-    if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.session.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
+    // Get transactions ordered by most recent first
     const transactions = await db
       .select()
       .from(walletTransactions)
-      .where(eq(walletTransactions.userId, userId))
-      .orderBy(walletTransactions.createdAt);
+      .where(eq(walletTransactions.userId, req.session.userId))
+      .orderBy(desc(walletTransactions.createdAt))
+      .limit(50);
 
     return res.status(200).json(transactions);
   } catch (error) {
-    console.error('Error getting transactions:', error);
-    return res.status(500).json({ error: 'Failed to get transactions' });
+    console.error('Error getting user transactions:', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
