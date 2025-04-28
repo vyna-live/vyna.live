@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSolanaWallet, formatWalletAddress, WalletStatus } from '@/hooks/useSolanaWallet';
+import { PublicKey } from '@solana/web3.js';
 import { Coins, ArrowDownUp, Check, X, Clock, ExternalLink } from 'lucide-react';
 import { 
   Card, 
@@ -45,7 +46,8 @@ export function WalletDashboard() {
       if (isConnected && walletAddress) {
         try {
           setIsLoadingBalance(true);
-          const pubKey = new window.solana.PublicKey(walletAddress);
+          // Convert string address to PublicKey object for Solana connection
+          const pubKey = new PublicKey(walletAddress);
           const bal = await connection.getBalance(pubKey);
           setBalance(bal / 1000000000); // Convert lamports to SOL
         } catch (error) {

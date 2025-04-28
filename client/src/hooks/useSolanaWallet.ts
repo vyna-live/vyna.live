@@ -1,168 +1,183 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Connection, PublicKey, Transaction, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey } from '@solana/web3.js';
 
-// Define wallet status enum
 export enum WalletStatus {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  ERROR = 'error',
+  NotDetected = 'not_detected',
+  NotConnected = 'not_connected',
+  Connected = 'connected',
+  Connecting = 'connecting',
+  Error = 'error'
 }
 
-// Define the shape of a simplified phantom wallet provider
-interface PhantomWalletProvider {
+interface SolanaProvider {
   isPhantom?: boolean;
-  publicKey?: { toString: () => string };
-  isConnected?: boolean;
-  signTransaction?: (transaction: Transaction) => Promise<Transaction>;
-  signAllTransactions?: (transactions: Transaction[]) => Promise<Transaction[]>;
-  signMessage?: (message: Uint8Array) => Promise<{ signature: Uint8Array }>;
-  connect?: () => Promise<{ publicKey: PublicKey }>;
-  disconnect?: () => Promise<void>;
-  on?: (event: string, callback: (...args: any[]) => void) => void;
-  removeListener?: (event: string, callback: (...args: any[]) => void) => void;
-}
-
-// Get phantom wallet from window object
-const getPhantomWallet = (): PhantomWalletProvider | null => {
-  if (typeof window !== 'undefined') {
-    const provider = (window as any).solana;
-    if (provider?.isPhantom) {
-      return provider;
-    }
-  }
-  return null;
-};
-
-// Interface for the hook return value
-interface SolanaWalletHook {
-  wallet: PhantomWalletProvider | null;
-  walletAddress: string | null;
-  status: WalletStatus;
-  connect: () => Promise<void>;
+  connect: () => Promise<{ publicKey: PublicKey }>;
   disconnect: () => Promise<void>;
-  hasWallet: boolean;
-  isConnecting: boolean;
-  isConnected: boolean;
-  connection: Connection;
+  on: (event: string, callback: Function) => void;
+  removeListener: (event: string, callback: Function) => void;
+  publicKey?: PublicKey;
+  isConnected?: boolean;
 }
 
-// Helper function to format a wallet address for display
-export const formatWalletAddress = (address: string | null): string => {
+declare global {
+  interface Window {
+    solana?: SolanaProvider;
+    phantom?: {
+      solana?: SolanaProvider;
+    };
+  }
+}
+
+export function formatWalletAddress(address: string): string {
   if (!address) return '';
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
-};
+  if (address.length <= 12) return address;
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 
-// The hook for Solana wallet interaction
-export const useSolanaWallet = (): SolanaWalletHook => {
-  const [wallet, setWallet] = useState<PhantomWalletProvider | null>(null);
+export function useSolanaWallet() {
+  const [provider, setProvider] = useState<SolanaProvider | null>(null);
+  const [status, setStatus] = useState<WalletStatus>(WalletStatus.NotDetected);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [status, setStatus] = useState<WalletStatus>(WalletStatus.DISCONNECTED);
-  
-  // Create a connection to Solana devnet
-  const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+  const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connection] = useState<Connection>(
+    new Connection('https://api.devnet.solana.com', 'confirmed')
+  );
 
-  // Check if wallet exists on mount
-  useEffect(() => {
-    const phantomWallet = getPhantomWallet();
-    setWallet(phantomWallet);
-    
-    // If wallet exists and is already connected, set status
-    if (phantomWallet?.isConnected && phantomWallet?.publicKey) {
-      setWalletAddress(phantomWallet.publicKey.toString());
-      setStatus(WalletStatus.CONNECTED);
+  const detectProvider = useCallback(() => {
+    if ('phantom' in window) {
+      const provider = window.phantom?.solana;
+      if (provider && provider.isPhantom) {
+        setProvider(provider);
+        setStatus(provider.isConnected ? WalletStatus.Connected : WalletStatus.NotConnected);
+        if (provider.publicKey) {
+          setWalletAddress(provider.publicKey.toString());
+        }
+        return;
+      }
     }
 
-    // Setup wallet change listener
-    const onWalletChange = () => {
-      const phantomWallet = getPhantomWallet();
-      setWallet(phantomWallet);
-      
-      if (phantomWallet?.isConnected && phantomWallet?.publicKey) {
-        setWalletAddress(phantomWallet.publicKey.toString());
-        setStatus(WalletStatus.CONNECTED);
-      } else {
-        setWalletAddress(null);
-        setStatus(WalletStatus.DISCONNECTED);
+    if ('solana' in window && window.solana?.isPhantom) {
+      setProvider(window.solana);
+      setStatus(window.solana.isConnected ? WalletStatus.Connected : WalletStatus.NotConnected);
+      if (window.solana.publicKey) {
+        setWalletAddress(window.solana.publicKey.toString());
       }
-    };
-    
-    // Add event listeners
-    if (phantomWallet?.on) {
-      phantomWallet.on('connect', onWalletChange);
-      phantomWallet.on('disconnect', onWalletChange);
-      phantomWallet.on('accountChanged', onWalletChange);
+      return;
     }
-    
-    return () => {
-      // Remove event listeners on cleanup
-      if (phantomWallet?.removeListener) {
-        phantomWallet.removeListener('connect', onWalletChange);
-        phantomWallet.removeListener('disconnect', onWalletChange);
-        phantomWallet.removeListener('accountChanged', onWalletChange);
-      }
-    };
+
+    setStatus(WalletStatus.NotDetected);
+    setProvider(null);
+    setWalletAddress(null);
   }, []);
 
-  // Connect to wallet
-  const connect = useCallback(async () => {
-    if (wallet) {
-      try {
-        setStatus(WalletStatus.CONNECTING);
-        await wallet.connect?.();
-        if (wallet.publicKey) {
-          setWalletAddress(wallet.publicKey.toString());
-          setStatus(WalletStatus.CONNECTED);
-          
-          // If we have an API, store wallet connection in user profile
-          try {
-            await fetch('/api/users/wallet', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                walletAddress: wallet.publicKey.toString(),
-                walletProvider: 'phantom',
-              }),
-            });
-          } catch (error) {
-            console.error('Failed to update user wallet info:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Error connecting to wallet:', error);
-        setStatus(WalletStatus.ERROR);
-      }
-    } else {
-      // If no wallet is installed, open Phantom website
-      window.open('https://phantom.app/', '_blank');
-    }
-  }, [wallet]);
+  useEffect(() => {
+    detectProvider();
+  }, [detectProvider]);
 
-  // Disconnect from wallet
-  const disconnect = useCallback(async () => {
-    if (wallet) {
-      try {
-        await wallet.disconnect?.();
-        setWalletAddress(null);
-        setStatus(WalletStatus.DISCONNECTED);
-      } catch (error) {
-        console.error('Error disconnecting from wallet:', error);
-        setStatus(WalletStatus.ERROR);
-      }
+  const connect = useCallback(async () => {
+    if (!provider) {
+      window.open('https://phantom.app/', '_blank');
+      return;
     }
-  }, [wallet]);
+
+    if (status === WalletStatus.Connected) return;
+
+    try {
+      setIsConnecting(true);
+      setStatus(WalletStatus.Connecting);
+      
+      // Request connection from the provider
+      const response = await provider.connect();
+      setWalletAddress(response.publicKey.toString());
+      setStatus(WalletStatus.Connected);
+      
+      // Send the wallet info to the server
+      await fetch('/api/wallet/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: response.publicKey.toString(),
+          provider: 'phantom'
+        })
+      });
+
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error connecting wallet');
+      setStatus(WalletStatus.Error);
+    } finally {
+      setIsConnecting(false);
+    }
+  }, [provider, status]);
+
+  const disconnect = useCallback(async () => {
+    if (!provider) return;
+
+    try {
+      await provider.disconnect();
+      setWalletAddress(null);
+      setStatus(WalletStatus.NotConnected);
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error disconnecting wallet');
+    }
+  }, [provider]);
+
+  // Handle connection changes from the provider
+  useEffect(() => {
+    if (!provider) return;
+
+    const handleConnect = () => {
+      if (provider.publicKey) {
+        setWalletAddress(provider.publicKey.toString());
+        setStatus(WalletStatus.Connected);
+      }
+    };
+
+    const handleDisconnect = () => {
+      setWalletAddress(null);
+      setStatus(WalletStatus.NotConnected);
+    };
+
+    const handleAccountChange = (publicKey: PublicKey | null) => {
+      if (publicKey) {
+        setWalletAddress(publicKey.toString());
+        // Update the wallet info on account change
+        fetch('/api/wallet/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            address: publicKey.toString(),
+            provider: 'phantom'
+          })
+        }).catch(console.error);
+      } else {
+        setWalletAddress(null);
+        setStatus(WalletStatus.NotConnected);
+      }
+    };
+
+    provider.on('connect', handleConnect);
+    provider.on('disconnect', handleDisconnect);
+    provider.on('accountChanged', handleAccountChange);
+
+    return () => {
+      provider.removeListener('connect', handleConnect);
+      provider.removeListener('disconnect', handleDisconnect);
+      provider.removeListener('accountChanged', handleAccountChange);
+    };
+  }, [provider]);
 
   return {
-    wallet,
-    walletAddress,
-    status,
     connect,
     disconnect,
-    hasWallet: !!wallet,
-    isConnecting: status === WalletStatus.CONNECTING,
-    isConnected: status === WalletStatus.CONNECTED,
+    status,
+    walletAddress,
+    error,
+    isConnected: status === WalletStatus.Connected,
+    isConnecting,
+    isDetected: status !== WalletStatus.NotDetected,
     connection,
   };
-};
+}
