@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ChevronRight, ChevronDown, ThumbsUp, ThumbsDown, RotateCcw, Share2, MessageSquare } from 'lucide-react';
 import PerfectInputArea from './PerfectInputArea';
 
-// Define types for our chat interface
 type MessageType = {
   id: string;
   content: string;
@@ -547,7 +545,6 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             )}
           </>
         )}
-      
       </div>
     </div>
   );
