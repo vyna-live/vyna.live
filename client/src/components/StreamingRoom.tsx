@@ -223,97 +223,95 @@ export default function StreamingRoom({
             />
           </div>
           
-          {/* Chat messages bottom left - exactly as in 1st view.png */}
-          <div className="absolute left-4 bottom-20 flex flex-col gap-2 z-10 max-w-xs">
+          {/* Chat messages bottom left - exactly matching bottom.png */}
+          <div className="absolute left-4 bottom-24 flex flex-col gap-2 z-10 max-w-xs">
             <div className="flex items-start gap-2 animate-slide-up">
-              <div className="h-6 w-6 rounded-full overflow-hidden bg-orange-500/80">
+              <div className="h-7 w-7 rounded-full overflow-hidden bg-orange-500">
                 <img src="https://i.pravatar.cc/100?img=20" alt="User" className="h-full w-full object-cover" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-white font-medium">Innocent Dive</span>
-                <span className="text-xs text-white/80">How far my guys wetin dey happen</span>
+                <span className="text-sm text-white font-medium">Innocent Dive</span>
+                <span className="text-sm text-white/90">How far my guys wetin dey happen</span>
               </div>
             </div>
             
             <div className="flex items-start gap-2 animate-slide-up animation-delay-100">
-              <div className="h-6 w-6 rounded-full overflow-hidden">
-                <img src="https://i.pravatar.cc/100?img=30" alt="User" className="h-full w-full object-cover" />
+              <div className="h-7 w-7 rounded-full overflow-hidden bg-gray-600">
+                <img src="https://i.pravatar.cc/100?img=30" alt="User" className="h-full w-full object-cover opacity-80" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-white font-medium">Godknows Ukari</span>
-                <span className="text-xs text-white/80">How far my guys wetin dey happen</span>
+                <span className="text-sm text-white font-medium">Godknows Ukari</span>
+                <span className="text-sm text-white/90">How far my guys wetin dey happen</span>
               </div>
             </div>
             
             <div className="flex items-start gap-2 animate-slide-up animation-delay-200">
-              <div className="h-6 w-6 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
+              <div className="h-7 w-7 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
                 <img src="https://i.pravatar.cc/100?img=40" alt="User" className="h-full w-full object-cover opacity-90" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs text-white font-medium">Godknows Ukari</span>
-                <span className="text-xs text-white/80">How far my guys wetin dey happen</span>
+                <span className="text-sm text-white font-medium">Godknows Ukari</span>
+                <span className="text-sm text-white/90">How far my guys wetin dey happen</span>
               </div>
             </div>
             
             <div className="flex items-center mt-1 animate-slide-up animation-delay-300">
-              <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                <span className="text-xs text-white font-medium">Goddess</span>
-              </div>
-              <span className="text-xs text-white/70 ml-1">joined</span>
+              <span className="text-white/40 mr-1 text-lg">⚪</span>
+              <span className="text-sm text-white font-medium">Goddess</span>
+              <span className="text-sm text-white/70 ml-2">joined</span>
             </div>
           </div>
           
-          {/* Control panel at bottom - exactly as in bottom.png */}
+          {/* Control panel at bottom - exactly matching bottom.png */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
             <div className="flex items-center gap-1 bg-[#333333]/80 backdrop-blur-md rounded-full px-1 py-1">
               {/* Microphone icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" fill="white"/>
-                  <path d="M7 8V12C7 14.7614 9.23858 17 12 17C14.7614 17 17 14.7614 17 12V8M12 19V23M8 23H16" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 15C14.2091 15 16 13.2091 16 11V5C16 2.79086 14.2091 1 12 1C9.79086 1 8 2.79086 8 5V11C8 13.2091 9.79086 15 12 15Z" fill="white"/>
+                  <path d="M12 15V19M8 11C8 13.2091 9.79086 15 12 15C14.2091 15 16 13.2091 16 11M6 11H18M18 11V19C18 21.2091 16.2091 23 14 23H12H10C7.79086 23 6 21.2091 6 19V11" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </button>
               
               {/* Camera icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="2" y="6" width="15" height="12" rx="2" fill="white"/>
-                  <path d="M22 9.76795C22 9.28299 22 9.04051 21.8977 8.91235C21.8078 8.80007 21.6739 8.73332 21.5348 8.72488C21.3766 8.71517 21.1926 8.81353 20.8245 9.01025L17 11.0001V13.0001L20.8245 14.99C21.1926 15.1867 21.3766 15.285 21.5348 15.2753C21.6739 15.2669 21.8078 15.2001 21.8977 15.0879C22 14.9597 22 14.7172 22 14.2323V9.76795Z" fill="white"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 8.93137V15.0686C22 15.6233 22 15.9006 21.8978 16.1081C21.8074 16.2918 21.664 16.4389 21.4841 16.5326C21.2816 16.6386 21.0075 16.6445 20.4594 16.6562C20.1516 16.6633 19.9977 16.6668 19.8694 16.634C19.7344 16.6 19.6067 16.539 19.4949 16.4546C19.3766 16.3646 19.2843 16.2335 19.0996 15.9713L16.5 12.5V11.5L19.0996 8.02869C19.2843 7.76646 19.3766 7.63535 19.4949 7.54536C19.6067 7.46098 19.7344 7.39998 19.8694 7.36598C19.9977 7.33321 20.1516 7.33671 20.4594 7.34371C21.0075 7.35551 21.2816 7.36141 21.4841 7.46739C21.664 7.56112 21.8074 7.7082 21.8978 7.89185C22 8.09933 22 8.37664 22 8.93137Z" fill="white"/>
+                  <rect x="2" y="5" width="15" height="14" rx="2" fill="white"/>
                 </svg>
               </button>
               
               {/* Emoji icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" fill="white"/>
-                  <path d="M8 14C8 14 9 16 12 16C15 16 16 14 16 14" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
-                  <circle cx="8.5" cy="10.5" r="1.5" fill="#333"/>
-                  <circle cx="15.5" cy="10.5" r="1.5" fill="#333"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="11" fill="white"/>
+                  <path d="M7 13.5C8.5 15.5 9.5 16 12 16C14.5 16 15.5 15.5 17 13.5" stroke="#333333" strokeWidth="2" strokeLinecap="round"/>
+                  <circle cx="9" cy="9" r="1.5" fill="#333333"/>
+                  <circle cx="15" cy="9" r="1.5" fill="#333333"/>
                 </svg>
               </button>
               
-              {/* Share icon */}
+              {/* Screen sharing icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 9.5V14.5C7 16.7091 8.79086 18.5 11 18.5H16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M12 7.5L16 3.5M16 3.5L16 7.5M16 3.5L12 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M20.4 14.8889C20.4 16.8021 18.8418 18.3555 16.9222 18.3998C16.9222 18.3998 16.8863 18.4 16.85 18.4H16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="4" width="20" height="16" rx="2" stroke="white" strokeWidth="2"/>
+                  <path d="M8 4V2M16 4V2M8 22V20M16 22V20M2 16H4M2 12H4M2 8H4M20 16H22M20 12H22M20 8H22" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M8 10L12 14L16 10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              {/* Info icon */}
+              {/* Text/Info icon (T) */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" fill="white"/>
-                  <path d="M12 7H12.01M11 12H12V16H13" stroke="#333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="11" fill="white"/>
+                  <path d="M8 7H16M12 7V17M9 17H15" stroke="#333333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              {/* End call button */}
+              {/* End call button - phone down icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 5L5 19M5 5L19 19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22 17.0001V20.0001C22 20.5306 21.7893 21.0393 21.4142 21.4143C21.0391 21.7894 20.5304 22.0001 20 22.0001C16.0218 22.0001 12.2064 20.3681 9.3934 17.5551C6.58035 14.742 4.94818 10.9266 4.94818 6.9484C4.94818 6.41796 5.15889 5.90926 5.53397 5.53417C5.90906 5.15909 6.41775 4.94839 6.94818 4.94839H9.94818C10.4659 4.94839 10.9612 5.16303 11.3201 5.55858C11.679 5.95413 11.8547 6.47992 11.8056 7.0001C11.6813 8.41709 11.3347 9.80141 10.7782 11.1001C10.6289 11.4188 10.3765 11.6801 10.061 11.8442C9.74554 12.0084 9.38278 12.0667 9.02855 12.0108L8.06641 11.8533C7.05422 13.909 6.45492 16.1359 6.30933 18.4113L6.32776 18.6778C8.0986 18.8924 9.83684 18.6814 11.4501 18.0626C12.2484 17.7661 13.0191 17.3955 13.7536 16.9551L13.8877 16.8641C14.1273 16.6939 14.3473 16.4971 14.5449 16.2768C14.7698 16.0063 14.9728 15.7169 15.1528 15.4118L15.2456 15.2376C15.3383 15.0635 15.4187 14.8831 15.4863 14.6978L15.5898 14.409C15.8159 13.8265 15.8674 13.1889 15.7376 12.5757C15.6078 11.9626 15.3032 11.4043 14.8653 10.9776L14.7444 10.8576C14.603 10.7183 14.4374 10.6088 14.2564 10.5342L13.9599 10.4099C13.7789 10.3354 13.5866 10.288 13.3905 10.27L12.7886 10.2223C12.5926 10.2042 12.3946 10.2122 12.2012 10.2461L11.6943 10.3355C11.5009 10.3694 11.3149 10.4281 11.1428 10.5097L10.9854 10.5849L10.9854 10.5849L9.78125 11.0704L10.0603 11.2396L9.78125 11.0704C9.6953 11.1139 9.60229 11.1404 9.50769 11.1488C9.4131 11.1572 9.31827 11.1473 9.22831 11.1199L8.02158 10.7678C7.93162 10.7404 7.84898 10.6959 7.77964 10.6371C7.7103 10.5782 7.65603 10.5061 7.62041 10.4254C7.31311 9.77981 7.11039 9.09689 7.01818 8.39686C7.00096 8.20321 7.04232 8.00868 7.1364 7.83771C7.23048 7.66673 7.37339 7.52707 7.54818 7.43684C8.17788 7.14333 8.83679 6.91877 9.51415 6.76808C9.80261 6.70451 10.1045 6.74595 10.3654 6.88496C10.6264 7.02397 10.8293 7.25194 10.9421 7.5288C11.248 8.30254 11.4502 9.10997 11.5439 9.93252C11.564 10.1279 11.5442 10.3255 11.486 10.512C11.4277 10.6984 11.3322 10.8694 11.2057 11.0137L11.0358 11.2034C11.0358 11.2034 11.0358 11.2034 11.0358 11.2034L9.99778 12.3329C9.87124 12.4706 9.77631 12.638 9.72189 12.8204C9.66747 13.0028 9.65528 13.1952 9.68634 13.3832L9.91222 14.7613C9.94328 14.9492 10.0166 15.1277 10.1264 15.2827C10.2362 15.4377 10.3797 15.5651 10.5456 15.6548L11.8028 16.3335C11.9686 16.4232 12.1525 16.4724 12.339 16.4776C12.5255 16.4829 12.7119 16.4439 12.883 16.3636L14.2349 15.7706C14.402 15.6903 14.5494 15.5725 14.6669 15.4257C14.7844 15.2788 14.8691 15.1062 14.9151 14.9217L15.1404 14.0307C15.1865 13.8462 15.1927 13.6544 15.1586 13.4674C15.1245 13.2804 15.0509 13.1029 14.9433 12.9487L12.5826 10.4999" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
