@@ -10,7 +10,7 @@ import AgoraRTC, {
   IRemoteVideoTrack,
   IRemoteAudioTrack
 } from "agora-rtc-sdk-ng";
-import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send } from 'lucide-react';
+import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp } from 'lucide-react';
 
 // Define Agora config
 const config: ClientConfig = { 
@@ -86,11 +86,13 @@ export function AgoraVideo({
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [showChat, setShowChat] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   
   // Client reference
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const audioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const videoTrackRef = useRef<ICameraVideoTrack | null>(null);
+  const screenTrackRef = useRef<any | null>(null);
   
   // Create client and tracks on mount
   useEffect(() => {
@@ -439,6 +441,63 @@ export function AgoraVideo({
           className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
         >
           {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
+        </button>
+        <button 
+          onClick={async () => {
+            if (isScreenSharing) {
+              // Stop screen sharing
+              try {
+                if (screenTrackRef.current) {
+                  await clientRef.current?.unpublish(screenTrackRef.current);
+                  screenTrackRef.current.close();
+                  screenTrackRef.current = null;
+                }
+                // Re-enable camera video
+                if (videoTrackRef.current) {
+                  await videoTrackRef.current.setEnabled(true);
+                  setIsVideoOn(true);
+                }
+                setIsScreenSharing(false);
+              } catch (error) {
+                console.error("Error stopping screen sharing:", error);
+              }
+            } else {
+              // Start screen sharing
+              try {
+                const screenTrack = await AgoraRTC.createScreenVideoTrack();
+                screenTrackRef.current = screenTrack;
+                
+                // Disable camera video while screen sharing
+                if (videoTrackRef.current) {
+                  await videoTrackRef.current.setEnabled(false);
+                }
+                
+                // Publish screen track
+                await clientRef.current?.publish(screenTrack);
+                setIsScreenSharing(true);
+                
+                // Handle screen sharing stopped by user through browser UI
+                screenTrack.on("track-ended", async () => {
+                  await clientRef.current?.unpublish(screenTrack);
+                  screenTrack.close();
+                  screenTrackRef.current = null;
+                  
+                  // Re-enable camera
+                  if (videoTrackRef.current) {
+                    await videoTrackRef.current.setEnabled(true);
+                    setIsVideoOn(true);
+                  }
+                  
+                  setIsScreenSharing(false);
+                });
+              } catch (error) {
+                console.error("Error starting screen sharing:", error);
+              }
+            }
+          }}
+          className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
+        >
+          <ScreenShare size={16} />
         </button>
         <button 
           onClick={endStream}
