@@ -4,8 +4,7 @@ import { Copy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AgoraVideo from './AgoraVideo';
-import ChatInterface from './ChatInterface';
-import InputArea from './InputArea';
+import VynaChat from './VynaChat';
 import GradientText from './GradientText';
 import { MessageType } from '../types/chat';
 import vpwwLogo from '@/assets/vpww.png';
@@ -161,7 +160,7 @@ export default function StreamingRoom({
           </div>
         </div>
 
-        {/* Center title - exactly as shown in the design */}
+        {/* Center title */}
         <div className="absolute left-1/2 transform -translate-x-1/2">
           <span className="text-white text-xs font-medium">Jaja Games</span>
         </div>
@@ -200,7 +199,7 @@ export default function StreamingRoom({
               : "w-full"
           )}
         >
-          {/* Video stream - full screen */}
+          {/* Video stream */}
           <div className="absolute inset-0 overflow-hidden">
             <AgoraVideo 
               channelName={channelName}
@@ -223,7 +222,7 @@ export default function StreamingRoom({
             />
           </div>
           
-          {/* Chat messages bottom left - exactly matching bottom.png */}
+          {/* Chat messages bottom left */}
           <div className="absolute left-4 bottom-24 flex flex-col gap-2 z-10 max-w-xs">
             <div className="flex items-start gap-2 animate-slide-up">
               <div className="h-6 w-6 rounded-full overflow-hidden bg-orange-500">
@@ -262,10 +261,10 @@ export default function StreamingRoom({
             </div>
           </div>
           
-          {/* Control panel at bottom - exactly matching bottom.png */}
+          {/* Control panel at bottom */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
             <div className="flex items-center gap-1 bg-[#333333]/80 backdrop-blur-md rounded-full px-1 py-1">
-              {/* Microphone icon - outlined */}
+              {/* Microphone icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 1C10.3431 1 9 2.34315 9 4V12C9 13.6569 10.3431 15 12 15C13.6569 15 15 13.6569 15 12V4C15 2.34315 13.6569 1 12 1Z" stroke="white" strokeWidth="1.5"/>
@@ -273,7 +272,7 @@ export default function StreamingRoom({
                 </svg>
               </button>
               
-              {/* Camera icon - outlined */}
+              {/* Camera icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="2" y="6" width="15" height="12" rx="2" stroke="white" strokeWidth="1.5"/>
@@ -281,7 +280,7 @@ export default function StreamingRoom({
                 </svg>
               </button>
               
-              {/* Emoji icon - outlined */}
+              {/* Emoji icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="1.5"/>
@@ -291,7 +290,7 @@ export default function StreamingRoom({
                 </svg>
               </button>
               
-              {/* Screen sharing icon - outlined */}
+              {/* Screen sharing icon */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect x="2" y="4" width="20" height="16" rx="2" stroke="white" strokeWidth="1.5"/>
@@ -299,7 +298,7 @@ export default function StreamingRoom({
                 </svg>
               </button>
               
-              {/* Text/Info icon (T) - outlined */}
+              {/* Text/Info icon (T) */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10 bg-[#555555]/80">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="1.5"/>
@@ -307,7 +306,7 @@ export default function StreamingRoom({
                 </svg>
               </button>
               
-              {/* End call button - X icon in red */}
+              {/* End call button */}
               <button className="h-10 w-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M18 6L6 18M6 6L18 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -317,189 +316,13 @@ export default function StreamingRoom({
           </div>
         </div>
         
-        {/* Sidebar drawer - matching exactly with the design images */}
+        {/* Sidebar drawer with VynaChat component */}
         {isDrawerOpen && (
-          <div className="w-[320px] h-full bg-[#121212] text-white rounded-2xl overflow-hidden">
-            {/* Tabs header - exactly matching design */}
-            <div className="flex items-center px-2 py-3 border-b border-white/10 bg-[#191919]">
-              <div className="flex gap-2 w-full items-center">
-                {/* Double arrow expand icon - exactly as in the image */}
-                <button 
-                  className="px-2"
-                  onClick={() => setIsDrawerOpen(false)}
-                >
-                  <svg className="mr-1" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 18L15 12L9 6M3 18L9 12L3 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-                
-                {/* VynaAI button - exactly matching the designs */}
-                <button
-                  className={`px-3 py-1 rounded-md text-sm flex items-center ${
-                    drawerContent === 'chat' 
-                      ? 'bg-white text-black' 
-                      : 'bg-transparent text-white/80'
-                  }`}
-                  onClick={() => setDrawerContent('chat')}
-                >
-                  <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill={drawerContent === 'chat' ? 'black' : 'white'} strokeWidth="1.5"/>
-                  </svg>
-                  VynaAI
-                </button>
-                
-                {/* Notepad button - exactly matching the designs */}
-                <button
-                  className={`px-3 py-1 rounded-md text-sm flex items-center ${
-                    drawerContent === 'teleprompter' 
-                      ? 'bg-white text-black' 
-                      : 'bg-transparent text-white/80'
-                  }`}
-                  onClick={() => setDrawerContent('teleprompter')}
-                >
-                  <svg className="mr-1.5" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 4h12v16H6zm0 0h12v16H6z" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 8h6M9 12h6M9 16h4" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  Notepad
-                </button>
-              </div>
-            </div>
-            
-            {/* Drawer content */}
-            <div className="h-[calc(100%-48px)]">
-              {drawerContent === 'chat' ? (
-                messages.length > 0 ? (
-                  // Chat history view - EXACTLY matching the provided design image
-                  <div className="flex flex-col h-full bg-[#121212]">
-                    {/* RECENTS header */}
-                    <div className="px-4 py-2">
-                      <h3 className="text-xs font-medium text-neutral-400 uppercase">RECENTS</h3>
-                    </div>
-                    
-                    {/* Chat history items - exactly matching design image */}
-                    <div className="flex-1 overflow-y-auto bg-[#121212]">
-                      <div className="space-y-0">
-                        {Array.from({ length: 11 }).map((_, i) => (
-                          <div key={i} className="px-4 py-3 hover:bg-[#1A1A1A] flex justify-between items-center bg-[#121212]">
-                            <p className="text-sm text-white truncate">Who is the best CODM gamer in Nigeria...</p>
-                            <button className="text-white/60 p-1">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-                                <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
-                                <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* New chat button - exactly matching design image */}
-                    <div className="p-4 bg-[#121212]">
-                      <button 
-                        className="w-full py-2 px-4 bg-[#1E1E1C] hover:bg-[#252525] rounded-lg text-sm text-white flex items-center justify-center"
-                        onClick={() => setMessages([])}
-                      >
-                        <span className="mr-1">+</span>
-                        New chat
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  // Empty state - exactly matching ainew.png
-                  <div className="flex flex-col h-full bg-[#121212]">
-                    {/* Empty state content */}
-                    <div className="flex-1 flex flex-col items-center justify-center px-4 pb-16">
-                      <div className="w-12 h-12 rounded-full bg-[#333333] flex items-center justify-center mb-3">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" strokeWidth="1.5"/>
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-medium text-white mb-1">VynaAI</h3>
-                      <p className="text-sm text-neutral-400 text-center">
-                        Ask questions to quickly<br/>research topics while streaming
-                      </p>
-                    </div>
-                    
-                    {/* Example question - exactly as shown in the design */}
-                    <div className="w-full px-4 pb-10">
-                      <div className="py-2 px-4 rounded-md bg-[#1A1A1A] text-sm text-white">
-                        Who is the best gamer in Nigeria as of April 2025?
-                      </div>
-                      
-                      {/* Input icons - exactly as in the image */}
-                      <div className="flex mt-4 gap-6 items-center justify-center">
-                        <button className="text-neutral-400 hover:text-white">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21 11H3M21 3H3M21 19H3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                        </button>
-                        <button className="text-neutral-400 hover:text-white">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14Z" stroke="currentColor" strokeWidth="1.5"/>
-                            <path d="M20 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V6C22 4.89543 21.1046 4 20 4Z" stroke="currentColor" strokeWidth="1.5"/>
-                            <path d="M4 4V20M20 4V20" stroke="currentColor" strokeWidth="1.5"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              ) : (
-                <div className="flex flex-col h-full">
-                  {/* Teleprompter content */}
-                  <div className="flex-1 p-4 overflow-y-auto">
-                    {teleprompterText ? (
-                      <div className="text-xl font-medium leading-relaxed">
-                        <GradientText 
-                          text={teleprompterText} 
-                          preset="warm" 
-                          showCursor={true}
-                          typingSpeed={0}
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-center">
-                        <div>
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-800 flex items-center justify-center">
-                            <svg width="28" height="28" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.6667 4.66667V12.25H2.33333V4.66667" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M12.8333 1.75H1.16667V4.66667H12.8333V1.75Z" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M5.83333 7H8.16667" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </div>
-                          <h4 className="text-lg font-medium mb-2">No content yet</h4>
-                          <p className="text-sm text-neutral-500">
-                            Click the "Add to Teleprompter" button in a chat to add content here.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Teleprompter actions */}
-                  {teleprompterText && (
-                    <div className="p-4 border-t border-white/10 flex justify-end">
-                      <button 
-                        className="px-3 py-1.5 rounded-md border border-white/20 text-white text-sm mr-2 flex items-center"
-                        onClick={handleClearTeleprompter}
-                      >
-                        <X className="h-3.5 w-3.5 mr-1" />
-                        Clear
-                      </button>
-                      <button 
-                        className="px-3 py-1.5 rounded-md border border-white/20 text-white text-sm flex items-center"
-                        onClick={handleCopyTeleprompter}
-                      >
-                        <Copy className="h-3.5 w-3.5 mr-1" />
-                        Copy
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+          <div className="w-[320px] h-full rounded-2xl overflow-hidden">
+            <VynaChat 
+              onClose={() => setIsDrawerOpen(false)} 
+              onToggleMinimize={() => setIsDrawerOpen(false)}
+            />
           </div>
         )}
       </div>

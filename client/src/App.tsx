@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/Home";
 import Livestream from "@/pages/Livestream";
 import Dashboard from "@/pages/Dashboard";
+import VynaChatDemo from "@/pages/VynaChatDemo";
 import NotFound from "@/pages/not-found";
 import { useState, useEffect } from "react";
 
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/livestream" component={Livestream} />
       <Route path="/chat" component={Home} />
       <Route path="/research" component={Home} />
+      <Route path="/vyna-demo" component={VynaChatDemo} />
       <Route component={NotFound} />
     </Switch>
   );
