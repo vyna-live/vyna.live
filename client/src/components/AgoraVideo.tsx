@@ -64,6 +64,7 @@ interface AgoraVideoProps {
   uid?: number;
   role?: 'host' | 'audience';
   userName: string;
+  onToggleDrawer?: () => void;
 }
 
 export function AgoraVideo({ 
@@ -72,7 +73,8 @@ export function AgoraVideo({
   token, 
   uid = Math.floor(Math.random() * 1000000),
   role = 'host',
-  userName
+  userName,
+  onToggleDrawer
 }: AgoraVideoProps) {
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -424,25 +426,25 @@ export function AgoraVideo({
         {videoTrackRef.current && <VideoPlayer videoTrack={videoTrackRef.current} />}
       </div>
       
-      {/* Controls */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex justify-center space-x-4 agora-controls">
+      {/* Custom controls - more stylish than Agora's */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
         <button 
           onClick={toggleAudio}
-          className="p-3 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
+          className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
         >
-          {isAudioOn ? <Mic size={20} /> : <MicOff size={20} className="text-red-500" />}
+          {isAudioOn ? <Mic size={16} /> : <MicOff size={16} className="text-red-400" />}
         </button>
         <button 
           onClick={toggleVideo}
-          className="p-3 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
+          className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
         >
-          {isVideoOn ? <Camera size={20} /> : <CameraOff size={20} className="text-red-500" />}
+          {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
         </button>
         <button 
           onClick={endStream}
-          className="p-3 rounded-full bg-red-600 hover:bg-red-700 text-white"
+          className="w-8 h-8 bg-red-500/80 hover:bg-red-600/90 rounded-full flex items-center justify-center text-white shadow-sm hover:shadow-md transition-all"
         >
-          End Stream
+          <X size={16} />
         </button>
       </div>
       
@@ -452,17 +454,30 @@ export function AgoraVideo({
         LIVE
       </div>
       
-      {/* Viewer count */}
-      <div className="absolute top-4 left-20 flex items-center bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
-        <div className="w-5 h-5 rounded-full mr-1.5 flex items-center justify-center">
-          <Users size={12} className="text-white" />
+      {/* Username and drawer toggle with viewer count */}
+      <div className="absolute top-4 right-4 flex items-center space-x-3">
+        {/* Viewer count - now next to toggle button */}
+        <div className="flex items-center">
+          <div className="flex items-center">
+            <Users size={12} className="text-white mr-1" />
+            <span className="text-white text-xs">{viewers}</span>
+          </div>
         </div>
-        <span className="text-white text-sm">{viewers}</span>
-      </div>
-      
-      {/* Username */}
-      <div className="absolute top-4 right-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
-        {userName}
+        
+        {/* Drawer toggle button - no background */}
+        <button 
+          onClick={onToggleDrawer} 
+          className="text-white hover:text-gray-300 transition-colors"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        
+        {/* Username badge */}
+        <div className="bg-black/60 text-white px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
+          {userName}
+        </div>
       </div>
       
       {/* Chat container */}
