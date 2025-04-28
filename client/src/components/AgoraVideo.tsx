@@ -285,6 +285,49 @@ export function AgoraVideo({
       console.error("Error leaving channel:", err);
     }
   };
+  
+  // Send chat message
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !clientRef.current) return;
+    
+    try {
+      // Using Agora RTM to send message to channel
+      // Instead we're just adding it locally for now
+      const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+      const myColor = randomColors[Math.floor(Math.random() * randomColors.length)];
+      
+      setChatMessages(prev => {
+        const newMessages = [...prev, {
+          userId: uid.toString(),
+          name: userName,
+          message: chatInput,
+          color: myColor
+        }];
+        
+        // Keep only the latest 10 messages
+        if (newMessages.length > 10) {
+          return newMessages.slice(newMessages.length - 10);
+        }
+        return newMessages;
+      });
+      
+      // Clear input
+      setChatInput('');
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
+  };
+  
+  // Handle chat input submit
+  const handleChatSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    sendChatMessage();
+  };
+  
+  // Toggle chat visibility
+  const toggleChat = () => {
+    setShowChat(!showChat);
+  };
 
   // Loading state
   if (isLoading) {
@@ -422,28 +465,64 @@ export function AgoraVideo({
         {userName}
       </div>
       
-      {/* Chat messages overlay */}
-      <div className="absolute left-4 bottom-24 w-72 max-h-64 overflow-hidden">
-        <div className="overflow-y-auto max-h-full flex flex-col-reverse pb-2">
-          {chatMessages.map((chatMsg, index) => (
-            <div key={index} className="animate-slideInUp">
-              <div className="flex items-center space-x-1.5 py-1">
-                <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
-                  {chatMsg.name.charAt(0)}
+      {/* Chat container */}
+      {showChat && (
+        <div className="absolute left-4 bottom-24 w-72 max-h-72 flex flex-col">
+          {/* Chat messages */}
+          <div className="overflow-y-auto max-h-64 flex flex-col-reverse pb-2 mb-2">
+            {chatMessages.map((chatMsg, index) => (
+              <div key={index} className="animate-slideInUp">
+                <div className="flex items-center space-x-1.5 py-1">
+                  <div className={`w-5 h-5 rounded-full ${chatMsg.color} overflow-hidden flex items-center justify-center text-xs shadow-sm`}>
+                    {chatMsg.name.charAt(0)}
+                  </div>
+                  <div className="text-white text-xs font-medium">{chatMsg.name}</div>
+                  {chatMsg.message === "joined" || chatMsg.message === "left" ? (
+                    <div className={`text-${chatMsg.message === "joined" ? "green" : "red"}-400 text-xs ml-0.5`}>{chatMsg.message}</div>
+                  ) : (
+                    <div className="text-gray-300 text-xs">{chatMsg.message}</div>
+                  )}
                 </div>
-                <div className="text-white text-xs font-medium">{chatMsg.name}</div>
-                {chatMsg.message === "joined" || chatMsg.message === "left" ? (
-                  <div className={`text-${chatMsg.message === "joined" ? "green" : "red"}-400 text-xs ml-0.5`}>{chatMsg.message}</div>
-                ) : (
-                  <div className="text-gray-400 text-xs">{chatMsg.message}</div>
+                {index > 0 && (
+                  <div className="border-t border-gray-800/30 my-1"></div>
                 )}
               </div>
-              {index > 0 && (
-                <div className="border-t border-gray-800/30 my-1"></div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          
+          {/* Chat input */}
+          <form onSubmit={handleChatSubmit} className="relative">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Send a message..."
+              className="w-full bg-black/50 backdrop-blur-sm text-white text-xs rounded-lg py-2 pl-3 pr-10 border border-gray-800/50 focus:outline-none focus:ring-1 focus:ring-[#A67D44]/60"
+            />
+            <button 
+              type="submit" 
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#A67D44] hover:text-[#B68D54] transition-colors"
+            >
+              <Send size={14} />
+            </button>
+          </form>
         </div>
+      )}
+      
+      {/* Chat toggle button */}
+      <div className="absolute left-4 bottom-16">
+        <button 
+          onClick={toggleChat}
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 10H8.01M12 10H12.01M16 10H16.01M12 18H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12H8C7.46957 12 6.96086 12.2107 6.58579 12.5858C6.21071 12.9609 6 13.4696 6 14V18H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M18 18C19.0609 18 20.0783 18.4214 20.8284 19.1716C21.5786 19.9217 22 20.9391 22 22H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M6 18C4.93913 18 3.92172 18.4214 3.17157 19.1716C2.42143 19.9217 2 20.9391 2 22H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M17 6.1632C16.9368 7.58343 16.0518 8.87525 14.7213 9.54385C13.3908 10.2125 11.8219 10.0941 10.5973 9.22225C9.3728 8.35044 8.73662 6.87022 8.91891 5.3848C9.1012 3.89938 10.0682 2.62441 11.442 2.12261C12.8158 1.62081 14.3311 1.96011 15.3785 2.97685C16.4259 3.99359 16.8223 5.4947 16.37 6.86" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
     </div>
   );
