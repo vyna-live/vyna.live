@@ -12,6 +12,12 @@ const arenaImage = "/assets/arena.png";
 
 interface LivestreamInterfaceProps {
   initialText?: string;
+  streamInfo?: {
+    appId: string | null;
+    token: string | null;
+    channelName: string | null;
+    uid: number | null;
+  };
 }
 
 // Mock chat messages for the right sidebar
@@ -81,7 +87,10 @@ const CHAT_MESSAGES = [
   { userId: "user8", name: "Lebron James", message: "That was sick!", color: "bg-pink-500" },
 ];
 
-export default function LivestreamInterface({ initialText = "" }: LivestreamInterfaceProps) {
+export default function LivestreamInterface({ 
+  initialText = "", 
+  streamInfo 
+}: LivestreamInterfaceProps) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
@@ -130,15 +139,25 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
   useEffect(() => {
     const initLivestream = async () => {
       try {
-        // Create a new livestream or prepare to join an existing one
-        // For demonstration, we'll set up as a host by default
-        await fetchHostToken(channelName);
-        
-        // Set loading to false when everything is ready
-        // In a production app, this would happen automatically in the hook
-        setTimeout(() => {
+        if (streamInfo && streamInfo.appId && streamInfo.token && streamInfo.channelName) {
+          console.log('Using provided stream info:', streamInfo);
+          
+          // We already have all the info needed to connect, set stream as active
+          setIsStreamActive(true);
+          
+          // Set loading to false
           setIsLoading(false);
-        }, 1000);
+        } else {
+          // No stream info provided, need to create a new session
+          console.log('No stream info provided, creating new session');
+          await fetchHostToken(channelName);
+          
+          // Set loading to false when everything is ready
+          // In a production app, this would happen automatically in the hook
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 1000);
+        }
       } catch (err) {
         console.error('Error initializing Agora stream:', err);
         showErrorToast('Failed to initialize streaming service');
@@ -148,7 +167,7 @@ export default function LivestreamInterface({ initialText = "" }: LivestreamInte
     initLivestream();
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [streamInfo]);
   
   // Handle any errors from Agora
   useEffect(() => {
