@@ -117,99 +117,90 @@ export default function StreamingRoom({
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-black">
-      {/* Top navigation bar - EXACTLY matching the navbar.png - first row */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-6 py-3 bg-gradient-to-b from-black/90 to-black/50">
-        <div className="flex items-center justify-between">
-          <div>
-            <svg width="70" height="32" viewBox="0 0 70 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M39.3711 15.4668C39.3711 17.2559 38.1758 18.4336 36.1211 18.4336C34.082 18.4336 32.957 17.2949 32.9336 15.5059H35.0898C35.1367 16.1934 35.5625 16.5898 36.1211 16.5898C36.6914 16.5898 37.0938 16.1699 37.0938 15.4668V7.72656H39.3711V15.4668ZM40.4551 11.2227C40.4551 8.80859 42.168 7.55859 44.4395 7.55859C46.7227 7.55859 48.4355 8.80859 48.4355 11.2227V14.7852C48.4355 17.1992 46.7227 18.4492 44.4395 18.4492C42.168 18.4492 40.4551 17.1992 40.4551 14.7852V11.2227ZM46.1582 11.2227C46.1582 10.0391 45.5645 9.39844 44.4395 9.39844C43.3262 9.39844 42.7324 10.0391 42.7324 11.2227V14.7852C42.7324 15.9688 43.3262 16.6094 44.4395 16.6094C45.5645 16.6094 46.1582 15.9688 46.1582 14.7852V11.2227ZM50.6426 7.72656H53.0097L54.9355 15.4668H55.0176L56.9434 7.72656H59.3047V18.2812H57.1074V10.4062H57.0254L55.1699 18.2812H54.7832L52.9278 10.4062H52.8457V18.2812H50.6426V7.72656ZM67.6856 9.53906H64.8066V18.2812H62.5293V9.53906H59.6504V7.72656H67.6856V9.53906Z" fill="white"/>
-              <path d="M15.0781 3.73438C21.375 3.73438 26.3438 8.01562 26.3438 14.2969C26.3438 16.7656 25.5 18.9375 24.0938 20.625C23.25 18.4688 21 16.7969 19.5 16.3594C22.1719 15.4688 24 13.3594 24 10.1562C24 6.98438 21.2812 4.5 17.2969 4.5C12.6094 4.5 9.65625 8.35938 9.65625 13.875C9.65625 14.7188 9.84375 15.75 10.2656 17.0156C8.625 16.5 8.0625 15.2344 8.0625 14.0625C8.0625 12.8438 8.71875 11.6562 9.42188 10.9062C6.9375 12.0781 4.96875 14.9375 4.96875 18.4688C4.96875 21.4688 6.75 23.0625 8.67188 23.0625C10.9062 23.0625 12.0781 21.3438 12.0781 19.1719C12.0781 17.6406 11.3594 16.7188 10.5312 16.125C10.7344 15.3281 11.25 14.0156 12.5469 14.0156C14.2969 14.0156 15.6094 15.75 15.6094 18.375C15.6094 21.1875 13.6875 23.0625 10.6406 23.0625C7.21875 23.0625 3.84375 20.2031 3.84375 15.75C3.84375 11.5625 6.75 3.73438 15.0781 3.73438Z" fill="white"/>
+    <div className="h-screen w-screen overflow-hidden bg-black relative">
+      {/* Top header row with Vyna.live logo and user */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center">
+          <svg width="64" height="32" viewBox="0 0 64 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M23.2812 14.2422C23.2812 16.0312 22.0859 17.2188 20.0312 17.2188C17.9922 17.2188 16.8594 16.0801 16.8438 14.2812H18.9844C19.0312 14.9688 19.4531 15.3652 20.0078 15.3652C20.5781 15.3652 20.9805 14.9453 20.9805 14.2422V6.5H23.2812V14.2422ZM11.9844 14.2969C11.9844 12.9922 12.9844 12.2578 13.9062 11.7617C13.0234 11.3086 12.25 10.3711 12.25 8.88672C12.25 6.74219 13.8281 5.33008 16.3828 5.33008C18.9062 5.33008 20.4844 6.74219 20.4844 8.88672C20.4844 10.3711 19.7109 11.3086 18.8281 11.7617C19.75 12.2578 20.75 12.9922 20.75 14.2969C20.75 16.5781 18.9375 18.043 16.3828 18.043C13.7969 18.043 11.9844 16.5781 11.9844 14.2969ZM14.5547 8.9375C14.5547 9.83594 15.3828 10.4023 16.3828 10.4023C17.3516 10.4023 18.1797 9.83594 18.1797 8.9375C18.1797 8.07422 17.3516 7.52344 16.3828 7.52344C15.3828 7.52344 14.5547 8.07422 14.5547 8.9375ZM14.2891 14.2422C14.2891 15.2266 15.2578 15.8438 16.3828 15.8438C17.4766 15.8438 18.4453 15.2266 18.4453 14.2422C18.4453 13.2734 17.4766 12.6562 16.3828 12.6562C15.2578 12.6562 14.2891 13.2734 14.2891 14.2422ZM9.375 5.5H6.5625V17.875H4.28516V5.5H1.47266V3.6875H9.375V5.5ZM42.5781 3.6875L39.1094 13.4062L35.7656 3.6875H32L27.5938 17.875H30.125L33.0938 7.59375L36.5625 17.875H41.6562L46.0625 3.6875H42.5781Z" fill="white"/>
+          </svg>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full overflow-hidden">
+            <img src="https://i.pravatar.cc/100" alt="Divine Samuel" className="h-full w-full object-cover" />
+          </div>
+          <span className="text-white">Divine Samuel</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5 7.5L10 12.5L15 7.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      
+      {/* Second row with user info, channel name and viewer count */}
+      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pr-2">
+            <div className="p-1 cursor-pointer hover:bg-white/10 rounded-full">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 12L5 8L10 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded-full overflow-hidden">
+              <img src="https://i.pravatar.cc/100" alt="Divine Samuel" className="h-full w-full object-cover" />
+            </div>
+            <span className="text-white text-sm font-medium">Divine Samuel</span>
+          </div>
+          
+          <div className="flex items-center mx-2">
+            <span className="text-white/40 text-xs">•</span>
+          </div>
+          
+          <span className="text-white text-sm font-medium">Jaja Games</span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="white"/>
+              <path d="M14 14C14 11.2385 11.3137 9 8 9C4.68629 9 2 11.2385 2 14V15C2 15.5523 2.44772 16 3 16H13C13.5523 16 14 15.5523 14 15V14Z" fill="white"/>
             </svg>
+            <span className="text-white text-xs">123.5k</span>
           </div>
           
-          <div className="flex items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full overflow-hidden bg-white/10">
-                <img src="https://i.pravatar.cc/100" alt="Profile" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-white text-sm font-normal">Divine Samuel</span>
+          {!isDrawerOpen && (
+            <button 
+              className="p-1 rounded-md hover:bg-white/10"
+              onClick={() => setIsDrawerOpen(true)}
+            >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 6L8 10L12 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M6 14L12 8L6 2" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </div>
-          </div>
+            </button>
+          )}
         </div>
       </div>
-      
-      {/* EXACT MATCH to navbar.png - second row with gaming channel info */}
-      <div className="absolute top-[48px] left-0 right-0 z-20 bg-transparent px-6 py-3 border-b border-white/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="flex items-center gap-3 pr-2">
-              <div className="p-0.5">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 18l-6-6 6-6"/>
-                </svg>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full overflow-hidden">
-                <img src="https://i.pravatar.cc/100" alt="Profile" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-white text-sm font-medium">Divine Samuel</span>
-            </div>
-            
-            <div className="flex items-center mx-5">
-              <span className="text-white/40 text-sm">•</span>
-            </div>
-            
-            <span className="text-white text-sm font-medium">Jaja Games</span>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 8C10.2091 8 12 6.20914 12 4C12 1.79086 10.2091 0 8 0C5.79086 0 4 1.79086 4 4C4 6.20914 5.79086 8 8 8Z" fill="white"/>
-                <path d="M14 14C14 11.2385 11.3137 9 8 9C4.68629 9 2 11.2385 2 14V15C2 15.5523 2.44772 16 3 16H13C13.5523 16 14 15.5523 14 15V14Z" fill="white"/>
-              </svg>
-              <span className="text-white text-xs font-medium">123.5k</span>
-            </div>
-            
-            {!isDrawerOpen && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-white p-0 h-auto"
-                onClick={() => setIsDrawerOpen(true)}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M6 14L12 8L6 2" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Main content */}
-      <div className="flex h-full pt-24">
+
+      {/* Main content area with video */}
+      <div className="flex h-full">
         {/* Main video area */}
         <div 
           className={cn(
             "transition-all duration-300 ease-in-out relative h-full overflow-hidden",
             isDrawerOpen 
-              ? "w-[calc(100%-384px)] pr-4" 
+              ? "w-[calc(100%-320px)]" 
               : "w-full"
           )}
         >
-          {/* Video component - fullscreen as in 1st view.png */}
-          <div className="absolute inset-0 h-full w-full">
+          {/* Video stream - full screen */}
+          <div className="absolute inset-0">
             <AgoraVideo 
               channelName={channelName}
               mode="livestream"
-              showControls={false} // We'll use our custom controls
+              showControls={false}
               enableMultiplatform={rtmpDestinations.length > 0}
               rtmpDestinations={rtmpDestinations}
               onError={(error) => {
@@ -225,257 +216,223 @@ export default function StreamingRoom({
               }}
               className="h-full w-full object-cover"
             />
-            {/* Optional overlay gradient for better visibility of UI elements */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
           </div>
           
-          {/* Bottom user chat messages popup - exactly as in 1st view.png */}
-          <div className="absolute left-6 bottom-24 flex flex-col gap-1 z-10 text-white max-w-xs">
+          {/* Chat messages bottom left - exactly as in 1st view.png */}
+          <div className="absolute left-4 bottom-20 flex flex-col gap-2 z-10 max-w-xs">
             <div className="flex items-start gap-2 animate-slide-up">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden bg-orange-500/80">
-                <img src="https://i.pravatar.cc/100?img=20" alt="User" className="w-full h-full object-cover" />
+              <div className="h-6 w-6 rounded-full overflow-hidden bg-orange-500/80">
+                <img src="https://i.pravatar.cc/100?img=20" alt="User" className="h-full w-full object-cover" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-medium">Innocent Dive</span>
-                <span className="text-xs opacity-80">How far my guys wetin dey happen</span>
+                <span className="text-xs text-white font-medium">Innocent Dive</span>
+                <span className="text-xs text-white/80">How far my guys wetin dey happen</span>
               </div>
             </div>
             
             <div className="flex items-start gap-2 animate-slide-up animation-delay-100">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
-                <img src="https://i.pravatar.cc/100?img=30" alt="User" className="w-full h-full object-cover" />
+              <div className="h-6 w-6 rounded-full overflow-hidden">
+                <img src="https://i.pravatar.cc/100?img=30" alt="User" className="h-full w-full object-cover" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-medium">Godknows Ukari</span>
-                <span className="text-xs opacity-80">How far my guys wetin dey happen</span>
+                <span className="text-xs text-white font-medium">Godknows Ukari</span>
+                <span className="text-xs text-white/80">How far my guys wetin dey happen</span>
               </div>
             </div>
             
             <div className="flex items-start gap-2 animate-slide-up animation-delay-200">
-              <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
-                <img src="https://i.pravatar.cc/100?img=40" alt="User" className="w-full h-full object-cover opacity-90" />
+              <div className="h-6 w-6 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
+                <img src="https://i.pravatar.cc/100?img=40" alt="User" className="h-full w-full object-cover opacity-90" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xs font-medium">Godknows Ukari</span>
-                <span className="text-xs opacity-80">How far my guys wetin dey happen</span>
+                <span className="text-xs text-white font-medium">Godknows Ukari</span>
+                <span className="text-xs text-white/80">How far my guys wetin dey happen</span>
               </div>
             </div>
             
             <div className="flex items-center mt-1 animate-slide-up animation-delay-300">
               <div className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                <span className="text-xs font-medium text-white/90">Goddess</span>
+                <span className="text-xs text-white font-medium">Goddess</span>
               </div>
               <span className="text-xs text-white/70 ml-1">joined</span>
             </div>
           </div>
           
-          {/* Bottom control panel exactly as shown in the 1st view.png mockup */}
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md rounded-full px-1 py-1">
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                  <line x1="12" x2="12" y1="19" y2="22"></line>
+          {/* Control panel at bottom - exactly as in 1st view.png */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex items-center gap-1 bg-black/60 backdrop-blur-md rounded-full px-1 py-1">
+              <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 1.66669C8.66583 1.66669 7.59768 2.69752 7.59768 3.99252V10.4C7.59768 11.695 8.66583 12.7258 10 12.7258C11.3342 12.7258 12.4023 11.695 12.4023 10.4V3.99252C12.4023 2.69752 11.3342 1.66669 10 1.66669Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M15.8333 8.33331V10.4C15.8333 13.6975 13.2641 16.25 10 16.25C6.73584 16.25 4.16666 13.6975 4.16666 10.4V8.33331" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M10 16.25V18.3333" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="18" height="12" x="3" y="6" rx="2" ry="2"></rect>
+              <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2.5" y="5" width="15" height="10" rx="1.5" stroke="white" strokeWidth="1.5"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="10" cy="10" r="7.5" stroke="white" strokeWidth="1.5"/>
+                  <circle cx="10" cy="10" r="3.5" stroke="white" strokeWidth="1.5"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20.84 4.60999C20.3292 4.099 19.7228 3.69364 19.0554 3.41708C18.3879 3.14052 17.6725 2.99817 16.95 2.99817C16.2275 2.99817 15.5121 3.14052 14.8446 3.41708C14.1772 3.69364 13.5708 4.099 13.06 4.60999L12 5.66999L10.94 4.60999C9.9083 3.5783 8.50903 2.9987 7.05 2.9987C5.59096 2.9987 4.19169 3.5783 3.16 4.60999C2.1283 5.64169 1.54871 7.04096 1.54871 8.49999C1.54871 9.95903 2.1283 11.3583 3.16 12.39L4.22 13.45L12 21.23L19.78 13.45L20.84 12.39C21.351 11.8792 21.7563 11.2728 22.0329 10.6053C22.3095 9.93789 22.4518 9.22248 22.4518 8.49999C22.4518 7.77751 22.3095 7.0621 22.0329 6.39464C21.7563 5.72718 21.351 5.12075 20.84 4.60999V4.60999Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.3667 3.84169C16.9411 3.41587 16.4356 3.07803 15.8795 2.84757C15.3233 2.6171 14.7271 2.49847 14.125 2.49847C13.5229 2.49847 12.9267 2.6171 12.3705 2.84757C11.8144 3.07803 11.3089 3.41587 10.8833 3.84169L10 4.72502L9.11666 3.84169C8.25692 2.98195 7.09085 2.49892 5.875 2.49892C4.65915 2.49892 3.49307 2.98195 2.63333 3.84169C1.7736 4.70143 1.29056 5.8675 1.29056 7.08335C1.29056 8.2992 1.7736 9.46528 2.63333 10.325L3.51666 11.2084L10 17.6917L16.4833 11.2084L17.3667 10.325C17.7925 9.89943 18.1303 9.39392 18.3608 8.83779C18.5913 8.28166 18.7099 7.68541 18.7099 7.08335C18.7099 6.4813 18.5913 5.88505 18.3608 5.32892C18.1303 4.77279 17.7925 4.26728 17.3667 3.84169V3.84169Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full text-white hover:bg-black/30">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 17.75L5.82796 20.995L7.00696 14.122L2.00696 9.25495L8.90696 8.25495L12 2.00195L15.093 8.25495L21.993 9.25495L16.993 14.122L18.172 20.995L12 17.75Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <button className="h-10 w-10 flex items-center justify-center rounded-full text-white hover:bg-white/10">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 14.7917L4.85667 17.4958L5.83917 11.7625L1.67834 7.71249L7.42834 6.87916L10 1.66666L12.5717 6.87916L18.3217 7.71249L14.1608 11.7625L15.1433 17.4958L10 14.7917Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
               
-              <button className="h-12 w-12 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18 6L6 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M6 6L18 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <button className="h-10 w-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M15 5L5 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5 5L15 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
           </div>
         </div>
         
-        {/* Right sidebar drawer */}
+        {/* Sidebar drawer */}
         {isDrawerOpen && (
-          <div className="w-[384px] h-full bg-black/95 backdrop-blur-sm text-white flex flex-col rounded-l-lg overflow-hidden border-l border-white/10">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-white/10">
-              <div className="flex">
-                <Button 
-                  variant={drawerContent === 'chat' ? "default" : "outline"}
-                  className={`h-8 rounded-md ${drawerContent === 'chat' ? 'bg-white text-black border-white' : 'bg-transparent border-white/20 text-white'}`}
+          <div className="w-[320px] h-full bg-black text-white border-l border-white/10">
+            {/* Tabs header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <div className="flex gap-2">
+                <button
+                  className={`px-3 py-1 rounded-md text-sm flex items-center ${
+                    drawerContent === 'chat' 
+                      ? 'bg-white text-black' 
+                      : 'bg-transparent text-white border border-white/20'
+                  }`}
                   onClick={() => setDrawerContent('chat')}
                 >
-                  <svg className="mr-2" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 13.3333L7.6 13.04L5.33333 11.6667V13.3333H4.66667V3.33333C4.66669 3.15652 4.73692 2.98695 4.86195 2.86193C4.98697 2.7369 5.15654 2.66667 5.33336 2.66667C5.51017 2.66667 5.67974 2.7369 5.80476 2.86193C5.92979 2.98695 6.00002 3.15652 6.00003 3.33333V3.33333L9.33336 3.33333C9.51017 3.33333 9.67974 3.4036 9.80476 3.52862C9.92979 3.65365 10 3.82321 10 4C10 4.17681 9.92976 4.34638 9.80473 4.4714C9.67971 4.59643 9.51014 4.66667 9.33333 4.66667L6.00003 4.66667V10.6667L7.6 11.6267L9.2 10.6667V9.66667H10V10.6667L8 12L7.6 12.2867V13.3333H8Z" fill={drawerContent === 'chat' ? 'black' : 'white'}/>
+                  <svg className="mr-1.5" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 11.6667L6.65 11.41L4.66667 10.2083V11.6667H4.08333V2.91666C4.08335 2.76196 4.14481 2.61358 4.25421 2.50418C4.36361 2.39478 4.51198 2.33333 4.66669 2.33333C4.8214 2.33333 4.96977 2.39478 5.07917 2.50418C5.18857 2.61358 5.25002 2.76196 5.25003 2.91666V2.91666L8.16669 2.91666C8.3214 2.91666 8.46977 2.97816 8.57917 3.08754C8.68857 3.19694 8.75003 3.34531 8.75003 3.5C8.75003 3.65471 8.6886 3.80308 8.57919 3.91247C8.46979 4.02187 8.32142 4.08333 8.16672 4.08333L5.25003 4.08333V9.33333L6.65 10.1733L8.05 9.33333V8.45833H8.75003V9.33333L7 10.5L6.65 10.7508V11.6667H7Z" fill={drawerContent === 'chat' ? 'black' : 'white'}/>
                   </svg>
                   VynaAI
-                </Button>
-                <Button 
-                  variant={drawerContent === 'teleprompter' ? "default" : "outline"}
-                  className={`h-8 ml-2 rounded-md ${drawerContent === 'teleprompter' ? 'bg-white text-black border-white' : 'bg-transparent border-white/20 text-white'}`}
+                </button>
+                
+                <button
+                  className={`px-3 py-1 rounded-md text-sm flex items-center ${
+                    drawerContent === 'teleprompter' 
+                      ? 'bg-white text-black' 
+                      : 'bg-transparent text-white border border-white/20'
+                  }`}
                   onClick={() => setDrawerContent('teleprompter')}
                 >
-                  <svg className="mr-2" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13.3334 5.33333V14H2.66675V5.33333" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M14.6667 2H1.33337V5.33333H14.6667V2Z" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M6.66675 8H9.33341" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg className="mr-1.5" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.6667 4.66667V12.25H2.33333V4.66667" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12.8333 1.75H1.16667V4.66667H12.8333V1.75Z" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M5.83333 7H8.16667" stroke={drawerContent === 'teleprompter' ? 'black' : 'white'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                   Notepad
-                </Button>
+                </button>
               </div>
               
-              <Button 
-                variant="ghost" 
-                size="icon"
+              <button 
+                className="p-1.5 rounded-full hover:bg-white/10"
                 onClick={() => setIsDrawerOpen(false)}
-                className="h-8 w-8 text-white hover:bg-white/10 rounded-full"
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 5L5 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5 5L15 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.5 3.5L3.5 10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3.5 3.5L10.5 10.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-              </Button>
+              </button>
             </div>
             
             {/* Drawer content */}
-            <div className="flex-grow flex flex-col">
+            <div className="h-[calc(100%-48px)]">
               {drawerContent === 'chat' ? (
-                <>
-                  {/* RECENTS Header */}
-                  <div className="p-6 pb-2">
+                <div className="flex flex-col h-full">
+                  {/* RECENTS header */}
+                  <div className="p-4 pb-2">
                     <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">RECENTS</h3>
                   </div>
                   
-                  {/* Chat messages list as in mockup */}
-                  <div className="flex-grow overflow-y-auto px-6 pt-0 pb-4">
-                    <div className="space-y-4">
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
-                      
-                      <div className="border border-white/10 rounded-xl p-3">
-                        <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
-                      </div>
+                  {/* Chat history */}
+                  <div className="flex-1 overflow-y-auto px-4">
+                    <div className="space-y-3">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <div key={i} className="p-3 border border-white/10 rounded-xl">
+                          <p className="text-sm text-white line-clamp-2">Who is the best CODM gamer in Nigeria right now?</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
                   {/* New chat button */}
-                  <div className="mx-6 mb-6">
-                    <button className="w-full h-10 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm flex items-center justify-center">
-                      <svg className="mr-2" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M8 3.33337V12.6667" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M3.33331 8H12.6666" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <div className="p-4">
+                    <button className="w-full py-2 px-4 bg-white/10 hover:bg-white/15 rounded-lg text-sm flex items-center justify-center">
+                      <svg className="mr-2" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 2.91666V11.0833" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M2.91666 7H11.0833" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                       New chat
                     </button>
                   </div>
-                </>
+                </div>
               ) : (
                 <div className="flex flex-col h-full">
                   {/* Teleprompter content */}
-                  <div className="flex-grow overflow-y-auto p-6 text-white">
+                  <div className="flex-1 p-4 overflow-y-auto">
                     {teleprompterText ? (
                       <div className="text-xl font-medium leading-relaxed">
                         <GradientText 
                           text={teleprompterText} 
                           preset="warm" 
                           showCursor={true}
-                          typingSpeed={0} // Show immediately
+                          typingSpeed={0}
                         />
                       </div>
                     ) : (
-                      <div className="h-full flex items-center justify-center text-center p-4 text-neutral-400">
+                      <div className="h-full flex items-center justify-center text-center">
                         <div>
                           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-800 flex items-center justify-center">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M26.6667 10.6667H5.33333V8H26.6667V10.6667ZM26.6667 13.3333H5.33333V16H26.6667V13.3333ZM26.6667 18.6667H5.33333V21.3333H26.6667V18.6667ZM4 26.6667H28V5.33333H4V26.6667ZM4 2.66667H28C28.7072 2.66667 29.3855 2.94762 29.8856 3.44772C30.3857 3.94781 30.6667 4.62609 30.6667 5.33333V26.6667C30.6667 27.3739 30.3857 28.0522 29.8856 28.5523C29.3855 29.0524 28.7072 29.3333 28 29.3333H4C3.29276 29.3333 2.61447 29.0524 2.11438 28.5523C1.61428 28.0522 1.33333 27.3739 1.33333 26.6667V5.33333C1.33333 4.62609 1.61428 3.94781 2.11438 3.44772C2.61447 2.94762 3.29276 2.66667 4 2.66667Z" fill="#9CA3AF"/>
+                            <svg width="28" height="28" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M11.6667 4.66667V12.25H2.33333V4.66667" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M12.8333 1.75H1.16667V4.66667H12.8333V1.75Z" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M5.83333 7H8.16667" stroke="#9CA3AF" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           </div>
-                          <p className="text-lg font-medium mb-2">Your notepad is empty</p>
+                          <h4 className="text-lg font-medium mb-2">No content yet</h4>
                           <p className="text-sm text-neutral-500">
-                            Ask the AI assistant for content, then click on a message 
-                            to add it to your notepad
+                            Click the "Add to Teleprompter" button in a chat to add content here.
                           </p>
                         </div>
                       </div>
                     )}
                   </div>
                   
-                  {/* Teleprompter controls */}
+                  {/* Teleprompter actions */}
                   {teleprompterText && (
-                    <div className="p-4 flex justify-end gap-2 border-t border-white/10">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleCopyTeleprompter}
-                        className="h-9 bg-transparent border-white/20 text-white hover:bg-white/10"
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                    <div className="p-4 border-t border-white/10 flex justify-end">
+                      <button 
+                        className="px-3 py-1.5 rounded-md border border-white/20 text-white text-sm mr-2 flex items-center"
                         onClick={handleClearTeleprompter}
-                        className="h-9 bg-transparent border-red-500/50 text-red-500 hover:bg-red-950/30"
                       >
-                        <X className="h-4 w-4 mr-2" />
+                        <X className="h-3.5 w-3.5 mr-1" />
                         Clear
-                      </Button>
+                      </button>
+                      <button 
+                        className="px-3 py-1.5 rounded-md border border-white/20 text-white text-sm flex items-center"
+                        onClick={handleCopyTeleprompter}
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copy
+                      </button>
                     </div>
                   )}
                 </div>
