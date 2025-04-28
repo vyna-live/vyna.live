@@ -147,32 +147,39 @@ export default function StreamingRoom({
       
       {/* Second row with user info, channel name and viewer count - transparent background */}
       <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-transparent">
-        <div className="flex items-center">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full overflow-hidden">
-              <img src="https://i.pravatar.cc/100" alt="Divine Samuel" className="h-full w-full object-cover" />
+        {/* Streamer info, viewer count, and VynaAI button are on the video view only */}
+        {isDrawerOpen ? (
+          <div></div>
+        ) : (
+          <div className="flex items-center">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-full overflow-hidden">
+                <img src="https://i.pravatar.cc/100" alt="Divine Samuel" className="h-full w-full object-cover" />
+              </div>
+              <span className="text-white text-xs font-normal">Divine Samuel</span>
             </div>
-            <span className="text-white text-xs font-normal">Divine Samuel</span>
+            
+            <div className="flex items-center mx-2">
+              <span className="text-white/40 text-xs">•</span>
+            </div>
           </div>
-          
-          <div className="flex items-center mx-2">
-            <span className="text-white/40 text-xs">•</span>
-          </div>
-        </div>
+        )}
 
         {/* Center title */}
-        <div className="absolute left-1/2 transform -translate-x-1/2">
+        <div className={isDrawerOpen ? "mr-auto ml-4" : "absolute left-1/2 transform -translate-x-1/2"}>
           <span className="text-white text-xs font-medium">Jaja Games</span>
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12C14.4853 12 16.5 9.98528 16.5 7.5C16.5 5.01472 14.4853 3 12 3C9.51472 3 7.5 5.01472 7.5 7.5C7.5 9.98528 9.51472 12 12 12Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 20.25C3 16.6587 7.02944 13.75 12 13.75C16.9706 13.75 21 16.6587 21 20.25V20.5C21 20.7761 20.7761 21 20.5 21H3.5C3.22386 21 3 20.7761 3 20.5V20.25Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="text-white text-[11px]">123.5k</span>
-          </div>
+          {!isDrawerOpen && (
+            <div className="flex items-center gap-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 12C14.4853 12 16.5 9.98528 16.5 7.5C16.5 5.01472 14.4853 3 12 3C9.51472 3 7.5 5.01472 7.5 7.5C7.5 9.98528 9.51472 12 12 12Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 20.25C3 16.6587 7.02944 13.75 12 13.75C16.9706 13.75 21 16.6587 21 20.25V20.5C21 20.7761 20.7761 21 20.5 21H3.5C3.22386 21 3 20.7761 3 20.5V20.25Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="text-white text-[11px]">123.5k</span>
+            </div>
+          )}
           
           {!isDrawerOpen && (
             <button 

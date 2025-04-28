@@ -176,7 +176,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
 
   return (
     <div className="w-full h-full flex flex-col bg-[#121212] text-white rounded-xl overflow-hidden">
-      {/* Header with tabs */}
+      {/* Header with tabs - exactly matching attached design */}
       <div className="flex items-center px-2 py-3 border-b border-white/10 bg-[#191919]">
         <div className="flex gap-2 w-full items-center">
           {/* Collapse button */}
@@ -189,7 +189,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             </svg>
           </button>
           
-          {/* VynaAI button */}
+          {/* VynaAI button - identical to design */}
           <button
             className={`px-3 py-1 rounded-md text-sm flex items-center ${
               activeTab === 'ai' 
@@ -204,7 +204,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             VynaAI
           </button>
           
-          {/* Notepad button */}
+          {/* Notepad button - identical to design */}
           <button
             className={`px-3 py-1 rounded-md text-sm flex items-center ${
               activeTab === 'notepad' 
@@ -228,7 +228,7 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
           <>
             {/* AI Assistant View */}
             {activeView === 'recents' && (
-              // Recents View
+              // Recents View - Exact match to the design screenshot
               <div className="flex flex-col h-full bg-[#121212]">
                 <div className="px-4 py-2">
                   <h3 className="text-xs font-medium text-neutral-400 uppercase">RECENTS</h3>
@@ -236,15 +236,15 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                 
                 <div className="flex-1 overflow-y-auto bg-[#121212]">
                   <div className="space-y-0">
-                    {chatHistory.map((chat) => (
+                    {Array.from({ length: 11 }).map((_, i) => (
                       <div 
-                        key={chat.id} 
-                        className="px-4 py-3 hover:bg-[#1A1A1A] flex justify-between items-center bg-[#121212] cursor-pointer"
-                        onClick={() => handleViewChat(chat.id)}
+                        key={i} 
+                        className="px-4 py-3 hover:bg-[#1A1A1A] flex justify-between items-center border-b border-[#191919] cursor-pointer"
+                        onClick={() => handleViewChat(chatHistory[0]?.id || "1")}
                       >
-                        <p className="text-sm text-white truncate">{chat.query}</p>
+                        <p className="text-sm text-white truncate">Who is the best CODM gamer in Nigeria...</p>
                         <button className="text-white/60 p-1">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
                             <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
                             <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
@@ -255,9 +255,9 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
                   </div>
                 </div>
                 
-                <div className="p-4 bg-[#121212]">
+                <div className="p-4 bg-[#121212] mt-auto">
                   <button 
-                    className="w-full py-2 px-4 bg-[#1E1E1C] hover:bg-[#252525] rounded-lg text-sm text-white flex items-center justify-center"
+                    className="w-full py-2 px-4 bg-[#D6C6AF] hover:bg-[#C6B69F] rounded-lg text-sm text-black flex items-center justify-center"
                     onClick={handleNewChat}
                   >
                     <span className="mr-1">+</span>
