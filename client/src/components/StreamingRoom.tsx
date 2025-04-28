@@ -118,10 +118,10 @@ export default function StreamingRoom({
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-black relative">
-      {/* Top header row with Vyna logo and user */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/60 backdrop-blur-sm">
+      {/* Top header row with Vyna logo and user - exactly matching navbar.png */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black">
         <div className="flex items-center">
-          <img src="/attached_assets/vpww.png" alt="Vyna.live" className="h-8" />
+          <img src="/attached_assets/vpww.png" alt="Vyna.live" className="h-7" />
         </div>
         
         <div className="flex items-center gap-2">
@@ -135,8 +135,8 @@ export default function StreamingRoom({
         </div>
       </div>
       
-      {/* Second row with user info, channel name and viewer count */}
-      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/40 backdrop-blur-sm">
+      {/* Second row with user info, channel name and viewer count - exactly matching navbar.png */}
+      <div className="absolute top-[48px] left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-[#111111]">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-full overflow-hidden">
@@ -214,48 +214,40 @@ export default function StreamingRoom({
           
           {/* Chat messages bottom left - exactly matching bottom.png */}
           <div className="absolute left-4 bottom-24 flex flex-col gap-2 z-10 max-w-xs">
-            <div className="p-2 rounded-lg bg-black/50 backdrop-blur-sm w-fit animate-slide-up">
-              <div className="flex items-start gap-2">
-                <div className="h-6 w-6 rounded-full overflow-hidden bg-orange-500">
-                  <img src="https://i.pravatar.cc/100?img=20" alt="User" className="h-full w-full object-cover" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-white font-medium">Innocent Dive</span>
-                  <span className="text-xs text-white/90">How far my guys wetin dey happen</span>
-                </div>
+            <div className="flex items-start gap-2 animate-slide-up">
+              <div className="h-6 w-6 rounded-full overflow-hidden bg-orange-500">
+                <img src="https://i.pravatar.cc/100?img=20" alt="User" className="h-full w-full object-cover" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-white font-medium">Innocent Dive</span>
+                <span className="text-xs text-white/90">How far my guys wetin dey happen</span>
               </div>
             </div>
             
-            <div className="p-2 rounded-lg bg-black/50 backdrop-blur-sm w-fit animate-slide-up animation-delay-100">
-              <div className="flex items-start gap-2">
-                <div className="h-6 w-6 rounded-full overflow-hidden bg-gray-600">
-                  <img src="https://i.pravatar.cc/100?img=30" alt="User" className="h-full w-full object-cover opacity-80" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-white font-medium">Godknows Ukari</span>
-                  <span className="text-xs text-white/90">How far my guys wetin dey happen</span>
-                </div>
+            <div className="flex items-start gap-2 animate-slide-up animation-delay-100">
+              <div className="h-6 w-6 rounded-full overflow-hidden bg-gray-600">
+                <img src="https://i.pravatar.cc/100?img=30" alt="User" className="h-full w-full object-cover opacity-80" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-white font-medium">Godknows Ukari</span>
+                <span className="text-xs text-white/90">How far my guys wetin dey happen</span>
               </div>
             </div>
             
-            <div className="p-2 rounded-lg bg-black/50 backdrop-blur-sm w-fit animate-slide-up animation-delay-200">
-              <div className="flex items-start gap-2">
-                <div className="h-6 w-6 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
-                  <img src="https://i.pravatar.cc/100?img=40" alt="User" className="h-full w-full object-cover opacity-90" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-white font-medium">Godknows Ukari</span>
-                  <span className="text-xs text-white/90">How far my guys wetin dey happen</span>
-                </div>
+            <div className="flex items-start gap-2 animate-slide-up animation-delay-200">
+              <div className="h-6 w-6 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 to-pink-500">
+                <img src="https://i.pravatar.cc/100?img=40" alt="User" className="h-full w-full object-cover opacity-90" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-white font-medium">Godknows Ukari</span>
+                <span className="text-xs text-white/90">How far my guys wetin dey happen</span>
               </div>
             </div>
             
-            <div className="p-2 rounded-lg bg-black/50 backdrop-blur-sm w-fit animate-slide-up animation-delay-300">
-              <div className="flex items-center">
-                <span className="text-red-500 mr-1 text-sm">●</span>
-                <span className="text-xs text-white font-medium">Goddess</span>
-                <span className="text-xs text-white/70 ml-1">joined</span>
-              </div>
+            <div className="flex items-center mt-1 animate-slide-up animation-delay-300">
+              <span className="text-red-500 mr-1 text-xs">●</span>
+              <span className="text-xs text-white font-medium">Goddess</span>
+              <span className="text-xs text-white/70 ml-1">joined</span>
             </div>
           </div>
           
