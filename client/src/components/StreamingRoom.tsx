@@ -118,7 +118,7 @@ export default function StreamingRoom({
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-black relative m-4 rounded-2xl">
+    <div style={{margin: '8px'}} className="h-[calc(100vh-16px)] w-[calc(100vw-16px)] overflow-hidden bg-black relative rounded-2xl">
       {/* Top header row with Vyna logo and user with blur effect */}
       <div className="absolute top-0 left-0 right-0 z-30 px-4 py-2 flex items-center justify-between bg-black/40 backdrop-blur-md rounded-t-2xl">
         <div className="flex items-center">
