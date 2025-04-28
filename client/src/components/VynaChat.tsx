@@ -537,7 +537,6 @@ const VynaChat: React.FC<VynaChatProps> = ({ onClose, onToggleMinimize, isMinimi
             )}
           </>
         )}
-        )}
       </div>
     </div>
   );
