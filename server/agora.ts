@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import * as agoraAccessToken from 'agora-access-token';
 
-// Define constants from the module
-const PUBLISHER_ROLE = 1; // RtcRole.PUBLISHER value 
-const SUBSCRIBER_ROLE = 2; // RtcRole.SUBSCRIBER value
-const RTM_ROLE = 1; // RTM Role.Publisher is always 1
+// Define role constants directly since we're using ESM with a CommonJS module
+const PUBLISHER_ROLE = 1;  // RtcRole.PUBLISHER
+const SUBSCRIBER_ROLE = 2;  // RtcRole.SUBSCRIBER
+const RTM_ROLE = 1;  // RtmRole.Rtm_User
 
 // Agora app credentials from environment variables
 const appId = process.env.AGORA_APP_ID!;
@@ -25,7 +25,7 @@ function generateRtcToken(channelName: string, uid: number, role: number, expira
   const currentTime = Math.floor(Date.now() / 1000);
   const privilegeExpireTime = currentTime + expirationTimeInSeconds;
 
-  // Build the RTC token
+  // Build the RTC token using the imported module
   return agoraAccessToken.RtcTokenBuilder.buildTokenWithUid(
     appId,
     appCertificate,
@@ -47,12 +47,12 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expirationTimeInSeconds;
 
-    // Build the RTM token - RTM only has one role so we pass a constant value
+    // Build the RTM token using the imported module
     return agoraAccessToken.RtmTokenBuilder.buildToken(
       appId,
       appCertificate,
       userId,
-      1, // RTM uses a fixed role value of 1
+      RTM_ROLE,
       privilegeExpireTime
     );
   } catch (error) {
