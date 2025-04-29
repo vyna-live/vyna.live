@@ -19,34 +19,67 @@ const config: ClientConfig = {
   codec: "vp8",
 };
 
-// Custom CSS for styling Agora video elements
+// Custom CSS for Agora components
 const customStyles = `
   .agora-video-player {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(205, 188, 171, 0.2);
   }
-
-  .agora-video-player video {
-    object-fit: cover;
-  }
-
-  /* Animation for messages */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
+  
   .viewer-chat-message {
-    animation: fadeIn 0.3s ease-out;
+    animation: slideInUp 0.3s ease-out forwards;
+  }
+  
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .pip-video {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 160px;
+    height: 90px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 40;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+  
+  /* Glassmorphic effect for controls */
+  .control-button {
+    background-color: rgba(25, 25, 35, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .control-button:hover {
+    background-color: rgba(45, 45, 55, 0.8);
+    transform: scale(1.05);
+  }
+  
+  .control-panel {
+    background-color: rgba(15, 15, 20, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   }
 `;
 
-// Message type for chat
 interface ChatMessage {
   userId: string;
   name: string;
@@ -55,7 +88,6 @@ interface ChatMessage {
   isHost?: boolean;
 }
 
-// Props for the ViewerStreamInterface component
 interface ViewerStreamInterfaceProps {
   appId: string;
   channelName: string;
@@ -68,7 +100,7 @@ interface ViewerStreamInterfaceProps {
   viewerCount?: number;
 }
 
-export default function ViewerStreamInterface({
+function ViewerStreamInterface({
   appId,
   channelName,
   token,
@@ -669,3 +701,5 @@ export default function ViewerStreamInterface({
     </div>
   );
 }
+
+export default ViewerStreamInterface;
