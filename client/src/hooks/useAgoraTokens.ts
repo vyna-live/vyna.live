@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 
 interface AgoraTokensResponse {
   appId: string;
-  token: string;
+  rtcToken: string;
+  rtmToken: string;
   channelName: string;
   uid: number;
   role: 'host' | 'audience';
