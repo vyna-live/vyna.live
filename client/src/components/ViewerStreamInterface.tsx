@@ -180,10 +180,43 @@ export default function ViewerStreamInterface({
           }
           
           try {
-            await rtmClient.login({ uid: uid.toString(), token: rtmToken });
-            console.log("Successfully logged into RTM");
+            // Attempt to login with provided token
+            try {
+              await rtmClient.login({ uid: uid.toString(), token: rtmToken });
+              console.log("Successfully logged into RTM");
+            } catch (rtmLoginErr: any) {
+              // Check if it's a network error (Code 2 or 2010026)
+              if (rtmLoginErr.code === 2 || 
+                  rtmLoginErr.code === 2010026 || 
+                  (rtmLoginErr.message && rtmLoginErr.message.includes('Error Code 2'))) {
+                
+                // Network error - implement retry mechanism
+                console.warn('Network error detected during initial RTM login. Retrying in 3 seconds...');
+                
+                // Only attempt retry if component is still mounted
+                if (mounted) {
+                  // Wait 3 seconds before retrying
+                  await new Promise(resolve => setTimeout(resolve, 3000));
+                  
+                  // Check if component is still mounted
+                  if (!mounted) {
+                    console.log('Component unmounted during retry delay');
+                    throw new Error('Component unmounted');
+                  }
+                  
+                  // Try login again
+                  await rtmClient.login({ uid: uid.toString(), token: rtmToken });
+                  console.log('Successfully logged into RTM after retry');
+                } else {
+                  throw rtmLoginErr; // Component is no longer mounted
+                }
+              } else {
+                // Not a network error, rethrow to be handled below
+                throw rtmLoginErr;
+              }
+            }
           } catch (rtmError: any) {
-            console.error('RTM login error:', rtmError);
+            console.error('RTM login error after retry attempts:', rtmError);
             
             // Check if it's a token authorization error
             if (rtmError.code === 101 || // Token expired
@@ -233,9 +266,41 @@ export default function ViewerStreamInterface({
                 // Try again with the new token
                 await rtmClient.login({ uid: uid.toString(), token: newTokenData.rtmToken });
                 console.log('Successfully logged into RTM with new token');
-              } catch (renewError) {
+              } catch (renewError: any) {
                 console.error('Failed to renew RTM token:', renewError);
-                throw new Error('Chat functionality may be limited - could not authenticate');
+                
+                // Check if it's a network error (Code 2 or 2010026)
+                if (renewError.code === 2 || 
+                    renewError.code === 2010026 || 
+                    (renewError.message && renewError.message.includes('Error Code 2'))) {
+                  
+                  // Network error - implement retry mechanism
+                  console.warn('Network error detected. Retrying in 3 seconds...');
+                  
+                  // Only attempt retry if component is still mounted
+                  if (mounted) {
+                    try {
+                      // Wait 3 seconds before retrying
+                      await new Promise(resolve => setTimeout(resolve, 3000));
+                      
+                      // Check again if component is still mounted before retry
+                      if (!mounted) {
+                        console.log('Component unmounted during retry delay');
+                        return;
+                      }
+                      
+                      // Try one more time with the same token
+                      await rtmClient.login({ uid: uid.toString(), token: rtmToken });
+                      console.log('Successfully logged into RTM after retry');
+                    } catch (retryError) {
+                      console.error('Retry failed:', retryError);
+                      throw new Error('Network problems prevented joining chat. Please check your connection.');
+                    }
+                  }
+                } else {
+                  // Not a network error
+                  throw new Error('Chat functionality may be limited - could not authenticate');
+                }
               }
             } else {
               // If it's a different error, rethrow it
@@ -434,8 +499,43 @@ export default function ViewerStreamInterface({
         
         try {
           // Pass token as string not null
-          await agoraClient.join(appId, channelName, rtcToken, uid);
-          console.log("Successfully joined Agora RTC channel:", channelName);
+          try {
+            await agoraClient.join(appId, channelName, rtcToken, uid);
+            console.log("Successfully joined Agora RTC channel:", channelName);
+          } catch (initialJoinErr: any) {
+            // Check if it's a network error for initial join
+            if (initialJoinErr.code === 'OPERATION_ABORTED' || 
+                initialJoinErr.code === 'NETWORK_ERROR' || 
+                (initialJoinErr.message && (
+                  initialJoinErr.message.includes('cancel') || 
+                  initialJoinErr.message.includes('network') || 
+                  initialJoinErr.message.includes('aborted')
+                ))) {
+                
+              console.warn('Network error detected during initial channel join. Retrying in 3 seconds...');
+              
+              // Only attempt retry if component is still mounted
+              if (mounted) {
+                // Wait 3 seconds before retrying
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Check if component is still mounted
+                if (!mounted) {
+                  console.log('Component unmounted during RTC join retry delay');
+                  throw new Error('Component unmounted');
+                }
+                
+                // Try one more time with same token
+                await agoraClient.join(appId, channelName, rtcToken, uid);
+                console.log('Successfully joined Agora RTC channel after retry');
+              } else {
+                throw initialJoinErr; // Component is no longer mounted
+              }
+            } else {
+              // Not a network error, rethrow to be handled below
+              throw initialJoinErr;
+            }
+          }
         } catch (joinError: any) {
           console.error('Error joining channel:', joinError);
           
@@ -482,9 +582,45 @@ export default function ViewerStreamInterface({
               // Use the new token to join
               await agoraClient.join(appId, channelName, newTokenData.rtcToken, uid);
               console.log('Successfully joined with new token');
-            } catch (renewError) {
+            } catch (renewError: any) {
               console.error('Failed to renew token:', renewError);
-              throw new Error('Could not renew token, please try again later');
+              
+              // Check if it's a network error (similar to RTM error handling)
+              if (renewError.code === 'OPERATION_ABORTED' || 
+                  renewError.code === 'NETWORK_ERROR' || 
+                  (renewError.message && (
+                    renewError.message.includes('cancel') || 
+                    renewError.message.includes('network') || 
+                    renewError.message.includes('aborted')
+                  ))) {
+                  
+                // Network error - implement retry mechanism
+                console.warn('Network error detected during RTC token renewal. Retrying in 3 seconds...');
+                
+                // Only attempt retry if component is still mounted
+                if (mounted) {
+                  try {
+                    // Wait 3 seconds before retrying
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    // Check again if component is still mounted before retry
+                    if (!mounted) {
+                      console.log('Component unmounted during RTC retry delay');
+                      return;
+                    }
+                    
+                    // Make one more attempt to join with original token
+                    await agoraClient.join(appId, channelName, rtcToken, uid);
+                    console.log('Successfully joined after retry with original token');
+                  } catch (retryError) {
+                    console.error('RTC retry failed:', retryError);
+                    throw new Error('Connection problems prevented joining stream. Please check your network.');
+                  }
+                }
+              } else {
+                // Not a network error
+                throw new Error('Could not renew token, please try again later');
+              }
             }
           } else {
             // If it's a different error, rethrow it
