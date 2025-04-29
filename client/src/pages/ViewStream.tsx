@@ -58,15 +58,22 @@ export default function ViewStream() {
         
         const tokenData = await tokenResponse.json();
         
-        // For a real application, you'd fetch stream details from the database
-        // using the channel name. For now, use placeholder values.
+        // Get stream details from our API
+        const streamDetailsResponse = await fetch(`/api/streams/${params.channelName}`);
+        
+        if (!streamDetailsResponse.ok) {
+          throw new Error('Failed to get stream details');
+        }
+        
+        const streamDetails = await streamDetailsResponse.json();
+        
         setStreamData({
           appId: appIdData.appId,
           token: tokenData.token,
           channelName: params.channelName,
-          streamTitle: 'Jaja Games', // This would come from the DB
-          hostName: 'Divine Samuel', // This would come from the DB
-          hostAvatar: 'https://randomuser.me/api/portraits/women/32.jpg' // This would come from the DB
+          streamTitle: streamDetails.title,
+          hostName: streamDetails.hostName,
+          hostAvatar: streamDetails.hostAvatar
         });
         
         setIsLoading(false);

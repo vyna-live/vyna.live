@@ -427,6 +427,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/agora/audience-token", getAudienceToken);
   
   app.post("/api/agora/livestream", createAgoraLivestream);
+  
+  // Get stream details by channel name
+  app.get("/api/streams/:channelName", async (req, res) => {
+    try {
+      const { channelName } = req.params;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: "Channel name is required" });
+      }
+      
+      // In a production app, you would fetch this from the database
+      // For now, return some dummy data based on the channel name
+      const streamData = {
+        channelName,
+        title: channelName.startsWith("saved") ? "Recorded Stream" : "Live Stream",
+        hostName: "Divine Samuel",
+        hostAvatar: "https://randomuser.me/api/portraits/women/32.jpg",
+        viewerCount: Math.floor(Math.random() * 1000) + 100,
+        status: channelName.startsWith("saved") ? "recorded" : "live",
+        description: "This is a sample stream description."
+      };
+      
+      return res.status(200).json(streamData);
+    } catch (error) {
+      console.error("Error getting stream details:", error);
+      return res.status(500).json({ error: "Failed to get stream details" });
+    }
+  });
 
   // Wallet connection endpoints
   app.post("/api/users/wallet", async (req, res) => {
