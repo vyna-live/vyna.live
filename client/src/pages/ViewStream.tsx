@@ -138,8 +138,19 @@ export default function ViewStream() {
         console.log('ViewStream: Received audience token data:', {
           ...tokenData,
           rtcToken: tokenData.rtcToken ? `${tokenData.rtcToken.substring(0, 20)}...` : 'missing',
-          rtmToken: tokenData.rtmToken ? `${tokenData.rtmToken.substring(0, 20)}...` : 'missing'
+          rtmToken: tokenData.rtmToken ? `${tokenData.rtmToken.substring(0, 20)}...` : 'missing',
+          channelName: tokenData.channelName,
+          uid: tokenData.uid
         });
+        
+        // Additional validation of tokens
+        if (!tokenData.rtcToken || tokenData.rtcToken.trim() === '') {
+          throw new Error('Invalid or missing RTC token received from server');
+        }
+        
+        if (!tokenData.rtmToken || tokenData.rtmToken.trim() === '') {
+          throw new Error('Invalid or missing RTM token received from server');
+        }
         
         // Update channel name from token response (important for any mapping/remapping that happened on server)
         if (tokenData.channelName && tokenData.channelName !== channelName) {

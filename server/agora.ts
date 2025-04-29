@@ -169,6 +169,11 @@ export function getAudienceToken(req: Request, res: Response) {
     
     // Get actual channel name from our mappings if it exists
     if (global.streamIdToChannel) {
+      // Print current mappings for debugging
+      const mappings = Array.from(global.streamIdToChannel.entries())
+        .map(([id, channel]) => `${id} -> ${channel}`);
+      console.log('Current stream mappings:', mappings);
+      
       const mappedChannel = global.streamIdToChannel.get(channelName);
       if (mappedChannel) {
         actualChannelName = mappedChannel;
@@ -235,11 +240,25 @@ export async function createLivestream(req: Request, res: Response) {
     
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
+    console.log(`Creating livestream: ${title} with ID ${streamId} and channel ${channelName} for UID: ${uidNumber}`);
+    
     // Generate tokens with host privileges
-    const rtcToken = generateRtcToken(channelName, uidNumber, PUBLISHER_ROLE);
-    const rtmToken = generateRtmToken(uidNumber.toString());
-
-    console.log(`Creating livestream: ${title} with ID ${streamId} and channel ${channelName}`);
+    let rtcToken, rtmToken;
+    try {
+      rtcToken = generateRtcToken(channelName, uidNumber, PUBLISHER_ROLE);
+      console.log('Generated RTC host token successfully');
+    } catch (rtcError) {
+      console.error('Error generating RTC token:', rtcError);
+      throw new Error('Failed to generate RTC host token');
+    }
+    
+    try {
+      rtmToken = generateRtmToken(uidNumber.toString());
+      console.log('Generated RTM host token successfully');
+    } catch (rtmError) {
+      console.error('Error generating RTM token:', rtmError);
+      throw new Error('Failed to generate RTM host token');
+    }
     
     // Initialize global maps if they don't exist yet
     if (!global.streamIdToChannel) {

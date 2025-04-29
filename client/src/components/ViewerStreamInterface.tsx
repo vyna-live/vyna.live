@@ -164,13 +164,23 @@ export default function ViewerStreamInterface({
         // Initialize RTM for chat
         try {
           // Create RTM Client
+          console.log("Creating RTM client with AppID:", appId);
           const rtmClient = AgoraRTM.createInstance(appId);
           rtmClientRef.current = rtmClient;
           
           // Login to RTM with token
-          await rtmClient.login({ uid: uid.toString(), token: rtmToken || undefined });
+          console.log("Logging into RTM with uid:", uid.toString());
+          console.log("RTM token available:", rtmToken ? `${rtmToken.substring(0, 20)}...` : 'missing');
+          
+          if (!rtmToken) {
+            throw new Error("Missing RTM token for chat");
+          }
+          
+          await rtmClient.login({ uid: uid.toString(), token: rtmToken });
+          console.log("Successfully logged into RTM");
           
           // Create RTM Channel
+          console.log("Creating RTM channel:", channelName);
           const rtmChannel = rtmClient.createChannel(channelName);
           rtmChannelRef.current = rtmChannel;
           
