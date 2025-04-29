@@ -112,6 +112,16 @@ export default function ViewStream() {
         }
         
         const tokenData = await tokenResponse.json();
+        console.log('ViewStream: Received audience token data:', {
+          ...tokenData,
+          token: tokenData.token ? `${tokenData.token.substring(0, 20)}...` : 'missing'
+        });
+        
+        // Update channel name from token response (important for any mapping/remapping that happened on server)
+        if (tokenData.channelName && tokenData.channelName !== channelName) {
+          console.log(`ViewStream: Channel name updated from ${channelName} to ${tokenData.channelName}`);
+          channelName = tokenData.channelName;
+        }
         
         console.log('ViewStream: Getting stream details for channel:', channelName);
         // Get stream details from our API
@@ -138,6 +148,10 @@ export default function ViewStream() {
           streamTitle: streamDetails.title,
           hostName: streamDetails.hostName,
         });
+        
+        if (!tokenData.token) {
+          throw new Error('Invalid token received from server');
+        }
         
         setStreamData({
           appId: appIdData.appId,

@@ -81,16 +81,34 @@ export function getAudienceToken(req: Request, res: Response) {
       return res.status(400).json({ error: 'channelName is required' });
     }
 
+    console.log(`Generating audience token for channel: ${channelName}`);
+    
+    // If the channel starts with "stream_", we need to make sure we're using the right format
+    let actualChannelName = channelName;
+    
+    // Get actual channel name from our mappings if it exists
+    if (global.streamIdToChannel) {
+      const mappedChannel = global.streamIdToChannel.get(channelName);
+      if (mappedChannel) {
+        actualChannelName = mappedChannel;
+        console.log(`Found mapped channel: ${channelName} -> ${actualChannelName}`);
+      }
+    }
+    
+    console.log(`Using channel name for token: ${actualChannelName}`);
+    
     // Convert string uid to number if needed
-    const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
+    const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
     // Generate a token with audience privileges
-    const token = generateAgoraToken(channelName, uidNumber, SUBSCRIBER_ROLE);
+    const token = generateAgoraToken(actualChannelName, uidNumber, SUBSCRIBER_ROLE);
 
+    console.log(`Generated token for audience member with UID: ${uidNumber}`);
+    
     res.json({
       token,
       appId,
-      channelName,
+      channelName: actualChannelName,
       uid: uidNumber,
       role: 'audience',
     });
