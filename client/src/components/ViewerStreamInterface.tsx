@@ -167,8 +167,8 @@ export default function ViewerStreamInterface({
           const rtmClient = AgoraRTM.createInstance(appId);
           rtmClientRef.current = rtmClient;
           
-          // Login to RTM
-          await rtmClient.login({ uid: uid.toString() });
+          // Login to RTM with token
+          await rtmClient.login({ uid: uid.toString(), token: rtmToken || undefined });
           
           // Create RTM Channel
           const rtmChannel = rtmClient.createChannel(channelName);
@@ -350,9 +350,9 @@ export default function ViewerStreamInterface({
           });
         });
         
-        // Join the channel
-        await agoraClient.join(appId, channelName, token || null, uid);
-        console.log("Joined Agora channel:", channelName);
+        // Join the channel with RTC token
+        await agoraClient.join(appId, channelName, rtcToken || null, uid);
+        console.log("Joined Agora RTC channel:", channelName);
         
         setIsJoined(true);
         setIsLoading(false);
@@ -394,7 +394,7 @@ export default function ViewerStreamInterface({
         });
       }
     };
-  }, [appId, channelName, token, uid, remoteUsers, mainHostUid]);
+  }, [appId, channelName, rtcToken, rtmToken, uid, remoteUsers, mainHostUid]);
   
   // Handle sending a chat message
   const handleSendMessage = async (e: FormEvent) => {

@@ -42,18 +42,26 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
     throw new Error('Missing Agora credentials');
   }
 
-  // Calculate privilege expire time
-  const currentTime = Math.floor(Date.now() / 1000);
-  const privilegeExpireTime = currentTime + expirationTimeInSeconds;
+  try {
+    // Calculate privilege expire time
+    const currentTime = Math.floor(Date.now() / 1000);
+    const privilegeExpireTime = currentTime + expirationTimeInSeconds;
 
-  // Build the RTM token
-  return agoraAccessToken.RtmTokenBuilder.buildToken(
-    appId,
-    appCertificate,
-    userId,
-    RTM_ROLE,
-    privilegeExpireTime
-  );
+    // Import and use RtmRole properly
+    const { RtmRole } = agoraAccessToken;
+    
+    // Build the RTM token
+    return agoraAccessToken.RtmTokenBuilder.buildToken(
+      appId,
+      appCertificate,
+      userId,
+      RtmRole.PUBLISHER, // Use the proper role from the package
+      privilegeExpireTime
+    );
+  } catch (error) {
+    console.error('Error generating Agora RTM token:', error);
+    throw error;
+  }
 }
 
 // API endpoint to get the Agora App ID
