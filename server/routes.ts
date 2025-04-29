@@ -428,6 +428,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/agora/livestream", createAgoraLivestream);
 
+  // Wallet connection endpoints
+  app.post("/api/users/wallet", async (req, res) => {
+    try {
+      const { walletAddress, walletProvider = 'phantom' } = req.body;
+      
+      if (!walletAddress) {
+        return res.status(400).json({ error: "Wallet address is required" });
+      }
+      
+      const userId = 1; // Default for now, replace with actual auth logic later
+      
+      // Check if user exists
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Update user's wallet information
+      await db.update(users)
+        .set({
+          walletAddress,
+          walletProvider,
+          walletConnectedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+      
+      res.json({ success: true, message: "Wallet connected successfully" });
+    } catch (error) {
+      log(`Error connecting wallet: ${error}`, "error");
+      res.status(500).json({ error: "Failed to connect wallet" });
+    }
+  });
+  
+  app.delete("/api/users/wallet", async (req, res) => {
+    try {
+      const userId = 1; // Default for now, replace with actual auth logic later
+      
+      // Check if user exists
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Remove user's wallet information
+      await db.update(users)
+        .set({
+          walletAddress: null,
+          walletProvider: null,
+          walletConnectedAt: null
+        })
+        .where(eq(users.id, userId));
+      
+      res.json({ success: true, message: "Wallet disconnected successfully" });
+    } catch (error) {
+      log(`Error disconnecting wallet: ${error}`, "error");
+      res.status(500).json({ error: "Failed to disconnect wallet" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

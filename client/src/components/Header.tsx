@@ -1,24 +1,65 @@
 import { Sparkles, Zap } from "lucide-react";
 import Logo from "./Logo";
 import SolanaWalletButton from "./SolanaWalletButton";
+import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
   username: string;
 }
 
 export default function Header({ username }: HeaderProps) {
+  const { toast } = useToast();
   const handleWalletConnect = async (publicKey: string) => {
-    // Here we would update the user's wallet address in the database
-    console.log('Wallet connected with public key:', publicKey);
-    // This is where you'd make an API call to update the user record
-    // Example: await fetch('/api/users/wallet', { method: 'POST', body: JSON.stringify({ walletAddress: publicKey }) ... })
+    try {
+      const response = await fetch('/api/users/wallet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          walletAddress: publicKey,
+          walletProvider: 'phantom'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to connect wallet');
+      }
+
+      console.log('Wallet connected successfully:', data);
+    } catch (error) {
+      console.error('Error updating wallet in database:', error);
+      toast({
+        title: 'Database Error',
+        description: 'Failed to update wallet info in database',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleWalletDisconnect = async () => {
-    // Here we would clear the user's wallet address in the database
-    console.log('Wallet disconnected');
-    // This is where you'd make an API call to update the user record
-    // Example: await fetch('/api/users/wallet', { method: 'DELETE' ... })
+    try {
+      const response = await fetch('/api/users/wallet', {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to disconnect wallet');
+      }
+
+      console.log('Wallet disconnected successfully:', data);
+    } catch (error) {
+      console.error('Error disconnecting wallet in database:', error);
+      toast({
+        title: 'Database Error',
+        description: 'Failed to disconnect wallet in database',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
