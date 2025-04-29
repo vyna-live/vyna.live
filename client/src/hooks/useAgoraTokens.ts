@@ -13,7 +13,8 @@ export interface AgoraTokens {
   isLoading: boolean;
   error: Error | null;
   appId: string | null;
-  token: string | null;
+  rtcToken: string | null;
+  rtmToken: string | null;
   channelName: string;
   uid: number | null;
   role: 'host' | 'audience';
@@ -21,7 +22,8 @@ export interface AgoraTokens {
   fetchAudienceToken: (channelName: string, uid?: number) => Promise<void>;
   createLivestream: (title: string, userName: string) => Promise<{
     id: string;
-    token: string;
+    rtcToken: string;
+    rtmToken: string;
     channelName: string;
     appId: string;
     uid: number;
@@ -32,7 +34,8 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [appId, setAppId] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [rtcToken, setRtcToken] = useState<string | null>(null);
+  const [rtmToken, setRtmToken] = useState<string | null>(null);
   const [channelName, setChannelName] = useState<string>(initialChannelName);
   const [uid, setUid] = useState<number | null>(null);
   const [role, setRole] = useState<'host' | 'audience'>('host');
@@ -91,7 +94,8 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
       
       if (data) {
         setAppId(data.appId);
-        setToken(data.token);
+        setRtcToken(data.rtcToken);
+        setRtmToken(data.rtmToken);
         setChannelName(data.channelName);
         setUid(data.uid);
         setRole('host');
@@ -131,7 +135,8 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
       
       if (data) {
         setAppId(data.appId);
-        setToken(data.token);
+        setRtcToken(data.rtcToken);
+        setRtmToken(data.rtmToken);
         setChannelName(data.channelName);
         setUid(data.uid);
         setRole('audience');
@@ -170,10 +175,11 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
       const data = await response.json();
       
       if (data && data.success && data.livestream) {
-        const { appId: newAppId, token: newToken, channelName: newChannel, uid: newUid } = data.livestream;
+        const { appId: newAppId, rtcToken, rtmToken, channelName: newChannel, uid: newUid } = data.livestream;
         
         setAppId(newAppId);
-        setToken(newToken);
+        setRtcToken(rtcToken);
+        setRtmToken(rtmToken);
         setChannelName(newChannel);
         setUid(newUid);
         setRole('host');
@@ -195,7 +201,8 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
     isLoading,
     error,
     appId,
-    token,
+    rtcToken,
+    rtmToken,
     channelName,
     uid,
     role,
