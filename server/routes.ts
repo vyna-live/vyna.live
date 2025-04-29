@@ -13,7 +13,6 @@ import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
-import { updateUserWallet, getUserWallet, recordTransaction, updateTransactionStatus, getUserTransactions } from "./walletRoutes";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -428,13 +427,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/agora/audience-token", getAudienceToken);
   
   app.post("/api/agora/livestream", createAgoraLivestream);
-
-  // Wallet API routes
-  app.post("/api/wallet/update", updateUserWallet);
-  app.get("/api/wallet/info", getUserWallet);
-  app.post("/api/wallet/transactions", recordTransaction);
-  app.post("/api/wallet/transactions/status", updateTransactionStatus);
-  app.get("/api/wallet/transactions", getUserTransactions);
 
   const httpServer = createServer(app);
 

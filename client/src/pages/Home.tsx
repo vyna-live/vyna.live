@@ -6,7 +6,6 @@ import Teleprompter from "@/components/Teleprompter";
 import Logo from "@/components/Logo";
 import GradientText from "@/components/GradientText";
 import CreateStreamDialog, { StreamFormData } from "@/components/CreateStreamDialog";
-import { WalletConnectButton } from "@/components/WalletConnect";
 import { InfoGraphic } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -408,9 +407,6 @@ export default function Home() {
           </div>
           
           <div className="flex items-center space-x-2">
-            {/* Wallet Connect Button */}
-            <WalletConnectButton />
-            
             <button 
               onClick={() => {
                 // Upload logo feature
