@@ -105,6 +105,10 @@ function generateRtcToken(channelName: string, uid: number, role: number, expira
   }
 }
 
+// Import our custom RTM token builder implementation
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
 // Helper to build an RTM token (for chat messaging)
 function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600) {
   if (!areAgoraCredentialsAvailable()) {
@@ -112,19 +116,6 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
   }
 
   try {
-    // Check if RtmTokenBuilder is available
-    if (!RtmTokenBuilder) {
-      console.error('RtmTokenBuilder is not available');
-      throw new Error('RtmTokenBuilder is not available');
-    }
-
-    // Check if buildToken method exists
-    if (typeof RtmTokenBuilder.buildToken !== 'function') {
-      console.error('RtmTokenBuilder.buildToken is not a function');
-      console.error('RtmTokenBuilder contents:', RtmTokenBuilder);
-      throw new Error('RtmTokenBuilder.buildToken is not a function');
-    }
-
     // Calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expirationTimeInSeconds;
@@ -135,11 +126,19 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
       RTM_ROLE,
       privilegeExpireTime
     });
-
-    // Fall back to hard-coded token for development if token generation fails
+    
+    // We know RtmTokenBuilder is not available in the ES module
+    // So we'll use our fallback directly
     try {
-      // Build the RTM token using the extracted RtmTokenBuilder
-      return RtmTokenBuilder.buildToken(
+      // Load our custom RTM token builder implementation
+      const { RtmTokenBuilder: CustomRtmTokenBuilder } = require('./rtmTokenFallback');
+      
+      if (!CustomRtmTokenBuilder) {
+        throw new Error('Custom RTM token builder not found');
+      }
+      
+      console.log('Using custom RTM token builder');
+      return CustomRtmTokenBuilder.buildToken(
         appId,
         appCertificate,
         userId,
@@ -147,19 +146,12 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
         privilegeExpireTime
       );
     } catch (tokenError) {
-      console.error('Failed to generate RTM token with RtmTokenBuilder:', tokenError);
+      console.error('Failed to generate RTM token:', tokenError);
       
-      // Since we cannot use direct imports in ESM, use a workaround
-      const { RtmTokenBuilder: RtmTokenBuilderDirect } = require('./rtmTokenFallback');
-      if (RtmTokenBuilderDirect && typeof RtmTokenBuilderDirect.buildToken === 'function') {
-        console.log('Trying fallback RTM token generator');
-        return RtmTokenBuilderDirect.buildToken(
-          appId,
-          appCertificate,
-          userId,
-          RTM_ROLE,
-          privilegeExpireTime
-        );
+      // Final fallback for development mode - generate a placeholder token
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Using placeholder RTM token for development');
+        return `00${appId}RTM${userId.replace(/[^a-zA-Z0-9]/g, '')}IAD${Math.floor(Date.now() / 1000)}${RTM_ROLE}`;
       }
       
       throw tokenError;
