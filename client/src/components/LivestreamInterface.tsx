@@ -426,44 +426,6 @@ export default function LivestreamInterface({
                         >
                           Start Streaming
                         </button>
-                        
-                        {/* Shareable Link Modal */}
-                        {showShareLink && shareableLink && (
-                          <div className="bg-black/80 backdrop-blur-sm p-4 rounded-lg border border-[#A67D44]/30 mt-4 max-w-md w-full">
-                            <h3 className="text-white text-lg font-medium mb-3">Share your stream</h3>
-                            <p className="text-zinc-400 text-sm mb-3">Copy this link to invite viewers to your livestream:</p>
-                            
-                            <div className="flex items-center bg-zinc-900 rounded overflow-hidden border border-zinc-700 mb-3">
-                              <input 
-                                type="text" 
-                                value={shareableLink} 
-                                readOnly 
-                                className="w-full py-2 px-3 bg-transparent text-white text-sm outline-none"
-                              />
-                              <button 
-                                onClick={() => {
-                                  navigator.clipboard.writeText(shareableLink);
-                                  toast({
-                                    title: "Link copied!",
-                                    description: "Share it with your audience",
-                                  });
-                                }}
-                                className="shrink-0 px-3 py-2 bg-[#A67D44] text-white font-medium hover:bg-opacity-90 transition-colors"
-                              >
-                                Copy
-                              </button>
-                            </div>
-                            
-                            <div className="flex justify-end">
-                              <button 
-                                onClick={() => setShowShareLink(false)}
-                                className="text-zinc-400 text-sm hover:text-white transition-colors"
-                              >
-                                Close
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ) : (
@@ -500,6 +462,63 @@ export default function LivestreamInterface({
               {/* No custom stream controls - using Agora's native controls */}
               
               {/* Chat is now handled by AgoraVideo component through RTM */}
+              
+              {/* Share Link Toggle Button */}
+              {isStreamActive && !showShareLink && shareableLink && (
+                <button
+                  onClick={() => setShowShareLink(true)}
+                  className="absolute top-4 right-4 z-30 bg-[#A67D44] hover:bg-[#B68D54] text-white px-3 py-2 rounded-md flex items-center shadow-lg transition-colors"
+                >
+                  <svg width="16" height="16" className="mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M18 22C19.6569 22 21 20.6569 21 19C21 17.3431 19.6569 16 18 16C16.3431 16 15 17.3431 15 19C15 20.6569 16.3431 22 18 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8.59 13.51L15.42 17.49" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M15.41 6.51L8.59 10.49" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Share Link
+                </button>
+              )}
+
+              {/* Shareable Link Floating Container */}
+              {isStreamActive && showShareLink && shareableLink && (
+                <div className="absolute bottom-4 left-4 z-30 bg-black/80 backdrop-blur-sm p-4 rounded-lg border border-[#A67D44]/30 max-w-md shadow-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-white text-base font-medium">Share your stream</h3>
+                    <button 
+                      onClick={() => setShowShareLink(false)}
+                      className="text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center bg-zinc-900 rounded overflow-hidden border border-zinc-700 mb-2">
+                    <input 
+                      type="text" 
+                      value={shareableLink} 
+                      readOnly 
+                      className="w-full py-2 px-3 bg-transparent text-white text-sm outline-none"
+                    />
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareableLink);
+                        toast({
+                          title: "Link copied!",
+                          description: "Share it with your audience",
+                        });
+                      }}
+                      className="shrink-0 px-3 py-2 bg-[#A67D44] text-white font-medium hover:bg-opacity-90 transition-colors"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  
+                  <p className="text-zinc-400 text-xs">Copy this link to invite viewers to your livestream</p>
+                </div>
+              )}
             </div>
           </div>
           
