@@ -34,7 +34,16 @@ export default function ViewStream() {
   }
   
   // Define TokenData interface to better handle the token response
-  interface TokenData {
+  interface TokenResponse {
+    token?: string;
+    appId?: string;
+    channelName?: string;
+    uid?: number;
+    role?: string;
+  }
+  
+  // Define a type for use with validated token data
+  interface ValidatedTokenData {
     token: string;
     appId?: string;
     channelName?: string;
@@ -122,7 +131,7 @@ export default function ViewStream() {
           throw new Error('Failed to get audience token');
         }
         
-        const tokenData = await tokenResponse.json();
+        const tokenData = await tokenResponse.json() as TokenResponse;
         console.log('ViewStream: Received audience token data:', {
           ...tokenData,
           token: tokenData.token ? `${tokenData.token.substring(0, 20)}...` : 'missing'
@@ -160,25 +169,19 @@ export default function ViewStream() {
           hostName: streamDetails.hostName,
         });
         
-        // Check if we received a valid token and throw an error if not
         if (!tokenData.token) {
           throw new Error('Invalid token received from server');
         }
         
-        // Create a type guard for the token
-        function isValidTokenData(data: any): data is TokenData {
-          return typeof data.token === 'string' && data.token.length > 0;
-        }
+        // After our check, we can safely assert this will be a string
+        const validatedTokenData: ValidatedTokenData = {
+          ...tokenData,
+          token: tokenData.token // TypeScript now knows this is a string
+        };
         
-        // Apply the type guard
-        if (!isValidTokenData(tokenData)) {
-          throw new Error('Invalid token format received from server');
-        }
-        
-        // Now TypeScript knows tokenData.token is a string
         setStreamData({
           appId: appIdData.appId,
-          token: tokenData.token,
+          token: validatedTokenData.token, // Using the validated token
           channelName,
           streamTitle: streamDetails.title,
           hostName: streamDetails.hostName,
