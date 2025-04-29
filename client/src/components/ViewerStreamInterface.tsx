@@ -362,7 +362,20 @@ export default function ViewerStreamInterface({
           
         } catch (rtmErr) {
           console.error("Error initializing RTM client:", rtmErr);
-          // Continue without RTM if it fails
+          // Set a non-fatal error message for chat only
+          if (mounted) {
+            setChatMessages(prev => [
+              ...prev,
+              {
+                userId: 'system',
+                name: 'System',
+                message: "Chat functionality is currently unavailable. You can still view the stream.",
+                color: 'bg-red-500',
+                isHost: false
+              }
+            ]);
+          }
+          // Continue without RTM if it fails - the stream will still work
         }
         
         // Event listeners for RTC client
@@ -632,10 +645,43 @@ export default function ViewerStreamInterface({
           setIsJoined(true);
           setIsLoading(false);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error initializing Agora:", err);
-        setError(err instanceof Error ? err.message : "Failed to join stream");
-        setIsLoading(false);
+        
+        // Determine if this is a fatal error or if we can continue
+        const isFatalError = 
+          // Check if it's related to tokens but not network
+          (err.message && err.message.includes('token') && 
+           !err.message.includes('network') && 
+           !err.message.includes('connection')) || 
+          // Or if it's a permission error
+          (err.code === 'ERR_NO_AUTHORIZED') || 
+          // Or if it's completely missing key components
+          (err.message && err.message.includes('Missing or invalid')); 
+        
+        if (isFatalError) {
+          // These errors prevent viewing the stream entirely
+          setError(err instanceof Error ? err.message : "Failed to join stream");
+          setIsLoading(false);
+        } else {
+          // For non-fatal errors (mostly RTM related), we can still show the stream
+          // but may not have chat functionality
+          console.warn("Non-fatal error:", err);
+          if (mounted) {
+            // Add a system message
+            setChatMessages([{
+              userId: 'system',
+              name: 'System',
+              message: "Some features may be limited. You can still view the stream but chat might be unavailable.",
+              color: 'bg-yellow-500',
+              isHost: false
+            }]);
+            
+            // Allow the stream to load anyway
+            setIsJoined(true);
+            setIsLoading(false);
+          }
+        }
       }
     };
     
@@ -683,7 +729,17 @@ export default function ViewerStreamInterface({
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     
-    if (!chatInput.trim() || !rtmChannelRef.current) return;
+    if (!chatInput.trim()) return;
+    
+    // Check if RTM is available
+    if (!rtmChannelRef.current || !rtmClientRef.current) {
+      toast({
+        title: "Chat Unavailable",
+        description: "Chat functionality is currently unavailable. Please try again later.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Create message object
     const chatMessage = {
@@ -725,19 +781,39 @@ export default function ViewerStreamInterface({
           }
         }, 100);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
+      
+      // Check if it's a network error
+      if (error.code === 2 || error.code === 2010026 || 
+          (error.message && (error.message.includes('network') || 
+                           error.message.includes('connection')))) {
+        toast({
+          title: "Network Error",
+          description: "Message couldn't be sent due to network issues. Please check your connection.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send message",
+          variant: "destructive"
+        });
+      }
     }
   };
   
   // Handle sending a gift/reaction
   const handleSendGift = async () => {
-    if (!rtmChannelRef.current) return;
+    // Check if RTM is available
+    if (!rtmChannelRef.current || !rtmClientRef.current) {
+      toast({
+        title: "Gift Sending Unavailable",
+        description: "Gift sending is currently unavailable. Please try again later.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Create gift message object
     const giftMessage = {
@@ -755,13 +831,25 @@ export default function ViewerStreamInterface({
         title: "Gift Sent",
         description: "Your appreciation has been sent to the streamer!",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending gift:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send gift",
-        variant: "destructive"
-      });
+      
+      // Check if it's a network error
+      if (error.code === 2 || error.code === 2010026 || 
+          (error.message && (error.message.includes('network') || 
+                           error.message.includes('connection')))) {
+        toast({
+          title: "Network Error",
+          description: "Gift couldn't be sent due to network issues. Please check your connection.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send gift",
+          variant: "destructive"
+        });
+      }
     }
   };
   
