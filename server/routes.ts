@@ -430,8 +430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/agora/livestream", createAgoraLivestream);
 
   // Wallet API routes
-  app.post("/api/users/wallet", updateUserWallet);
-  app.get("/api/users/wallet", getUserWallet);
+  app.post("/api/wallet/update", updateUserWallet);
+  app.get("/api/wallet/info", getUserWallet);
   app.post("/api/wallet/transactions", recordTransaction);
   app.post("/api/wallet/transactions/status", updateTransactionStatus);
   app.get("/api/wallet/transactions", getUserTransactions);
