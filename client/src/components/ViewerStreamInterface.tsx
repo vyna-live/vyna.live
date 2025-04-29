@@ -144,6 +144,8 @@ export default function ViewerStreamInterface({
   
   // Initialize the Agora RTC and RTM clients
   useEffect(() => {
+    let mounted = true; // Track if component is still mounted to prevent token cancel errors
+    
     const init = async () => {
       try {
         setIsLoading(true);
@@ -468,8 +470,10 @@ export default function ViewerStreamInterface({
           }
         }
         
-        setIsJoined(true);
-        setIsLoading(false);
+        if (mounted) {
+          setIsJoined(true);
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error("Error initializing Agora:", err);
         setError(err instanceof Error ? err.message : "Failed to join stream");
@@ -477,10 +481,11 @@ export default function ViewerStreamInterface({
       }
     };
     
-    init();
+    const initPromise = init();
     
     // Cleanup function
     return () => {
+      mounted = false; // Set mounted to false on cleanup
       // Leave Agora RTC channel
       if (clientRef.current && isJoined) {
         clientRef.current.leave().then(() => {
