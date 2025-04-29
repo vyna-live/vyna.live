@@ -78,13 +78,14 @@ export function getHostToken(req: Request, res: Response) {
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
 
     // Generate a token with host privileges for RTC (video/audio)
-    const rtcToken = generateAgoraRtcToken(channelName, uidNumber, PUBLISHER_ROLE);
+    const rtcToken = generateRtcToken(channelName, uidNumber, PUBLISHER_ROLE);
     
     // Generate an RTM token for chat (using the UID as a string for the user ID)
-    const rtmToken = generateAgoraRtmToken(uidNumber.toString());
+    const rtmToken = generateRtmToken(uidNumber.toString());
 
     res.json({
-      token,
+      rtcToken,
+      rtmToken,
       appId,
       channelName,
       uid: uidNumber,
@@ -124,13 +125,15 @@ export function getAudienceToken(req: Request, res: Response) {
     // Convert string uid to number if needed
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
-    // Generate a token with audience privileges
-    const token = generateAgoraToken(actualChannelName, uidNumber, SUBSCRIBER_ROLE);
+    // Generate tokens for audience
+    const rtcToken = generateRtcToken(actualChannelName, uidNumber, SUBSCRIBER_ROLE);
+    const rtmToken = generateRtmToken(uidNumber.toString());
 
-    console.log(`Generated token for audience member with UID: ${uidNumber}`);
+    console.log(`Generated tokens for audience member with UID: ${uidNumber}`);
     
     res.json({
-      token,
+      rtcToken,
+      rtmToken,
       appId,
       channelName: actualChannelName,
       uid: uidNumber,
@@ -176,8 +179,9 @@ export async function createLivestream(req: Request, res: Response) {
     
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
-    // Generate a token with host privileges
-    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE);
+    // Generate tokens with host privileges
+    const rtcToken = generateRtcToken(channelName, uidNumber, PUBLISHER_ROLE);
+    const rtmToken = generateRtmToken(uidNumber.toString());
 
     console.log(`Creating livestream: ${title} with ID ${streamId} and channel ${channelName}`);
     
@@ -212,7 +216,8 @@ export async function createLivestream(req: Request, res: Response) {
         title,
         hostName: userName,
         channelName,
-        token,
+        rtcToken,
+        rtmToken,
         appId,
         uid: uidNumber,
         createdAt: new Date().toISOString(),

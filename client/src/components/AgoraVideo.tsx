@@ -114,7 +114,8 @@ interface ChatMessage {
 interface AgoraVideoProps {
   appId: string;
   channelName: string;
-  token?: string;
+  rtcToken?: string;
+  rtmToken?: string;
   uid?: number;
   role?: 'host' | 'audience';
   userName: string;
@@ -124,7 +125,8 @@ interface AgoraVideoProps {
 export function AgoraVideo({ 
   appId, 
   channelName, 
-  token, 
+  rtcToken,
+  rtmToken,
   uid = Math.floor(Math.random() * 1000000),
   role = 'host',
   userName,
@@ -181,7 +183,8 @@ export function AgoraVideo({
           
           // Initialize RTM Client
           await rtmClient.login({
-            uid: uid.toString()
+            uid: uid.toString(),
+            token: rtmToken || undefined
           });
           
           // Create RTM Channel
@@ -406,7 +409,7 @@ export function AgoraVideo({
       
       console.log("All Agora resources cleaned up");
     };
-  }, [appId, role, channelName, uid, userName]);
+  }, [appId, role, channelName, uid, userName, rtcToken, rtmToken]);
 
   // Join call when ready
   const joinChannel = async () => {
@@ -417,7 +420,7 @@ export function AgoraVideo({
       const client = clientRef.current;
       
       // Join the channel
-      await client.join(appId, channelName, token || null, uid);
+      await client.join(appId, channelName, rtcToken || null, uid);
       console.log("Joined Agora channel:", channelName);
       
       // Publish tracks if host
