@@ -14,7 +14,8 @@ interface LivestreamInterfaceProps {
   initialText?: string;
   streamInfo?: {
     appId: string | null;
-    token: string | null;
+    rtcToken: string | null;
+    rtmToken: string | null;
     channelName: string | null;
     uid: number | null;
   };
@@ -108,7 +109,8 @@ export default function LivestreamInterface({
     isLoading: agoraLoading,
     error: agoraError,
     appId,
-    token,
+    rtcToken,
+    rtmToken,
     channelName,
     uid,
     role,
@@ -131,7 +133,7 @@ export default function LivestreamInterface({
   useEffect(() => {
     const initLivestream = async () => {
       try {
-        if (streamInfo && streamInfo.appId && streamInfo.token && streamInfo.channelName) {
+        if (streamInfo && streamInfo.appId && streamInfo.rtcToken && streamInfo.rtmToken && streamInfo.channelName) {
           console.log('Using provided stream info:', streamInfo);
           
           // We already have all the info needed to connect, set stream as active
@@ -430,21 +432,23 @@ export default function LivestreamInterface({
                     </div>
                   ) : (
                     /* Use Agora for video streaming */
-                    (streamInfo?.appId && streamInfo?.token && streamInfo?.channelName) ? (
+                    (streamInfo?.appId && streamInfo?.rtcToken && streamInfo?.rtmToken && streamInfo?.channelName) ? (
                       <AgoraVideo 
                         appId={streamInfo.appId}
                         channelName={streamInfo.channelName}
-                        token={streamInfo.token}
+                        rtcToken={streamInfo.rtcToken}
+                        rtmToken={streamInfo.rtmToken}
                         uid={streamInfo.uid || undefined}
                         role={'host'}
                         userName={userName}
                         onToggleDrawer={toggleDrawer}
                       />
-                    ) : (appId && token) ? (
+                    ) : (appId && rtcToken && rtmToken) ? (
                       <AgoraVideo 
                         appId={appId}
                         channelName={channelName}
-                        token={token}
+                        rtcToken={rtcToken}
+                        rtmToken={rtmToken}
                         uid={uid || undefined}
                         role={role}
                         userName={userName}
