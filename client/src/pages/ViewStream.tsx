@@ -9,6 +9,11 @@ interface StreamParams {
   streamId?: string;
 }
 
+// Helper to check if a string is a valid stream ID format
+function isValidStreamId(id: string): boolean {
+  return /^[a-zA-Z0-9_-]{6,}$/.test(id);
+}
+
 export default function ViewStream() {
   const [, setLocation] = useLocation();
   const params = useParams<StreamParams>();

@@ -116,12 +116,30 @@ export async function createLivestream(req: Request, res: Response) {
     // Generate a token with host privileges
     const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE);
 
-    // In a real implementation, you would save the livestream details to a database
-    // For now, we just return the channel details
+    // Create a unique stream ID
+    const streamId = channelName;
+
+    // Update global mappings for this stream
+    if (global.streamIdToChannel) {
+      global.streamIdToChannel.set(streamId, channelName);
+    }
+
+    if (global.streamViewers) {
+      global.streamViewers.set(channelName, {
+        count: 1, // Start with 1 viewer (the streamer)
+        title: title,
+        hostName: userName,
+        streamId: streamId,
+        isActive: true,
+        lastUpdated: Date.now()
+      });
+    }
+
+    // Return the live stream details
     res.json({
       success: true,
       livestream: {
-        id: channelName,
+        id: streamId,
         title,
         hostName: userName,
         channelName,
