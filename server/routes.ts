@@ -496,12 +496,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Global store for stream viewer counts (in a real app this would be in Redis or a database)
-  const streamViewers = new Map<string, {
+  // Initialize global maps for stream data (in a real app these would be in a database)
+  global.streamViewers = global.streamViewers || new Map<string, {
     count: number,
     title: string,
+    streamId?: string, // Unique identifier for the stream
+    hostName?: string, // Host name
+    hostAvatar?: string, // Host avatar URL
+    isActive?: boolean, // Whether stream is currently active
     lastUpdated: number
   }>();
+  
+  global.streamIdToChannel = global.streamIdToChannel || new Map<string, string>();
+  
+  // Use references to the global maps
+  const streamViewers = global.streamViewers;
+  const streamIdToChannel = global.streamIdToChannel;
 
   // Get stream details by channel name
   app.get("/api/streams/:channelName", async (req, res) => {
@@ -611,6 +621,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to disconnect wallet" });
     }
   });
+
+  // Stream ID validation endpoint
+  app.get("/api/livestreams/:streamId/validate", async (req, res) => {
+    try {
+      const { streamId } = req.params;
+      
+      if (!streamId) {
+        return res.status(400).json({ error: "Stream ID is required" });
+      }
+      
+      // Check if we have this streamId in our mapping
+      const channelName = streamIdToChannel.get(streamId);
+      
+      if (!channelName) {
+        // For demo purposes, accept any formatted stream ID
+        if (/^[a-zA-Z0-9_-]{6,}$/.test(streamId)) {
+          // This is a valid format for a stream ID
+          // Store it with a generated channel name
+          const newChannelName = `stream_${streamId}`;
+          streamIdToChannel.set(streamId, newChannelName);
+          
+          // Initialize the viewer data
+          if (!streamViewers.has(newChannelName)) {
+            streamViewers.set(newChannelName, {
+              count: 1, // Start with 1 viewer (the streamer)
+              title: `Live Stream ${streamId}`,
+              streamId: streamId,
+              hostName: "Host", // Default name
+              isActive: true,
+              lastUpdated: Date.now()
+            });
+          }
+          
+          return res.status(200).json({ 
+            isActive: true,
+            channelName: newChannelName
+          });
+        }
+        
+        // If not found and not a valid format
+        return res.status(404).json({ 
+          error: "Stream not found",
+          isActive: false
+        });
+      }
+      
+      // Check if the stream is active
+      const viewerData = streamViewers.get(channelName);
+      const isActive = viewerData ? true : false;
+      
+      return res.status(200).json({ 
+        isActive,
+        channelName,
+        ...viewerData
+      });
+    } catch (error) {
+      console.error("Error validating stream ID:", error);
+      return res.status(500).json({ error: "Failed to validate stream" });
+    }
+  });
+  
+  // Stream data by ID endpoint
+  app.get("/api/livestreams/:streamId", async (req, res) => {
+    try {
+      const { streamId } = req.params;
+      
+      if (!streamId) {
+        return res.status(400).json({ error: "Stream ID is required" });
+      }
+      
+      // Check if we have this streamId in our mapping
+      const channelName = streamIdToChannel.get(streamId);
+      
+      if (!channelName) {
+        return res.status(404).json({ error: "Stream not found" });
+      }
+      
+      // Get the viewer data
+      const viewerData = streamViewers.get(channelName);
+      
+      if (!viewerData) {
+        return res.status(404).json({ error: "Stream data not found" });
+      }
+      
+      return res.status(200).json({
+        streamId,
+        channelName,
+        title: viewerData.title,
+        hostName: viewerData.hostName || "Host",
+        hostAvatar: viewerData.hostAvatar,
+        viewerCount: viewerData.count,
+        isActive: true,
+        timestamp: viewerData.lastUpdated
+      });
+    } catch (error) {
+      console.error("Error getting stream data:", error);
+      return res.status(500).json({ error: "Failed to get stream data" });
+    }
+  });
+
+  // End of stream-related API routes
 
   const httpServer = createServer(app);
 
