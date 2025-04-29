@@ -428,6 +428,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/agora/livestream", createAgoraLivestream);
   
+  // Add endpoints to update viewer counts
+  app.post("/api/streams/:channelName/join", (req, res) => {
+    try {
+      const { channelName } = req.params;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: "Channel name is required" });
+      }
+      
+      // Get current viewer data or initialize new
+      let viewerData = streamViewers.get(channelName);
+      
+      if (!viewerData) {
+        viewerData = {
+          count: 1, // Start with 1 viewer (the streamer)
+          title: channelName.includes('demo') 
+            ? "Jaja Games Fighting Championship" 
+            : channelName.startsWith("saved") 
+              ? "Recorded Stream" 
+              : `${channelName} Live Stream`,
+          lastUpdated: Date.now()
+        };
+      } else {
+        // Increment viewers
+        viewerData.count += 1;
+        viewerData.lastUpdated = Date.now();
+      }
+      
+      streamViewers.set(channelName, viewerData);
+      
+      return res.status(200).json({ 
+        success: true, 
+        viewerCount: viewerData.count 
+      });
+    } catch (error) {
+      console.error("Error joining stream:", error);
+      return res.status(500).json({ error: "Failed to join stream" });
+    }
+  });
+  
+  app.post("/api/streams/:channelName/leave", (req, res) => {
+    try {
+      const { channelName } = req.params;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: "Channel name is required" });
+      }
+      
+      // Get current viewer data
+      const viewerData = streamViewers.get(channelName);
+      
+      if (viewerData) {
+        // Decrement viewers but never below 1 (the host)
+        viewerData.count = Math.max(1, viewerData.count - 1);
+        viewerData.lastUpdated = Date.now();
+        streamViewers.set(channelName, viewerData);
+      }
+      
+      return res.status(200).json({ 
+        success: true, 
+        viewerCount: viewerData ? viewerData.count : 0 
+      });
+    } catch (error) {
+      console.error("Error leaving stream:", error);
+      return res.status(500).json({ error: "Failed to leave stream" });
+    }
+  });
+  
+  // Global store for stream viewer counts (in a real app this would be in Redis or a database)
+  const streamViewers = new Map<string, {
+    count: number,
+    title: string,
+    lastUpdated: number
+  }>();
+
   // Get stream details by channel name
   app.get("/api/streams/:channelName", async (req, res) => {
     try {
@@ -437,14 +512,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Channel name is required" });
       }
       
+      // Check if we have existing viewer data for this channel
+      if (!streamViewers.has(channelName)) {
+        // Initialize with starting data
+        streamViewers.set(channelName, {
+          count: 1, // Start with 1 viewer (the streamer)
+          title: channelName.includes('demo') 
+            ? "Jaja Games Fighting Championship" 
+            : channelName.startsWith("saved") 
+              ? "Recorded Stream" 
+              : `${channelName} Live Stream`,
+          lastUpdated: Date.now()
+        });
+      } else {
+        // Update the last activity time
+        const viewerData = streamViewers.get(channelName)!;
+        viewerData.lastUpdated = Date.now();
+        streamViewers.set(channelName, viewerData);
+      }
+      
+      const viewerData = streamViewers.get(channelName)!;
+      
       // In a production app, you would fetch this from the database
-      // For now, return some dummy data based on the channel name
       const streamData = {
         channelName,
-        title: channelName.startsWith("saved") ? "Recorded Stream" : "Live Stream",
+        title: viewerData.title,
         hostName: "Divine Samuel",
         hostAvatar: "https://randomuser.me/api/portraits/women/32.jpg",
-        viewerCount: Math.floor(Math.random() * 1000) + 100,
+        viewerCount: viewerData.count,
         status: channelName.startsWith("saved") ? "recorded" : "live",
         description: "This is a sample stream description."
       };

@@ -135,14 +135,42 @@ export default function ViewerStreamInterface({
   const pipVideoRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
   
-  // Set the initial viewer count from props
+  // Set the initial viewer count and handle joining/leaving the stream
   useEffect(() => {
     // If externalViewerCount is provided externally (from API), use it as the base
     if (externalViewerCount && externalViewerCount > 0) {
       setBaseViewerCount(externalViewerCount);
       setViewerCount(externalViewerCount);
     }
-  }, [externalViewerCount]);
+
+    // Call the join endpoint to increase viewer count
+    const joinStream = async () => {
+      try {
+        const response = await fetch(`/api/streams/${channelName}/join`, { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setViewerCount(data.viewerCount);
+        }
+      } catch (error) {
+        console.error('Error joining stream:', error);
+      }
+    };
+    
+    joinStream();
+    
+    // Clean up - call leave endpoint when component unmounts
+    return () => {
+      // Leave the stream
+      fetch(`/api/streams/${channelName}/leave`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      }).catch(error => console.error('Error leaving stream:', error));
+    };
+  }, [channelName, externalViewerCount]);
   
   // Initialize the Agora RTC and RTM clients
   useEffect(() => {
@@ -245,7 +273,7 @@ export default function ViewerStreamInterface({
           // If we haven't already added this user
           if (!remoteUsers.find(u => u.uid === user.uid)) {
             setRemoteUsers(prev => [...prev, user]);
-            setViewerCount(prev => prev + 1);
+            // We handle viewer counts via API now
           }
           
           // Handle video tracks
