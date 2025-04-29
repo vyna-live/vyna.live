@@ -15,7 +15,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/livestream" component={Livestream} />
       <Route path="/chat" component={Home} />
-      <Route path="/stream/:channelName" component={ViewStream} />
+      <Route path="/view/:channelName" component={ViewStream} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -577,32 +577,36 @@ export default function ViewerStreamInterface({
               <div ref={pipVideoRef} className="absolute top-4 left-4 w-40 h-24 rounded-lg overflow-hidden border border-gray-700 z-20"></div>
             )}
             
-            {/* Chat messages that appear and fade away */}
+            {/* Chat messages display area */}
             <div 
               ref={messageContainerRef}
-              className="absolute bottom-24 left-4 max-w-md max-h-[50vh] overflow-y-auto px-4 py-2"
+              className="absolute bottom-24 left-4 w-64 sm:w-72 md:w-80 max-h-[40vh] overflow-y-auto bg-black/30 backdrop-blur-sm rounded-lg border border-gray-700/50 px-2 py-2"
               style={{ scrollBehavior: 'smooth' }}
             >
-              {chatMessages.map((msg, idx) => (
-                <div key={idx} className="viewer-chat-message mb-2 animate-in fade-in duration-300">
-                  <div className="flex items-start">
-                    <div className={`w-6 h-6 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-xs shadow-sm`}>
-                      {msg.name.charAt(0)}
-                    </div>
-                    <div className="ml-2">
-                      <div className="flex items-center">
-                        <span className="text-white text-xs font-medium">{msg.name}</span>
-                        {msg.isHost && (
-                          <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[9px] ml-1 px-1 py-0.5 rounded text-white font-medium">
-                            HOST
-                          </span>
-                        )}
+              {chatMessages.length > 0 ? (
+                chatMessages.map((msg, idx) => (
+                  <div key={idx} className="viewer-chat-message mb-2 animate-in fade-in duration-300">
+                    <div className="flex items-start">
+                      <div className={`w-5 h-5 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-xs shadow-sm`}>
+                        {msg.name.charAt(0)}
                       </div>
-                      <div className="text-gray-200 text-sm">{msg.message}</div>
+                      <div className="ml-2">
+                        <div className="flex items-center">
+                          <span className="text-white text-xs font-medium">{msg.name}</span>
+                          {msg.isHost && (
+                            <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[9px] ml-1 px-1 py-0.5 rounded text-white font-medium">
+                              HOST
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-gray-200 text-xs">{msg.message}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-center text-gray-400 text-xs py-2">Chat messages will appear here</div>
+              )}
             </div>
             
             {/* Centered control buttons (like in the image) */}
@@ -638,21 +642,21 @@ export default function ViewerStreamInterface({
       </div>
       
       {/* Bottom chat input */}
-      <div className="absolute bottom-4 left-4 right-4 z-20">
-        <form onSubmit={handleSendMessage} className="max-w-md relative">
+      <div className="absolute bottom-4 left-4 z-20">
+        <form onSubmit={handleSendMessage} className="relative">
           <input
             type="text"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             placeholder="Type a message..."
-            className="w-full bg-black/60 backdrop-blur-sm text-white placeholder-gray-400 border border-gray-700 rounded-full py-3 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50"
+            className="w-64 sm:w-72 md:w-80 bg-black/60 backdrop-blur-sm text-white placeholder-gray-400 border border-gray-700 rounded-full py-2 px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50"
           />
           <button 
             type="submit" 
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
             disabled={!chatInput.trim()}
           >
-            <Send size={18} />
+            <Send size={16} />
           </button>
         </form>
       </div>
