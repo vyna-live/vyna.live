@@ -1,18 +1,39 @@
 import { Sparkles, Zap } from "lucide-react";
 import Logo from "./Logo";
+import SolanaWalletButton from "./SolanaWalletButton";
 
 interface HeaderProps {
   username: string;
 }
 
 export default function Header({ username }: HeaderProps) {
+  const handleWalletConnect = async (publicKey: string) => {
+    // Here we would update the user's wallet address in the database
+    console.log('Wallet connected with public key:', publicKey);
+    // This is where you'd make an API call to update the user record
+    // Example: await fetch('/api/users/wallet', { method: 'POST', body: JSON.stringify({ walletAddress: publicKey }) ... })
+  };
+
+  const handleWalletDisconnect = async () => {
+    // Here we would clear the user's wallet address in the database
+    console.log('Wallet disconnected');
+    // This is where you'd make an API call to update the user record
+    // Example: await fetch('/api/users/wallet', { method: 'DELETE' ... })
+  };
+
   return (
     <div className="mb-10 animate-fade-in">
       <div className="flex items-center justify-between mb-3">
         <Logo variant="full" size="lg" className="max-w-[140px]" />
-        <div className="flex items-center space-x-2">
-          <Sparkles className="h-5 w-5 text-[#5D1C34]" />
-          <span className="text-sm font-medium text-[#5D1C34]">STREAMCAST AI</span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="h-5 w-5 text-[#5D1C34]" />
+            <span className="text-sm font-medium text-[#5D1C34]">STREAMCAST AI</span>
+          </div>
+          <SolanaWalletButton 
+            onWalletConnect={handleWalletConnect}
+            onWalletDisconnect={handleWalletDisconnect}
+          />
         </div>
       </div>
       
