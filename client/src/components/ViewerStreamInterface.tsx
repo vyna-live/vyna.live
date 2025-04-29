@@ -92,7 +92,7 @@ export default function ViewerStreamInterface({
   streamTitle,
   hostName,
   hostAvatar,
-  viewerCount: initialViewerCount
+  viewerCount: externalViewerCount
 }: ViewerStreamInterfaceProps) {
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,12 +120,12 @@ export default function ViewerStreamInterface({
   
   // Set the initial viewer count from props
   useEffect(() => {
-    // If initialViewerCount is provided externally (from API), use it as the base
-    if (initialViewerCount && initialViewerCount > 0) {
-      setBaseViewerCount(initialViewerCount);
-      setViewerCount(initialViewerCount);
+    // If externalViewerCount is provided externally (from API), use it as the base
+    if (externalViewerCount && externalViewerCount > 0) {
+      setBaseViewerCount(externalViewerCount);
+      setViewerCount(externalViewerCount);
     }
-  }, [initialViewerCount]);
+  }, [externalViewerCount]);
   
   // Initialize the Agora RTC and RTM clients
   useEffect(() => {
