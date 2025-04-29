@@ -839,6 +839,13 @@ export function AgoraVideo({
         )}
       </div>
       
+      {/* PIP camera view when screen sharing */}
+      {isScreenSharing && videoTrackRef.current && (
+        <div className="absolute top-4 left-4 w-40 h-24 rounded-lg overflow-hidden border border-gray-700 z-20">
+          <VideoPlayer videoTrack={videoTrackRef.current} />
+        </div>
+      )}
+      
       {/* Custom controls - more stylish than Agora's */}
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
         <button 
@@ -867,8 +874,8 @@ export function AgoraVideo({
         </button>
       </div>
       
-      {/* Live indicator */}
-      <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center">
+      {/* Live indicator - repositioned when screen sharing is active */}
+      <div className={`absolute ${isScreenSharing ? 'top-4 left-52' : 'top-4 left-4'} bg-red-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center transition-all duration-300`}>
         <span className="w-2 h-2 bg-white rounded-full animate-pulse mr-1.5"></span>
         LIVE
       </div>

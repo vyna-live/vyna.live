@@ -583,10 +583,10 @@ export default function ViewerStreamInterface({
               <div ref={pipVideoRef} className="absolute top-4 left-4 w-40 h-24 rounded-lg overflow-hidden border border-gray-700 z-20"></div>
             )}
             
-            {/* Chat messages display area */}
+            {/* Chat messages display area - more compact */}
             <div 
               ref={messageContainerRef}
-              className="absolute bottom-24 left-4 w-64 sm:w-72 md:w-80 max-h-[40vh] overflow-y-auto bg-black/30 backdrop-blur-sm rounded-lg border border-gray-700/50 px-2 py-2"
+              className="absolute bottom-20 left-4 w-56 sm:w-64 md:w-72 max-h-[30vh] overflow-y-auto bg-black/30 backdrop-blur-sm rounded-lg border border-gray-700/50 px-2 py-1.5"
               style={{ scrollBehavior: 'smooth' }}
             >
               {chatMessages.length > 0 ? (
@@ -647,7 +647,7 @@ export default function ViewerStreamInterface({
         )}
       </div>
       
-      {/* Bottom chat input */}
+      {/* Bottom chat input - more compact */}
       <div className="absolute bottom-4 left-4 z-20">
         <form onSubmit={handleSendMessage} className="relative">
           <input
@@ -655,14 +655,14 @@ export default function ViewerStreamInterface({
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
             placeholder="Type a message..."
-            className="w-64 sm:w-72 md:w-80 bg-black/60 backdrop-blur-sm text-white placeholder-gray-400 border border-gray-700 rounded-full py-2 px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50"
+            className="w-56 sm:w-64 md:w-72 bg-black/60 backdrop-blur-sm text-white placeholder-gray-400 border border-gray-700 rounded-full py-1.5 px-3 pr-8 text-xs focus:outline-none focus:ring-1 focus:ring-[#5D1C34]/50"
           />
           <button 
             type="submit" 
             className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
             disabled={!chatInput.trim()}
           >
-            <Send size={16} />
+            <Send size={14} />
           </button>
         </form>
       </div>
