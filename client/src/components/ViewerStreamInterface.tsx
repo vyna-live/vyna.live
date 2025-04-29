@@ -351,8 +351,16 @@ export default function ViewerStreamInterface({
         });
         
         // Join the channel with RTC token
-        await agoraClient.join(appId, channelName, rtcToken || null, uid);
-        console.log("Joined Agora RTC channel:", channelName);
+        console.log("Attempting to join Agora RTC channel with token:", rtcToken ? `${rtcToken.substring(0, 20)}...` : 'null');
+        
+        // Make sure we have a valid token
+        if (!rtcToken) {
+          throw new Error("Missing or invalid RTC token");
+        }
+        
+        // Pass token as string not null
+        await agoraClient.join(appId, channelName, rtcToken, uid);
+        console.log("Successfully joined Agora RTC channel:", channelName);
         
         setIsJoined(true);
         setIsLoading(false);
