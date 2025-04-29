@@ -44,28 +44,35 @@ function generateRtcToken(channelName: string, uid: number, role: number, expira
       privilegeExpireTime
     });
 
-    // Try to build the RTC token using the agora-token package
-    return AgoraToken.RtcTokenBuilder.buildTokenWithUid(
-      appId,
-      appCertificate,
-      channelName,
-      uid,
-      role,
-      privilegeExpireTime,
-      privilegeExpireTime // Added privilegeExpire parameter
-    );
-  } catch (error) {
-    console.error('Error generating Agora RTC token:', error);
-    
-    // If we're in development mode, return a placeholder token for testing
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Using placeholder RTC token for development');
-      // This is just a placeholder token pattern that resembles a real token
-      // It will not work with Agora servers but lets testing continue
-      return `00${appId}${channelName.replace(/[^a-zA-Z0-9]/g, '')}IAD${uid}${Math.floor(Date.now() / 1000)}${role}`;
+    // Enhanced error handling and debugging for RTC token generation
+    try {
+      console.log('Using AgoraToken.RtcTokenBuilder.buildTokenWithUid with proper parameters');
+      
+      // Try to build the RTC token using the agora-token package
+      // For RTC tokens, use the RtcTokenBuilder.buildTokenWithUid method
+      const token = AgoraToken.RtcTokenBuilder.buildTokenWithUid(
+        appId,
+        appCertificate,
+        channelName,
+        uid,
+        role,
+        privilegeExpireTime,
+        privilegeExpireTime // Added privilegeExpire parameter
+      );
+      
+      console.log(`Successfully generated RTC token: ${token.substring(0, 10)}...`);
+      return token;
+    } catch (primaryError) {
+      console.error('Error in primary RTC token generation method:', primaryError);
+      throw primaryError;
     }
+  } catch (error) {
+    console.error('All RTC token generation methods failed:', error);
     
-    throw error;
+    // We need real tokens for RTC to work
+    // Clearly communicate the issue
+    console.error('Cannot generate valid RTC token - Agora RTC may not function correctly');
+    throw new Error('Failed to generate valid RTC token');
   }
 }
 
@@ -89,26 +96,33 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
       privilegeExpireTime
     });
 
-    // Generate a token using the new agora-token package
-    // Based on the API: RtmTokenBuilder.buildToken(appId, appCertificate, userId, expire)
-    return AgoraToken.RtmTokenBuilder.buildToken(
-      appId,
-      appCertificate,
-      userId,
-      privilegeExpireTime
-    );
-  } catch (error) {
-    console.error('Error generating Agora RTM token:', error);
-    
-    // Final fallback for development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Using placeholder RTM token for development');
-      // This is just a placeholder token pattern that resembles a real token
-      // It will not work with Agora servers but lets testing continue
-      return `00${appId}RTM${userId.replace(/[^a-zA-Z0-9]/g, '')}IAD${Math.floor(Date.now() / 1000)}`;
+    // First try using the agora-token package with proper params
+    try {
+      // Enhanced error handling and debugging
+      console.log('Using AgoraToken.RtmTokenBuilder.buildToken with proper parameters');
+      
+      // Generate a token using the agora-token package
+      // Important: For RTM tokens, use the RtmTokenBuilder.buildToken method
+      const token = AgoraToken.RtmTokenBuilder.buildToken(
+        appId,
+        appCertificate,
+        userId,
+        privilegeExpireTime
+      );
+      
+      console.log(`Successfully generated RTM token: ${token.substring(0, 10)}...`);
+      return token;
+    } catch (primaryError) {
+      console.error('Error in primary RTM token generation method:', primaryError);
+      throw primaryError;
     }
+  } catch (error) {
+    console.error('All RTM token generation methods failed:', error);
     
-    throw error;
+    // Never use development placeholder tokens - we need real tokens for RTM to work
+    // Clearly communicate the issue
+    console.error('Cannot generate valid RTM token - Agora RTM may not function correctly');
+    throw new Error('Failed to generate valid RTM token - chat functionality may be limited');
   }
 }
 
