@@ -59,7 +59,8 @@ interface ChatMessage {
 interface ViewerStreamInterfaceProps {
   appId: string;
   channelName: string;
-  token?: string;
+  rtcToken?: string;
+  rtmToken?: string;
   uid?: number;
   username: string;
   streamTitle: string;
@@ -71,7 +72,8 @@ interface ViewerStreamInterfaceProps {
 export default function ViewerStreamInterface({
   appId,
   channelName,
-  token,
+  rtcToken,
+  rtmToken,
   uid = Math.floor(Math.random() * 1000000),
   username,
   streamTitle,
