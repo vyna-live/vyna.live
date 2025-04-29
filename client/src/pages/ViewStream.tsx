@@ -37,13 +37,32 @@ export default function ViewStream() {
   useEffect(() => {
     const fetchStreamInfo = async () => {
       try {
+        console.log('ViewStream: Trying to load stream with params:', params);
+        
         // Determine if we're using streamId or channelName
         let channelName = params.channelName;
+        let streamId = params.streamId;
         
-        // If streamId is provided instead of channelName, fetch the channel from the database
-        if (params.streamId && !channelName) {
-          // Get stream details by streamId
-          const streamLookupResponse = await fetch(`/api/livestreams/${params.streamId}`);
+        // Start by validating the stream ID if we have one
+        if (streamId) {
+          console.log('ViewStream: Validating stream ID:', streamId);
+          
+          // First validate the stream - this checks if it's active
+          const validateResponse = await fetch(`/api/livestreams/${streamId}/validate`);
+          
+          if (!validateResponse.ok) {
+            throw new Error('Stream cannot be found or is no longer active');
+          }
+          
+          const validateData = await validateResponse.json();
+          
+          if (!validateData.isActive) {
+            throw new Error('This stream is not currently active');
+          }
+          
+          // Now get the full stream details
+          console.log('ViewStream: Getting stream details for:', streamId);
+          const streamLookupResponse = await fetch(`/api/livestreams/${streamId}`);
           
           if (!streamLookupResponse.ok) {
             throw new Error('Stream not found or no longer active');
@@ -51,6 +70,8 @@ export default function ViewStream() {
           
           const streamInfo = await streamLookupResponse.json();
           channelName = streamInfo.channelName;
+          
+          console.log('ViewStream: Found channel name:', channelName);
           
           if (!channelName) {
             throw new Error('Invalid stream data - missing channel information');
@@ -61,6 +82,7 @@ export default function ViewStream() {
           throw new Error('No channel name specified');
         }
         
+        console.log('ViewStream: Getting Agora App ID');
         // First get the app ID
         const appIdResponse = await fetch('/api/agora/app-id');
         if (!appIdResponse.ok) {
@@ -71,6 +93,7 @@ export default function ViewStream() {
         // Generate a random UID for the audience member
         const audienceUid = Math.floor(Math.random() * 1000000);
         
+        console.log('ViewStream: Getting Agora audience token for channel:', channelName);
         // Get audience token
         const tokenResponse = await fetch('/api/agora/audience-token', {
           method: 'POST',
@@ -90,6 +113,7 @@ export default function ViewStream() {
         
         const tokenData = await tokenResponse.json();
         
+        console.log('ViewStream: Getting stream details for channel:', channelName);
         // Get stream details from our API
         const streamDetailsResponse = await fetch(`/api/streams/${channelName}`);
         
@@ -99,12 +123,20 @@ export default function ViewStream() {
         
         const streamDetails = await streamDetailsResponse.json();
         
+        console.log('ViewStream: Joining stream:', channelName);
         // Track that this viewer joined the stream to increment the count
         await fetch(`/api/streams/${channelName}/join`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           }
+        });
+        
+        console.log('ViewStream: Setting stream data', {
+          appId: appIdData.appId,
+          channelName,
+          streamTitle: streamDetails.title,
+          hostName: streamDetails.hostName,
         });
         
         setStreamData({
@@ -133,13 +165,13 @@ export default function ViewStream() {
         
         window.addEventListener('beforeunload', handleBeforeUnload);
         
+        setIsLoading(false);
+        
         // Cleanup function
         return () => {
           window.removeEventListener('beforeunload', handleBeforeUnload);
           handleBeforeUnload();
         };
-        
-        setIsLoading(false);
       } catch (err) {
         console.error('Error fetching stream info:', err);
         setError(err instanceof Error ? err.message : 'Failed to load stream');

@@ -25,13 +25,31 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
     
     try {
       // Extract the stream ID from the link
-      // Links could be in format: vyna.live/stream/[streamId] or just the streamId
+      // Links could be in format: 
+      // - domain.com/view-stream/streamId
+      // - domain.com/livestream/streamId
+      // - http(s)://domain.com/view-stream/streamId
+      // - or just the streamId itself
       let streamId = streamLink.trim();
       
-      if (streamId.includes('/')) {
+      // Check for full URL pattern
+      if (streamId.includes('://')) {
+        // Remove protocol
+        const withoutProtocol = streamId.split('://')[1];
+        
+        // Split by slashes and get the last part as stream ID
+        const parts = withoutProtocol.split('/');
+        if (parts.length > 1) {
+          streamId = parts[parts.length - 1];
+        }
+      } 
+      // For non-URL but with slashes (like vyna.live/view-stream/streamId)
+      else if (streamId.includes('/')) {
         const parts = streamId.split('/');
         streamId = parts[parts.length - 1];
       }
+      
+      console.log("Extracted Stream ID:", streamId);
       
       // Validate the stream ID
       const response = await fetch(`/api/livestreams/${streamId}/validate`);
@@ -46,9 +64,12 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
         throw new Error('This stream is no longer active');
       }
       
+      console.log("Stream is active, redirecting to:", `/view-stream/${streamId}`);
+      
       // Redirect to the stream view page
       setLocation(`/view-stream/${streamId}`);
     } catch (error) {
+      console.error("Join stream error:", error);
       if (error instanceof Error) {
         setError(error.message);
       } else {

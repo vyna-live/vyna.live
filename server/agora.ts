@@ -100,6 +100,20 @@ export function getAudienceToken(req: Request, res: Response) {
   }
 }
 
+// Declare types for global objects
+declare global {
+  var streamIdToChannel: Map<string, string>;
+  var streamViewers: Map<string, {
+    count: number,
+    title: string,
+    streamId?: string,
+    hostName?: string,
+    hostAvatar?: string,
+    isActive?: boolean,
+    lastUpdated: number
+  }>;
+}
+
 // Create a livestream
 export async function createLivestream(req: Request, res: Response) {
   try {
@@ -119,21 +133,30 @@ export async function createLivestream(req: Request, res: Response) {
     // Create a unique stream ID
     const streamId = channelName;
 
-    // Update global mappings for this stream
-    if (global.streamIdToChannel) {
-      global.streamIdToChannel.set(streamId, channelName);
+    console.log(`Creating livestream: ${title} with ID ${streamId}`);
+    
+    // Initialize global maps if they don't exist yet
+    if (!global.streamIdToChannel) {
+      global.streamIdToChannel = new Map();
+    }
+    
+    if (!global.streamViewers) {
+      global.streamViewers = new Map();
     }
 
-    if (global.streamViewers) {
-      global.streamViewers.set(channelName, {
-        count: 1, // Start with 1 viewer (the streamer)
-        title: title,
-        hostName: userName,
-        streamId: streamId,
-        isActive: true,
-        lastUpdated: Date.now()
-      });
-    }
+    // Update global mappings for this stream
+    global.streamIdToChannel.set(streamId, channelName);
+    console.log(`Added mapping: ${streamId} -> ${channelName}`);
+
+    global.streamViewers.set(channelName, {
+      count: 1, // Start with 1 viewer (the streamer)
+      title: title,
+      hostName: userName,
+      streamId: streamId,
+      isActive: true,
+      lastUpdated: Date.now()
+    });
+    console.log(`Added viewer data for channel: ${channelName}`);
 
     // Return the live stream details
     res.json({

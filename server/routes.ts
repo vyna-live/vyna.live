@@ -631,19 +631,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Stream ID is required" });
       }
       
-      // Check if we have this streamId in our mapping
-      const channelName = streamIdToChannel.get(streamId);
+      console.log(`Validating stream ID: ${streamId}`);
+      // Log current mappings in a more compatible way
+      const mappings: string[] = [];
+      streamIdToChannel.forEach((channel, id) => {
+        mappings.push(`${id} -> ${channel}`);
+      });
+      console.log(`Current stream mappings:`, mappings);
+      
+      // First, try looking up the stream ID directly
+      let channelName = streamIdToChannel.get(streamId);
+      
+      // If not found, check if it's a channel name with stream_ prefix
+      if (!channelName && streamId.startsWith('stream_')) {
+        console.log(`Stream ID appears to be a channel name with stream_ prefix`);
+        
+        // The streamId is already a channel name, so check if we have viewer data for it
+        if (streamViewers.has(streamId)) {
+          channelName = streamId;
+          // For consistency, also add it to the id->channel mapping 
+          const actualId = streamId.replace(/^stream_/, '');
+          streamIdToChannel.set(actualId, streamId);
+          console.log(`Added reverse mapping ${actualId} -> ${streamId}`);
+        }
+      }
       
       if (!channelName) {
-        // For demo purposes, accept any formatted stream ID
+        console.log(`Stream ID ${streamId} not found in mapping`);
+        
+        // Check for our standard format
         if (/^[a-zA-Z0-9_-]{6,}$/.test(streamId)) {
           // This is a valid format for a stream ID
           // Store it with a generated channel name
           const newChannelName = `stream_${streamId}`;
+          console.log(`Creating new mapping ${streamId} -> ${newChannelName}`);
+          
           streamIdToChannel.set(streamId, newChannelName);
           
           // Initialize the viewer data
           if (!streamViewers.has(newChannelName)) {
+            console.log(`Initializing viewer data for ${newChannelName}`);
             streamViewers.set(newChannelName, {
               count: 1, // Start with 1 viewer (the streamer)
               title: `Live Stream ${streamId}`,
@@ -661,6 +688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // If not found and not a valid format
+        console.log(`Stream ID ${streamId} is not in a valid format`);
         return res.status(404).json({ 
           error: "Stream not found",
           isActive: false
@@ -670,6 +698,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if the stream is active
       const viewerData = streamViewers.get(channelName);
       const isActive = viewerData ? true : false;
+      
+      console.log(`Stream ID ${streamId} is mapped to channel ${channelName}, active: ${isActive}`);
+      if (viewerData) {
+        console.log(`Stream data:`, {
+          title: viewerData.title,
+          hostName: viewerData.hostName,
+          count: viewerData.count
+        });
+      }
       
       return res.status(200).json({ 
         isActive,
