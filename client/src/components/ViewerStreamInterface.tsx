@@ -586,61 +586,61 @@ export default function ViewerStreamInterface({
             {/* Chat messages display area - more compact */}
             <div 
               ref={messageContainerRef}
-              className="absolute bottom-20 left-4 w-56 sm:w-64 md:w-72 max-h-[30vh] overflow-y-auto bg-black/30 backdrop-blur-sm rounded-lg border border-gray-700/50 px-2 py-1.5"
+              className="absolute bottom-16 left-4 w-56 sm:w-64 md:w-72 max-h-[30vh] overflow-y-auto bg-black/30 backdrop-blur-sm rounded-lg border border-gray-700/50 px-2 py-1.5"
               style={{ scrollBehavior: 'smooth' }}
             >
               {chatMessages.length > 0 ? (
                 chatMessages.map((msg, idx) => (
-                  <div key={idx} className="viewer-chat-message mb-2 animate-in fade-in duration-300">
+                  <div key={idx} className="viewer-chat-message mb-1.5 animate-in fade-in duration-300">
                     <div className="flex items-start">
-                      <div className={`w-5 h-5 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-xs shadow-sm`}>
+                      <div className={`w-4 h-4 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-[9px] shadow-sm`}>
                         {msg.name.charAt(0)}
                       </div>
-                      <div className="ml-2">
+                      <div className="ml-1.5">
                         <div className="flex items-center">
-                          <span className="text-white text-xs font-medium">{msg.name}</span>
+                          <span className="text-white text-[11px] font-medium">{msg.name}</span>
                           {msg.isHost && (
-                            <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[9px] ml-1 px-1 py-0.5 rounded text-white font-medium">
+                            <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[8px] ml-1 px-1 leading-3 rounded text-white font-medium">
                               HOST
                             </span>
                           )}
                         </div>
-                        <div className="text-gray-200 text-xs">{msg.message}</div>
+                        <div className="text-gray-200 text-[10px] leading-tight">{msg.message}</div>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center text-gray-400 text-xs py-2">Chat messages will appear here</div>
+                <div className="text-center text-gray-400 text-[10px] py-1.5">Chat messages will appear here</div>
               )}
             </div>
             
-            {/* Centered control buttons (like in the image) */}
-            <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/40 backdrop-blur-sm px-6 py-3 rounded-full border border-white/10">
+            {/* Centered control buttons (like in the image) - more compact */}
+            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 bg-black/40 backdrop-blur-sm px-5 py-2 rounded-full border border-white/10">
               <button 
                 onClick={handleSendGift}
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/70 text-white hover:text-pink-400 transition-colors"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/70 text-white hover:text-pink-400 transition-colors"
               >
-                <Gift size={22} />
+                <Gift size={18} />
               </button>
               
               <button 
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/70 text-white hover:text-red-400 transition-colors"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/70 text-white hover:text-red-400 transition-colors"
               >
-                <Heart size={22} />
+                <Heart size={18} />
               </button>
               
               <button 
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/70 text-white hover:text-yellow-400 transition-colors"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/70 text-white hover:text-yellow-400 transition-colors"
               >
-                <Flag size={22} />
+                <Flag size={18} />
               </button>
               
               <button 
                 onClick={handleLeaveStream}
-                className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
               >
-                <X size={22} />
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -648,7 +648,7 @@ export default function ViewerStreamInterface({
       </div>
       
       {/* Bottom chat input - more compact */}
-      <div className="absolute bottom-4 left-4 z-20">
+      <div className="absolute bottom-3 left-4 z-20">
         <form onSubmit={handleSendMessage} className="relative">
           <input
             type="text"
