@@ -21,8 +21,8 @@ export default function ViewStream() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Stream information
-  const [streamData, setStreamData] = useState<{
+  // Stream information with proper types
+  interface StreamData {
     appId: string;
     token: string;
     channelName: string;
@@ -31,7 +31,18 @@ export default function ViewStream() {
     hostAvatar?: string;
     viewerCount?: number;
     uid?: number;
-  } | null>(null);
+  }
+  
+  // Define TokenData interface to better handle the token response
+  interface TokenData {
+    token: string;
+    appId?: string;
+    channelName?: string;
+    uid?: number;
+    role?: string;
+  }
+  
+  const [streamData, setStreamData] = useState<StreamData | null>(null);
   
   // Get audience token and stream info
   useEffect(() => {
@@ -149,10 +160,22 @@ export default function ViewStream() {
           hostName: streamDetails.hostName,
         });
         
+        // Check if we received a valid token and throw an error if not
         if (!tokenData.token) {
           throw new Error('Invalid token received from server');
         }
         
+        // Create a type guard for the token
+        function isValidTokenData(data: any): data is TokenData {
+          return typeof data.token === 'string' && data.token.length > 0;
+        }
+        
+        // Apply the type guard
+        if (!isValidTokenData(tokenData)) {
+          throw new Error('Invalid token format received from server');
+        }
+        
+        // Now TypeScript knows tokenData.token is a string
         setStreamData({
           appId: appIdData.appId,
           token: tokenData.token,
