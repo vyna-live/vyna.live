@@ -22,17 +22,9 @@ const config: ClientConfig = {
 // Custom CSS for Agora components
 const customStyles = `
   .agora-video-player {
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     border: 1px solid rgba(205, 188, 171, 0.2);
-  }
-  
-  .viewer-controls {
-    background: rgba(15, 16, 21, 0.6);
-    backdrop-filter: blur(8px);
-    border-radius: 9999px;
-    padding: 12px;
-    border: 1px solid rgba(205, 188, 171, 0.1);
   }
   
   .viewer-chat-message {
@@ -56,10 +48,35 @@ const customStyles = `
     left: 16px;
     width: 160px;
     height: 90px;
-    border-radius: 8px;
+    border-radius: 14px;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     z-index: 40;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+  
+  /* Glassmorphic effect for controls */
+  .control-button {
+    background-color: rgba(25, 25, 35, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .control-button:hover {
+    background-color: rgba(45, 45, 55, 0.8);
+    transform: scale(1.05);
+  }
+  
+  .control-panel {
+    background-color: rgba(15, 15, 20, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
   }
 `;
 
@@ -490,9 +507,9 @@ export default function ViewerStreamInterface({
     <div className="h-full w-full relative overflow-hidden bg-black flex flex-col">
       <style>{customStyles}</style>
       
-      {/* Top navbar */}
-      <div className="absolute top-0 left-0 right-0 z-30 bg-black/70 backdrop-blur-sm flex items-center justify-between p-4">
-        <div className="flex items-center">
+      {/* Header with stream info */}
+      <div className="absolute top-0 left-0 right-0 z-30 bg-black/60 backdrop-blur-sm flex items-center justify-between p-4">
+        <div className="flex items-center space-x-3">
           <a href="/" className="transition-opacity hover:opacity-80">
             <Logo variant="light" size="sm" className="h-7" />
           </a>
@@ -500,24 +517,33 @@ export default function ViewerStreamInterface({
         
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden mr-2">
-              <img 
-                src={hostAvatar || "https://randomuser.me/api/portraits/women/32.jpg"} 
-                alt="Streamer" 
-                className="w-full h-full object-cover" 
-              />
+            <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden mr-2 border border-white/20">
+              {hostAvatar ? (
+                <img 
+                  src={hostAvatar} 
+                  alt={hostName}
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-[#5D1C34] to-[#A67D44] flex items-center justify-center text-white">
+                  {hostName.charAt(0)}
+                </div>
+              )}
             </div>
             <span className="text-white text-sm font-medium">{hostName}</span>
           </div>
           
-          <div className="text-white text-sm">{streamTitle}</div>
-          
-          <div className="flex items-center bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
-            <div className="flex items-center">
-              <Users size={12} className="text-white mr-1" />
-              <span className="text-white text-xs">{viewerCount}</span>
-            </div>
+          <div className="flex items-center bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
+            <Users size={14} className="text-white mr-2" />
+            <span className="text-white text-sm">{viewerCount}</span>
           </div>
+        </div>
+      </div>
+
+      {/* Stream title at top center */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
+        <div className="text-white text-sm font-medium bg-black/40 backdrop-blur-sm px-4 py-1 rounded-full">
+          {streamTitle}
         </div>
       </div>
       
@@ -548,19 +574,19 @@ export default function ViewerStreamInterface({
             
             {/* PIP camera when screen sharing is active */}
             {isScreenShared && (
-              <div ref={pipVideoRef} className="pip-video"></div>
+              <div ref={pipVideoRef} className="absolute top-4 left-4 w-40 h-24 rounded-lg overflow-hidden border border-gray-700 z-20"></div>
             )}
             
             {/* Chat messages that appear and fade away */}
             <div 
               ref={messageContainerRef}
-              className="absolute bottom-24 left-0 right-0 max-h-[50vh] overflow-y-auto px-4 py-2"
+              className="absolute bottom-24 left-4 max-w-md max-h-[50vh] overflow-y-auto px-4 py-2"
               style={{ scrollBehavior: 'smooth' }}
             >
               {chatMessages.map((msg, idx) => (
                 <div key={idx} className="viewer-chat-message mb-2 animate-in fade-in duration-300">
                   <div className="flex items-start">
-                    <div className={`w-5 h-5 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-xs shadow-sm`}>
+                    <div className={`w-6 h-6 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-xs shadow-sm`}>
                       {msg.name.charAt(0)}
                     </div>
                     <div className="ml-2">
@@ -578,60 +604,57 @@ export default function ViewerStreamInterface({
                 </div>
               ))}
             </div>
+            
+            {/* Centered control buttons (like in the image) */}
+            <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/40 backdrop-blur-sm px-6 py-3 rounded-full border border-white/10">
+              <button 
+                onClick={handleSendGift}
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/70 text-white hover:text-pink-400 transition-colors"
+              >
+                <Gift size={22} />
+              </button>
+              
+              <button 
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/70 text-white hover:text-red-400 transition-colors"
+              >
+                <Heart size={22} />
+              </button>
+              
+              <button 
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/70 text-white hover:text-yellow-400 transition-colors"
+              >
+                <Flag size={22} />
+              </button>
+              
+              <button 
+                onClick={handleLeaveStream}
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+              >
+                <X size={22} />
+              </button>
+            </div>
           </div>
         )}
       </div>
       
-      {/* Bottom controls */}
-      <div className="relative bg-transparent p-4">
-        <div className="flex items-center justify-center space-x-3">
-          {/* Chat input */}
-          <form onSubmit={handleSendMessage} className="flex-1 max-w-xl relative">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Type a message..."
-              className="w-full bg-[#282828] text-white placeholder-gray-400 rounded-full py-3 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50"
-            />
-            <button 
-              type="submit" 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              disabled={!chatInput.trim()}
-            >
-              <Send size={18} />
-            </button>
-          </form>
-          
-          {/* Action buttons */}
-          <div className="flex items-center space-x-3">
-            <button 
-              onClick={handleSendGift}
-              className="viewer-controls flex items-center justify-center w-10 h-10 text-white hover:text-pink-400 transition-colors"
-            >
-              <Gift size={20} />
-            </button>
-            
-            <button 
-              className="viewer-controls flex items-center justify-center w-10 h-10 text-white hover:text-red-400 transition-colors"
-            >
-              <Heart size={20} />
-            </button>
-            
-            <button 
-              className="viewer-controls flex items-center justify-center w-10 h-10 text-white hover:text-yellow-400 transition-colors"
-            >
-              <Flag size={20} />
-            </button>
-            
-            <button 
-              onClick={handleLeaveStream}
-              className="viewer-controls flex items-center justify-center w-10 h-10 bg-red-500 text-white hover:bg-red-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
+      {/* Bottom chat input */}
+      <div className="absolute bottom-4 left-4 right-4 z-20">
+        <form onSubmit={handleSendMessage} className="max-w-md relative">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            placeholder="Type a message..."
+            className="w-full bg-black/60 backdrop-blur-sm text-white placeholder-gray-400 border border-gray-700 rounded-full py-3 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50"
+          />
+          <button 
+            type="submit" 
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+            disabled={!chatInput.trim()}
+          >
+            <Send size={18} />
+          </button>
+        </form>
       </div>
     </div>
   );
