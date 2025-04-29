@@ -123,6 +123,9 @@ export default function LivestreamInterface({
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("Divine Samuel");
   const [streamTitle, setStreamTitle] = useState<string>("Jaja Games");
+  const [streamId, setStreamId] = useState<string>("");
+  const [shareableLink, setShareableLink] = useState<string>("");
+  const [showShareLink, setShowShareLink] = useState<boolean>(false);
 
   // Initialize livestream
   useEffect(() => {
@@ -173,6 +176,17 @@ export default function LivestreamInterface({
       
       if (result) {
         setIsStreamActive(true);
+        
+        // Generate unique stream ID for the stream
+        const generatedStreamId = result.id || `stream_${Date.now()}`;
+        setStreamId(generatedStreamId);
+        
+        // Generate shareable link
+        const hostUrl = window.location.origin;
+        const link = `${hostUrl}/view-stream/${generatedStreamId}`;
+        setShareableLink(link);
+        setShowShareLink(true);
+        
         toast({
           title: "You're Live!",
           description: "Your stream is now available to viewers",
@@ -408,10 +422,48 @@ export default function LivestreamInterface({
                         <h2 className="text-white text-xl font-medium mb-4">Ready to go live?</h2>
                         <button
                           onClick={handleGoLive}
-                          className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
+                          className="px-6 py-3 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all mb-4"
                         >
                           Start Streaming
                         </button>
+                        
+                        {/* Shareable Link Modal */}
+                        {showShareLink && shareableLink && (
+                          <div className="bg-black/80 backdrop-blur-sm p-4 rounded-lg border border-[#A67D44]/30 mt-4 max-w-md w-full">
+                            <h3 className="text-white text-lg font-medium mb-3">Share your stream</h3>
+                            <p className="text-zinc-400 text-sm mb-3">Copy this link to invite viewers to your livestream:</p>
+                            
+                            <div className="flex items-center bg-zinc-900 rounded overflow-hidden border border-zinc-700 mb-3">
+                              <input 
+                                type="text" 
+                                value={shareableLink} 
+                                readOnly 
+                                className="w-full py-2 px-3 bg-transparent text-white text-sm outline-none"
+                              />
+                              <button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(shareableLink);
+                                  toast({
+                                    title: "Link copied!",
+                                    description: "Share it with your audience",
+                                  });
+                                }}
+                                className="shrink-0 px-3 py-2 bg-[#A67D44] text-white font-medium hover:bg-opacity-90 transition-colors"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                            
+                            <div className="flex justify-end">
+                              <button 
+                                onClick={() => setShowShareLink(false)}
+                                className="text-zinc-400 text-sm hover:text-white transition-colors"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
