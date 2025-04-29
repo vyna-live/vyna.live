@@ -1,44 +1,17 @@
 import { Request, Response } from 'express';
+// Import Agora token module using dynamic import for compatibility
+import AgoraTokenModule from 'agora-token';
 
-// We need to use dynamic imports since we're in an ES module
-let agoraAccessToken: any = null;
-let RtcTokenBuilder: any = null;
-let RtmTokenBuilder: any = null;
+// Create a safer way to access the module
+const AgoraToken = AgoraTokenModule as any;
 
-// Define role constants directly since we're using ESM with a CommonJS module
-const PUBLISHER_ROLE = 1;  // RtcRole.PUBLISHER
-const SUBSCRIBER_ROLE = 2;  // RtcRole.SUBSCRIBER
-const RTM_ROLE = 1;  // RtmRole.Rtm_User
+// Define role constants
+const PUBLISHER_ROLE = 1; // RtcRole.PUBLISHER
+const SUBSCRIBER_ROLE = 2; // RtcRole.SUBSCRIBER
 
-// Initialize the Agora token builders asynchronously
-(async () => {
-  try {
-    // Use dynamic import to load the CommonJS module
-    agoraAccessToken = await import('agora-access-token');
-    
-    // Log available properties
-    console.log('Agora access token import successful');
-    console.log('Available properties:', Object.keys(agoraAccessToken));
-    
-    // Extract the token builders
-    RtcTokenBuilder = agoraAccessToken.RtcTokenBuilder;
-    RtmTokenBuilder = agoraAccessToken.RtmTokenBuilder;
-    
-    // Check if they're available
-    console.log('RtcTokenBuilder:', RtcTokenBuilder ? 'Available' : 'Not available');
-    console.log('RtmTokenBuilder:', RtmTokenBuilder ? 'Available' : 'Not available');
-    
-    if (RtcTokenBuilder) {
-      console.log('RtcTokenBuilder methods:', Object.keys(RtcTokenBuilder));
-    }
-    
-    if (RtmTokenBuilder) {
-      console.log('RtmTokenBuilder methods:', Object.keys(RtmTokenBuilder));
-    }
-  } catch (error) {
-    console.error('Failed to import agora-access-token:', error);
-  }
-})();
+// Log startup info
+console.log('Using agora-token package for token generation');
+console.log('Available roles:', { PUBLISHER: PUBLISHER_ROLE, SUBSCRIBER: SUBSCRIBER_ROLE });
 
 // Agora app credentials from environment variables
 const appId = process.env.AGORA_APP_ID!;
@@ -56,18 +29,8 @@ function generateRtcToken(channelName: string, uid: number, role: number, expira
   }
 
   try {
-    // Check if RtcTokenBuilder is available
-    if (!RtcTokenBuilder) {
-      console.error('RtcTokenBuilder is not available');
-      throw new Error('RtcTokenBuilder is not available');
-    }
-
-    // Check if buildTokenWithUid method exists
-    if (typeof RtcTokenBuilder.buildTokenWithUid !== 'function') {
-      console.error('RtcTokenBuilder.buildTokenWithUid is not a function');
-      console.error('RtcTokenBuilder contents:', RtcTokenBuilder);
-      throw new Error('RtcTokenBuilder.buildTokenWithUid is not a function');
-    }
+    // Log token generation attempt
+    console.log('Attempting to generate RTC token with role:', role);
 
     // Calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
@@ -81,14 +44,15 @@ function generateRtcToken(channelName: string, uid: number, role: number, expira
       privilegeExpireTime
     });
 
-    // Try to build the RTC token
-    return RtcTokenBuilder.buildTokenWithUid(
+    // Try to build the RTC token using the agora-token package
+    return AgoraToken.RtcTokenBuilder.buildTokenWithUid(
       appId,
       appCertificate,
       channelName,
       uid,
       role,
-      privilegeExpireTime
+      privilegeExpireTime,
+      privilegeExpireTime // Added privilegeExpire parameter
     );
   } catch (error) {
     console.error('Error generating Agora RTC token:', error);
@@ -105,10 +69,6 @@ function generateRtcToken(channelName: string, uid: number, role: number, expira
   }
 }
 
-// Import our custom RTM token builder implementation
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
 // Helper to build an RTM token (for chat messaging)
 function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600) {
   if (!areAgoraCredentialsAvailable()) {
@@ -116,6 +76,9 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
   }
 
   try {
+    // Log token generation attempt
+    console.log('Attempting to generate RTM token');
+
     // Calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expirationTimeInSeconds;
@@ -123,39 +86,17 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
     console.log('Generating RTM token with params:', {
       appId: appId ? `${appId.substring(0, 8)}...` : 'undefined',
       userId,
-      RTM_ROLE,
       privilegeExpireTime
     });
-    
-    // We know RtmTokenBuilder is not available in the ES module
-    // So we'll use our fallback directly
-    try {
-      // Load our custom RTM token builder implementation
-      const { RtmTokenBuilder: CustomRtmTokenBuilder } = require('./rtmTokenFallback');
-      
-      if (!CustomRtmTokenBuilder) {
-        throw new Error('Custom RTM token builder not found');
-      }
-      
-      console.log('Using custom RTM token builder');
-      return CustomRtmTokenBuilder.buildToken(
-        appId,
-        appCertificate,
-        userId,
-        RTM_ROLE,
-        privilegeExpireTime
-      );
-    } catch (tokenError) {
-      console.error('Failed to generate RTM token:', tokenError);
-      
-      // Final fallback for development mode - generate a placeholder token
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Using placeholder RTM token for development');
-        return `00${appId}RTM${userId.replace(/[^a-zA-Z0-9]/g, '')}IAD${Math.floor(Date.now() / 1000)}${RTM_ROLE}`;
-      }
-      
-      throw tokenError;
-    }
+
+    // Generate a token using the new agora-token package
+    // Based on the API: RtmTokenBuilder.buildToken(appId, appCertificate, userId, expire)
+    return AgoraToken.RtmTokenBuilder.buildToken(
+      appId,
+      appCertificate,
+      userId,
+      privilegeExpireTime
+    );
   } catch (error) {
     console.error('Error generating Agora RTM token:', error);
     
@@ -164,7 +105,7 @@ function generateRtmToken(userId: string, expirationTimeInSeconds: number = 3600
       console.warn('Using placeholder RTM token for development');
       // This is just a placeholder token pattern that resembles a real token
       // It will not work with Agora servers but lets testing continue
-      return `00${appId}RTM${userId.replace(/[^a-zA-Z0-9]/g, '')}IAD${Math.floor(Date.now() / 1000)}${RTM_ROLE}`;
+      return `00${appId}RTM${userId.replace(/[^a-zA-Z0-9]/g, '')}IAD${Math.floor(Date.now() / 1000)}`;
     }
     
     throw error;
