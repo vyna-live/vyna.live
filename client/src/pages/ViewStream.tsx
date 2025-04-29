@@ -23,6 +23,7 @@ export default function ViewStream() {
     streamTitle: string;
     hostName: string;
     hostAvatar?: string;
+    viewerCount?: number;
   } | null>(null);
   
   // Get audience token and stream info
@@ -73,7 +74,8 @@ export default function ViewStream() {
           channelName: params.channelName,
           streamTitle: streamDetails.title,
           hostName: streamDetails.hostName,
-          hostAvatar: streamDetails.hostAvatar
+          hostAvatar: streamDetails.hostAvatar,
+          viewerCount: streamDetails.viewerCount
         });
         
         setIsLoading(false);
@@ -127,6 +129,7 @@ export default function ViewStream() {
         streamTitle={streamData.streamTitle}
         hostName={streamData.hostName}
         hostAvatar={streamData.hostAvatar}
+        viewerCount={streamData.viewerCount}
       />
     </div>
   );

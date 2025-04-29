@@ -91,7 +91,8 @@ export default function ViewerStreamInterface({
   username,
   streamTitle,
   hostName,
-  hostAvatar
+  hostAvatar,
+  viewerCount: initialViewerCount
 }: ViewerStreamInterfaceProps) {
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,7 +101,7 @@ export default function ViewerStreamInterface({
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [viewerCount, setViewerCount] = useState<number>(0);
-  const [initialViewerCount, setInitialViewerCount] = useState<number>(0);
+  const [baseViewerCount, setBaseViewerCount] = useState<number>(0);
   const [isScreenShared, setIsScreenShared] = useState(false);
   const [mainHostUid, setMainHostUid] = useState<number | null>(null);
   const [, setLocation] = useLocation();
@@ -119,12 +120,12 @@ export default function ViewerStreamInterface({
   
   // Set the initial viewer count from props
   useEffect(() => {
-    // If viewerCount is provided externally (from API), use it as the base
-    if (typeof viewerCount === 'number' && viewerCount > 0) {
-      setInitialViewerCount(viewerCount);
-      setViewerCount(viewerCount);
+    // If initialViewerCount is provided externally (from API), use it as the base
+    if (initialViewerCount && initialViewerCount > 0) {
+      setBaseViewerCount(initialViewerCount);
+      setViewerCount(initialViewerCount);
     }
-  }, []);
+  }, [initialViewerCount]);
   
   // Initialize the Agora RTC and RTM clients
   useEffect(() => {
