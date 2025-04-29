@@ -24,7 +24,8 @@ export default function ViewStream() {
   // Stream information with proper types
   interface StreamData {
     appId: string;
-    token: string;
+    rtcToken: string;
+    rtmToken: string;
     channelName: string;
     streamTitle: string;
     hostName: string;
@@ -35,7 +36,8 @@ export default function ViewStream() {
   
   // Define TokenData interface to better handle the token response
   interface TokenResponse {
-    token?: string;
+    rtcToken?: string;
+    rtmToken?: string;
     appId?: string;
     channelName?: string;
     uid?: number;
@@ -44,7 +46,8 @@ export default function ViewStream() {
   
   // Define a type for use with validated token data
   interface ValidatedTokenData {
-    token: string;
+    rtcToken: string;
+    rtmToken: string;
     appId?: string;
     channelName?: string;
     uid?: number;
@@ -134,7 +137,8 @@ export default function ViewStream() {
         const tokenData = await tokenResponse.json() as TokenResponse;
         console.log('ViewStream: Received audience token data:', {
           ...tokenData,
-          token: tokenData.token ? `${tokenData.token.substring(0, 20)}...` : 'missing'
+          rtcToken: tokenData.rtcToken ? `${tokenData.rtcToken.substring(0, 20)}...` : 'missing',
+          rtmToken: tokenData.rtmToken ? `${tokenData.rtmToken.substring(0, 20)}...` : 'missing'
         });
         
         // Update channel name from token response (important for any mapping/remapping that happened on server)
@@ -169,19 +173,21 @@ export default function ViewStream() {
           hostName: streamDetails.hostName,
         });
         
-        if (!tokenData.token) {
-          throw new Error('Invalid token received from server');
+        if (!tokenData.rtcToken || !tokenData.rtmToken) {
+          throw new Error('Invalid tokens received from server');
         }
         
-        // After our check, we can safely assert this will be a string
+        // After our check, we can safely assert these will be strings
         const validatedTokenData: ValidatedTokenData = {
           ...tokenData,
-          token: tokenData.token // TypeScript now knows this is a string
+          rtcToken: tokenData.rtcToken, // TypeScript now knows this is a string
+          rtmToken: tokenData.rtmToken  // TypeScript now knows this is a string
         };
         
         setStreamData({
           appId: appIdData.appId,
-          token: validatedTokenData.token, // Using the validated token
+          rtcToken: validatedTokenData.rtcToken, // Using the validated RTC token
+          rtmToken: validatedTokenData.rtmToken, // Using the validated RTM token
           channelName,
           streamTitle: streamDetails.title,
           hostName: streamDetails.hostName,
@@ -257,7 +263,8 @@ export default function ViewStream() {
       <ViewerStreamInterface
         appId={streamData.appId}
         channelName={streamData.channelName}
-        token={streamData.token}
+        rtcToken={streamData.rtcToken}
+        rtmToken={streamData.rtmToken}
         username="Viewer" // In a real app, this would be the logged-in user's name
         streamTitle={streamData.streamTitle}
         hostName={streamData.hostName}
