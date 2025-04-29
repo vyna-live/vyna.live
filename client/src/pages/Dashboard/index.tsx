@@ -125,7 +125,7 @@ export default function Dashboard() {
               <span>Start streaming</span>
             </button>
             
-            <Link href="/stream/channel-demo" className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm">
+            <Link href="/join-stream" className="flex items-center space-x-2 px-6 py-3 bg-[#2B2B2B] text-white font-medium hover:opacity-90 transition-opacity rounded-sm">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="2" y="6" width="20" height="12" />
                 <line x1="6" y1="10" x2="6" y2="10" />

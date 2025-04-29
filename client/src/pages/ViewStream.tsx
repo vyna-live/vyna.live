@@ -5,7 +5,8 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface StreamParams {
-  channelName: string;
+  channelName?: string;
+  streamId?: string;
 }
 
 export default function ViewStream() {
@@ -24,13 +25,34 @@ export default function ViewStream() {
     hostName: string;
     hostAvatar?: string;
     viewerCount?: number;
+    uid?: number;
   } | null>(null);
   
   // Get audience token and stream info
   useEffect(() => {
     const fetchStreamInfo = async () => {
       try {
-        if (!params.channelName) {
+        // Determine if we're using streamId or channelName
+        let channelName = params.channelName;
+        
+        // If streamId is provided instead of channelName, fetch the channel from the database
+        if (params.streamId && !channelName) {
+          // Get stream details by streamId
+          const streamLookupResponse = await fetch(`/api/livestreams/${params.streamId}`);
+          
+          if (!streamLookupResponse.ok) {
+            throw new Error('Stream not found or no longer active');
+          }
+          
+          const streamInfo = await streamLookupResponse.json();
+          channelName = streamInfo.channelName;
+          
+          if (!channelName) {
+            throw new Error('Invalid stream data - missing channel information');
+          }
+        }
+        
+        if (!channelName) {
           throw new Error('No channel name specified');
         }
         
@@ -41,6 +63,9 @@ export default function ViewStream() {
         }
         const appIdData = await appIdResponse.json();
         
+        // Generate a random UID for the audience member
+        const audienceUid = Math.floor(Math.random() * 1000000);
+        
         // Get audience token
         const tokenResponse = await fetch('/api/agora/audience-token', {
           method: 'POST',
@@ -48,7 +73,8 @@ export default function ViewStream() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            channelName: params.channelName,
+            channelName,
+            uid: audienceUid,
             role: 'audience'
           })
         });
@@ -60,7 +86,7 @@ export default function ViewStream() {
         const tokenData = await tokenResponse.json();
         
         // Get stream details from our API
-        const streamDetailsResponse = await fetch(`/api/streams/${params.channelName}`);
+        const streamDetailsResponse = await fetch(`/api/streams/${channelName}`);
         
         if (!streamDetailsResponse.ok) {
           throw new Error('Failed to get stream details');
@@ -68,15 +94,45 @@ export default function ViewStream() {
         
         const streamDetails = await streamDetailsResponse.json();
         
+        // Track that this viewer joined the stream to increment the count
+        await fetch(`/api/streams/${channelName}/join`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
         setStreamData({
           appId: appIdData.appId,
           token: tokenData.token,
-          channelName: params.channelName,
+          channelName,
           streamTitle: streamDetails.title,
           hostName: streamDetails.hostName,
           hostAvatar: streamDetails.hostAvatar,
-          viewerCount: streamDetails.viewerCount
+          viewerCount: streamDetails.viewerCount,
+          uid: audienceUid
         });
+        
+        // Setup leaving event handler
+        const handleBeforeUnload = () => {
+          // Track that this viewer left the stream
+          fetch(`/api/streams/${channelName}/leave`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            // Use keepalive to ensure the request completes even if the page is unloading
+            keepalive: true
+          });
+        };
+        
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        
+        // Cleanup function
+        return () => {
+          window.removeEventListener('beforeunload', handleBeforeUnload);
+          handleBeforeUnload();
+        };
         
         setIsLoading(false);
       } catch (err) {
@@ -93,7 +149,7 @@ export default function ViewStream() {
     };
     
     fetchStreamInfo();
-  }, [params.channelName, toast]);
+  }, [params.channelName, params.streamId, toast]);
   
   if (isLoading) {
     return (
