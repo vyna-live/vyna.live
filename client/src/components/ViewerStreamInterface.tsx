@@ -176,8 +176,56 @@ export default function ViewerStreamInterface({
             throw new Error("Missing RTM token for chat");
           }
           
-          await rtmClient.login({ uid: uid.toString(), token: rtmToken });
-          console.log("Successfully logged into RTM");
+          try {
+            await rtmClient.login({ uid: uid.toString(), token: rtmToken });
+            console.log("Successfully logged into RTM");
+          } catch (rtmError: any) {
+            console.error('RTM login error:', rtmError);
+            
+            // Check if it's a token authorization error
+            if (rtmError.code === 101 || // Token expired
+                rtmError.code === 102 || // Invalid token
+                (rtmError.message && rtmError.message.includes('token'))) {
+                
+              console.log('RTM token validation failed, attempting to get a new token');
+              
+              // Request a new token
+              try {
+                const response = await fetch('/api/agora/audience-token', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    channelName,
+                    uid,
+                    role: 'audience'
+                  })
+                });
+                
+                if (!response.ok) {
+                  throw new Error('Failed to get new RTM token');
+                }
+                
+                const newTokenData = await response.json();
+                console.log('Received new RTM token:', newTokenData.rtmToken ? `${newTokenData.rtmToken.substring(0, 20)}...` : 'missing');
+                
+                if (!newTokenData.rtmToken) {
+                  throw new Error('New RTM token is invalid');
+                }
+                
+                // Try again with the new token
+                await rtmClient.login({ uid: uid.toString(), token: newTokenData.rtmToken });
+                console.log('Successfully logged into RTM with new token');
+              } catch (renewError) {
+                console.error('Failed to renew RTM token:', renewError);
+                throw new Error('Chat functionality may be limited - could not authenticate');
+              }
+            } else {
+              // If it's a different error, rethrow it
+              throw rtmError;
+            }
+          }
           
           // Create RTM Channel
           console.log("Creating RTM channel:", channelName);
@@ -368,9 +416,57 @@ export default function ViewerStreamInterface({
           throw new Error("Missing or invalid RTC token");
         }
         
-        // Pass token as string not null
-        await agoraClient.join(appId, channelName, rtcToken, uid);
-        console.log("Successfully joined Agora RTC channel:", channelName);
+        try {
+          // Pass token as string not null
+          await agoraClient.join(appId, channelName, rtcToken, uid);
+          console.log("Successfully joined Agora RTC channel:", channelName);
+        } catch (joinError: any) {
+          console.error('Error joining channel:', joinError);
+          
+          // Check if it's a token authorization error
+          if (joinError.code === 'INVALID_OPERATION' || 
+              joinError.code === 'ERR_NO_AUTHORIZED' || 
+              (joinError.message && joinError.message.includes('invalid token'))) {
+            
+            console.log('Token validation failed, attempting to get a new token');
+            
+            // Get a new token
+            try {
+              const response = await fetch('/api/agora/audience-token', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  channelName,
+                  uid,
+                  role: 'audience'
+                })
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to get new token');
+              }
+              
+              const newTokenData = await response.json();
+              console.log('Received new token:', newTokenData.rtcToken ? `${newTokenData.rtcToken.substring(0, 20)}...` : 'missing');
+              
+              if (!newTokenData.rtcToken) {
+                throw new Error('New token is invalid');
+              }
+              
+              // Use the new token to join
+              await agoraClient.join(appId, channelName, newTokenData.rtcToken, uid);
+              console.log('Successfully joined with new token');
+            } catch (renewError) {
+              console.error('Failed to renew token:', renewError);
+              throw new Error('Could not renew token, please try again later');
+            }
+          } else {
+            // If it's a different error, rethrow it
+            throw joinError;
+          }
+        }
         
         setIsJoined(true);
         setIsLoading(false);
