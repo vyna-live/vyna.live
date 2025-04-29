@@ -145,6 +145,7 @@ export default function ViewerStreamInterface({
   // Initialize the Agora RTC and RTM clients
   useEffect(() => {
     let mounted = true; // Track if component is still mounted to prevent token cancel errors
+    let cancelTokenSource: AbortController | null = null;
     
     const init = async () => {
       try {
@@ -187,12 +188,24 @@ export default function ViewerStreamInterface({
             // Check if it's a token authorization error
             if (rtmError.code === 101 || // Token expired
                 rtmError.code === 102 || // Invalid token
-                (rtmError.message && rtmError.message.includes('token'))) {
+                rtmError.code === 2010026 || // Login rejected by server
+                rtmError.code === 2 || // RTM unavailable error
+                (rtmError.message && (
+                  rtmError.message.includes('token') || 
+                  rtmError.message.includes('Login is rejected')
+                ))) {
                 
               console.log('RTM token validation failed, attempting to get a new token');
               
               // Request a new token
               try {
+                if (!mounted) {
+                  throw new Error('Component unmounted during RTM token renewal');
+                }
+                
+                // Create a new AbortController for this request
+                cancelTokenSource = new AbortController();
+                
                 const response = await fetch('/api/agora/audience-token', {
                   method: 'POST',
                   headers: {
@@ -202,7 +215,8 @@ export default function ViewerStreamInterface({
                     channelName,
                     uid,
                     role: 'audience'
-                  })
+                  }),
+                  signal: cancelTokenSource.signal
                 });
                 
                 if (!response.ok) {
@@ -434,6 +448,13 @@ export default function ViewerStreamInterface({
             
             // Get a new token
             try {
+              if (!mounted) {
+                throw new Error('Component unmounted during token renewal');
+              }
+              
+              // Create a new AbortController for this request
+              cancelTokenSource = new AbortController();
+              
               const response = await fetch('/api/agora/audience-token', {
                 method: 'POST',
                 headers: {
@@ -443,7 +464,8 @@ export default function ViewerStreamInterface({
                   channelName,
                   uid,
                   role: 'audience'
-                })
+                }),
+                signal: cancelTokenSource.signal
               });
               
               if (!response.ok) {
@@ -486,6 +508,12 @@ export default function ViewerStreamInterface({
     // Cleanup function
     return () => {
       mounted = false; // Set mounted to false on cleanup
+      
+      // Cancel any pending fetch requests
+      if (cancelTokenSource) {
+        console.log('Aborting pending token requests');
+        cancelTokenSource.abort();
+      }
       // Leave Agora RTC channel
       if (clientRef.current && isJoined) {
         clientRef.current.leave().then(() => {
