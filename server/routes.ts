@@ -13,6 +13,7 @@ import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
+import { WebSocketServer, WebSocket } from 'ws';
 
 // Configure multer for file uploads
 const upload = multer({ 
