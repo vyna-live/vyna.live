@@ -181,9 +181,10 @@ export default function LivestreamInterface({
         const generatedStreamId = result.id || `stream_${Date.now()}`;
         setStreamId(generatedStreamId);
         
-        // Generate shareable link
+        // Generate shareable link - using the streamId and channel name for reliable connection
         const hostUrl = window.location.origin;
-        const link = `${hostUrl}/view-stream/${generatedStreamId}`;
+        const link = `${hostUrl}/view-stream/${generatedStreamId}?channel=${channelName}`;
+        console.log("Generated shareable link:", link);
         setShareableLink(link);
         setShowShareLink(true);
         

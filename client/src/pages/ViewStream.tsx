@@ -4,6 +4,21 @@ import ViewerStreamInterface from '../components/ViewerStreamInterface';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper function to parse URL query parameters
+function getQueryParams(): Record<string, string> {
+  const search = window.location.search.substring(1);
+  return search
+    .split('&')
+    .map(param => {
+      const [key, value] = param.split('=');
+      return { key, value: value || '' };
+    })
+    .reduce((acc, { key, value }) => {
+      if (key) acc[key] = decodeURIComponent(value);
+      return acc;
+    }, {} as Record<string, string>);
+}
+
 interface StreamParams {
   channelName?: string;
   streamId?: string;

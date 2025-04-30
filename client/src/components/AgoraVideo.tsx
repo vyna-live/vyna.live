@@ -58,15 +58,29 @@ interface VideoPlayerProps {
   videoTrack: ICameraVideoTrack;
 }
 
-function VideoPlayer({ videoTrack }: VideoPlayerProps) {
+// Using React.memo to prevent unnecessary re-renders
+const VideoPlayer = React.memo(({ videoTrack }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (!videoRef.current) return;
-    videoTrack.play(videoRef.current);
     
+    // Safely play the video track
+    try {
+      videoTrack.play(videoRef.current);
+      console.log("Video track playing in div:", videoRef.current.id);
+    } catch (err) {
+      console.error("Error playing video track:", err);
+    }
+    
+    // Cleanup function
     return () => {
-      videoTrack.stop();
+      try {
+        videoTrack.stop();
+        console.log("Video track stopped");
+      } catch (err) {
+        console.error("Error stopping video track:", err);
+      }
     };
   }, [videoTrack]);
   
@@ -74,24 +88,39 @@ function VideoPlayer({ videoTrack }: VideoPlayerProps) {
     <div 
       ref={videoRef} 
       className="w-full h-full agora-video-player"
+      id={`video-player-${Date.now()}`}
     ></div>
   );
-}
+});
 
 // Component to display screen sharing video
 interface ScreenPlayerProps {
   videoTrack: ILocalVideoTrack;
 }
 
-function ScreenPlayer({ videoTrack }: ScreenPlayerProps) {
+// Using React.memo to prevent unnecessary re-renders
+const ScreenPlayer = React.memo(({ videoTrack }: ScreenPlayerProps) => {
   const screenRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (!screenRef.current) return;
-    videoTrack.play(screenRef.current);
     
+    // Safely play the screen track
+    try {
+      videoTrack.play(screenRef.current);
+      console.log("Screen track playing in div:", screenRef.current.id);
+    } catch (err) {
+      console.error("Error playing screen track:", err);
+    }
+    
+    // Cleanup function
     return () => {
-      videoTrack.stop();
+      try {
+        videoTrack.stop();
+        console.log("Screen track stopped");
+      } catch (err) {
+        console.error("Error stopping screen track:", err);
+      }
     };
   }, [videoTrack]);
   
@@ -99,9 +128,10 @@ function ScreenPlayer({ videoTrack }: ScreenPlayerProps) {
     <div 
       ref={screenRef} 
       className="w-full h-full agora-video-player"
+      id={`screen-player-${Date.now()}`}
     ></div>
   );
-}
+});
 
 interface ChatMessage {
   userId: string;
