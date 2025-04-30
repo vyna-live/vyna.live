@@ -54,8 +54,12 @@ export default function ViewStream() {
       try {
         console.log('ViewStream: Trying to load stream with params:', params);
         
+        // Get query parameters (e.g., ?channel=xyz)
+        const queryParams = getQueryParams();
+        console.log('ViewStream: Extracted query params:', queryParams);
+        
         // Determine if we're using streamId or channelName
-        let channelName = params.channelName;
+        let channelName = params.channelName || queryParams.channel;
         let streamId = params.streamId;
         
         // Start by validating the stream ID if we have one
@@ -201,6 +205,9 @@ export default function ViewStream() {
     };
     
     fetchStreamInfo();
+    
+    // We don't need to add queryParams to the dependency array because getQueryParams() 
+    // reads directly from window.location.search which changes with the route
   }, [params.channelName, params.streamId, toast]);
   
   if (isLoading) {
