@@ -10,100 +10,73 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
   const [streamLink, setStreamLink] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [joinType, setJoinType] = useState<'link' | 'direct'>('link');
-  const [streamCode, setStreamCode] = useState('');
   const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (joinType === 'link') {
-      if (!streamLink.trim()) {
-        setError('Please enter a valid stream link');
-        return;
-      }
+    if (!streamLink.trim()) {
+      setError('Please enter a valid stream link');
+      return;
+    }
 
-      setIsLoading(true);
-      setError('');
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Extract the stream ID from the link
+      // Links could be in format: 
+      // - domain.com/view-stream/streamId
+      // - domain.com/livestream/streamId
+      // - http(s)://domain.com/view-stream/streamId
+      // - or just the streamId itself
+      let streamId = streamLink.trim();
       
-      try {
-        // Extract the stream ID from the link
-        // Links could be in format: 
-        // - domain.com/view-stream/streamId
-        // - domain.com/livestream/streamId
-        // - http(s)://domain.com/view-stream/streamId
-        // - or just the streamId itself
-        let streamId = streamLink.trim();
+      // Check for full URL pattern
+      if (streamId.includes('://')) {
+        // Remove protocol
+        const withoutProtocol = streamId.split('://')[1];
         
-        // Check for full URL pattern
-        if (streamId.includes('://')) {
-          // Remove protocol
-          const withoutProtocol = streamId.split('://')[1];
-          
-          // Split by slashes and get the last part as stream ID
-          const parts = withoutProtocol.split('/');
-          if (parts.length > 1) {
-            streamId = parts[parts.length - 1];
-          }
-        } 
-        // For non-URL but with slashes (like vyna.live/view-stream/streamId)
-        else if (streamId.includes('/')) {
-          const parts = streamId.split('/');
+        // Split by slashes and get the last part as stream ID
+        const parts = withoutProtocol.split('/');
+        if (parts.length > 1) {
           streamId = parts[parts.length - 1];
         }
-        
-        console.log("Extracted Stream ID:", streamId);
-        
-        // Validate the stream ID
-        const response = await fetch(`/api/livestreams/${streamId}/validate`);
-        
-        if (!response.ok) {
-          throw new Error('Invalid stream link or stream is not active');
-        }
-        
-        const data = await response.json();
-        
-        if (!data.isActive) {
-          throw new Error('This stream is no longer active');
-        }
-        
-        console.log("Stream is active, redirecting to:", `/view-stream/${streamId}`);
-        
-        // Redirect to the stream view page
-        setLocation(`/view-stream/${streamId}`);
-      } catch (error) {
-        console.error("Join stream error:", error);
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('An unexpected error occurred');
-        }
-      } finally {
-        setIsLoading(false);
+      } 
+      // For non-URL but with slashes (like vyna.live/view-stream/streamId)
+      else if (streamId.includes('/')) {
+        const parts = streamId.split('/');
+        streamId = parts[parts.length - 1];
       }
-    } else {
-      // Direct access mode - using stream code
-      if (!streamCode.trim()) {
-        setError('Stream code is required');
-        return;
+      
+      console.log("Extracted Stream ID:", streamId);
+      
+      // Validate the stream ID
+      const response = await fetch(`/api/livestreams/${streamId}/validate`);
+      
+      if (!response.ok) {
+        throw new Error('Invalid stream link or stream is not active');
       }
-
-      setIsLoading(true);
-      setError('');
-
-      try {
-        // Using direct code access - just redirect to the direct route with the code
-        setLocation(`/direct/${streamCode}`);
-      } catch (error) {
-        console.error("Direct join error:", error);
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('An unexpected error occurred');
-        }
-      } finally {
-        setIsLoading(false);
+      
+      const data = await response.json();
+      
+      if (!data.isActive) {
+        throw new Error('This stream is no longer active');
       }
+      
+      console.log("Stream is active, redirecting to:", `/view-stream/${streamId}`);
+      
+      // Redirect to the stream view page
+      setLocation(`/view-stream/${streamId}`);
+    } catch (error) {
+      console.error("Join stream error:", error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,51 +95,18 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
         )}
       </div>
       
-      <div className="flex mb-4 border border-gray-800 rounded-lg overflow-hidden">
-        <button
-          onClick={() => setJoinType('link')}
-          className={`flex-1 py-2 text-sm font-medium ${joinType === 'link' 
-            ? 'bg-gradient-to-r from-[#5D1C34]/80 to-[#A67D44]/80 text-white' 
-            : 'bg-gray-900/50 text-gray-400 hover:text-white'}`}
-        >
-          Stream Link
-        </button>
-        <button
-          onClick={() => setJoinType('direct')}
-          className={`flex-1 py-2 text-sm font-medium ${joinType === 'direct' 
-            ? 'bg-gradient-to-r from-[#5D1C34]/80 to-[#A67D44]/80 text-white' 
-            : 'bg-gray-900/50 text-gray-400 hover:text-white'}`}
-        >
-          Stream Code
-        </button>
-      </div>
-      
       <form onSubmit={handleSubmit}>
-        {joinType === 'link' ? (
-          <div className="mb-4">
-            <label htmlFor="streamLink" className="block text-sm text-gray-400 mb-1">Stream Link or ID</label>
-            <input
-              id="streamLink"
-              type="text"
-              value={streamLink}
-              onChange={(e) => setStreamLink(e.target.value)}
-              placeholder="Enter vyna.live/stream/[id] or stream ID"
-              className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
-            />
-          </div>
-        ) : (
-          <div className="mb-4">
-            <label htmlFor="streamCode" className="block text-sm text-gray-400 mb-1">Stream Code</label>
-            <input
-              id="streamCode"
-              type="text"
-              value={streamCode}
-              onChange={(e) => setStreamCode(e.target.value)}
-              placeholder="Enter the stream code provided by the streamer"
-              className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
-            />
-          </div>
-        )}
+        <div className="mb-4">
+          <label htmlFor="streamLink" className="block text-sm text-gray-400 mb-1">Stream Link or ID</label>
+          <input
+            id="streamLink"
+            type="text"
+            value={streamLink}
+            onChange={(e) => setStreamLink(e.target.value)}
+            placeholder="Enter vyna.live/stream/[id] or stream ID"
+            className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
+          />
+        </div>
         
         {error && (
           <div className="mb-4 p-2 bg-red-500/20 border border-red-500/40 rounded text-red-200 text-sm">
@@ -176,10 +116,7 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
         
         <button
           type="submit"
-          disabled={isLoading || 
-            (joinType === 'link' ? !streamLink.trim() : 
-             !streamCode.trim())
-          }
+          disabled={isLoading || !streamLink.trim()}
           className="w-full py-2.5 px-4 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] rounded-lg text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed hover:from-[#6D2C44] hover:to-[#B68D54] transition-colors"
         >
           {isLoading ? 'Connecting...' : 'Join Stream'}
@@ -187,9 +124,7 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       </form>
       
       <div className="mt-4 text-center text-gray-500 text-xs">
-        {joinType === 'link' 
-          ? 'To join a stream, paste the stream link shared by the streamer or enter the stream ID'
-          : 'Enter the stream code provided by the streamer to directly connect to their stream'}
+        To join a stream, paste the stream link shared by the streamer or enter the stream ID
       </div>
     </div>
   );

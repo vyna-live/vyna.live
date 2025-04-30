@@ -728,51 +728,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Stream ID is required" });
       }
       
-      console.log(`Getting stream data for ID: ${streamId}`);
-      
-      // First check - direct map
-      let channelName = streamIdToChannel.get(streamId);
-      
-      // Second check - if the ID is actually a channel name
-      if (!channelName && streamViewers.has(streamId)) {
-        console.log(`The stream ID ${streamId} appears to be a channel name itself`);
-        channelName = streamId;
-      }
-      
-      // Third check - fallback for "stream_" prefix
-      if (!channelName && streamId.startsWith('stream_')) {
-        const possibleStreamId = streamId.replace(/^stream_/, '');
-        const mappedChannel = streamIdToChannel.get(possibleStreamId);
-        if (mappedChannel) {
-          console.log(`Found channel ${mappedChannel} by removing stream_ prefix from ${streamId}`);
-          channelName = mappedChannel;
-        } else if (streamViewers.has(streamId)) {
-          console.log(`Direct match for ${streamId} in stream viewers data`);
-          channelName = streamId;
-        }
-      }
+      // Check if we have this streamId in our mapping
+      const channelName = streamIdToChannel.get(streamId);
       
       if (!channelName) {
-        console.log(`No channel name found for stream ID: ${streamId}`);
         return res.status(404).json({ error: "Stream not found" });
       }
-      
-      console.log(`Using channel name: ${channelName} for stream ID: ${streamId}`);
       
       // Get the viewer data
       const viewerData = streamViewers.get(channelName);
       
       if (!viewerData) {
-        console.log(`No viewer data found for channel: ${channelName}`);
         return res.status(404).json({ error: "Stream data not found" });
       }
-      
-      console.log(`Returning stream data for ${streamId}:`, {
-        title: viewerData.title,
-        hostName: viewerData.hostName || "Host",
-        viewerCount: viewerData.count,
-        isActive: true
-      });
       
       return res.status(200).json({
         streamId,

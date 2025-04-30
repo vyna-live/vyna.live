@@ -14,8 +14,7 @@ interface LivestreamInterfaceProps {
   initialText?: string;
   streamInfo?: {
     appId: string | null;
-    rtcToken: string | null;
-    rtmToken: string | null;
+    token: string | null;
     channelName: string | null;
     uid: number | null;
   };
@@ -109,8 +108,7 @@ export default function LivestreamInterface({
     isLoading: agoraLoading,
     error: agoraError,
     appId,
-    rtcToken,
-    rtmToken,
+    token,
     channelName,
     uid,
     role,
@@ -133,7 +131,7 @@ export default function LivestreamInterface({
   useEffect(() => {
     const initLivestream = async () => {
       try {
-        if (streamInfo && streamInfo.appId && streamInfo.rtcToken && streamInfo.rtmToken && streamInfo.channelName) {
+        if (streamInfo && streamInfo.appId && streamInfo.token && streamInfo.channelName) {
           console.log('Using provided stream info:', streamInfo);
           
           // We already have all the info needed to connect, set stream as active
@@ -432,23 +430,21 @@ export default function LivestreamInterface({
                     </div>
                   ) : (
                     /* Use Agora for video streaming */
-                    (streamInfo?.appId && streamInfo?.rtcToken && streamInfo?.rtmToken && streamInfo?.channelName) ? (
+                    (streamInfo?.appId && streamInfo?.token && streamInfo?.channelName) ? (
                       <AgoraVideo 
                         appId={streamInfo.appId}
                         channelName={streamInfo.channelName}
-                        rtcToken={streamInfo.rtcToken}
-                        rtmToken={streamInfo.rtmToken}
+                        token={streamInfo.token}
                         uid={streamInfo.uid || undefined}
                         role={'host'}
                         userName={userName}
                         onToggleDrawer={toggleDrawer}
                       />
-                    ) : (appId && rtcToken && rtmToken) ? (
+                    ) : (appId && token) ? (
                       <AgoraVideo 
                         appId={appId}
                         channelName={channelName}
-                        rtcToken={rtcToken}
-                        rtmToken={rtmToken}
+                        token={token}
                         uid={uid || undefined}
                         role={role}
                         userName={userName}
@@ -467,20 +463,20 @@ export default function LivestreamInterface({
               
               {/* Chat is now handled by AgoraVideo component through RTM */}
               
-              {/* Share Link Toggle Button - Compact Icon */}
+              {/* Share Link Toggle Button */}
               {isStreamActive && !showShareLink && shareableLink && (
                 <button
                   onClick={() => setShowShareLink(true)}
-                  className="absolute top-4 right-16 z-30 bg-[#A67D44]/90 hover:bg-[#A67D44] text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors backdrop-blur-sm"
-                  title="Share Stream Link"
+                  className="absolute top-4 right-4 z-30 bg-[#A67D44] hover:bg-[#B68D54] text-white px-3 py-2 rounded-md flex items-center shadow-lg transition-colors"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg width="16" height="16" className="mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M18 22C19.6569 22 21 20.6569 21 19C21 17.3431 19.6569 16 18 16C16.3431 16 15 17.3431 15 19C15 20.6569 16.3431 22 18 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M8.59 13.51L15.42 17.49" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M15.41 6.51L8.59 10.49" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
+                  Share Link
                 </button>
               )}
 

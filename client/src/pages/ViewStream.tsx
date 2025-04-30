@@ -21,40 +21,17 @@ export default function ViewStream() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Stream information with proper types
-  interface StreamData {
+  // Stream information
+  const [streamData, setStreamData] = useState<{
     appId: string;
-    rtcToken: string;
-    rtmToken: string;
+    token: string;
     channelName: string;
     streamTitle: string;
     hostName: string;
     hostAvatar?: string;
     viewerCount?: number;
     uid?: number;
-  }
-  
-  // Define TokenData interface to better handle the token response
-  interface TokenResponse {
-    rtcToken?: string;
-    rtmToken?: string;
-    appId?: string;
-    channelName?: string;
-    uid?: number;
-    role?: string;
-  }
-  
-  // Define a type for use with validated token data
-  interface ValidatedTokenData {
-    rtcToken: string;
-    rtmToken: string;
-    appId?: string;
-    channelName?: string;
-    uid?: number;
-    role?: string;
-  }
-  
-  const [streamData, setStreamData] = useState<StreamData | null>(null);
+  } | null>(null);
   
   // Get audience token and stream info
   useEffect(() => {
@@ -134,29 +111,7 @@ export default function ViewStream() {
           throw new Error('Failed to get audience token');
         }
         
-        const tokenData = await tokenResponse.json() as TokenResponse;
-        console.log('ViewStream: Received audience token data:', {
-          ...tokenData,
-          rtcToken: tokenData.rtcToken ? `${tokenData.rtcToken.substring(0, 20)}...` : 'missing',
-          rtmToken: tokenData.rtmToken ? `${tokenData.rtmToken.substring(0, 20)}...` : 'missing',
-          channelName: tokenData.channelName,
-          uid: tokenData.uid
-        });
-        
-        // Additional validation of tokens
-        if (!tokenData.rtcToken || tokenData.rtcToken.trim() === '') {
-          throw new Error('Invalid or missing RTC token received from server');
-        }
-        
-        if (!tokenData.rtmToken || tokenData.rtmToken.trim() === '') {
-          throw new Error('Invalid or missing RTM token received from server');
-        }
-        
-        // Update channel name from token response (important for any mapping/remapping that happened on server)
-        if (tokenData.channelName && tokenData.channelName !== channelName) {
-          console.log(`ViewStream: Channel name updated from ${channelName} to ${tokenData.channelName}`);
-          channelName = tokenData.channelName;
-        }
+        const tokenData = await tokenResponse.json();
         
         console.log('ViewStream: Getting stream details for channel:', channelName);
         // Get stream details from our API
@@ -184,21 +139,9 @@ export default function ViewStream() {
           hostName: streamDetails.hostName,
         });
         
-        if (!tokenData.rtcToken || !tokenData.rtmToken) {
-          throw new Error('Invalid tokens received from server');
-        }
-        
-        // After our check, we can safely assert these will be strings
-        const validatedTokenData: ValidatedTokenData = {
-          ...tokenData,
-          rtcToken: tokenData.rtcToken, // TypeScript now knows this is a string
-          rtmToken: tokenData.rtmToken  // TypeScript now knows this is a string
-        };
-        
         setStreamData({
           appId: appIdData.appId,
-          rtcToken: validatedTokenData.rtcToken, // Using the validated RTC token
-          rtmToken: validatedTokenData.rtmToken, // Using the validated RTM token
+          token: tokenData.token,
           channelName,
           streamTitle: streamDetails.title,
           hostName: streamDetails.hostName,
@@ -274,8 +217,7 @@ export default function ViewStream() {
       <ViewerStreamInterface
         appId={streamData.appId}
         channelName={streamData.channelName}
-        rtcToken={streamData.rtcToken}
-        rtmToken={streamData.rtmToken}
+        token={streamData.token}
         username="Viewer" // In a real app, this would be the logged-in user's name
         streamTitle={streamData.streamTitle}
         hostName={streamData.hostName}

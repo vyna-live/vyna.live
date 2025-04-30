@@ -114,25 +114,21 @@ interface ChatMessage {
 interface AgoraVideoProps {
   appId: string;
   channelName: string;
-  rtcToken?: string;
-  rtmToken?: string | null;
+  token?: string;
   uid?: number;
   role?: 'host' | 'audience';
   userName: string;
   onToggleDrawer?: () => void;
-  onUserCountChange?: (count: number) => void;
 }
 
 export function AgoraVideo({ 
   appId, 
   channelName, 
-  rtcToken,
-  rtmToken,
+  token, 
   uid = Math.floor(Math.random() * 1000000),
   role = 'host',
   userName,
-  onToggleDrawer,
-  onUserCountChange
+  onToggleDrawer
 }: AgoraVideoProps) {
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -185,8 +181,7 @@ export function AgoraVideo({
           
           // Initialize RTM Client
           await rtmClient.login({
-            uid: uid.toString(),
-            token: rtmToken || undefined
+            uid: uid.toString()
           });
           
           // Create RTM Channel
@@ -250,15 +245,7 @@ export function AgoraVideo({
         agoraClient.on('user-joined', (user) => {
           console.log("User joined:", user.uid);
           setRemoteUsers(prev => [...prev, user]);
-          
-          // Update viewers count and notify parent component if callback provided
-          setViewers(prev => {
-            const newCount = prev + 1;
-            if (onUserCountChange) {
-              onUserCountChange(newCount);
-            }
-            return newCount;
-          });
+          setViewers(prev => prev + 1);
           
           // Add a chat message for user joining
           const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
@@ -285,15 +272,7 @@ export function AgoraVideo({
         agoraClient.on('user-left', (user) => {
           console.log("User left:", user.uid);
           setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-          
-          // Update viewers count and notify parent component if callback provided
-          setViewers(prev => {
-            const newCount = Math.max(0, prev - 1);
-            if (onUserCountChange) {
-              onUserCountChange(newCount);
-            }
-            return newCount;
-          });
+          setViewers(prev => Math.max(0, prev - 1));
           
           // Add a chat message for user leaving
           const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
@@ -427,7 +406,7 @@ export function AgoraVideo({
       
       console.log("All Agora resources cleaned up");
     };
-  }, [appId, role, channelName, uid, userName, rtcToken, rtmToken]);
+  }, [appId, role, channelName, uid, userName]);
 
   // Join call when ready
   const joinChannel = async () => {
@@ -438,7 +417,7 @@ export function AgoraVideo({
       const client = clientRef.current;
       
       // Join the channel
-      await client.join(appId, channelName, rtcToken || null, uid);
+      await client.join(appId, channelName, token || null, uid);
       console.log("Joined Agora channel:", channelName);
       
       // Publish tracks if host
@@ -545,9 +524,6 @@ export function AgoraVideo({
       // Reset state
       setIsJoined(false);
       setViewers(0);
-      if (onUserCountChange) {
-        onUserCountChange(0);
-      }
       setChatMessages([]);
       
       // Reset tracks to null
