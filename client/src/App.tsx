@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import Livestream from "@/pages/Livestream";
 import Dashboard from "@/pages/Dashboard";
 import ViewStream from "@/pages/ViewStream";
+import DirectStream from "@/pages/DirectStream";
 import JoinStream from "@/pages/JoinStream";
 import NotFound from "@/pages/not-found";
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/join-stream" component={JoinStream} />
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
+      <Route path="/direct-stream" component={DirectStream} />
       <Route component={NotFound} />
     </Switch>
   );

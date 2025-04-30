@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vyna Helper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <img src="icons/icon48.png" alt="Vyna Logo">
+        <h1>Vyna Helper</h1>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="notepad">Notepad</button>
+        <button class="tab-btn" data-tab="ai-chat">AI Chat</button>
+      </div>
+    </header>
+    
+    <main>
+      <div id="notepad" class="tab-content active">
+        <textarea id="notepad-content" placeholder="Type your notes here..."></textarea>
+        <div class="actions">
+          <button id="save-note">Save</button>
+          <button id="clear-note">Clear</button>
+        </div>
+      </div>
+      
+      <div id="ai-chat" class="tab-content">
+        <div id="chat-messages"></div>
+        <div class="chat-input">
+          <textarea id="message-input" placeholder="Ask the AI..."></textarea>
+          <button id="send-message">Send</button>
+        </div>
+      </div>
+    </main>
+    
+    <footer>
+      <span>Vyna.live - Your AI-powered streaming assistant</span>
+      <a href="https://vyna.live" target="_blank">Open Web App</a>
+    </footer>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
