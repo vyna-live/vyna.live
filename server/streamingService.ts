@@ -138,8 +138,7 @@ function broadcastStreamStatus(streamId: string, status: 'active' | 'inactive'):
  */
 export function getAgoraAppId(req: Request, res: Response): void {
   if (!areAgoraCredentialsAvailable()) {
-    res.status(500).json({ error: 'Missing Agora credentials' });
-    return;
+    return res.status(500).json({ error: 'Missing Agora credentials' });
   }
 
   res.json({ appId });
@@ -153,8 +152,7 @@ export function getHostToken(req: Request, res: Response): void {
     const { channelName, uid } = req.body;
 
     if (!channelName) {
-      res.status(400).json({ error: 'channelName is required' });
-      return;
+      return res.status(400).json({ error: 'channelName is required' });
     }
 
     // Convert string uid to number if needed, or use 0 (Agora will assign a uid)
@@ -194,8 +192,7 @@ export function getAudienceToken(req: Request, res: Response): void {
     const { channelName, uid } = req.body;
 
     if (!channelName) {
-      res.status(400).json({ error: 'channelName is required' });
-      return;
+      return res.status(400).json({ error: 'channelName is required' });
     }
 
     // Generate random uid if not provided
@@ -246,16 +243,14 @@ export function createLivestream(req: Request, res: Response): void {
     const { title, userName, uid, avatar } = req.body;
 
     if (!title || !userName) {
-      res.status(400).json({ error: 'Title and userName are required' });
-      return;
+      return res.status(400).json({ error: 'Title and userName are required' });
     }
 
-    // Generate a clean ID for the stream for shareable URL
+    // Generate a clean ID for the stream
     const streamId = generateStreamId(title);
     
-    // Use the exact title as the channel name for simplicity
-    // This ensures audience members can join with the exact same channel name
-    const channelName = title;
+    // Use the streamId directly as the channelName
+    const channelName = streamId;
     
     // Convert string uid to number if needed, or use 0 (Agora will assign a uid)
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
@@ -276,9 +271,6 @@ export function createLivestream(req: Request, res: Response): void {
       lastPing: Date.now(),
       status: 'active'
     });
-    
-    // Store a mapping from stream ID to channel name
-    global.streamIdToChannel.set(streamId, channelName);
     
     // Broadcast the new stream to all connected clients
     broadcastStreamStatus(streamId, 'active');
@@ -311,8 +303,7 @@ export function validateStream(req: Request, res: Response): void {
     const { streamId } = req.params;
     
     if (!streamId) {
-      res.status(400).json({ error: 'Stream ID is required' });
-      return;
+      return res.status(400).json({ error: 'Stream ID is required' });
     }
     
     log(`Validating stream ID: ${streamId}`);
@@ -322,11 +313,10 @@ export function validateStream(req: Request, res: Response): void {
     
     if (!streamData) {
       log(`Stream ID ${streamId} not found`);
-      res.status(404).json({ 
+      return res.status(404).json({ 
         error: "Stream not found",
         isActive: false
       });
-      return;
     }
     
     // Return the stream data
@@ -351,16 +341,14 @@ export function getStreamDetails(req: Request, res: Response): void {
     const { streamId } = req.params;
     
     if (!streamId) {
-      res.status(400).json({ error: 'Stream ID is required' });
-      return;
+      return res.status(400).json({ error: 'Stream ID is required' });
     }
     
     // Get the stream data
     const streamData = global.activeStreams.get(streamId);
     
     if (!streamData) {
-      res.status(404).json({ error: "Stream not found" });
-      return;
+      return res.status(404).json({ error: "Stream not found" });
     }
     
     // Update the timestamp to show it was recently accessed
@@ -393,16 +381,14 @@ export function joinStream(req: Request, res: Response): void {
     const { userName } = req.body;
     
     if (!streamId) {
-      res.status(400).json({ error: 'Stream ID is required' });
-      return;
+      return res.status(400).json({ error: 'Stream ID is required' });
     }
     
     // Get the stream data
     const streamData = global.activeStreams.get(streamId);
     
     if (!streamData) {
-      res.status(404).json({ error: "Stream not found" });
-      return;
+      return res.status(404).json({ error: "Stream not found" });
     }
     
     // Increment viewer count
@@ -434,16 +420,14 @@ export function leaveStream(req: Request, res: Response): void {
     const { streamId } = req.params;
     
     if (!streamId) {
-      res.status(400).json({ error: 'Stream ID is required' });
-      return;
+      return res.status(400).json({ error: 'Stream ID is required' });
     }
     
     // Get the stream data
     const streamData = global.activeStreams.get(streamId);
     
     if (!streamData) {
-      res.status(404).json({ error: "Stream not found" });
-      return;
+      return res.status(404).json({ error: "Stream not found" });
     }
     
     // Decrement viewer count (minimum 1 for the host)
@@ -473,16 +457,14 @@ export function endStream(req: Request, res: Response): void {
     const { streamId } = req.params;
     
     if (!streamId) {
-      res.status(400).json({ error: 'Stream ID is required' });
-      return;
+      return res.status(400).json({ error: 'Stream ID is required' });
     }
     
     // Get the stream data
     const streamData = global.activeStreams.get(streamId);
     
     if (!streamData) {
-      res.status(404).json({ error: "Stream not found" });
-      return;
+      return res.status(404).json({ error: "Stream not found" });
     }
     
     // Mark as inactive
@@ -582,8 +564,7 @@ export function startStreamMonitoring(): void {
         
         // Broadcast the status change
         broadcastStreamStatus(streamId, 'inactive');
-        
-        log(`Stream ${streamId} marked inactive due to inactivity`);
+        log(`Stream ${streamId} marked inactive due to timeout`);
       }
     });
   }, 10000);

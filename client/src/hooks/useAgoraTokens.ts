@@ -24,7 +24,6 @@ export interface AgoraTokens {
     channelName: string;
     appId: string;
     uid: number;
-    shareableUrl?: string;
   } | null>;
 }
 
@@ -152,9 +151,6 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
       setIsLoading(true);
       setError(null);
       
-      // Get user avatar if available (could be enhanced in the future)
-      const avatar = null; // For now this is null, but could be implemented later
-      
       const response = await fetch('/api/agora/livestream', {
         method: 'POST',
         headers: {
@@ -163,7 +159,6 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
         body: JSON.stringify({
           title,
           userName,
-          avatar
         }),
       });
       
@@ -174,16 +169,7 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
       const data = await response.json();
       
       if (data && data.success && data.livestream) {
-        const { 
-          appId: newAppId, 
-          token: newToken, 
-          channelName: newChannel, 
-          uid: newUid, 
-          id: streamId 
-        } = data.livestream;
-        
-        // Log important information for debugging
-        console.log(`Created livestream with ID: ${streamId}, channel: ${newChannel}`);
+        const { appId: newAppId, token: newToken, channelName: newChannel, uid: newUid } = data.livestream;
         
         setAppId(newAppId);
         setToken(newToken);
@@ -191,15 +177,7 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
         setUid(newUid);
         setRole('host');
         
-        // Generate a shareable link for this stream that can be easily copied
-        const shareableUrl = `${window.location.origin}/view-stream/${streamId}`;
-        console.log(`Shareable stream URL: ${shareableUrl}`);
-        
-        // Include the shareable link and stream ID in the return value
-        return {
-          ...data.livestream,
-          shareableUrl
-        };
+        return data.livestream;
       } else {
         throw new Error('Failed to create livestream');
       }
