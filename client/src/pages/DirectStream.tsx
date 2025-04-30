@@ -1,152 +1,150 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useParams } from 'wouter';
+import { Loader2, AlertCircle } from 'lucide-react';
 import ViewerStreamInterface from '../components/ViewerStreamInterface';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-// Minimal data needed to join a stream directly
-interface DirectStreamData {
-  appId: string;
-  channelName: string;
-  hostName: string;
-  streamTitle: string;
-  directAccess: boolean;
-}
+import useAgoraTokens from '../hooks/useAgoraTokens';
 
 export default function DirectStream() {
+  const params = useParams<{ code: string }>();
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  
-  // Stream information with tokens
-  interface CompleteStreamData extends DirectStreamData {
-    rtcToken: string;
-    rtmToken: string;
-    uid: number;
-  }
-  
-  const [streamData, setStreamData] = useState<CompleteStreamData | null>(null);
-  
-  // Get audience token and prepare stream
+  const [streamInfo, setStreamInfo] = useState<{
+    appId: string | null;
+    channelName: string | null;
+    uid: number | null;
+    rtcToken: string | null;
+    rtmToken: string | null;
+    userName: string | null;
+    streamTitle: string | null;
+  }>({
+    appId: null,
+    channelName: null,
+    uid: null,
+    rtcToken: null,
+    rtmToken: null,
+    userName: null,
+    streamTitle: 'Live Stream'
+  });
+
+  const { getAudienceTokens, isTokenLoading, tokenError } = useAgoraTokens();
+
+  // Parse the stream code to get channelName from the URL parameter
   useEffect(() => {
-    const fetchDirectStreamData = async () => {
+    if (!params.code) {
+      setError("No stream code provided");
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchTokens = async () => {
       try {
-        // Get stored stream data from session storage
-        const storedData = sessionStorage.getItem('directStreamData');
-        if (!storedData) {
-          throw new Error('No direct stream data found. Please go back and enter stream details.');
+        setIsLoading(true);
+        
+        // Generate a random visitor ID
+        const visitorId = Math.floor(Math.random() * 1000000);
+        const visitorName = `Viewer_${visitorId}`;
+        
+        // The code parameter is our channel name
+        const channelName = params.code;
+        
+        // Get audience tokens for this channel
+        const tokens = await getAudienceTokens(channelName, visitorId);
+        
+        if (tokens) {
+          setStreamInfo({
+            appId: tokens.appId,
+            channelName: channelName,
+            uid: visitorId,
+            rtcToken: tokens.rtcToken,
+            rtmToken: tokens.rtmToken,
+            userName: visitorName,
+            streamTitle: `${channelName}'s Live Stream`
+          });
+          setError(null);
         }
-        
-        // Parse the stored data
-        const directData = JSON.parse(storedData) as DirectStreamData;
-        console.log('DirectStream: Using direct access data:', directData);
-        
-        if (!directData.appId || !directData.channelName) {
-          throw new Error('Invalid stream data. Missing required information.');
-        }
-        
-        // Generate a random UID for the audience member
-        const audienceUid = Math.floor(Math.random() * 1000000);
-        
-        console.log('DirectStream: Getting Agora audience token for channel:', directData.channelName);
-        
-        // Get audience token for this direct stream
-        const tokenResponse = await fetch('/api/agora/audience-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            channelName: directData.channelName,
-            uid: audienceUid,
-            role: 'audience'
-          })
-        });
-        
-        if (!tokenResponse.ok) {
-          throw new Error('Failed to get audience token for direct stream');
-        }
-        
-        const tokenData = await tokenResponse.json();
-        console.log('DirectStream: Received audience token data:', {
-          ...tokenData,
-          rtcToken: tokenData.rtcToken ? `${tokenData.rtcToken.substring(0, 20)}...` : 'missing',
-          rtmToken: tokenData.rtmToken ? `${tokenData.rtmToken.substring(0, 20)}...` : 'missing',
-          channelName: tokenData.channelName,
-          uid: tokenData.uid
-        });
-        
-        // Additional validation of tokens
-        if (!tokenData.rtcToken || tokenData.rtcToken.trim() === '') {
-          throw new Error('Invalid or missing RTC token received from server');
-        }
-        
-        if (!tokenData.rtmToken || tokenData.rtmToken.trim() === '') {
-          throw new Error('Invalid or missing RTM token received from server');
-        }
-        
-        // Combine the direct access data with the tokens
-        setStreamData({
-          ...directData,
-          rtcToken: tokenData.rtcToken,
-          rtmToken: tokenData.rtmToken,
-          uid: audienceUid
-        });
-        
-        setIsLoading(false);
       } catch (err) {
-        console.error('Error preparing direct stream:', err);
-        setError(err instanceof Error ? err.message : 'Failed to prepare direct stream access');
+        console.error("Error joining stream:", err);
+        setError("Could not join the stream. Please check the code and try again.");
+      } finally {
         setIsLoading(false);
-        
-        toast({
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to prepare direct stream access',
-          variant: 'destructive'
-        });
       }
     };
-    
-    fetchDirectStreamData();
-  }, [toast]);
+
+    fetchTokens();
+  }, [params.code, getAudienceTokens]);
   
-  if (isLoading) {
+  // Handle token loading errors
+  useEffect(() => {
+    if (tokenError) {
+      setError(`Error getting stream tokens: ${tokenError}`);
+    }
+  }, [tokenError]);
+
+  // Redirect back to join page if there's an error
+  const handleBackToJoin = () => {
+    setLocation('/join');
+  };
+  
+  if (isLoading || isTokenLoading) {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-black">
-        <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
-        <div className="text-white text-xl">Connecting to Stream...</div>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
+        <Loader2 className="w-12 h-12 animate-spin mb-4 text-primary" />
+        <h2 className="text-xl font-semibold mb-2">Joining Stream...</h2>
+        <p className="text-gray-400">Connecting to the live stream</p>
       </div>
     );
   }
   
-  if (error || !streamData) {
+  if (error) {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-black p-4">
-        <div className="text-red-500 text-2xl mb-4">Stream Error</div>
-        <div className="text-white text-lg mb-6">{error || 'Unable to connect to stream'}</div>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
+        <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
+        <h2 className="text-xl font-semibold mb-2">Could Not Join Stream</h2>
+        <p className="text-gray-400 mb-4">{error}</p>
         <button 
-          onClick={() => setLocation('/')}
-          className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
+          onClick={handleBackToJoin}
+          className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition"
         >
-          Back to Home
+          Back to Join Page
         </button>
       </div>
     );
   }
   
-  return (
-    <div className="w-full h-screen overflow-hidden bg-black">
+  // If we have all the necessary stream info, render the ViewerStreamInterface
+  if (
+    streamInfo.appId && 
+    streamInfo.channelName && 
+    streamInfo.rtcToken &&
+    streamInfo.uid
+  ) {
+    return (
       <ViewerStreamInterface
-        appId={streamData.appId}
-        channelName={streamData.channelName}
-        rtcToken={streamData.rtcToken}
-        rtmToken={streamData.rtmToken}
-        username="Viewer" // In a real app, this would be the logged-in user's name
-        streamTitle={streamData.streamTitle}
-        hostName={streamData.hostName}
-        viewerCount={1} // Default to 1 for direct access streams
+        appId={streamInfo.appId}
+        channelName={streamInfo.channelName}
+        rtcToken={streamInfo.rtcToken}
+        rtmToken={streamInfo.rtmToken}
+        uid={streamInfo.uid}
+        userName={streamInfo.userName || 'Anonymous'}
+        streamTitle={streamInfo.streamTitle || 'Live Stream'}
       />
+    );
+  }
+  
+  // Fallback rendering
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-900 text-white">
+      <AlertCircle className="w-12 h-12 mb-4 text-yellow-500" />
+      <h2 className="text-xl font-semibold mb-2">Stream Information Missing</h2>
+      <p className="text-gray-400 mb-4">Some required information is missing to join the stream.</p>
+      <button 
+        onClick={handleBackToJoin}
+        className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/80 transition"
+      >
+        Back to Join Page
+      </button>
     </div>
   );
 }

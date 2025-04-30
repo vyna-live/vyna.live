@@ -20,6 +20,15 @@ export interface AgoraTokens {
   role: 'host' | 'audience';
   fetchHostToken: (channelName: string, uid?: number) => Promise<void>;
   fetchAudienceToken: (channelName: string, uid?: number) => Promise<void>;
+  getAudienceTokens: (channelName: string, uid: number) => Promise<{
+    appId: string;
+    rtcToken: string;
+    rtmToken: string;
+    channelName: string;
+    uid: number;
+  } | null>;
+  isTokenLoading: boolean;
+  tokenError: Error | null;
   createLivestream: (title: string, userName: string) => Promise<{
     id: string;
     rtcToken: string;
@@ -33,6 +42,8 @@ export interface AgoraTokens {
 export default function useAgoraTokens(initialChannelName: string = ''): AgoraTokens {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [isTokenLoading, setIsTokenLoading] = useState(false);
+  const [tokenError, setTokenError] = useState<Error | null>(null);
   const [appId, setAppId] = useState<string | null>(null);
   const [rtcToken, setRtcToken] = useState<string | null>(null);
   const [rtmToken, setRtmToken] = useState<string | null>(null);
@@ -197,6 +208,64 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
     }
   };
 
+  // Get audience tokens (separate function to avoid state updates)
+  const getAudienceTokens = async (channel: string, userId: number) => {
+    try {
+      setIsTokenLoading(true);
+      setTokenError(null);
+      
+      // First check if we already have the app ID, if not fetch it
+      let currentAppId = appId;
+      if (!currentAppId) {
+        const appIdResponse = await fetch('/api/agora/app-id');
+        if (!appIdResponse.ok) {
+          throw new Error(`HTTP error getting App ID! Status: ${appIdResponse.status}`);
+        }
+        const appIdData = await appIdResponse.json();
+        if (!appIdData.appId) {
+          throw new Error('No App ID returned from server');
+        }
+        currentAppId = appIdData.appId;
+      }
+      
+      // Now get the audience tokens
+      const response = await fetch('/api/agora/audience-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          channelName: channel,
+          uid: userId,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.rtcToken && data.rtmToken) {
+        return {
+          appId: currentAppId,
+          rtcToken: data.rtcToken,
+          rtmToken: data.rtmToken,
+          channelName: channel,
+          uid: userId
+        };
+      } else {
+        throw new Error('Failed to get audience tokens');
+      }
+    } catch (err) {
+      console.error('Error getting audience tokens:', err);
+      setTokenError(err instanceof Error ? err : new Error('Failed to get audience tokens'));
+      return null;
+    } finally {
+      setIsTokenLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -208,6 +277,9 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
     role,
     fetchHostToken,
     fetchAudienceToken,
+    getAudienceTokens,
+    isTokenLoading,
+    tokenError,
     createLivestream,
   };
 }
