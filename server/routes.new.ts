@@ -28,73 +28,6 @@ if (!fs.existsSync(LOGO_DIR)) {
   fs.mkdirSync(LOGO_DIR, { recursive: true });
 }
 
-// Track active streams globally
-declare global {
-  var activeStreams: Map<string, {
-    channelName: string;
-    title: string;
-    hostName: string;
-    startTime: number;
-    lastPing: number;
-    viewers: number;
-    status: 'active' | 'inactive';
-  }>;
-  var streamIdToChannel: Map<string, string>;
-  var streamViewers: Map<string, {
-    count: number;
-    title: string;
-    hostName: string;
-    streamId: string;
-    hostAvatar?: string;
-    isActive: boolean;
-    lastUpdated: number;
-  }>;
-  var connectedClients: Map<string, WebSocket>;
-}
-
-// Initialize our global tracking maps
-if (!global.activeStreams) {
-  global.activeStreams = new Map();
-}
-
-if (!global.streamIdToChannel) {
-  global.streamIdToChannel = new Map();
-}
-
-if (!global.streamViewers) {
-  global.streamViewers = new Map();
-}
-
-if (!global.connectedClients) {
-  global.connectedClients = new Map();
-}
-
-// Utility to generate a URL-friendly stream ID from a title
-function generateStreamId(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '') // Remove special chars
-    .replace(/\s+/g, '') // Remove spaces
-    + Date.now().toString(); // Add timestamp for uniqueness
-}
-
-// Utility to broadcast stream status to all connected clients
-function broadcastStreamUpdate(streamId: string, status: 'active' | 'inactive') {
-  const message = JSON.stringify({
-    type: 'streamUpdate',
-    streamId,
-    status
-  });
-  
-  global.connectedClients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-  
-  log(`Broadcasted ${status} status for stream ${streamId} to ${global.connectedClients.size} clients`);
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
   const httpServer = createServer(app);
@@ -104,6 +37,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   wss.on('connection', (ws: WebSocket, req) => {
     const clientId = req.headers['sec-websocket-key'] || Math.random().toString(36).substring(2, 15);
+    if (!global.connectedClients) {
+      global.connectedClients = new Map();
+    }
     global.connectedClients.set(clientId, ws);
     
     log(`WebSocket client connected: ${clientId}, total clients: ${global.connectedClients.size}`);
@@ -112,27 +48,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     streamingService.setupStreamHeartbeat(ws, clientId);
     
     // Send current active streams to the new client
-    const activeStreamsData = Array.from(global.activeStreams.entries()).map(([id, data]) => ({
-      streamId: id,
-      status: data.status,
-      title: data.title,
-      viewers: data.viewerCount || 0,
-      hostName: data.hostName
-    }));
-    
-    ws.send(JSON.stringify({
-      type: 'initialStreamData',
-      streams: activeStreamsData
-    }));
+    if (global.activeStreams) {
+      const activeStreamsData = Array.from(global.activeStreams.entries()).map(([id, data]) => ({
+        streamId: id,
+        status: data.status,
+        title: data.title,
+        viewers: data.viewerCount || 0,
+        hostName: data.hostName
+      }));
+      
+      ws.send(JSON.stringify({
+        type: 'initialStreamData',
+        streams: activeStreamsData
+      }));
+    }
     
     ws.on('close', () => {
-      global.connectedClients.delete(clientId);
-      log(`WebSocket client disconnected: ${clientId}, remaining clients: ${global.connectedClients.size}`);
+      if (global.connectedClients) {
+        global.connectedClients.delete(clientId);
+        log(`WebSocket client disconnected: ${clientId}, remaining clients: ${global.connectedClients.size}`);
+      }
     });
   });
   
   // Start stream monitoring background task
   streamingService.startStreamMonitoring();
+
   // Chat endpoint to get AI responses
   app.post("/api/chat", async (req, res) => {
     try {
@@ -293,6 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get all research sessions
   app.get("/api/sessions", async (req, res) => {
     try {
       const userId = 1; // Default for now, replace with actual auth logic later
@@ -309,6 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a single research session with its messages
   app.get("/api/sessions/:id", async (req, res) => {
     try {
       const sessionId = parseInt(req.params.id);
@@ -385,6 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a file by ID
   app.get("/api/files/:id", async (req, res) => {
     try {
       const fileId = parseInt(req.params.id);
@@ -407,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Endpoint to process a file after user confirmation
+  // Process a file
   app.post("/api/files/:id/process", async (req, res) => {
     try {
       const fileId = parseInt(req.params.id);
@@ -450,63 +394,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Write file
       fs.writeFileSync(logoPath, req.file.buffer);
       
-      // Update in database
-      const logoUrl = `/api/logo/image`;
-      
-      // Check if config exists
-      const [existingConfig] = await db.select().from(siteConfig);
-      
-      if (existingConfig) {
-        await db.update(siteConfig)
-          .set({ logoUrl, lastUpdated: new Date() })
-          .where(eq(siteConfig.id, existingConfig.id));
-      } else {
-        await db.insert(siteConfig).values({
-          logoUrl,
-          siteName: "vyna.live",
-          lastUpdated: new Date()
-        });
-      }
-      
-      res.json({ success: true, logoUrl });
+      res.json({ 
+        success: true, 
+        logo: `/logo${fileExt}` 
+      });
     } catch (error) {
       log(`Error uploading logo: ${error}`, "error");
       res.status(500).json({ error: "Failed to upload logo" });
     }
   });
   
-  app.get("/api/logo", async (req, res) => {
+  // Get logo
+  app.get("/api/logo", async (_req, res) => {
     try {
-      // Get logo URL from database
-      const [config] = await db.select().from(siteConfig);
+      // Check for logo files
+      const files = fs.readdirSync(LOGO_DIR);
       
-      if (config && config.logoUrl) {
-        res.json({ logoUrl: config.logoUrl });
-      } else {
-        res.json({ logoUrl: null });
-      }
-    } catch (error) {
-      log(`Error getting logo URL: ${error}`, "error");
-      res.status(500).json({ error: "Failed to get logo URL" });
-    }
-  });
-  
-  app.get("/api/logo/image", (req, res) => {
-    try {
-      // Find the logo file in the logo directory
-      if (fs.existsSync(LOGO_DIR)) {
-        const files = fs.readdirSync(LOGO_DIR);
-        const logoFile = files.find(file => file.startsWith("logo"));
+      const logoFile = files.find(file => file.startsWith('logo'));
+      
+      if (logoFile) {
+        const logoPath = path.join(LOGO_DIR, logoFile);
+        const fileBuffer = fs.readFileSync(logoPath);
+        const mimeType = path.extname(logoFile) === ".png" ? "image/png" : "image/jpeg";
         
-        if (logoFile) {
-          const logoPath = path.join(LOGO_DIR, logoFile);
-          const fileBuffer = fs.readFileSync(logoPath);
-          const mimeType = path.extname(logoFile) === ".png" ? "image/png" : "image/jpeg";
-          
-          res.setHeader("Content-Type", mimeType);
-          res.send(fileBuffer);
-          return;
-        }
+        res.setHeader("Content-Type", mimeType);
+        res.send(fileBuffer);
+        return;
       }
       
       res.status(404).json({ error: "Logo not found" });
@@ -518,166 +431,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // GetStream API endpoints for livestreaming
   app.post("/api/stream/token", getStreamToken);
-  
   app.post("/api/stream/livestream", createLivestream);
-  
-  // Get GetStream API key for frontend
   app.get("/api/stream/key", getStreamApiKey);
   
   // Agora API endpoints for livestreaming
   app.get("/api/agora/app-id", streamingService.getAgoraAppId);
-  
   app.post("/api/agora/host-token", streamingService.getHostToken);
-  
   app.post("/api/agora/audience-token", streamingService.getAudienceToken);
-  
   app.post("/api/agora/livestream", streamingService.createLivestream);
   
-  // New streaming API endpoints for real-time status
+  // New streaming API endpoints
   app.get("/api/streams/active", streamingService.getActiveStreams);
   app.get("/api/streams/:streamId", streamingService.getStreamDetails);
   app.get("/api/streams/:streamId/validate", streamingService.validateStream);
+  app.post("/api/streams/:streamId/join", streamingService.joinStream);
+  app.post("/api/streams/:streamId/leave", streamingService.leaveStream);
+  app.post("/api/streams/:streamId/end", streamingService.endStream);
   
-  // Add endpoints to update viewer counts
-  app.post("/api/streams/:channelName/join", (req, res) => {
-    try {
-      const { channelName } = req.params;
-      
-      if (!channelName) {
-        return res.status(400).json({ error: "Channel name is required" });
-      }
-      
-      // Get current viewer data or initialize new
-      let viewerData = streamViewers.get(channelName);
-      
-      if (!viewerData) {
-        viewerData = {
-          count: 1, // Start with 1 viewer (the streamer)
-          title: channelName.includes('demo') 
-            ? "Jaja Games Fighting Championship" 
-            : channelName.startsWith("saved") 
-              ? "Recorded Stream" 
-              : `${channelName} Live Stream`,
-          lastUpdated: Date.now()
-        };
-      } else {
-        // Increment viewers
-        viewerData.count += 1;
-        viewerData.lastUpdated = Date.now();
-      }
-      
-      streamViewers.set(channelName, viewerData);
-      
-      return res.status(200).json({ 
-        success: true, 
-        viewerCount: viewerData.count 
-      });
-    } catch (error) {
-      console.error("Error joining stream:", error);
-      return res.status(500).json({ error: "Failed to join stream" });
-    }
-  });
-  
-  app.post("/api/streams/:channelName/leave", (req, res) => {
-    try {
-      const { channelName } = req.params;
-      
-      if (!channelName) {
-        return res.status(400).json({ error: "Channel name is required" });
-      }
-      
-      // Get current viewer data
-      const viewerData = streamViewers.get(channelName);
-      
-      if (viewerData) {
-        // Decrement viewers but never below 1 (the host)
-        viewerData.count = Math.max(1, viewerData.count - 1);
-        viewerData.lastUpdated = Date.now();
-        streamViewers.set(channelName, viewerData);
-      }
-      
-      return res.status(200).json({ 
-        success: true, 
-        viewerCount: viewerData ? viewerData.count : 0 
-      });
-    } catch (error) {
-      console.error("Error leaving stream:", error);
-      return res.status(500).json({ error: "Failed to leave stream" });
-    }
-  });
-  
-  // Initialize global maps for stream data (in a real app these would be in a database)
-  global.streamViewers = global.streamViewers || new Map<string, {
-    count: number,
-    title: string,
-    streamId?: string, // Unique identifier for the stream
-    hostName?: string, // Host name
-    hostAvatar?: string, // Host avatar URL
-    isActive?: boolean, // Whether stream is currently active
-    lastUpdated: number
-  }>();
-  
-  global.streamIdToChannel = global.streamIdToChannel || new Map<string, string>();
-  
-  // Use references to the global maps
-  const streamViewers = global.streamViewers;
-  const streamIdToChannel = global.streamIdToChannel;
-
-  // Get stream details by channel name
-  app.get("/api/streams/:channelName", async (req, res) => {
-    try {
-      const { channelName } = req.params;
-      
-      if (!channelName) {
-        return res.status(400).json({ error: "Channel name is required" });
-      }
-      
-      console.log(`Getting stream details for channel: ${channelName}`);
-      
-      // Check if we have existing viewer data for this channel
-      if (!streamViewers.has(channelName)) {
-        console.log(`No existing data for channel ${channelName}, initializing with defaults`);
-        // Initialize with starting data
-        streamViewers.set(channelName, {
-          count: 1, // Start with 1 viewer (the streamer)
-          title: channelName.includes('demo') 
-            ? "Jaja Games Fighting Championship" 
-            : channelName.startsWith("saved") 
-              ? "Recorded Stream" 
-              : `Live Stream`,
-          hostName: "Divine Samuel",
-          isActive: true,
-          lastUpdated: Date.now()
-        });
-      } else {
-        // Update the last activity time
-        const viewerData = streamViewers.get(channelName)!;
-        viewerData.lastUpdated = Date.now();
-        streamViewers.set(channelName, viewerData);
-        console.log(`Updated activity time for channel ${channelName}`);
-      }
-      
-      const viewerData = streamViewers.get(channelName)!;
-      console.log(`Stream viewer data for ${channelName}:`, viewerData);
-      
-      // In a production app, you would fetch this from the database
-      const streamData = {
-        channelName,
-        title: viewerData.title || "Live Stream",
-        hostName: viewerData.hostName || "Divine Samuel",
-        hostAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
-        viewerCount: viewerData.count,
-        status: "live",
-        description: "This is a sample stream description."
-      };
-      
-      return res.status(200).json(streamData);
-    } catch (error) {
-      console.error("Error getting stream details:", error);
-      return res.status(500).json({ error: "Failed to get stream details" });
-    }
-  });
-
   // Wallet connection endpoints
   app.post("/api/users/wallet", async (req, res) => {
     try {
@@ -712,6 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Disconnect wallet
   app.delete("/api/users/wallet", async (req, res) => {
     try {
       const userId = 1; // Default for now, replace with actual auth logic later
@@ -738,144 +509,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to disconnect wallet" });
     }
   });
-
-  // Stream ID validation endpoint
-  app.get("/api/livestreams/:streamId/validate", async (req, res) => {
-    try {
-      const { streamId } = req.params;
-      
-      if (!streamId) {
-        return res.status(400).json({ error: "Stream ID is required" });
-      }
-      
-      console.log(`Validating stream ID: ${streamId}`);
-      // Log current mappings in a more compatible way
-      const mappings: string[] = [];
-      streamIdToChannel.forEach((channel, id) => {
-        mappings.push(`${id} -> ${channel}`);
-      });
-      console.log(`Current stream mappings:`, mappings);
-      
-      // First, try looking up the stream ID directly
-      let channelName = streamIdToChannel.get(streamId);
-      
-      // If not found, check if it's a channel name with stream_ prefix
-      if (!channelName && streamId.startsWith('stream_')) {
-        console.log(`Stream ID appears to be a channel name with stream_ prefix`);
-        
-        // The streamId is already a channel name, so check if we have viewer data for it
-        if (streamViewers.has(streamId)) {
-          channelName = streamId;
-          // For consistency, also add it to the id->channel mapping 
-          const actualId = streamId.replace(/^stream_/, '');
-          streamIdToChannel.set(actualId, streamId);
-          console.log(`Added reverse mapping ${actualId} -> ${streamId}`);
-        }
-      }
-      
-      if (!channelName) {
-        console.log(`Stream ID ${streamId} not found in mapping`);
-        
-        // Check for our standard format
-        if (/^[a-zA-Z0-9_-]{6,}$/.test(streamId)) {
-          // This is a valid format for a stream ID
-          // Store it with a generated channel name
-          const newChannelName = `stream_${streamId}`;
-          console.log(`Creating new mapping ${streamId} -> ${newChannelName}`);
-          
-          streamIdToChannel.set(streamId, newChannelName);
-          
-          // Initialize the viewer data
-          if (!streamViewers.has(newChannelName)) {
-            console.log(`Initializing viewer data for ${newChannelName}`);
-            streamViewers.set(newChannelName, {
-              count: 1, // Start with 1 viewer (the streamer)
-              title: `Live Stream ${streamId}`,
-              streamId: streamId,
-              hostName: "Host", // Default name
-              isActive: true,
-              lastUpdated: Date.now()
-            });
-          }
-          
-          return res.status(200).json({ 
-            isActive: true,
-            channelName: newChannelName
-          });
-        }
-        
-        // If not found and not a valid format
-        console.log(`Stream ID ${streamId} is not in a valid format`);
-        return res.status(404).json({ 
-          error: "Stream not found",
-          isActive: false
-        });
-      }
-      
-      // Check if the stream is active
-      const viewerData = streamViewers.get(channelName);
-      const isActive = viewerData ? true : false;
-      
-      console.log(`Stream ID ${streamId} is mapped to channel ${channelName}, active: ${isActive}`);
-      if (viewerData) {
-        console.log(`Stream data:`, {
-          title: viewerData.title,
-          hostName: viewerData.hostName,
-          count: viewerData.count
-        });
-      }
-      
-      return res.status(200).json({ 
-        isActive,
-        channelName,
-        ...viewerData
-      });
-    } catch (error) {
-      console.error("Error validating stream ID:", error);
-      return res.status(500).json({ error: "Failed to validate stream" });
-    }
-  });
   
-  // Stream data by ID endpoint
-  app.get("/api/livestreams/:streamId", async (req, res) => {
-    try {
-      const { streamId } = req.params;
-      
-      if (!streamId) {
-        return res.status(400).json({ error: "Stream ID is required" });
-      }
-      
-      // Check if we have this streamId in our mapping
-      const channelName = streamIdToChannel.get(streamId);
-      
-      if (!channelName) {
-        return res.status(404).json({ error: "Stream not found" });
-      }
-      
-      // Get the viewer data
-      const viewerData = streamViewers.get(channelName);
-      
-      if (!viewerData) {
-        return res.status(404).json({ error: "Stream data not found" });
-      }
-      
-      return res.status(200).json({
-        streamId,
-        channelName,
-        title: viewerData.title,
-        hostName: viewerData.hostName || "Host",
-        hostAvatar: viewerData.hostAvatar,
-        viewerCount: viewerData.count,
-        isActive: true,
-        timestamp: viewerData.lastUpdated
-      });
-    } catch (error) {
-      console.error("Error getting stream data:", error);
-      return res.status(500).json({ error: "Failed to get stream data" });
-    }
-  });
-
-  // End of stream-related API routes
-
   return httpServer;
 }
