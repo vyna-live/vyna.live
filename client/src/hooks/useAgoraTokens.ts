@@ -228,6 +228,11 @@ export default function useAgoraTokens(initialChannelName: string = ''): AgoraTo
         currentAppId = appIdData.appId;
       }
       
+      // Make sure we have a valid app ID string
+      if (typeof currentAppId !== 'string') {
+        throw new Error('Invalid App ID');
+      }
+      
       // Now get the audience tokens
       const response = await fetch('/api/agora/audience-token', {
         method: 'POST',

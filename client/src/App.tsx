@@ -20,7 +20,7 @@ function Router() {
       <Route path="/join-stream" component={JoinStream} />
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
-      <Route path="/direct-stream" component={DirectStream} />
+      <Route path="/direct/:code" component={DirectStream} />
       <Route component={NotFound} />
     </Switch>
   );
