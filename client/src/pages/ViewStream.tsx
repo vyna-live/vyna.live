@@ -48,7 +48,8 @@ export default function ViewStream() {
           console.log('ViewStream: Validating stream ID:', streamId);
           
           // First validate the stream - this checks if it's active
-          const validateResponse = await fetch(`/api/livestreams/${streamId}/validate`);
+          // Use the new streamingService API endpoint
+          const validateResponse = await fetch(`/api/streams/${streamId}/validate`);
           
           if (!validateResponse.ok) {
             throw new Error('Stream cannot be found or is no longer active');
@@ -62,7 +63,7 @@ export default function ViewStream() {
           
           // Now get the full stream details
           console.log('ViewStream: Getting stream details for:', streamId);
-          const streamLookupResponse = await fetch(`/api/livestreams/${streamId}`);
+          const streamLookupResponse = await fetch(`/api/streams/${streamId}`);
           
           if (!streamLookupResponse.ok) {
             throw new Error('Stream not found or no longer active');
@@ -125,11 +126,19 @@ export default function ViewStream() {
         
         console.log('ViewStream: Joining stream:', channelName);
         // Track that this viewer joined the stream to increment the count
-        await fetch(`/api/streams/${channelName}/join`, {
+        // Use the streamId if available, otherwise use channelName
+        const joinEndpoint = streamId 
+          ? `/api/streams/${streamId}/join`
+          : `/api/streams/${channelName}/join`;
+          
+        await fetch(joinEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({ 
+            userName: 'Anonymous Viewer' 
+          })
         });
         
         console.log('ViewStream: Setting stream data', {
@@ -153,7 +162,12 @@ export default function ViewStream() {
         // Setup leaving event handler
         const handleBeforeUnload = () => {
           // Track that this viewer left the stream
-          fetch(`/api/streams/${channelName}/leave`, {
+          // Use the same endpoint pattern as with join
+          const leaveEndpoint = streamId 
+            ? `/api/streams/${streamId}/leave`
+            : `/api/streams/${channelName}/leave`;
+          
+          fetch(leaveEndpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

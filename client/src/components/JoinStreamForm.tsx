@@ -51,8 +51,8 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       
       console.log("Extracted Stream ID:", streamId);
       
-      // Validate the stream ID
-      const response = await fetch(`/api/livestreams/${streamId}/validate`);
+      // Validate the stream ID using the new streamingService API
+      const response = await fetch(`/api/streams/${streamId}/validate`);
       
       if (!response.ok) {
         throw new Error('Invalid stream link or stream is not active');
@@ -63,6 +63,9 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       if (!data.isActive) {
         throw new Error('This stream is no longer active');
       }
+      
+      // Store the channel name for reference
+      console.log(`Stream is valid with channel name: ${data.channelName}`)
       
       console.log("Stream is active, redirecting to:", `/view-stream/${streamId}`);
       
