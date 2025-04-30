@@ -82,10 +82,15 @@ export function getAudienceToken(req: Request, res: Response) {
     }
 
     // Convert string uid to number if needed
-    const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
+    const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
-    // Generate a token with audience privileges
-    const token = generateAgoraToken(channelName, uidNumber, SUBSCRIBER_ROLE);
+    console.log(`Generating audience token for channel: ${channelName}, uid: ${uidNumber}`);
+    
+    // Generate a token with audience privileges and longer expiration (4 hours)
+    const token = generateAgoraToken(channelName, uidNumber, SUBSCRIBER_ROLE, 14400);
+
+    // Log the token (partial) for debugging
+    console.log(`Generated audience token: ${token.substring(0, 20)}...`);
 
     res.json({
       token,
@@ -123,14 +128,16 @@ export async function createLivestream(req: Request, res: Response) {
       return res.status(400).json({ error: 'Title and userName are required' });
     }
 
-    // Generate a channel name (using title and some random string for uniqueness)
-    const channelName = `${title.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+    // Generate a clean channel name (using title and timestamp for uniqueness)
+    // Make sure it doesn't include any special characters that could cause token issues
+    const cleanTitle = title.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    const channelName = `${cleanTitle}${Date.now()}`;
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || Math.floor(Math.random() * 1000000);
 
-    // Generate a token with host privileges
-    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE);
+    // Generate a token with host privileges with longer expiration time (4 hours)
+    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE, 14400);
 
-    // Create a unique stream ID
+    // Use the same channelName as the streamId for consistency
     const streamId = channelName;
 
     console.log(`Creating livestream: ${title} with ID ${streamId}`);

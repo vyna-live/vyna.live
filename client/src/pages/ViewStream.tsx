@@ -94,7 +94,7 @@ export default function ViewStream() {
         const audienceUid = Math.floor(Math.random() * 1000000);
         
         console.log('ViewStream: Getting Agora audience token for channel:', channelName);
-        // Get audience token
+        // Get audience token - make sure we pass the EXACT same channel name that the host used
         const tokenResponse = await fetch('/api/agora/audience-token', {
           method: 'POST',
           headers: {
@@ -102,8 +102,7 @@ export default function ViewStream() {
           },
           body: JSON.stringify({
             channelName,
-            uid: audienceUid,
-            role: 'audience'
+            uid: audienceUid
           })
         });
         
@@ -112,9 +111,10 @@ export default function ViewStream() {
         }
         
         const tokenData = await tokenResponse.json();
+        console.log('ViewStream: Got token for channel:', tokenData.channelName);
         
-        console.log('ViewStream: Getting stream details for channel:', channelName);
         // Get stream details from our API
+        console.log('ViewStream: Getting stream details for channel:', channelName);
         const streamDetailsResponse = await fetch(`/api/streams/${channelName}`);
         
         if (!streamDetailsResponse.ok) {

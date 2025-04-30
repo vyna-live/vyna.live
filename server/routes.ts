@@ -522,8 +522,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Channel name is required" });
       }
       
+      console.log(`Getting stream details for channel: ${channelName}`);
+      
       // Check if we have existing viewer data for this channel
       if (!streamViewers.has(channelName)) {
+        console.log(`No existing data for channel ${channelName}, initializing with defaults`);
         // Initialize with starting data
         streamViewers.set(channelName, {
           count: 1, // Start with 1 viewer (the streamer)
@@ -531,7 +534,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? "Jaja Games Fighting Championship" 
             : channelName.startsWith("saved") 
               ? "Recorded Stream" 
-              : `${channelName} Live Stream`,
+              : `Live Stream`,
+          hostName: "Divine Samuel",
+          isActive: true,
           lastUpdated: Date.now()
         });
       } else {
@@ -539,18 +544,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const viewerData = streamViewers.get(channelName)!;
         viewerData.lastUpdated = Date.now();
         streamViewers.set(channelName, viewerData);
+        console.log(`Updated activity time for channel ${channelName}`);
       }
       
       const viewerData = streamViewers.get(channelName)!;
+      console.log(`Stream viewer data for ${channelName}:`, viewerData);
       
       // In a production app, you would fetch this from the database
       const streamData = {
         channelName,
-        title: viewerData.title,
-        hostName: "Divine Samuel",
-        hostAvatar: "https://randomuser.me/api/portraits/women/32.jpg",
+        title: viewerData.title || "Live Stream",
+        hostName: viewerData.hostName || "Divine Samuel",
+        hostAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
         viewerCount: viewerData.count,
-        status: channelName.startsWith("saved") ? "recorded" : "live",
+        status: "live",
         description: "This is a sample stream description."
       };
       
