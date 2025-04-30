@@ -4,21 +4,6 @@ import ViewerStreamInterface from '../components/ViewerStreamInterface';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Helper function to parse URL query parameters
-function getQueryParams(): Record<string, string> {
-  const search = window.location.search.substring(1);
-  return search
-    .split('&')
-    .map(param => {
-      const [key, value] = param.split('=');
-      return { key, value: value || '' };
-    })
-    .reduce((acc, { key, value }) => {
-      if (key) acc[key] = decodeURIComponent(value);
-      return acc;
-    }, {} as Record<string, string>);
-}
-
 interface StreamParams {
   channelName?: string;
   streamId?: string;
@@ -54,12 +39,8 @@ export default function ViewStream() {
       try {
         console.log('ViewStream: Trying to load stream with params:', params);
         
-        // Get query parameters (e.g., ?channel=xyz)
-        const queryParams = getQueryParams();
-        console.log('ViewStream: Extracted query params:', queryParams);
-        
         // Determine if we're using streamId or channelName
-        let channelName = params.channelName || queryParams.channel;
+        let channelName = params.channelName;
         let streamId = params.streamId;
         
         // Start by validating the stream ID if we have one
@@ -205,9 +186,6 @@ export default function ViewStream() {
     };
     
     fetchStreamInfo();
-    
-    // We don't need to add queryParams to the dependency array because getQueryParams() 
-    // reads directly from window.location.search which changes with the route
   }, [params.channelName, params.streamId, toast]);
   
   if (isLoading) {
@@ -222,31 +200,14 @@ export default function ViewStream() {
   if (error || !streamData) {
     return (
       <div className="w-full h-screen flex flex-col items-center justify-center bg-black p-4">
-        <div className="max-w-lg bg-black/70 backdrop-blur-sm p-6 rounded-lg border border-red-500/30">
-          <div className="text-red-500 text-2xl mb-4">Stream Error</div>
-          <div className="text-white text-lg mb-4">{error || 'Unable to load stream'}</div>
-          <div className="text-gray-400 text-sm mb-6">
-            {error?.includes("not found") ? 
-              "The stream you're looking for may have ended or never existed. Please check the stream link and try again." : 
-            error?.includes("token") ?
-              "Authentication failed. The stream may have expired or the streamer is no longer broadcasting." :
-              "There was a problem connecting to the stream. Please check your connection and try again."}
-          </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-            >
-              Try Again
-            </button>
-            <button 
-              onClick={() => setLocation('/')}
-              className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-            >
-              Back to Home
-            </button>
-          </div>
-        </div>
+        <div className="text-red-500 text-2xl mb-4">Stream Error</div>
+        <div className="text-white text-lg mb-6">{error || 'Unable to load stream'}</div>
+        <button 
+          onClick={() => setLocation('/')}
+          className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          Back to Home
+        </button>
       </div>
     );
   }

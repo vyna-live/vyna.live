@@ -12,8 +12,7 @@ import path from "path";
 import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
-import { WebSocketServer, WebSocket } from 'ws';
-import * as streamingService from "./streamingService";
+import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -28,111 +27,7 @@ if (!fs.existsSync(LOGO_DIR)) {
   fs.mkdirSync(LOGO_DIR, { recursive: true });
 }
 
-// Track active streams globally
-declare global {
-  var activeStreams: Map<string, {
-    channelName: string;
-    title: string;
-    hostName: string;
-    startTime: number;
-    lastPing: number;
-    viewers: number;
-    status: 'active' | 'inactive';
-  }>;
-  var streamIdToChannel: Map<string, string>;
-  var streamViewers: Map<string, {
-    count: number;
-    title: string;
-    hostName: string;
-    streamId: string;
-    hostAvatar?: string;
-    isActive: boolean;
-    lastUpdated: number;
-  }>;
-  var connectedClients: Map<string, WebSocket>;
-}
-
-// Initialize our global tracking maps
-if (!global.activeStreams) {
-  global.activeStreams = new Map();
-}
-
-if (!global.streamIdToChannel) {
-  global.streamIdToChannel = new Map();
-}
-
-if (!global.streamViewers) {
-  global.streamViewers = new Map();
-}
-
-if (!global.connectedClients) {
-  global.connectedClients = new Map();
-}
-
-// Utility to generate a URL-friendly stream ID from a title
-function generateStreamId(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '') // Remove special chars
-    .replace(/\s+/g, '') // Remove spaces
-    + Date.now().toString(); // Add timestamp for uniqueness
-}
-
-// Utility to broadcast stream status to all connected clients
-function broadcastStreamUpdate(streamId: string, status: 'active' | 'inactive') {
-  const message = JSON.stringify({
-    type: 'streamUpdate',
-    streamId,
-    status
-  });
-  
-  global.connectedClients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
-  
-  log(`Broadcasted ${status} status for stream ${streamId} to ${global.connectedClients.size} clients`);
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Create HTTP server
-  const httpServer = createServer(app);
-  
-  // Create WebSocket server for active stream tracking
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  wss.on('connection', (ws: WebSocket, req) => {
-    const clientId = req.headers['sec-websocket-key'] || Math.random().toString(36).substring(2, 15);
-    global.connectedClients.set(clientId, ws);
-    
-    log(`WebSocket client connected: ${clientId}, total clients: ${global.connectedClients.size}`);
-    
-    // Set up the streaming heartbeat handler for this connection
-    streamingService.setupStreamHeartbeat(ws, clientId);
-    
-    // Send current active streams to the new client
-    const activeStreamsData = Array.from(global.activeStreams.entries()).map(([id, data]) => ({
-      streamId: id,
-      status: data.status,
-      title: data.title,
-      viewers: data.viewerCount || 0,
-      hostName: data.hostName
-    }));
-    
-    ws.send(JSON.stringify({
-      type: 'initialStreamData',
-      streams: activeStreamsData
-    }));
-    
-    ws.on('close', () => {
-      global.connectedClients.delete(clientId);
-      log(`WebSocket client disconnected: ${clientId}, remaining clients: ${global.connectedClients.size}`);
-    });
-  });
-  
-  // Start stream monitoring background task
-  streamingService.startStreamMonitoring();
   // Chat endpoint to get AI responses
   app.post("/api/chat", async (req, res) => {
     try {
@@ -525,18 +420,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stream/key", getStreamApiKey);
   
   // Agora API endpoints for livestreaming
-  app.get("/api/agora/app-id", streamingService.getAgoraAppId);
+  app.get("/api/agora/app-id", getAgoraAppId);
   
-  app.post("/api/agora/host-token", streamingService.getHostToken);
+  app.post("/api/agora/host-token", getHostToken);
   
-  app.post("/api/agora/audience-token", streamingService.getAudienceToken);
+  app.post("/api/agora/audience-token", getAudienceToken);
   
-  app.post("/api/agora/livestream", streamingService.createLivestream);
-  
-  // New streaming API endpoints for real-time status
-  app.get("/api/streams/active", streamingService.getActiveStreams);
-  app.get("/api/streams/:streamId", streamingService.getStreamDetails);
-  app.get("/api/streams/:streamId/validate", streamingService.validateStream);
+  app.post("/api/agora/livestream", createAgoraLivestream);
   
   // Add endpoints to update viewer counts
   app.post("/api/streams/:channelName/join", (req, res) => {
@@ -876,6 +766,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // End of stream-related API routes
+
+  const httpServer = createServer(app);
 
   return httpServer;
 }

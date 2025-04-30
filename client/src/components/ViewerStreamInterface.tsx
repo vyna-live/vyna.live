@@ -59,7 +59,7 @@ interface ChatMessage {
 interface ViewerStreamInterfaceProps {
   appId: string;
   channelName: string;
-  token: string;
+  token?: string;
   uid?: number;
   username: string;
   streamTitle: string;
@@ -224,33 +224,6 @@ export default function ViewerStreamInterface({
           // Continue without RTM if it fails
         }
         
-        // Join the channel
-        console.log(`Joining Agora channel as audience: ${channelName} with uid ${uid}`);
-        console.log(`Using token: ${token.substring(0, 20)}...`);
-        
-        try {
-          // Join with a timeout to catch potential hanging connections
-          const joinPromise = agoraClient.join(appId, channelName, token, uid);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Joining channel timed out after 15 seconds")), 15000)
-          );
-          
-          await Promise.race([joinPromise, timeoutPromise]);
-          console.log("✅ Successfully joined Agora channel as audience");
-          setIsJoined(true);
-        } catch (error: any) {
-          console.error("Failed to join Agora channel:", error);
-          // Provide a specific error message for common errors
-          if (error?.message?.includes("token")) {
-            setError(`Authentication failed: Invalid token for channel ${channelName}`);
-          } else if (error?.message?.includes("timeout")) {
-            setError("Connection timed out. Please check your internet connection and try again.");
-          } else {
-            setError(`Failed to join stream: ${error?.message || "Unknown error"}`);
-          }
-          throw error; // Rethrow to be caught by the outer catch block
-        }
-        
         // Event listeners for RTC client
         agoraClient.on('user-published', async (user, mediaType) => {
           // When a broadcaster publishes a track
@@ -375,7 +348,11 @@ export default function ViewerStreamInterface({
           });
         });
         
-        // We've already joined the channel above
+        // Join the channel
+        await agoraClient.join(appId, channelName, token || null, uid);
+        console.log("Joined Agora channel:", channelName);
+        
+        setIsJoined(true);
         setIsLoading(false);
       } catch (err) {
         console.error("Error initializing Agora:", err);
@@ -585,28 +562,15 @@ export default function ViewerStreamInterface({
           </div>
         ) : error ? (
           <div className="w-full h-full flex items-center justify-center bg-black">
-            <div className="z-10 bg-black/70 backdrop-blur-sm p-6 rounded-lg border border-red-500/30 max-w-lg">
+            <div className="z-10 bg-black/70 backdrop-blur-sm p-6 rounded-lg border border-red-500/30">
               <div className="text-red-400 text-xl mb-4">Stream Error</div>
               <div className="text-white mb-4">{error}</div>
-              <div className="text-gray-400 text-sm mb-6">
-                {error?.includes("token") ? 
-                  "The stream authentication failed. This may happen if the stream expired or the streamer is no longer broadcasting." :
-                  "There was a problem connecting to the stream. Please check your connection and try again."}
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                >
-                  Try Again
-                </button>
-                <button 
-                  onClick={() => window.location.href = '/'}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-                >
-                  Back to Home
-                </button>
-              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           </div>
         ) : (

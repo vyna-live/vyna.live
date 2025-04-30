@@ -55,14 +55,9 @@ export function getHostToken(req: Request, res: Response) {
 
     // Convert string uid to number if needed
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
-    
-    console.log(`Generating host token for channel: ${channelName}, uid: ${uidNumber}`);
 
-    // Generate a token with host privileges with longer expiration (4 hours)
-    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE, 14400);
-    
-    // Log the token (partial) for debugging
-    console.log(`Generated host token for channel ${channelName}: ${token.substring(0, 20)}...`);
+    // Generate a token with host privileges
+    const token = generateAgoraToken(channelName, uidNumber, PUBLISHER_ROLE);
 
     res.json({
       token,
@@ -70,21 +65,10 @@ export function getHostToken(req: Request, res: Response) {
       channelName,
       uid: uidNumber,
       role: 'host',
-      expiresInSeconds: 14400,
     });
   } catch (error) {
     console.error('Error generating Agora token:', error);
-    // Provide more detailed error feedback
-    const errorMessage = error instanceof Error ? 
-      error.message : 
-      'Failed to generate token';
-      
-    console.error(`Host token generation failed with error: ${errorMessage}`);
-    
-    res.status(500).json({ 
-      error: errorMessage, 
-      details: error instanceof Error ? error.stack : undefined 
-    });
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to generate token' });
   }
 }
 
@@ -102,42 +86,22 @@ export function getAudienceToken(req: Request, res: Response) {
 
     console.log(`Generating audience token for channel: ${channelName}, uid: ${uidNumber}`);
     
-    // Check stream existence first for better UX
-    if (global.streamViewers && !global.streamViewers.has(channelName)) {
-      console.log(`Warning: Generating token for non-existent stream: ${channelName}`);
-      // We'll still generate a token, but log the warning
-    }
-    
     // Generate a token with audience privileges and longer expiration (4 hours)
     const token = generateAgoraToken(channelName, uidNumber, SUBSCRIBER_ROLE, 14400);
 
     // Log the token (partial) for debugging
-    console.log(`Generated audience token for channel ${channelName}: ${token.substring(0, 20)}...`);
+    console.log(`Generated audience token: ${token.substring(0, 20)}...`);
 
-    // Return success response
     res.json({
       token,
       appId,
       channelName,
       uid: uidNumber,
       role: 'audience',
-      expiresInSeconds: 14400,
     });
   } catch (error) {
     console.error('Error generating Agora token:', error);
-    // Provide more detailed error feedback
-    const errorMessage = error instanceof Error ? 
-      error.message : 
-      'Failed to generate token';
-      
-    // Log the detailed error for debugging
-    console.error(`Token generation failed with error: ${errorMessage}`);
-    
-    res.status(500).json({ 
-      error: errorMessage, 
-      details: error instanceof Error ? error.stack : undefined,
-      channelName: req.body.channelName
-    });
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to generate token' });
   }
 }
 
