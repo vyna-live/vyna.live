@@ -59,7 +59,7 @@ interface ChatMessage {
 interface ViewerStreamInterfaceProps {
   appId: string;
   channelName: string;
-  token?: string;
+  token: string;
   uid?: number;
   username: string;
   streamTitle: string;
@@ -224,6 +224,12 @@ export default function ViewerStreamInterface({
           // Continue without RTM if it fails
         }
         
+        // Join the channel
+        console.log(`Joining Agora channel as audience: ${channelName} with token ${token.substring(0, 20)}...`);
+        await agoraClient.join(appId, channelName, token, uid);
+        console.log("Successfully joined Agora channel as audience");
+        setIsJoined(true);
+        
         // Event listeners for RTC client
         agoraClient.on('user-published', async (user, mediaType) => {
           // When a broadcaster publishes a track
@@ -348,11 +354,7 @@ export default function ViewerStreamInterface({
           });
         });
         
-        // Join the channel
-        await agoraClient.join(appId, channelName, token || null, uid);
-        console.log("Joined Agora channel:", channelName);
-        
-        setIsJoined(true);
+        // We've already joined the channel above
         setIsLoading(false);
       } catch (err) {
         console.error("Error initializing Agora:", err);
