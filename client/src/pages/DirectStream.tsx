@@ -84,7 +84,7 @@ export default function DirectStream() {
 
   // Redirect back to join page if there's an error
   const handleBackToJoin = () => {
-    setLocation('/join');
+    setLocation('/join-stream');
   };
   
   if (isLoading || isTokenLoading) {

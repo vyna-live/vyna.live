@@ -11,12 +11,7 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [joinType, setJoinType] = useState<'link' | 'direct'>('link');
-  const [directAccessData, setDirectAccessData] = useState({
-    appId: '',
-    channelName: '',
-    hostName: 'Streamer',
-    streamTitle: 'Live Stream'
-  });
+  const [streamCode, setStreamCode] = useState('');
   const [, setLocation] = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,8 +83,8 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       }
     } else {
       // Direct access mode - using stream code
-      if (!directAccessData.channelName.trim() || !directAccessData.appId.trim()) {
-        setError('Stream code and App ID are required');
+      if (!streamCode.trim()) {
+        setError('Stream code is required');
         return;
       }
 
@@ -97,28 +92,8 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       setError('');
 
       try {
-        // Get app ID if not provided (use our default)
-        let appId = directAccessData.appId;
-        if (!appId) {
-          const appIdResponse = await fetch('/api/agora/app-id');
-          if (!appIdResponse.ok) {
-            throw new Error('Failed to get App ID');
-          }
-          const appIdData = await appIdResponse.json();
-          appId = appIdData.appId;
-        }
-
-        // Store the direct access data in sessionStorage
-        sessionStorage.setItem('directStreamData', JSON.stringify({
-          appId,
-          channelName: directAccessData.channelName,
-          hostName: directAccessData.hostName || 'Streamer',
-          streamTitle: directAccessData.streamTitle || 'Live Stream',
-          directAccess: true
-        }));
-
-        // Redirect to the special direct access page
-        setLocation(`/direct-stream`);
+        // Using direct code access - just redirect to the direct route with the code
+        setLocation(`/direct/${streamCode}`);
       } catch (error) {
         console.error("Direct join error:", error);
         if (error instanceof Error) {
@@ -180,54 +155,17 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
             />
           </div>
         ) : (
-          <>
-            <div className="mb-3">
-              <label htmlFor="channelName" className="block text-sm text-gray-400 mb-1">Stream Code</label>
-              <input
-                id="channelName"
-                type="text"
-                value={directAccessData.channelName}
-                onChange={(e) => setDirectAccessData({...directAccessData, channelName: e.target.value})}
-                placeholder="Enter the stream code"
-                className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
-              />
-            </div>
-            <div className="mb-3">
-              <label htmlFor="appId" className="block text-sm text-gray-400 mb-1">App ID</label>
-              <input
-                id="appId"
-                type="text"
-                value={directAccessData.appId}
-                onChange={(e) => setDirectAccessData({...directAccessData, appId: e.target.value})}
-                placeholder="Enter Agora App ID (optional)"
-                className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
-              />
-            </div>
-            <div className="flex gap-2">
-              <div className="mb-3 flex-1">
-                <label htmlFor="hostName" className="block text-sm text-gray-400 mb-1">Host Name</label>
-                <input
-                  id="hostName"
-                  type="text"
-                  value={directAccessData.hostName}
-                  onChange={(e) => setDirectAccessData({...directAccessData, hostName: e.target.value})}
-                  placeholder="Enter host name"
-                  className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
-                />
-              </div>
-              <div className="mb-3 flex-1">
-                <label htmlFor="streamTitle" className="block text-sm text-gray-400 mb-1">Stream Title</label>
-                <input
-                  id="streamTitle"
-                  type="text"
-                  value={directAccessData.streamTitle}
-                  onChange={(e) => setDirectAccessData({...directAccessData, streamTitle: e.target.value})}
-                  placeholder="Enter stream title"
-                  className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
-                />
-              </div>
-            </div>
-          </>
+          <div className="mb-4">
+            <label htmlFor="streamCode" className="block text-sm text-gray-400 mb-1">Stream Code</label>
+            <input
+              id="streamCode"
+              type="text"
+              value={streamCode}
+              onChange={(e) => setStreamCode(e.target.value)}
+              placeholder="Enter the stream code provided by the streamer"
+              className="w-full bg-gray-900/70 border border-gray-700 rounded-lg py-2 px-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#5D1C34]/50 focus:border-transparent transition"
+            />
+          </div>
         )}
         
         {error && (
@@ -240,7 +178,7 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
           type="submit"
           disabled={isLoading || 
             (joinType === 'link' ? !streamLink.trim() : 
-             !directAccessData.channelName.trim())
+             !streamCode.trim())
           }
           className="w-full py-2.5 px-4 bg-gradient-to-r from-[#5D1C34] to-[#A67D44] rounded-lg text-white font-medium disabled:opacity-60 disabled:cursor-not-allowed hover:from-[#6D2C44] hover:to-[#B68D54] transition-colors"
         >
@@ -251,7 +189,7 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       <div className="mt-4 text-center text-gray-500 text-xs">
         {joinType === 'link' 
           ? 'To join a stream, paste the stream link shared by the streamer or enter the stream ID'
-          : 'Enter the stream code and App ID to directly connect to a stream'}
+          : 'Enter the stream code provided by the streamer to directly connect to their stream'}
       </div>
     </div>
   );
