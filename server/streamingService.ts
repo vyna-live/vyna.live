@@ -250,11 +250,12 @@ export function createLivestream(req: Request, res: Response): void {
       return;
     }
 
-    // Generate a clean ID for the stream
+    // Generate a clean ID for the stream for shareable URL
     const streamId = generateStreamId(title);
     
-    // Use the streamId directly as the channelName
-    const channelName = streamId;
+    // Use the exact title as the channel name for simplicity
+    // This ensures audience members can join with the exact same channel name
+    const channelName = title;
     
     // Convert string uid to number if needed, or use 0 (Agora will assign a uid)
     const uidNumber = typeof uid === 'string' ? parseInt(uid, 10) : uid || 0;
