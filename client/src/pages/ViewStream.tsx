@@ -200,14 +200,31 @@ export default function ViewStream() {
   if (error || !streamData) {
     return (
       <div className="w-full h-screen flex flex-col items-center justify-center bg-black p-4">
-        <div className="text-red-500 text-2xl mb-4">Stream Error</div>
-        <div className="text-white text-lg mb-6">{error || 'Unable to load stream'}</div>
-        <button 
-          onClick={() => setLocation('/')}
-          className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          Back to Home
-        </button>
+        <div className="max-w-lg bg-black/70 backdrop-blur-sm p-6 rounded-lg border border-red-500/30">
+          <div className="text-red-500 text-2xl mb-4">Stream Error</div>
+          <div className="text-white text-lg mb-4">{error || 'Unable to load stream'}</div>
+          <div className="text-gray-400 text-sm mb-6">
+            {error?.includes("not found") ? 
+              "The stream you're looking for may have ended or never existed. Please check the stream link and try again." : 
+            error?.includes("token") ?
+              "Authentication failed. The stream may have expired or the streamer is no longer broadcasting." :
+              "There was a problem connecting to the stream. Please check your connection and try again."}
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            >
+              Try Again
+            </button>
+            <button 
+              onClick={() => setLocation('/')}
+              className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
