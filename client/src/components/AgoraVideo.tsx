@@ -12,7 +12,7 @@ import AgoraRTC, {
   ILocalVideoTrack
 } from "agora-rtc-sdk-ng";
 import AgoraRTM, { RtmClient, RtmMessage, RtmChannel } from 'agora-rtm-sdk';
-import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp } from 'lucide-react';
+import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp, Share2, Copy } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 // Define Agora config
@@ -846,8 +846,8 @@ export function AgoraVideo({
         </div>
       )}
       
-      {/* Custom controls - more stylish than Agora's */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10">
+      {/* Custom controls - centered at the bottom */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-5 bg-black/40 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/10 shadow-lg">
         <button 
           onClick={toggleAudio}
           className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
@@ -880,7 +880,7 @@ export function AgoraVideo({
         LIVE
       </div>
       
-      {/* Viewer count and drawer toggle */}
+      {/* Viewer count, share button, and drawer toggle */}
       <div className="absolute top-4 right-4 flex items-center space-x-3">
         {/* Viewer count with glassmorphic background */}
         <div className="flex items-center bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
@@ -889,13 +889,39 @@ export function AgoraVideo({
             <span className="text-white text-xs">{viewers}</span>
           </div>
         </div>
+
+        {/* Share button with transparent background */}
+        <button
+          onClick={() => {
+            // Generate the shareable link
+            const shareUrl = window.location.href;
+            navigator.clipboard.writeText(shareUrl).then(() => {
+              // Show toast notification instead of alert
+              const toast = document.createElement('div');
+              toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
+              toast.textContent = 'Stream link copied to clipboard!';
+              document.body.appendChild(toast);
+              
+              // Remove the toast after 2 seconds
+              setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => document.body.removeChild(toast), 300);
+              }, 2000);
+            }).catch(err => {
+              console.error('Could not copy link: ', err);
+            });
+          }}
+          className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
+        >
+          <Share2 size={14} />
+        </button>
         
         {/* Drawer toggle button with glassmorphic background */}
         <button 
           onClick={onToggleDrawer} 
           className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
@@ -964,7 +990,7 @@ export function AgoraVideo({
           onClick={toggleChat}
           className="w-8 h-8 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 text-white transition-colors border border-white/10"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 10H8.01M12 10H12.01M16 10H16.01M12 18H18V14C18 13.4696 17.7893 12.9609 17.4142 12.5858C17.0391 12.2107 16.5304 12 16 12H8C7.46957 12 6.96086 12.2107 6.58579 12.5858C6.21071 12.9609 6 13.4696 6 14V18H12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M18 18C19.0609 18 20.0783 18.4214 20.8284 19.1716C21.5786 19.9217 22 20.9391 22 22H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
