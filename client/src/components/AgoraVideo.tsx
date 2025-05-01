@@ -250,12 +250,14 @@ export function AgoraVideo({
           const rtmClient = AgoraRTM.createInstance(appId);
           rtmClientRef.current = rtmClient;
           
-          // Initialize RTM Client
+          // Initialize RTM Client with detailed logging
+          console.log(`Logging in to RTM with uid: ${uid.toString()}`);
           await rtmClient.login({
             uid: uid.toString()
           });
           
           // Create RTM Channel
+          console.log(`Creating RTM channel: ${channelName}`);
           const rtmChannel = rtmClient.createChannel(channelName);
           rtmChannelRef.current = rtmChannel;
           
@@ -293,6 +295,25 @@ export function AgoraVideo({
               });
             } catch (err) {
               console.error("Error parsing RTM message:", err);
+            }
+          });
+          
+          // Add specific handlers for RTM channel events
+          rtmChannel.on('MemberJoined', (memberId) => {
+            console.log(`RTM Member joined: ${memberId}`);
+            // Update viewers count when member joins RTM channel - fixes audience count issue
+            if (role === 'host' && memberId !== uid.toString()) {
+              setViewers(prev => prev + 1);
+              console.log(`Host increased viewer count for ${memberId}, new count:`, viewers + 1);
+            }
+          });
+          
+          rtmChannel.on('MemberLeft', (memberId) => {
+            console.log(`RTM Member left: ${memberId}`);
+            // Update viewers count when member leaves RTM channel
+            if (role === 'host' && memberId !== uid.toString()) {
+              setViewers(prev => Math.max(0, prev - 1));
+              console.log(`Host decreased viewer count for ${memberId}`);
             }
           });
           
@@ -744,35 +765,37 @@ export function AgoraVideo({
         isHost: role === 'host'
       };
       
-      console.log('Sending chat message:', messageObj);
+      console.log('Preparing to send chat message:', messageObj);
+      
+      // Always add message locally first for immediate feedback
+      addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
       
       // Try to send via RTM if available
       if (rtmChannelRef.current) {
         try {
+          // Add debug information
+          console.log('RTM status:', rtmChannelRef.current?.channelId ? 'Connected to ' + rtmChannelRef.current.channelId : 'Not connected');
+          
           // Send message via RTM
           const stringifiedMessage = JSON.stringify(messageObj);
           console.log('Sending RTM message:', stringifiedMessage);
-          await rtmChannelRef.current.sendMessage({ text: stringifiedMessage });
-          console.log("Message sent via RTM");
           
-          // Add message locally for immediate feedback
-          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+          // Use explicit format to ensure message is properly sent
+          const result = await rtmChannelRef.current.sendMessage({ text: stringifiedMessage });
+          console.log("Message successfully sent via RTM. Result:", result);
         } catch (rtmError) {
           console.error("Failed to send message via RTM:", rtmError);
-          
-          // If RTM fails, add message locally
-          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+          // Message is already added locally, so we don't need to do it again
         }
       } else {
-        // Add message locally if RTM is not available
-        console.log('RTM not available, adding message locally');
-        addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+        // RTM is not available - message is already added locally
+        console.warn('RTM channel not available - message only visible locally');
       }
       
       // Clear input regardless
       setChatInput('');
     } catch (err) {
-      console.error("Error sending message:", err);
+      console.error("Error in overall send message process:", err);
     }
   };
   
