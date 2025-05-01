@@ -124,6 +124,68 @@ async function createUser(userData: CreateUserData): Promise<SelectUser> {
   }
 }
 
+// Function to check if a user already has a StreamSession
+async function hasStreamSession(userId: number): Promise<boolean> {
+  try {
+    const sessions = await db.select()
+      .from(streamSessions)
+      .where(eq(streamSessions.userId, userId));
+    
+    return sessions.length > 0;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(`Error checking stream session: ${errorMessage}`, 'error');
+    return false;
+  }
+}
+
+// Function to get user's stream session
+async function getUserStreamSession(userId: number) {
+  try {
+    const [session] = await db.select()
+      .from(streamSessions)
+      .where(eq(streamSessions.userId, userId));
+    
+    return session;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(`Error getting stream session: ${errorMessage}`, 'error');
+    return null;
+  }
+}
+
+// Function to create a StreamSession for a user
+async function createStreamSession(user: SelectUser): Promise<void> {
+  try {
+    // Check if user already has a stream session
+    const hasSession = await hasStreamSession(user.id);
+    if (hasSession) {
+      log(`User ${user.id} already has a stream session, skipping creation`, 'info');
+      return;
+    }
+
+    // Create a placeholder channel name (will be updated when stream starts)
+    const placeholderChannelName = `channel_${user.id}_${Date.now()}`;
+    
+    // Prepare stream session data with required fields
+    const sessionData: InsertStreamSession = {
+      userId: user.id,
+      channelName: placeholderChannelName,
+      hostName: user.username,
+      streamTitle: `${user.username}'s Stream`,  // Default title, will be updated later
+      isLive: false,
+    };
+    
+    // Insert the stream session
+    await db.insert(streamSessions).values(sessionData);
+    log(`Created stream session for user ${user.id}`, 'info');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(`Error creating stream session: ${errorMessage}`, 'error');
+    // We don't throw here to avoid disrupting the authentication flow
+  }
+}
+
 // Auth middleware to check if user is authenticated
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
@@ -246,6 +308,9 @@ export function setupAuth(app: Express) {
         isEmailVerified: false,
       });
       
+      // Create stream session for the new user
+      await createStreamSession(user);
+      
       // Log the user in automatically
       req.login(user, (err: Error | null) => {
         if (err) {
@@ -273,11 +338,15 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: info.message || 'Invalid credentials' });
       }
       
-      req.login(user, (err: Error | null) => {
+      req.login(user, async (err: Error | null) => {
         if (err) {
           log(`Login session error: ${err.message}`, 'error');
           return res.status(500).json({ error: 'Login failed' });
         }
+        
+        // Create stream session if it doesn't exist
+        await createStreamSession(user);
+        
         return res.json(user);
       });
     })(req, res, next);
@@ -300,5 +369,46 @@ export function setupAuth(app: Express) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
     res.json(req.user);
+  });
+  
+  // Check if user has a stream session
+  app.get('/api/user/stream-session', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const hasSession = await hasStreamSession(req.user!.id);
+      
+      if (!hasSession) {
+        // Create a stream session if one doesn't exist
+        await createStreamSession(req.user!);
+        return res.json({ hasStreamSession: true, newlyCreated: true });
+      }
+      
+      return res.json({ hasStreamSession: true, newlyCreated: false });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Error checking stream session: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to check stream session status' });
+    }
+  });
+  
+  // Get user's stream session data
+  app.get('/api/user/stream-session/data', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      // Get the user's stream session
+      const session = await getUserStreamSession(req.user!.id);
+      
+      if (!session) {
+        // Create a new session if one doesn't exist
+        await createStreamSession(req.user!);
+        // Fetch the newly created session
+        const newSession = await getUserStreamSession(req.user!.id);
+        return res.json(newSession);
+      }
+      
+      return res.json(session);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Error getting stream session data: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to get stream session data' });
+    }
   });
 }
