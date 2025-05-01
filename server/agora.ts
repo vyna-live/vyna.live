@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as agoraAccessToken from 'agora-access-token';
+import { db } from './db';
 
 // Define constants from the module
 const PUBLISHER_ROLE = 1; // RtcRole.PUBLISHER value 

@@ -13,6 +13,7 @@ import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
+import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
 
 // Configure multer for file uploads
@@ -503,7 +504,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uid = Math.floor(Math.random() * 1000000);
       
       // Generate a token with audience privileges
-      const token = generateAgoraToken(streamData.channelName, uid, 2, 14400); // 2 = subscriber role
+      const { RtcTokenBuilder } = agoraAccessToken;
+      const appCertificate = process.env.AGORA_APP_CERTIFICATE!;
+      
+      // Calculate privilege expire time (4 hours)
+      const currentTime = Math.floor(Date.now() / 1000);
+      const privilegeExpireTime = currentTime + 14400;
+      
+      const token = RtcTokenBuilder.buildTokenWithUid(
+        appId,
+        appCertificate,
+        streamData.channelName,
+        uid,
+        2,  // 2 = SUBSCRIBER_ROLE
+        privilegeExpireTime
+      );
       
       return res.json({
         token,

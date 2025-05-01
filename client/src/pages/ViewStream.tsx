@@ -52,34 +52,22 @@ export default function ViewStream() {
           throw new Error('This stream is not currently active. Please try again later.');
         }
         
-        // Fetch Agora app ID
-        const appIdResponse = await fetch('/api/agora/app-id');
-        const appIdData = await appIdResponse.json();
+        // Get join credentials (includes appId, token, and uid)
+        const credentialsResponse = await fetch(`/api/stream/${params.streamId}/join-credentials`);
         
-        // Generate audience token
-        const tokenResponse = await fetch('/api/agora/audience-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            channelName: streamData.channelName,
-            uid: Math.floor(Math.random() * 1000000) // Random viewer ID
-          }),
-        });
-        
-        if (!tokenResponse.ok) {
-          throw new Error('Failed to generate audience token');
+        if (!credentialsResponse.ok) {
+          const errorData = await credentialsResponse.json();
+          throw new Error(errorData.error || 'Failed to get stream credentials');
         }
         
-        const tokenData = await tokenResponse.json();
+        const credentials = await credentialsResponse.json();
         
         // Set stream information for viewer
         setStreamInfo({
-          appId: appIdData.appId,
-          token: tokenData.token,
-          channelName: streamData.channelName,
-          uid: tokenData.uid,
+          appId: credentials.appId,
+          token: credentials.token,
+          channelName: credentials.channelName,
+          uid: credentials.uid,
           streamTitle: streamData.streamTitle,
           hostName: streamData.hostName,
           isActive: streamData.isActive
