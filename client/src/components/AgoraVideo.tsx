@@ -428,7 +428,9 @@ export function AgoraVideo({
       
       // Publish tracks if host
       if (role === 'host') {
-        await client.publish([audioTrackRef.current, videoTrackRef.current]);
+        // Publish audio and video tracks separately to avoid type errors
+        await client.publish(audioTrackRef.current);
+        await client.publish(videoTrackRef.current);
         console.log("Published tracks to Agora channel");
         
         // Update database to set stream as active
@@ -806,26 +808,14 @@ export function AgoraVideo({
     if (role === 'audience') {
       // Auto-join for audience role
       useEffect(() => {
-        if (!isJoined && clientRef.current) {
-          console.log('Audience attempting to auto-join stream');
-          const joinAudience = async () => {
-            try {
-              if (!clientRef.current) return;
-              
-              await clientRef.current.join(appId, channelName, token || null, uid);
-              console.log('Audience joined stream');
-              setIsJoined(true);
-              setIsLoading(false);
-            } catch (err) {
-              console.error('Error connecting audience to stream:', err);
-              setError(err instanceof Error ? err.message : 'Failed to connect to stream');
-              setIsLoading(false);
-            }
-          };
-          
-          joinAudience();
-        }
-      }, [clientRef.current, isJoined, appId, channelName, token, uid]);
+        // Only run once when component mounts
+        setTimeout(() => {
+          if (clientRef.current && !isJoined) {
+            console.log('Audience auto-joining stream');
+            joinChannel();
+          }
+        }, 500); // Small delay to ensure client is ready
+      }, []);
       
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
