@@ -5,10 +5,18 @@ import session from 'express-session';
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import connectPg from 'connect-pg-simple';
+import multer from 'multer';
 import { pool, db } from './db';
 import { User as SelectUser, users, streamSessions, InsertStreamSession } from '@shared/schema';
 import { eq, SQL } from 'drizzle-orm';
 import { log } from './vite';
+import { saveCoverImage } from './fileUpload';
+
+// Configure multer for file uploads
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit for cover images
+});
 
 // Extend Express.User interface with our User type
 declare global {
@@ -418,6 +426,42 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // Upload cover image for stream
+  app.post('/api/user/stream-session/upload-cover', ensureAuthenticated, upload.single('coverImage'), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No cover image provided' });
+      }
+      
+      const userId = req.user!.id;
+      
+      // Save the cover image
+      const coverImagePath = await saveCoverImage(req.file, userId);
+      
+      // Get the user's stream session
+      const session = await getUserStreamSession(userId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Stream session not found' });
+      }
+      
+      // Update the session with the new cover image
+      await db.update(streamSessions)
+        .set({
+          coverImage: coverImagePath,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, session.id));
+      
+      // Return the updated cover image path
+      return res.json({ coverImage: coverImagePath });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Error uploading cover image: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to upload cover image' });
+    }
+  });
+  
   // Update stream session settings
   app.post('/api/user/stream-session/update', ensureAuthenticated, async (req: Request, res: Response) => {
     try {

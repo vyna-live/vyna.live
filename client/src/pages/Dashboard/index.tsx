@@ -75,13 +75,38 @@ export default function Dashboard() {
   };
   
   // Define a function to handle submit form data
-  const handleStreamFormSubmit = (formData: StreamFormData) => {
-    console.log('Stream form submitted:', formData);
-    // Close the dialog
-    setIsStreamDialogOpen(false);
-    
-    // Navigate to the livestream page after submitting
-    navigate('/livestream');
+  const handleStreamFormSubmit = async (formData: StreamFormData) => {
+    try {
+      console.log('Stream form submitted:', formData);
+      setIsStreamDialogOpen(false);
+      
+      // Update stream session with form data
+      const response = await fetch('/api/user/stream-session/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          streamTitle: formData.title,
+          description: formData.description,
+          destination: formData.destination,
+          coverImage: '', // Would need additional handling for file upload
+          privacy: formData.privacy,
+          scheduled: !!formData.scheduledDate,
+          streamDate: formData.scheduledDate,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update stream settings');
+      }
+      
+      // Navigate to the livestream page after submitting
+      navigate('/livestream');
+    } catch (error) {
+      console.error('Error updating stream session:', error);
+      // Could add toast notification here
+    }
   };
 
   return (

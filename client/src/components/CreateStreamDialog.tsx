@@ -81,9 +81,38 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    try {
+      // If there's a cover image, upload it first
+      let coverImagePath = '';
+      if (formData.coverImage) {
+        const formData = new FormData();
+        formData.append('coverImage', formData.coverImage);
+        
+        const response = await fetch('/api/user/stream-session/upload-cover', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to upload cover image');
+        }
+        
+        const data = await response.json();
+        coverImagePath = data.coverImage;
+      }
+      
+      // Submit the form data including the cover image path if available
+      onSubmit({
+        ...formData,
+        coverImagePath,
+      });
+    } catch (error) {
+      console.error('Error handling stream form submission:', error);
+      // Could add toast notification here
+    }
   };
   
 

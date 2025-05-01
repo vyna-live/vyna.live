@@ -15,10 +15,12 @@ const readFileAsync = promisify(fs.readFile);
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads');
 
 // Ensure the uploads directory exists
-const ensureUploadDir = async () => {
-  if (!await existsAsync(UPLOAD_DIR)) {
-    await mkdirAsync(UPLOAD_DIR, { recursive: true });
+const ensureUploadDir = async (subDir = '') => {
+  const dir = subDir ? path.join(UPLOAD_DIR, subDir) : UPLOAD_DIR;
+  if (!await existsAsync(dir)) {
+    await mkdirAsync(dir, { recursive: true });
   }
+  return dir;
 };
 
 // Generate a secure, unique filename
@@ -209,6 +211,27 @@ function getContentTypeDescription(mimeType: string): string {
   if (mimeType.includes('presentationml')) return 'Presentation';
   return mimeType;
 }
+
+// Save a cover image for stream sessions
+export const saveCoverImage = async (file: any, userId: number): Promise<string> => {
+  try {
+    // Create covers directory if it doesn't exist
+    const coversDir = await ensureUploadDir('covers');
+    
+    // Generate a secure filename
+    const secureFilename = generateSecureFilename(file.originalname);
+    const filePath = path.join(coversDir, secureFilename);
+    
+    // Save the file
+    await writeFileAsync(filePath, file.buffer);
+    
+    // Return the relative path to use in the database
+    return `/uploads/covers/${secureFilename}`;
+  } catch (error) {
+    console.error('Error saving cover image:', error);
+    throw new Error('Failed to save cover image');
+  }
+};
 
 // Delete a file
 export const deleteFile = async (fileId: number) => {
