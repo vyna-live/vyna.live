@@ -28,14 +28,16 @@ export default function ViewStream() {
   
   // Fetch stream data using the hostId (now in streamId param) and optional channel from URL
   useEffect(() => {
+    let isMounted = true; // Flag to prevent state updates after unmount
+    
     async function fetchStreamData() {
       try {
         if (!params?.streamId) {
           throw new Error('Host ID is missing');
         }
         
-        setIsLoading(true);
-        setError(null);
+        if (isMounted) setIsLoading(true);
+        if (isMounted) setError(null);
         
         // Check if there's a channel parameter in the URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -80,27 +82,37 @@ export default function ViewStream() {
         
         const credentials = await credentialsResponse.json();
         
-        // Set stream information for viewer
-        setStreamInfo({
-          appId: credentials.appId,
-          token: credentials.token,
-          channelName: credentials.channelName,
-          uid: credentials.uid,
-          streamTitle: validateData.streamTitle || 'Live Stream',
-          hostName: validateData.hostName || 'Host',
-          isActive: validateData.isActive
-        });
-        
-        setIsLoading(false);
+        // Only update state if component is still mounted
+        if (isMounted) {
+          // Set stream information for viewer
+          setStreamInfo({
+            appId: credentials.appId,
+            token: credentials.token,
+            channelName: credentials.channelName,
+            uid: credentials.uid,
+            streamTitle: validateData.streamTitle || 'Live Stream',
+            hostName: validateData.hostName || 'Host',
+            isActive: validateData.isActive
+          });
+          
+          setIsLoading(false);
+        }
       } catch (error) {
         console.error('Error fetching stream data:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load stream');
-        setIsLoading(false);
+        if (isMounted) {
+          setError(error instanceof Error ? error.message : 'Failed to load stream');
+          setIsLoading(false);
+        }
       }
     }
     
     fetchStreamData();
-  }, [params]);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false; // Prevent state updates after unmount
+    };
+  }, [params?.streamId]); // Only depend on the streamId part of params
   
   // If there's an error, show an error screen with a button to go back
   if (error) {

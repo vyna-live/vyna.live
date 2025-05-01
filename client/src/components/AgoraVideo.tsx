@@ -406,7 +406,7 @@ export function AgoraVideo({
       
       console.log("All Agora resources cleaned up");
     };
-  }, [appId, role, channelName, uid, userName]);
+  }, [appId, role, channelName, uid]);  // Removed userName from dependencies as it's not used for connection
 
   // Join call when ready
   const joinChannel = async () => {
