@@ -12,7 +12,7 @@ import path from "path";
 import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
-import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
+import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream, generateAgoraToken } from "./agora";
 import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
 
@@ -1306,6 +1306,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating audience token:", error);
       return res.status(500).json({ error: "Failed to generate token" });
+    }
+  });
+  
+  // Validate livestream and get channel info
+  app.get("/api/livestreams/:hostId/validate", async (req, res) => {
+    try {
+      const { hostId } = req.params;
+      
+      if (!hostId) {
+        return res.status(400).json({ error: "Host ID is required" });
+      }
+      
+      console.log(`Validating stream with host ID: ${hostId}`);
+      
+      // Parse hostId to number if possible
+      let hostIdValue = hostId;
+      try {
+        if (!Number.isNaN(parseInt(hostId))) {
+          hostIdValue = parseInt(hostId);
+        }
+      } catch (parseError) {
+        console.warn(`Could not parse hostId ${hostId} as number, using as string`);
+      }
+      
+      // First look up by hostId in stream_sessions
+      const streams = await db.select()
+        .from(streamSessions)
+        .where(eq(streamSessions.hostId, hostIdValue));
+      
+      // If no streams for this host, check if the hostId is actually a channelName
+      if (streams.length === 0) {
+        // Try by channel name
+        console.log(`No streams found with host ID, trying as channel name: ${hostId}`);
+        const streamsByChannel = await db.select()
+          .from(streamSessions)
+          .where(eq(streamSessions.channelName, hostId));
+          
+        if (streamsByChannel.length > 0) {
+          // Find the active stream if any
+          const activeStream = streamsByChannel.find(stream => stream.isActive);
+          
+          if (activeStream) {
+            console.log(`Found stream by channel name: ${hostId}, using hostId: ${activeStream.hostId}`);
+            return res.status(200).json({
+              hostId: activeStream.hostId,
+              channelName: activeStream.channelName,
+              isActive: true,
+              streamTitle: activeStream.streamTitle
+            });
+          } else {
+            // Return the most recent stream even if not active
+            console.log(`Found inactive stream by channel name: ${hostId}`);
+            return res.status(200).json({
+              hostId: streamsByChannel[0].hostId,
+              channelName: streamsByChannel[0].channelName,
+              isActive: false,
+              streamTitle: streamsByChannel[0].streamTitle,
+              message: "Stream exists but is not currently active"
+            });
+          }
+        }
+        
+        // No streams found for this host ID or channel name
+        return res.status(404).json({ error: "No streams found for this host or channel" });
+      }
+      
+      // Found streams by host ID, return the active one if any
+      const activeStream = streams.find(stream => stream.isActive);
+      
+      if (activeStream) {
+        return res.status(200).json({
+          hostId: activeStream.hostId,
+          channelName: activeStream.channelName,
+          isActive: true,
+          streamTitle: activeStream.streamTitle
+        });
+      } else {
+        // Return the most recent stream even if not active
+        return res.status(200).json({
+          hostId: streams[0].hostId,
+          channelName: streams[0].channelName,
+          isActive: false,
+          streamTitle: streams[0].streamTitle,
+          message: "Stream exists but is not currently active"
+        });
+      }
+    } catch (error) {
+      console.error("Error validating livestream:", error);
+      return res.status(500).json({ error: "Failed to validate livestream" });
     }
   });
   

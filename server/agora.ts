@@ -16,7 +16,7 @@ function areAgoraCredentialsAvailable(): boolean {
 }
 
 // Helper to build a token with uid
-function generateAgoraToken(channelName: string, uid: number, role: number, expirationTimeInSeconds: number = 3600) {
+export function generateAgoraToken(channelName: string, uid: number, role: number, expirationTimeInSeconds: number = 3600) {
   if (!areAgoraCredentialsAvailable()) {
     throw new Error('Missing Agora credentials');
   }

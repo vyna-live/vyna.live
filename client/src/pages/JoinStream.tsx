@@ -15,31 +15,78 @@ export default function JoinStream() {
     setError(null);
 
     try {
-      // Extract stream ID from the link if it's a full URL
-      let streamId = streamLink.trim();
+      // Parse the stream link to extract host ID and channel
+      const linkStr = streamLink.trim();
+      let hostId = null;
+      let channelName = null;
       
-      // If it's a full URL, extract just the ID
-      if (streamLink.includes("/")) {
-        // Extract the last part of the URL as the stream ID
-        const parts = streamLink.split("/");
-        streamId = parts[parts.length - 1];
+      // Case 1: Full URL format with query parameter
+      if (linkStr.includes('/view-stream/') && linkStr.includes('?channel=')) {
+        // Extract host ID from path
+        const urlObj = new URL(linkStr);
+        const pathParts = urlObj.pathname.split('/');
+        hostId = pathParts[pathParts.length - 1]; // Last part of the path
+        
+        // Extract channel name from query parameter
+        channelName = urlObj.searchParams.get('channel');
       }
-
-      // Validate the stream ID
-      if (!streamId) {
+      // Case 2: Just the last path segment with query parameter
+      else if (linkStr.includes('?channel=')) {
+        const parts = linkStr.split('?');
+        hostId = parts[0];
+        const params = new URLSearchParams('?' + parts[1]);
+        channelName = params.get('channel');
+      }
+      // Case 3: Legacy format or just the stream ID
+      else {
+        // If it's a full URL, extract just the path part
+        if (linkStr.includes('://')) {
+          const urlObj = new URL(linkStr);
+          const pathParts = urlObj.pathname.split('/');
+          hostId = pathParts[pathParts.length - 1]; // Last part of the path
+        } else {
+          // Just an ID or channel name
+          hostId = linkStr;
+        }
+      }
+      
+      console.log(`Parsed link - Host ID: ${hostId}, Channel: ${channelName}`);
+      
+      // Must have at least a host ID to continue
+      if (!hostId) {
         throw new Error("Invalid stream link. Please try again.");
       }
-
-      // Fetch stream information using the ID
-      const response = await fetch(`/api/stream/${streamId}/info`);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to join stream. The stream may not exist or is no longer active.");
+      // If we have both host ID and channel name, we can go directly to view stream
+      if (hostId && channelName) {
+        // Redirect to view stream with both parameters
+        setLocation(`/view-stream/${hostId}?channel=${encodeURIComponent(channelName)}`);
+        return;
       }
-
-      // Redirect to the viewer stream page with the stream ID
-      setLocation(`/view-stream/${streamId}`);
+      
+      // If we only have host ID, validate against our API
+      try {
+        const validateResponse = await fetch(`/api/livestreams/${hostId}/validate`);
+        
+        if (!validateResponse.ok) {
+          const errorData = await validateResponse.json();
+          throw new Error(errorData.error || "Failed to validate stream. It may not exist or is no longer active.");
+        }
+        
+        const validateData = await validateResponse.json();
+        
+        // If we got channel name from validation, use that
+        if (validateData.channelName) {
+          channelName = validateData.channelName;
+          setLocation(`/view-stream/${hostId}?channel=${encodeURIComponent(channelName)}`);
+          return;
+        } else {
+          throw new Error("Stream exists but channel information is missing. Please use a complete link.");
+        }
+      } catch (validationError) {
+        console.error("Stream validation error:", validationError);
+        throw validationError;
+      }
     } catch (error) {
       console.error("Error joining stream:", error);
       setError(error instanceof Error ? error.message : "An unknown error occurred");
