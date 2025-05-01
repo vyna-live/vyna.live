@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import * as agoraAccessToken from 'agora-access-token';
-import { db } from './db';
+import { db, pool } from './db';
 
 // Define constants from the module
 const PUBLISHER_ROLE = 1; // RtcRole.PUBLISHER value 
@@ -112,7 +112,7 @@ export async function getAudienceToken(req: Request, res: Response) {
     `;
     
     try {
-      const result = await db.execute(sql, [channelName]);
+      const result = await pool.query(sql, [channelName]);
       
       // If no active streams found, log a warning but still generate token
       if (result.rows.length === 0) {

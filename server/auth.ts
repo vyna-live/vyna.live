@@ -183,12 +183,14 @@ async function createStreamSession(user: SelectUser): Promise<void> {
     const defaultChannelName = `channel_${user.id}_${Date.now()}`;
     
     // Insert with required fields, the rest will be filled when user sets up stream
-    const streamSessionData: Partial<typeof streamSessions.$inferInsert> = {
+    const streamSessionData = {
       userId: user.id,
       hostId: user.id, // same as host for creator
       channelName: defaultChannelName, // Required field
       hostName: user.username || 'Host', // Required field
       streamTitle: `${user.username || 'Host'}'s Stream`, // Required field
+      isActive: false,
+      viewerCount: 0
     };
     
     await db.insert(streamSessions).values(streamSessionData);

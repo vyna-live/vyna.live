@@ -27,10 +27,20 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
       // Extract the stream ID from the link
       // Links could be in format: 
       // - domain.com/view-stream/streamId
-      // - domain.com/livestream/streamId
+      // - domain.com/view-stream/streamId?channel=channelName
       // - http(s)://domain.com/view-stream/streamId
       // - or just the streamId itself
       let streamId = streamLink.trim();
+      let channelName = null;
+      
+      // First check if there's a query string with channel parameter
+      if (streamId.includes('?')) {
+        const [baseUrl, queryString] = streamId.split('?');
+        const params = new URLSearchParams(queryString);
+        channelName = params.get('channel');
+        streamId = baseUrl; // Remove query string for further processing
+        console.log("Extracted channel name from URL:", channelName);
+      }
       
       // Check for full URL pattern
       if (streamId.includes('://')) {
@@ -49,10 +59,14 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
         streamId = parts[parts.length - 1];
       }
       
-      console.log("Extracted Stream ID:", streamId);
+      console.log("Extracted Stream ID:", streamId, "Channel Name:", channelName);
       
-      // Validate the stream ID
-      const response = await fetch(`/api/livestreams/${streamId}/validate`);
+      // Validate the stream ID, including channel name if available
+      let validateUrl = `/api/livestreams/${streamId}/validate`;
+      if (channelName) {
+        validateUrl += `?channel=${encodeURIComponent(channelName)}`;
+      }      
+      const response = await fetch(validateUrl);
       
       if (!response.ok) {
         throw new Error('Invalid stream link or stream is not active');
@@ -64,10 +78,16 @@ export default function JoinStreamForm({ onClose }: JoinStreamFormProps) {
         throw new Error('This stream is no longer active');
       }
       
-      console.log("Stream is active, redirecting to:", `/view-stream/${streamId}`);
+      // Create the redirect URL with channel name if available
+      let redirectUrl = `/view-stream/${streamId}`;
+      if (channelName) {
+        redirectUrl += `?channel=${encodeURIComponent(channelName)}`;
+      }
+      
+      console.log("Stream is active, redirecting to:", redirectUrl);
       
       // Redirect to the stream view page
-      setLocation(`/view-stream/${streamId}`);
+      setLocation(redirectUrl);
     } catch (error) {
       console.error("Join stream error:", error);
       if (error instanceof Error) {

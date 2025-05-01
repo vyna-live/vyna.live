@@ -999,12 +999,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/livestreams/:streamId/validate", async (req, res) => {
     try {
       const { streamId } = req.params;
+      const { channel } = req.query; // Get optional channel parameter from query
       
       if (!streamId) {
         return res.status(400).json({ error: "Stream ID is required" });
       }
       
-      console.log(`Validating stream ID: ${streamId}`);
+      console.log(`Validating stream ID: ${streamId}, channel: ${channel || 'not specified'}`);
       // Log current mappings in a more compatible way
       const mappings: string[] = [];
       streamIdToChannel.forEach((channel, id) => {
@@ -1012,11 +1013,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       console.log(`Current stream mappings:`, mappings);
       
-      // First, try looking up the stream ID directly
-      let channelName = streamIdToChannel.get(streamId);
+      // If channel parameter is provided, use it directly
+      let channelName = channel ? String(channel) : streamIdToChannel.get(streamId);
       
-      // If not found, check if it's a channel name with stream_ prefix
-      if (!channelName && streamId.startsWith('stream_')) {
+      if (channel) {
+        console.log(`Using provided channel name: ${channel}`);
+        // For consistency, also add/update the mapping
+        streamIdToChannel.set(streamId, String(channel));
+      }
+      // If not found by ID and no channel provided, check if it's a channel name with stream_ prefix
+      else if (!channelName && streamId.startsWith('stream_')) {
         console.log(`Stream ID appears to be a channel name with stream_ prefix`);
         
         // The streamId is already a channel name, so check if we have viewer data for it
