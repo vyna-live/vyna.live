@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useContext } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '../lib/queryClient';
 import { User } from '@shared/schema';
@@ -8,9 +8,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (credentials: { usernameOrEmail: string; password: string }) => Promise<User>;
-  register: (userData: { username: string; email: string; password: string; displayName?: string }) => Promise<User>;
+  register: (userData: { username: string; email: string; password: string }) => Promise<User>;
   logout: () => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
 }
 
 // Initialize with a default value that matches the shape
@@ -21,13 +20,11 @@ const defaultAuthContext: AuthContextType = {
   login: async () => { throw new Error('Not implemented'); },
   register: async () => { throw new Error('Not implemented'); },
   logout: async () => { throw new Error('Not implemented'); },
-  loginWithGoogle: async () => { throw new Error('Not implemented'); },
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
 
   // Fetch current user
   const {
@@ -69,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Register mutation
   const registerMutation = useMutation({
-    mutationFn: async (userData: { username: string; email: string; password: string; displayName?: string }) => {
+    mutationFn: async (userData: { username: string; email: string; password: string }) => {
       const res = await apiRequest('POST', '/api/register', userData);
       if (!res.ok) {
         const errorData = await res.json();
@@ -95,32 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  // Google login
-  const loginWithGoogle = async () => {
-    try {
-      setIsLoadingGoogle(true);
-      // Redirect to the Google authentication endpoint
-      window.location.href = '/api/auth/google';
-    } catch (error) {
-      console.error('Google login error:', error);
-      setIsLoadingGoogle(false);
-      throw error;
-    }
-  };
 
-  // Handle Google auth callback on page load
-  useEffect(() => {
-    // Check if we have a token from Google auth in the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const googleAuthSuccess = urlParams.get('google_auth_success');
-    
-    if (googleAuthSuccess === 'true') {
-      // If Google auth was successful, refetch the user
-      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
-      // Clean the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
 
   // Login function
   const login = async (credentials: { usernameOrEmail: string; password: string }) => {
@@ -137,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await logoutMutation.mutateAsync();
   };
 
-  const isLoading = isLoadingUser || isLoadingGoogle || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending;
+  const isLoading = isLoadingUser || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending;
   const isAuthenticated = !!user;
 
   return (
@@ -149,7 +121,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
-        loginWithGoogle,
       }}
     >
       {children}
