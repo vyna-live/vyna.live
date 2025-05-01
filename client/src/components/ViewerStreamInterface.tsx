@@ -1,706 +1,125 @@
-import React, { useState, useEffect, useRef, FormEvent } from 'react';
-import { Send, Gift, Heart, Flag, X, Mic, Users } from 'lucide-react';
-import Logo from './Logo';
-import AgoraRTC, {
-  ClientConfig, 
-  IAgoraRTCClient,
-  IRemoteVideoTrack,
-  IRemoteAudioTrack,
-  IAgoraRTCRemoteUser
-} from 'agora-rtc-sdk-ng';
-import AgoraRTM, { RtmClient, RtmMessage, RtmChannel } from 'agora-rtm-sdk';
-import { useToast } from '@/hooks/use-toast';
-import { useLocation } from 'wouter';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useState, useCallback, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { AgoraVideo } from "@/components/AgoraVideo";
+import Logo from "@/components/Logo";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 
-// Define Agora config for audience role
-const config: ClientConfig = { 
-  mode: "live", 
-  codec: "vp8",
-};
-
-// Custom CSS for styling Agora video elements
-const customStyles = `
-  .agora-video-player {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
-  }
-
-  .agora-video-player video {
-    object-fit: cover;
-  }
-
-  /* Animation for messages */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .viewer-chat-message {
-    animation: fadeIn 0.3s ease-out;
-  }
-`;
-
-// Message type for chat
-interface ChatMessage {
-  userId: string;
-  name: string;
-  message: string;
-  color: string;
-  isHost?: boolean;
-}
-
-// Props for the ViewerStreamInterface component
 interface ViewerStreamInterfaceProps {
-  appId: string;
-  channelName: string;
-  token: string;
-  uid?: number;
-  username: string;
-  streamTitle: string;
-  hostName: string;
-  hostAvatar?: string;
-  viewerCount?: number;
+  streamInfo: {
+    appId: string | null;
+    token: string | null;
+    channelName: string | null;
+    uid: number | null;
+    streamTitle: string | null;
+    hostName: string | null;
+    isActive: boolean;
+  };
 }
 
 export default function ViewerStreamInterface({
-  appId,
-  channelName,
-  token,
-  uid = Math.floor(Math.random() * 1000000),
-  username,
-  streamTitle,
-  hostName,
-  hostAvatar,
-  viewerCount: externalViewerCount
+  streamInfo,
 }: ViewerStreamInterfaceProps) {
-  const [isJoined, setIsJoined] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [viewerCount, setViewerCount] = useState<number>(0);
-  const [baseViewerCount, setBaseViewerCount] = useState<number>(0);
-  const [isScreenShared, setIsScreenShared] = useState(false);
-  const [mainHostUid, setMainHostUid] = useState<number | null>(null);
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-  
-  // References for Agora RTC and RTM clients
-  const clientRef = useRef<IAgoraRTCClient | null>(null);
-  const rtmClientRef = useRef<RtmClient | null>(null);
-  const rtmChannelRef = useRef<RtmChannel | null>(null);
-  
-  // DOM references for video displays
-  const mainVideoRef = useRef<HTMLDivElement>(null);
-  const pipVideoRef = useRef<HTMLDivElement>(null);
-  const messageContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Set the initial viewer count and handle joining/leaving the stream
-  useEffect(() => {
-    // If externalViewerCount is provided externally (from API), use it as the base
-    if (externalViewerCount && externalViewerCount > 0) {
-      setBaseViewerCount(externalViewerCount);
-      setViewerCount(externalViewerCount);
-    }
+  const [userName, setUserName] = useState<string>(
+    user ? user.displayName || user.username : "Anonymous Viewer"
+  );
 
-    // Call the join endpoint to increase viewer count
-    const joinStream = async () => {
-      try {
-        const response = await fetch(`/api/streams/${channelName}/join`, { 
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setViewerCount(data.viewerCount);
-        }
-      } catch (error) {
-        console.error('Error joining stream:', error);
-      }
-    };
-    
-    joinStream();
-    
-    // Clean up - call leave endpoint when component unmounts
-    return () => {
-      // Leave the stream
-      fetch(`/api/streams/${channelName}/leave`, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      }).catch(error => console.error('Error leaving stream:', error));
-    };
-  }, [channelName, externalViewerCount]);
-  
-  // Initialize the Agora RTC and RTM clients
+  // Update username when authentication state changes
   useEffect(() => {
-    const init = async () => {
-      try {
-        setIsLoading(true);
-        
-        if (!appId) {
-          setError("Missing Agora App ID");
-          setIsLoading(false);
-          return;
-        }
-        
-        // Create RTC client
-        const agoraClient = AgoraRTC.createClient(config);
-        clientRef.current = agoraClient;
-        
-        // Set client role to audience
-        await agoraClient.setClientRole('audience');
-        
-        // Initialize RTM for chat
-        try {
-          // Create RTM Client
-          const rtmClient = AgoraRTM.createInstance(appId);
-          rtmClientRef.current = rtmClient;
-          
-          // Login to RTM
-          await rtmClient.login({ uid: uid.toString() });
-          
-          // Create RTM Channel
-          const rtmChannel = rtmClient.createChannel(channelName);
-          rtmChannelRef.current = rtmChannel;
-          
-          // Handle incoming messages
-          rtmChannel.on('ChannelMessage', (message: any, senderId: string) => {
-            try {
-              if (!message || typeof message.text !== 'string') {
-                console.error("Received invalid message format", message);
-                return;
-              }
-              
-              const parsedMsg = JSON.parse(message.text);
-              const { text, name, color } = parsedMsg;
-              
-              console.log(`Message received: ${text} from ${name || 'unknown'}`);
-              
-              // Add message to chat (new messages at bottom)
-              setChatMessages(prev => {
-                const newMessages = [...prev, {
-                  userId: senderId,
-                  name: name || `User ${senderId.slice(-4)}`,
-                  message: text || "sent a message",
-                  color: color || 'bg-blue-500',
-                  isHost: parsedMsg.isHost || false
-                }];
-                
-                // Keep only the latest 50 messages
-                if (newMessages.length > 50) {
-                  return newMessages.slice(-50);
-                }
-                return newMessages;
-              });
-              
-              // Auto-scroll to bottom of message container
-              if (messageContainerRef.current) {
-                setTimeout(() => {
-                  if (messageContainerRef.current) {
-                    messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
-                  }
-                }, 100);
-              }
-            } catch (err) {
-              console.error("Error parsing RTM message:", err);
-            }
-          });
-          
-          // Join RTM channel
-          await rtmChannel.join();
-          console.log("Joined RTM channel:", channelName);
-          
-        } catch (rtmErr) {
-          console.error("Error initializing RTM client:", rtmErr);
-          // Continue without RTM if it fails
-        }
-        
-        // Join the channel
-        console.log(`Joining Agora channel as audience: ${channelName} with uid ${uid}`);
-        console.log(`Using token: ${token.substring(0, 20)}...`);
-        
-        try {
-          // Join with a timeout to catch potential hanging connections
-          const joinPromise = agoraClient.join(appId, channelName, token, uid);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Joining channel timed out after 15 seconds")), 15000)
-          );
-          
-          await Promise.race([joinPromise, timeoutPromise]);
-          console.log("✅ Successfully joined Agora channel as audience");
-          setIsJoined(true);
-        } catch (error: any) {
-          console.error("Failed to join Agora channel:", error);
-          // Provide a specific error message for common errors
-          if (error?.message?.includes("token")) {
-            setError(`Authentication failed: Invalid token for channel ${channelName}`);
-          } else if (error?.message?.includes("timeout")) {
-            setError("Connection timed out. Please check your internet connection and try again.");
-          } else {
-            setError(`Failed to join stream: ${error?.message || "Unknown error"}`);
-          }
-          throw error; // Rethrow to be caught by the outer catch block
-        }
-        
-        // Event listeners for RTC client
-        agoraClient.on('user-published', async (user, mediaType) => {
-          // When a broadcaster publishes a track
-          console.log("Remote user published:", user.uid, mediaType);
-          
-          // Subscribe to the remote user
-          await agoraClient.subscribe(user, mediaType);
-          
-          // Save the first host UID we see for identifying the main host
-          if (mainHostUid === null) {
-            console.log("Setting main host UID to:", user.uid);
-            setMainHostUid(user.uid as number);
-          }
-          
-          // If we haven't already added this user
-          if (!remoteUsers.find(u => u.uid === user.uid)) {
-            setRemoteUsers(prev => [...prev, user]);
-            // We handle viewer counts via API now
-          }
-          
-          // Handle video tracks
-          if (mediaType === 'video') {
-            // Detect if this is a screen sharing track
-            // Screen shares typically have higher resolution
-            const videoTrack = user.videoTrack;
-            if (videoTrack) {
-              // Determine if this is a screen share track
-              // Screen shares typically have higher resolution, but we'll
-              // use a simple heuristic since exact dimension info may not be available
-              // through the stats API in all browsers
-              const stats = videoTrack.getStats();
-              // We'll use a simpler check since the exact properties may vary
-              const isScreenShare = user.uid.toString().includes('screenshare') || 
-                               (remoteUsers.length > 1 && mainHostUid !== user.uid);
-              
-              console.log("Video track stats:", stats, "Is screen share:", isScreenShare);
-              
-              // Update screen share state
-              setIsScreenShared(isScreenShare);
-              
-              // If this is the main host or only remote user
-              if ((mainHostUid === user.uid || remoteUsers.length === 0) && !isScreenShare) {
-                // Keep host camera in main view if no screen share
-                if (mainVideoRef.current) {
-                  videoTrack.play(mainVideoRef.current);
-                }
-              } else if ((mainHostUid === user.uid || remoteUsers.length === 0) && isScreenShare) {
-                // For host screen share, move host camera to PIP if available
-                if (pipVideoRef.current && mainVideoRef.current && user.videoTrack) {
-                  // Play screen share in main view
-                  videoTrack.play(mainVideoRef.current);
-                }
-              } else {
-                // For other users, play in appropriate containers
-                if (videoTrack) {
-                  // Decide where to play based on screen sharing state
-                  if (mainVideoRef.current && !isScreenShared) {
-                    videoTrack.play(mainVideoRef.current);
-                  } else if (pipVideoRef.current && isScreenShared) {
-                    videoTrack.play(pipVideoRef.current);
-                  }
-                }
-              }
-            }
-          }
-          
-          // Handle audio tracks
-          if (mediaType === 'audio' && user.audioTrack) {
-            user.audioTrack.play();
-          }
-        });
-        
-        // When a remote user unpublishes
-        agoraClient.on('user-unpublished', (user, mediaType) => {
-          console.log("Remote user unpublished:", user.uid, mediaType);
-          
-          // If it was video, check if it was screen sharing
-          if (mediaType === 'video' && user.videoTrack) {
-            user.videoTrack.stop();
-            
-            // If we were in screen share mode, reset it
-            setIsScreenShared(false);
-          }
-          
-          // If it was audio
-          if (mediaType === 'audio' && user.audioTrack) {
-            user.audioTrack.stop();
-          }
-        });
-        
-        // When a user leaves
-        agoraClient.on('user-left', (user) => {
-          console.log("Remote user left:", user.uid);
-          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-          // We handle viewer counts via API now, not here
-          
-          // If the main host left, reset the main host UID
-          if (mainHostUid === user.uid) {
-            setMainHostUid(null);
-            setIsScreenShared(false);
-          }
-          
-          // Add a chat message for user leaving
-          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500'];
-          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-          
-          setChatMessages(prev => {
-            // Add message to the end
-            const newMessages = [...prev, {
-              userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
-              message: "left",
-              color,
-              isHost: false
-            }];
-            
-            // Keep only the latest 50 messages
-            if (newMessages.length > 50) {
-              return newMessages.slice(-50);
-            }
-            return newMessages;
-          });
-        });
-        
-        // We've already joined the channel above
-        setIsLoading(false);
-      } catch (err) {
-        console.error("Error initializing Agora:", err);
-        setError(err instanceof Error ? err.message : "Failed to join stream");
-        setIsLoading(false);
-      }
-    };
-    
-    init();
-    
-    // Cleanup function
-    return () => {
-      // Leave Agora RTC channel
-      if (clientRef.current && isJoined) {
-        clientRef.current.leave().then(() => {
-          console.log("Left RTC channel");
-        }).catch(err => {
-          console.error("Error leaving RTC channel:", err);
-        });
-      }
-      
-      // Leave RTM channel
-      if (rtmChannelRef.current) {
-        rtmChannelRef.current.leave().then(() => {
-          console.log("Left RTM channel");
-        }).catch(err => {
-          console.error("Error leaving RTM channel:", err);
-        });
-      }
-      
-      // Logout RTM client
-      if (rtmClientRef.current) {
-        rtmClientRef.current.logout().then(() => {
-          console.log("Logged out of RTM client");
-        }).catch(err => {
-          console.error("Error logging out of RTM client:", err);
-        });
-      }
-    };
-  }, [appId, channelName, token, uid, remoteUsers, mainHostUid]);
-  
-  // Handle sending a chat message
-  const handleSendMessage = async (e: FormEvent) => {
-    e.preventDefault();
-    
-    if (!chatInput.trim() || !rtmChannelRef.current) return;
-    
-    // Create message object
-    const chatMessage = {
-      text: chatInput.trim(),
-      name: username,
-      color: 'bg-blue-500',
-      isHost: false
-    };
-    
-    try {
-      // Send message via RTM
-      await rtmChannelRef.current.sendMessage({ text: JSON.stringify(chatMessage) });
-      
-      // Add message to local state (at the end)
-      setChatMessages(prev => {
-        const newMessages = [...prev, {
-          userId: uid.toString(),
-          name: username,
-          message: chatInput.trim(),
-          color: 'bg-blue-500',
-          isHost: false
-        }];
-        
-        // Keep only the latest 50 messages
-        if (newMessages.length > 50) {
-          return newMessages.slice(-50);
-        }
-        return newMessages;
-      });
-      
-      // Clear input
-      setChatInput('');
-      
-      // Auto-scroll to bottom
-      if (messageContainerRef.current) {
-        setTimeout(() => {
-          if (messageContainerRef.current) {
-            messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
-          }
-        }, 100);
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive"
-      });
+    if (user) {
+      setUserName(user.displayName || user.username);
     }
-  };
-  
-  // Handle sending a gift/reaction
-  const handleSendGift = async () => {
-    if (!rtmChannelRef.current) return;
-    
-    // Create gift message object
-    const giftMessage = {
-      text: "❤️", // Heart emoji as gift
-      name: username,
-      color: 'bg-red-500',
-      isGift: true
-    };
-    
-    try {
-      // Send message via RTM
-      await rtmChannelRef.current.sendMessage({ text: JSON.stringify(giftMessage) });
-      
-      toast({
-        title: "Gift Sent",
-        description: "Your appreciation has been sent to the streamer!",
-      });
-    } catch (error) {
-      console.error("Error sending gift:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send gift",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Handle leaving the stream
-  const handleLeaveStream = async () => {
-    try {
-      // Notify the server that user is leaving
-      await fetch(`/api/streams/${channelName}/leave`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      // Attempt to leave properly
-      if (clientRef.current && isJoined) {
-        await clientRef.current.leave().catch(console.error);
-      }
-      
-      if (rtmChannelRef.current) {
-        await rtmChannelRef.current.leave().catch(console.error);
-      }
-      
-      if (rtmClientRef.current) {
-        await rtmClientRef.current.logout().catch(console.error);
-      }
-    } catch (error) {
-      console.error("Error leaving stream:", error);
-    } finally {
-      // Navigate back to home page
-      setLocation('/');
-    }
-  };
+  }, [user]);
+
+  // Handler for leaving the stream
+  const handleLeaveStream = useCallback(() => {
+    setLocation("/join-stream");
+  }, [setLocation]);
+
+  if (
+    !streamInfo ||
+    !streamInfo.appId ||
+    !streamInfo.token ||
+    !streamInfo.channelName
+  ) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="text-xl mb-4">Stream Error</div>
+          <p>Unable to load stream information.</p>
+          <button
+            onClick={() => setLocation("/join-stream")}
+            className="mt-4 px-4 py-2 bg-[#D8C6AF] text-black rounded"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full w-full relative overflow-hidden bg-black flex flex-col">
-      <style>{customStyles}</style>
-      
-      {/* Header with stream info */}
-      <div className="absolute top-0 left-0 right-0 z-30 bg-black/60 backdrop-blur-sm flex items-center justify-between p-4">
-        <div className="flex items-center space-x-3">
-          <a href="/" className="transition-opacity hover:opacity-80">
-            <Logo variant="light" size="sm" className="h-7" />
-          </a>
+    <div className="w-full h-screen relative overflow-hidden bg-black p-4">
+      {/* Top Navbar */}
+      <div className="absolute top-4 left-4 right-4 h-12 z-30 bg-black/70 backdrop-blur-sm flex items-center justify-between px-4 rounded-lg">
+        <div className="flex items-center">
+          <button
+            onClick={handleLeaveStream}
+            className="flex items-center text-white hover:text-[#D8C6AF] transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            <span>Leave</span>
+          </button>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-gray-700 overflow-hidden mr-2 border border-white/20">
-              {hostAvatar ? (
-                <img 
-                  src={hostAvatar} 
-                  alt={hostName}
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#5D1C34] to-[#A67D44] flex items-center justify-center text-white">
-                  {hostName.charAt(0)}
-                </div>
-              )}
-            </div>
-            <span className="text-white text-sm font-medium">{hostName}</span>
-          </div>
-          
-          <div className="flex items-center bg-black/30 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
-            <Users size={14} className="text-white mr-2" />
-            <span className="text-white text-sm">{viewerCount}</span>
-          </div>
+
+        <div className="flex-1 mx-4 text-center">
+          <h1 className="text-white text-lg font-semibold truncate">
+            {streamInfo.streamTitle || "Vyna.live Stream"}
+          </h1>
+        </div>
+
+        <div className="flex items-center">
+          <Logo variant="light" size="xs" className="h-6" />
         </div>
       </div>
 
-      {/* Stream title at top center */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
-        <div className="text-white text-sm font-medium bg-black/40 backdrop-blur-sm px-4 py-1 rounded-full">
-          {streamTitle}
-        </div>
-      </div>
-      
-      {/* Main content - video display */}
-      <div className="flex-1 relative bg-black">
-        {isLoading ? (
-          <div className="w-full h-full flex items-center justify-center bg-black">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-4"></div>
-            <div className="text-white text-lg ml-4">Joining Stream...</div>
-          </div>
-        ) : error ? (
-          <div className="w-full h-full flex items-center justify-center bg-black">
-            <div className="z-10 bg-black/70 backdrop-blur-sm p-6 rounded-lg border border-red-500/30 max-w-lg">
-              <div className="text-red-400 text-xl mb-4">Stream Error</div>
-              <div className="text-white mb-4">{error}</div>
-              <div className="text-gray-400 text-sm mb-6">
-                {error?.includes("token") ? 
-                  "The stream authentication failed. This may happen if the stream expired or the streamer is no longer broadcasting." :
-                  "There was a problem connecting to the stream. Please check your connection and try again."}
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                >
-                  Try Again
-                </button>
-                <button 
-                  onClick={() => window.location.href = '/'}
-                  className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-                >
-                  Back to Home
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full h-full">
-            {/* Main video stream */}
-            <div ref={mainVideoRef} className="w-full h-full agora-video-player"></div>
-            
-            {/* PIP camera when screen sharing is active */}
-            {isScreenShared && (
-              <div ref={pipVideoRef} className="absolute top-4 left-4 w-40 h-24 rounded-lg overflow-hidden border border-gray-700 z-20"></div>
-            )}
-            
-            {/* Chat messages display area - more compact */}
-            <div 
-              ref={messageContainerRef}
-              className="absolute bottom-16 left-4 w-56 sm:w-64 md:w-72 max-h-[30vh] overflow-y-auto bg-black/30 backdrop-blur-sm rounded-lg border border-gray-700/50 px-2 py-1.5"
-              style={{ scrollBehavior: 'smooth' }}
-            >
-              {chatMessages.length > 0 ? (
-                chatMessages.map((msg, idx) => (
-                  <div key={idx} className="viewer-chat-message mb-1.5 animate-in fade-in duration-300">
-                    <div className="flex items-start">
-                      <div className={`w-4 h-4 mt-0.5 rounded-full ${msg.color} flex items-center justify-center text-[9px] shadow-sm`}>
-                        {msg.name.charAt(0)}
-                      </div>
-                      <div className="ml-1.5">
-                        <div className="flex items-center">
-                          <span className="text-white text-[11px] font-medium">{msg.name}</span>
-                          {msg.isHost && (
-                            <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[8px] ml-1 px-1 leading-3 rounded text-white font-medium">
-                              HOST
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-gray-200 text-[10px] leading-tight">{msg.message}</div>
-                      </div>
-                    </div>
+      {/* Main Content Area */}
+      <div className="h-full pt-12">
+        <div className="flex h-full rounded-lg overflow-hidden">
+          {/* Main livestream view */}
+          <div className="w-full h-full bg-black relative rounded-lg overflow-hidden">
+            {/* Stream content */}
+            <AgoraVideo
+              appId={streamInfo.appId}
+              channelName={streamInfo.channelName}
+              token={streamInfo.token}
+              uid={streamInfo.uid || undefined}
+              role="audience"
+              userName={userName}
+            />
+
+            {/* Stream metadata overlay */}
+            <div className="absolute bottom-4 left-4 z-20 bg-black/50 backdrop-blur-sm rounded-lg p-2">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-[#D8C6AF] flex items-center justify-center text-black font-bold">
+                  {streamInfo.hostName ? streamInfo.hostName.charAt(0).toUpperCase() : "H"}
+                </div>
+                <div className="ml-2">
+                  <div className="text-white text-sm font-medium">
+                    {streamInfo.hostName || "Host"}
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-400 text-[10px] py-1.5">Chat messages will appear here</div>
-              )}
-            </div>
-            
-            {/* Centered control buttons (like in the image) - more compact */}
-            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 flex items-center space-x-3 bg-black/40 backdrop-blur-sm px-5 py-2 rounded-full border border-white/10">
-              <button 
-                onClick={handleSendGift}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/70 text-white hover:text-pink-400 transition-colors"
-              >
-                <Gift size={18} />
-              </button>
-              
-              <button 
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/70 text-white hover:text-red-400 transition-colors"
-              >
-                <Heart size={18} />
-              </button>
-              
-              <button 
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-800/70 text-white hover:text-yellow-400 transition-colors"
-              >
-                <Flag size={18} />
-              </button>
-              
-              <button 
-                onClick={handleLeaveStream}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-              >
-                <X size={18} />
-              </button>
+                  <div className="text-[#D8C6AF] text-xs">
+                    Streaming Live
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-      
-      {/* Bottom chat input - more compact */}
-      <div className="absolute bottom-3 left-4 z-20">
-        <form onSubmit={handleSendMessage} className="relative">
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Type a message..."
-            className="w-56 sm:w-64 md:w-72 bg-black/60 backdrop-blur-sm text-white placeholder-gray-400 border border-gray-700 rounded-full py-1.5 px-3 pr-8 text-xs focus:outline-none focus:ring-1 focus:ring-[#5D1C34]/50"
-          />
-          <button 
-            type="submit" 
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-            disabled={!chatInput.trim()}
-          >
-            <Send size={14} />
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );
