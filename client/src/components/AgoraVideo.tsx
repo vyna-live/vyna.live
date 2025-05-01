@@ -173,6 +173,32 @@ export function AgoraVideo({
         // Set client role
         await agoraClient.setClientRole(role === 'host' ? 'host' : 'audience');
         
+        // Listen for user-published events - this is crucial for viewing streamer content
+        agoraClient.on('user-published', async (user, mediaType) => {
+          console.log(`User ${user.uid} published ${mediaType} track`);
+          
+          // Subscribe to the remote user when they publish
+          await agoraClient.subscribe(user, mediaType);
+          console.log(`Subscribed to ${user.uid}'s ${mediaType} track`);
+          
+          // Handle video track
+          if (mediaType === 'video') {
+            // Add to remote users array if not already there
+            setRemoteUsers(prev => prev.some(u => u.uid === user.uid) ? prev : [...prev, user]);
+            
+            // Play the video track
+            console.log(`Playing ${user.uid}'s video track`);
+          }
+          
+          // Handle audio track
+          if (mediaType === 'audio') {
+            if (user.audioTrack) {
+              user.audioTrack.play();
+              console.log(`Playing ${user.uid}'s audio track`);
+            }
+          }
+        });
+        
         // Create RTM client for chat
         try {
           // Create RTM Client
@@ -197,10 +223,12 @@ export function AgoraVideo({
                 return;
               }
               
+              console.log(`Raw Channel message received from ${senderId}:`, message.text);
+              
               const parsedMsg = JSON.parse(message.text);
               const { text, name, color } = parsedMsg;
               
-              console.log(`Channel message received: ${text} from ${name || 'unknown'} (${senderId})`);
+              console.log(`Channel message parsed: ${text} from ${name || 'unknown'} (${senderId})`);
               
               // Add message to chat - prepend new messages so they show at the bottom
               setChatMessages(prev => {
@@ -246,6 +274,18 @@ export function AgoraVideo({
           console.log("User joined:", user.uid);
           setRemoteUsers(prev => [...prev, user]);
           setViewers(prev => prev + 1);
+          
+          // Force re-render when users join to update UI
+          if (role === 'host') {
+            console.log("Host notified of viewer joining, uid:", user.uid);
+          }
+          
+          // For audience role, subscribe to remote streams when a user (host) joins
+          if (role === 'audience') {
+            console.log("Audience subscribing to host streams...");
+            user.videoTrack && user.videoTrack.play('remote-stream-' + user.uid);
+            user.audioTrack && user.audioTrack.play();
+          }
           
           // Add a chat message for user joining
           const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
@@ -441,8 +481,15 @@ export function AgoraVideo({
       // Publish tracks if host
       if (role === 'host') {
         // Publish audio and video tracks separately to avoid type errors
-        await client.publish(audioTrackRef.current);
-        await client.publish(videoTrackRef.current);
+        // Add null checks to ensure tracks exist before publishing
+        if (audioTrackRef.current) {
+          await client.publish(audioTrackRef.current);
+        }
+        
+        if (videoTrackRef.current) {
+          await client.publish(videoTrackRef.current);
+        }
+        
         console.log("Published tracks to Agora channel");
         
         // Update database to set stream as active
@@ -611,12 +658,19 @@ export function AgoraVideo({
         isHost: role === 'host'
       };
       
+      console.log('Sending chat message:', messageObj);
+      
       // Try to send via RTM if available
       if (rtmChannelRef.current) {
         try {
           // Send message via RTM
-          await rtmChannelRef.current.sendMessage({ text: JSON.stringify(messageObj) });
+          const stringifiedMessage = JSON.stringify(messageObj);
+          console.log('Sending RTM message:', stringifiedMessage);
+          await rtmChannelRef.current.sendMessage({ text: stringifiedMessage });
           console.log("Message sent via RTM");
+          
+          // Add message locally for immediate feedback
+          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
         } catch (rtmError) {
           console.error("Failed to send message via RTM:", rtmError);
           
@@ -625,6 +679,7 @@ export function AgoraVideo({
         }
       } else {
         // Add message locally if RTM is not available
+        console.log('RTM not available, adding message locally');
         addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
       }
       
@@ -890,13 +945,26 @@ export function AgoraVideo({
     <div className="h-full relative">
       <style>{customStyles}</style>
       
-      {/* Main video stream - show screen share when active or regular video */}
+      {/* Main video stream - show screen share when active, remote user video for audience, or regular video */}
       <div className="absolute inset-0 bg-black rounded-lg overflow-hidden">
         {isScreenSharing && screenTrackRef.current ? (
           // For screen sharing track
           <ScreenPlayer videoTrack={screenTrackRef.current} />
+        ) : role === 'audience' ? (
+          // For audience, show remote streams (the host)
+          <div id={"remote-stream-" + remoteUsers[0]?.uid} className="w-full h-full">
+            {remoteUsers.length > 0 && remoteUsers[0].videoTrack ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-sm text-white">Waiting for host video...</div>
+              </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-sm text-white">Waiting for host video...</div>
+              </div>
+            )}
+          </div>
         ) : (
-          // For camera track
+          // For host camera track
           videoTrackRef.current && <VideoPlayer videoTrack={videoTrackRef.current} />
         )}
       </div>
