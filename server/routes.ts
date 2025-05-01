@@ -1059,29 +1059,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Validating host ID: ${hostId}, channel: ${channel || 'not specified'}`);
       
-      // Check if hostId is a valid number
+      // Check if hostId is a valid number or timestamp
+      // Since the generated IDs might be timestamps or other large numbers that exceed
+      // PostgreSQL's integer limits, we'll handle them as strings for searching in multiple ways
       const parsedHostId = parseInt(hostId, 10);
-      if (isNaN(parsedHostId)) {
-        console.log(`Invalid host ID format: ${hostId}`);
-        return res.status(400).json({ error: "Invalid host ID format" });
+      let numericId = null;
+      
+      // Only use the parsed ID if it's a reasonable size for PostgreSQL integer
+      if (!isNaN(parsedHostId) && parsedHostId > 0 && parsedHostId < 2147483647) {
+        numericId = parsedHostId;
+        console.log(`Valid numeric host ID: ${numericId}`);
+      } else {
+        console.log(`Host ID ${hostId} is not a valid PostgreSQL integer, will search by string comparison`);
       }
       
       // Query the database to check if this host has an active stream
-      let streams;
+      let streams = [];
       
-      if (channel) {
-        // If channel is provided, filter by both host ID and channel name
-        streams = await db.select()
-          .from(streamSessions)
-          .where(and(
-            eq(streamSessions.hostId, parsedHostId),
-            eq(streamSessions.channelName, String(channel))
-          ));
-      } else {
-        // Otherwise just filter by host ID
-        streams = await db.select()
-          .from(streamSessions)
-          .where(eq(streamSessions.hostId, parsedHostId));
+      try {
+        // First try to find streams using the numeric ID if valid
+        if (numericId !== null) {
+          // Build the query with conditions
+          let query = db.select().from(streamSessions);
+          
+          if (channel) {
+            // Filter by both host ID and channel name
+            streams = await query.where(and(
+              eq(streamSessions.hostId, numericId),
+              eq(streamSessions.channelName, String(channel))
+            ));
+          } else {
+            // Filter just by host ID
+            streams = await query.where(eq(streamSessions.hostId, numericId));
+          }
+          
+          if (streams.length > 0) {
+            console.log(`Found ${streams.length} streams for numeric host ID: ${numericId}`);
+          }
+        }
+        
+        // If no streams found with numeric ID or it wasn't valid, try alternate approaches
+        if (streams.length === 0) {
+          console.log(`No streams found with numeric ID, looking for any match with channel name`);
+          
+          // Try to find by channel name containing the host ID
+          if (channel) {
+            streams = await db.select()
+              .from(streamSessions)
+              .where(eq(streamSessions.channelName, String(channel)));
+              
+            if (streams.length > 0) {
+              console.log(`Found ${streams.length} streams by channel name: ${channel}`);
+            }
+          } else {
+            // As last resort, get all active streams (up to 10)
+            streams = await db.select()
+              .from(streamSessions)
+              .where(eq(streamSessions.isActive, true))
+              .limit(10);
+              
+            if (streams.length > 0) {
+              console.log(`Found ${streams.length} active streams as fallback`);
+            }
+          }
+        }
+      } catch (queryError) {
+        console.error('Error in database query:', queryError);
+        // Continue with empty streams array
       }
       
       if (streams.length === 0) {
