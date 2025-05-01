@@ -424,6 +424,29 @@ export function AgoraVideo({
       if (role === 'host') {
         await client.publish([audioTrackRef.current, videoTrackRef.current]);
         console.log("Published tracks to Agora channel");
+        
+        // Update database to set stream as active
+        try {
+          const response = await fetch('/api/stream/active', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              channelName,
+              isActive: true
+            })
+          });
+          
+          if (response.ok) {
+            console.log('Stream marked as active in database');
+          } else {
+            console.error('Failed to update stream active status in database');
+          }
+        } catch (dbErr) {
+          console.error('Error updating stream status:', dbErr);
+          // Continue even if database update fails
+        }
       }
       
       setIsJoined(true);

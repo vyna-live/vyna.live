@@ -432,6 +432,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/agora/livestream", createAgoraLivestream);
   
+  // Endpoint to update stream active status
+  app.post('/api/stream/active', async (req, res) => {
+    try {
+      const { channelName, isActive } = req.body;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: 'Channel name is required' });
+      }
+      
+      console.log(`Setting stream ${channelName} active status to: ${isActive}`);
+      
+      // Update the database
+      const result = await db.update(streamSessions)
+        .set({ 
+          isActive: isActive === true, 
+          startedAt: isActive === true ? new Date() : undefined,
+          endedAt: isActive === false ? new Date() : undefined
+        })
+        .where(eq(streamSessions.channelName, channelName))
+        .returning({
+          id: streamSessions.id,
+          isActive: streamSessions.isActive,
+          channelName: streamSessions.channelName
+        });
+        
+      if (result.length === 0) {
+        console.log(`No stream found with channel name: ${channelName}`);
+        return res.status(404).json({ error: 'Stream not found' });
+      }
+      
+      // Also update the global map if it exists
+      if (global.streamViewers && global.streamViewers.has(channelName)) {
+        const viewerData = global.streamViewers.get(channelName);
+        viewerData.isActive = isActive === true;
+        viewerData.lastUpdated = Date.now();
+        global.streamViewers.set(channelName, viewerData);
+        console.log(`Updated global map for channel: ${channelName}, isActive: ${isActive}`);
+      }
+      
+      return res.status(200).json({
+        id: result[0].id,
+        isActive: result[0].isActive,
+        channelName: result[0].channelName
+      });
+    } catch (error) {
+      console.error('Error updating stream active status:', error);
+      return res.status(500).json({ error: 'Failed to update stream status' });
+    }
+  });
+  
   // Get Agora credentials for a specific stream
   app.get("/api/stream/:streamId/join-credentials", async (req, res) => {
     try {
@@ -996,104 +1046,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Stream ID validation endpoint
-  app.get("/api/livestreams/:streamId/validate", async (req, res) => {
+  app.get("/api/livestreams/:hostId/validate", async (req, res) => {
     try {
-      const { streamId } = req.params;
+      const { hostId } = req.params;
       const { channel } = req.query; // Get optional channel parameter from query
       
-      if (!streamId) {
-        return res.status(400).json({ error: "Stream ID is required" });
+      if (!hostId) {
+        return res.status(400).json({ error: "Host ID is required" });
       }
       
-      console.log(`Validating stream ID: ${streamId}, channel: ${channel || 'not specified'}`);
-      // Log current mappings in a more compatible way
-      const mappings: string[] = [];
-      streamIdToChannel.forEach((channel, id) => {
-        mappings.push(`${id} -> ${channel}`);
-      });
-      console.log(`Current stream mappings:`, mappings);
+      console.log(`Validating host ID: ${hostId}, channel: ${channel || 'not specified'}`);
       
-      // If channel parameter is provided, use it directly
-      let channelName = channel ? String(channel) : streamIdToChannel.get(streamId);
+      // Check if hostId is a valid number
+      const parsedHostId = parseInt(hostId, 10);
+      if (isNaN(parsedHostId)) {
+        console.log(`Invalid host ID format: ${hostId}`);
+        return res.status(400).json({ error: "Invalid host ID format" });
+      }
       
+      // Query the database to check if this host has an active stream
+      let query = db.select()
+        .from(streamSessions)
+        .where(eq(streamSessions.hostId, parsedHostId));
+      
+      // If channel is provided, also filter by channel name
       if (channel) {
-        console.log(`Using provided channel name: ${channel}`);
-        // For consistency, also add/update the mapping
-        streamIdToChannel.set(streamId, String(channel));
-      }
-      // If not found by ID and no channel provided, check if it's a channel name with stream_ prefix
-      else if (!channelName && streamId.startsWith('stream_')) {
-        console.log(`Stream ID appears to be a channel name with stream_ prefix`);
-        
-        // The streamId is already a channel name, so check if we have viewer data for it
-        if (streamViewers.has(streamId)) {
-          channelName = streamId;
-          // For consistency, also add it to the id->channel mapping 
-          const actualId = streamId.replace(/^stream_/, '');
-          streamIdToChannel.set(actualId, streamId);
-          console.log(`Added reverse mapping ${actualId} -> ${streamId}`);
-        }
+        query = query.where(eq(streamSessions.channelName, String(channel)));
       }
       
-      if (!channelName) {
-        console.log(`Stream ID ${streamId} not found in mapping`);
-        
-        // Check for our standard format
-        if (/^[a-zA-Z0-9_-]{6,}$/.test(streamId)) {
-          // This is a valid format for a stream ID
-          // Store it with a generated channel name
-          const newChannelName = `stream_${streamId}`;
-          console.log(`Creating new mapping ${streamId} -> ${newChannelName}`);
-          
-          streamIdToChannel.set(streamId, newChannelName);
-          
-          // Initialize the viewer data
-          if (!streamViewers.has(newChannelName)) {
-            console.log(`Initializing viewer data for ${newChannelName}`);
-            streamViewers.set(newChannelName, {
-              count: 1, // Start with 1 viewer (the streamer)
-              title: `Live Stream ${streamId}`,
-              streamId: streamId,
-              hostName: "Host", // Default name
-              isActive: true,
-              lastUpdated: Date.now()
-            });
-          }
-          
-          return res.status(200).json({ 
-            isActive: true,
-            channelName: newChannelName
-          });
-        }
-        
-        // If not found and not a valid format
-        console.log(`Stream ID ${streamId} is not in a valid format`);
+      // Execute the query
+      const streams = await query;
+      
+      if (streams.length === 0) {
+        console.log(`No streams found for host ID: ${hostId}`);
         return res.status(404).json({ 
-          error: "Stream not found",
+          error: "No streams found for this host",
           isActive: false
         });
       }
       
-      // Check if the stream is active
-      const viewerData = streamViewers.get(channelName);
-      const isActive = viewerData ? true : false;
+      // Find the active stream if any
+      const activeStream = streams.find(stream => stream.isActive);
       
-      console.log(`Stream ID ${streamId} is mapped to channel ${channelName}, active: ${isActive}`);
-      if (viewerData) {
-        console.log(`Stream data:`, {
-          title: viewerData.title,
-          hostName: viewerData.hostName,
-          count: viewerData.count
+      if (!activeStream) {
+        console.log(`Host ${hostId} has streams but none are active`);
+        return res.status(200).json({ 
+          isActive: false,
+          channelName: streams[0].channelName, // Return the first stream's channel name
+          message: "Host has streams but none are currently active"
         });
       }
       
+      // Stream is active, check if it's in the global map
+      if (!streamViewers.has(activeStream.channelName)) {
+        // Initialize it in the global map if not present
+        streamViewers.set(activeStream.channelName, {
+          count: 1,
+          title: activeStream.streamTitle || `Live Stream`,
+          streamId: activeStream.id.toString(),
+          hostName: activeStream.hostName || "Host",
+          isActive: true,
+          lastUpdated: Date.now()
+        });
+        
+        // Also set up the reverse mapping
+        streamIdToChannel.set(activeStream.id.toString(), activeStream.channelName);
+      }
+      
+      const viewerData = streamViewers.get(activeStream.channelName) || {};
+      
+      console.log(`Host ${hostId} has active stream with channel ${activeStream.channelName}`);
+      
       return res.status(200).json({ 
-        isActive,
-        channelName,
+        isActive: true,
+        channelName: activeStream.channelName,
+        hostId: parsedHostId,
+        streamId: activeStream.id,
+        streamTitle: activeStream.streamTitle,
         ...viewerData
       });
     } catch (error) {
-      console.error("Error validating stream ID:", error);
+      console.error("Error validating host ID:", error);
       return res.status(500).json({ error: "Failed to validate stream" });
     }
   });
