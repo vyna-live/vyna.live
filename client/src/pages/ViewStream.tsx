@@ -4,37 +4,33 @@ import { Loader2 } from "lucide-react";
 import ViewerStreamInterface from "@/components/ViewerStreamInterface";
 
 export default function ViewStream() {
-  const [_, params] = useRoute('/view-stream/:hostId');
+  const [_, params] = useRoute('/view-stream/:streamId');
   const [location, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  type StreamInfoType = {
+  const [streamInfo, setStreamInfo] = useState<{
     appId: string | null;
     token: string | null;
     channelName: string | null;
     uid: number | null;
     streamTitle: string | null;
     hostName: string | null;
-    hostId: string | number | null;
     isActive: boolean;
-  };
-  
-  const [streamInfo, setStreamInfo] = useState<StreamInfoType>({
+  }>({  
     appId: null,
     token: null,
     channelName: null,
     uid: null,
     streamTitle: null,
     hostName: null,
-    hostId: null,
     isActive: false
   });
   
-  // Fetch stream data using the hostId and channel from URL parameters
+  // Fetch stream data using the hostId (now in streamId param) and optional channel from URL
   useEffect(() => {
     async function fetchStreamData() {
       try {
-        if (!params?.hostId) {
+        if (!params?.streamId) {
           throw new Error('Host ID is missing');
         }
         
@@ -45,112 +41,54 @@ export default function ViewStream() {
         const urlParams = new URLSearchParams(window.location.search);
         const channelParam = urlParams.get('channel');
         
-        // This is the host's user ID
-        const hostId = params.hostId;
-        console.log(`Fetching stream data for host ID: ${hostId}, channel: ${channelParam || 'not specified'}`);
+        // The streamId param is now actually the hostId
+        const hostId = params.streamId;
+        console.log(`Validating host ID: ${hostId}, channel: ${channelParam || 'not specified'}`);
         
-        // If we don't have a channel parameter, we can't connect
-        if (!channelParam) {
-          throw new Error('Channel information is missing. The stream link is incomplete.');
+        // Fetch stream data from the host validation endpoint
+        let validateUrl = `/api/livestreams/${hostId}/validate`;
+        if (channelParam) {
+          validateUrl += `?channel=${encodeURIComponent(channelParam)}`;
         }
         
-        // First try to find channel using both host ID and channel name
-        const fetchStreamSession = async () => {
-          try {
-            // Try to fetch the channel information first by channel name
-            const channelResponse = await fetch(`/api/stream/channel/${channelParam}`);
-            
-            // If successful, return that data
-            if (channelResponse.ok) {
-              const channelData = await channelResponse.json();
-              if (channelData && channelData.isActive) {
-                return channelData;
-              }
-              throw new Error('Channel exists but stream is not active');
-            }
-            
-            // Otherwise, try directly with host ID
-            const validateUrl = `/api/livestreams/${hostId}/validate?channel=${encodeURIComponent(channelParam)}`;
-            const validateResponse = await fetch(validateUrl);
-            
-            if (!validateResponse.ok) {
-              const errorData = await validateResponse.json();
-              throw new Error(errorData.error || 'Failed to find active stream for this host');
-            }
-            
-            return await validateResponse.json();
-          } catch (error) {
-            console.error('Error in fetchStreamSession:', error);
-            throw error;
-          }
-        };
+        const validateResponse = await fetch(validateUrl);
         
-        // Fetch the stream session data
-        const streamData = await fetchStreamSession();
+        if (!validateResponse.ok) {
+          const errorData = await validateResponse.json();
+          throw new Error(errorData.error || 'Failed to find active stream for this host');
+        }
         
-        // Check if the stream is active
-        if (!streamData.isActive) {
+        const validateData = await validateResponse.json();
+        
+        // Check if host has an active stream
+        if (!validateData.isActive) {
           throw new Error('This host does not have an active stream at the moment. Please try again later.');
         }
         
-        // Get credentials to join the stream
-        const requestAudienceToken = async () => {
-          try {
-            // Request an audience token for this channel
-            const audienceResponse = await fetch('/api/stream/audience-token', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                channelName: streamData.channelName
-              })
-            });
-            
-            if (!audienceResponse.ok) {
-              const errorData = await audienceResponse.json();
-              throw new Error(errorData.error || 'Failed to get audience token');
-            }
-            
-            return await audienceResponse.json();
-          } catch (error) {
-            console.error('Error in requestAudienceToken:', error);
-            throw error;
-          }
-        };
+        // Get join credentials from the active stream data
+        let credentialsUrl = `/api/stream/${validateData.streamId}/join-credentials`;
+        if (validateData.channelName) {
+          credentialsUrl += `?channel=${encodeURIComponent(validateData.channelName)}`;
+        }
         
-        // Get API key for agora
-        const fetchApiKey = async () => {
-          try {
-            const keyResponse = await fetch('/api/stream/key');
-            
-            if (!keyResponse.ok) {
-              throw new Error('Failed to fetch API key');
-            }
-            
-            return await keyResponse.json();
-          } catch (error) {
-            console.error('Error in fetchApiKey:', error);
-            throw error;
-          }
-        };
+        const credentialsResponse = await fetch(credentialsUrl);
         
-        // Fetch both in parallel
-        const [tokenData, apiKeyData] = await Promise.all([
-          requestAudienceToken(),
-          fetchApiKey()
-        ]);
+        if (!credentialsResponse.ok) {
+          const errorData = await credentialsResponse.json();
+          throw new Error(errorData.error || 'Failed to get stream credentials');
+        }
+        
+        const credentials = await credentialsResponse.json();
         
         // Set stream information for viewer
         setStreamInfo({
-          appId: apiKeyData.apiKey,
-          token: tokenData.token,
-          channelName: streamData.channelName,
-          uid: Math.floor(Math.random() * 1000000), // Generate a random uid for the audience
-          streamTitle: streamData.streamTitle || streamData.title || 'Live Stream',
-          hostName: streamData.hostName || 'Host',
-          hostId: params.hostId, // Use the host ID from URL params
-          isActive: streamData.isActive
+          appId: credentials.appId,
+          token: credentials.token,
+          channelName: credentials.channelName,
+          uid: credentials.uid,
+          streamTitle: validateData.streamTitle || 'Live Stream',
+          hostName: validateData.hostName || 'Host',
+          isActive: validateData.isActive
         });
         
         setIsLoading(false);
