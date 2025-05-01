@@ -90,7 +90,7 @@ export default function Dashboard() {
           streamTitle: formData.title,
           description: formData.description,
           destination: formData.destination,
-          coverImage: '', // Would need additional handling for file upload
+          coverImage: formData.coverImagePath || '', // Use the path returned from the upload endpoint
           privacy: formData.privacy,
           scheduled: !!formData.scheduledDate,
           streamDate: formData.scheduledDate,

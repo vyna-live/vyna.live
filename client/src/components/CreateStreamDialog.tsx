@@ -13,6 +13,7 @@ export interface StreamFormData {
   description: string;
   destination: string[];
   coverImage?: File;
+  coverImagePath?: string;
   privacy: 'public' | 'unlisted' | 'private';
   scheduledDate?: Date;
 }
@@ -88,12 +89,12 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
       // If there's a cover image, upload it first
       let coverImagePath = '';
       if (formData.coverImage) {
-        const formData = new FormData();
-        formData.append('coverImage', formData.coverImage);
+        const formDataForUpload = new FormData();
+        formDataForUpload.append('coverImage', formData.coverImage as Blob);
         
         const response = await fetch('/api/user/stream-session/upload-cover', {
           method: 'POST',
-          body: formData,
+          body: formDataForUpload,
         });
         
         if (!response.ok) {
@@ -314,7 +315,7 @@ export default function CreateStreamDialog({ isOpen, onClose, onSubmit }: Create
               type="submit"
               className="w-full py-3 bg-[#D8C6AF] text-black font-medium rounded hover:bg-opacity-90 transition-opacity"
             >
-              Join stream
+              Create Stream
             </button>
           </form>
         </div>
