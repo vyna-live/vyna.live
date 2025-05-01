@@ -407,6 +407,18 @@ export function AgoraVideo({
       console.log("All Agora resources cleaned up");
     };
   }, [appId, role, channelName, uid]);  // Removed userName from dependencies as it's not used for connection
+  
+  // Auto-join for audience role
+  useEffect(() => {
+    if (role === 'audience' && clientRef.current && !isJoined && !isLoading) {
+      console.log('Audience auto-joining stream');
+      // Small delay to ensure client is ready
+      const timer = setTimeout(() => {
+        joinChannel();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [role, isJoined, isLoading]);
 
   // Join call when ready
   const joinChannel = async () => {
@@ -806,17 +818,6 @@ export function AgoraVideo({
   if (!isJoined) {
     // For audience, show connecting view and automatically try to join
     if (role === 'audience') {
-      // Auto-join for audience role
-      useEffect(() => {
-        // Only run once when component mounts
-        setTimeout(() => {
-          if (clientRef.current && !isJoined) {
-            console.log('Audience auto-joining stream');
-            joinChannel();
-          }
-        }, 500); // Small delay to ensure client is ready
-      }, []);
-      
       return (
         <div className="w-full h-full flex items-center justify-center p-4">
           <style>{customStyles}</style>
