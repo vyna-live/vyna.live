@@ -13,7 +13,18 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Initialize with a default value that matches the shape
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  isLoading: false,
+  isAuthenticated: false,
+  login: async () => { throw new Error('Not implemented'); },
+  register: async () => { throw new Error('Not implemented'); },
+  logout: async () => { throw new Error('Not implemented'); },
+  loginWithGoogle: async () => { throw new Error('Not implemented'); },
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
