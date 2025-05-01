@@ -232,12 +232,23 @@ export function AgoraVideo({
               
               // Add message to chat - prepend new messages so they show at the bottom
               setChatMessages(prev => {
+                // Determine the correct name to display
+                let displayName = name || `User ${senderId.slice(-4)}`;
+                
+                // In audience role, if the message is from host, use the stream host name
+                const isMessageFromHost = parsedMsg.isHost || false;
+                if (role === 'audience' && isMessageFromHost) {
+                  displayName = userName; // userName prop contains host name for audience
+                }
+                
+                console.log(`Processing message from ${senderId}, display name: ${displayName}, isHost: ${isMessageFromHost}`);
+                
                 const newMessages = [{
                   userId: senderId,
-                  name: name || `User ${senderId.slice(-4)}`,
+                  name: displayName,
                   message: text || "sent a message",
                   color: color || 'bg-blue-500',
-                  isHost: parsedMsg.isHost || false
+                  isHost: isMessageFromHost
                 }, ...prev];
                 
                 // Keep only the latest 8 messages
@@ -682,12 +693,15 @@ export function AgoraVideo({
       const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
       const myColor = randomColors[Math.floor(Math.random() * randomColors.length)];
       
+      // Determine if user is host
+      const isUserHost = role === 'host';
+      
       // Create message object
       const messageObj = {
         text: chatInput,
         name: userName,
         color: myColor,
-        isHost: role === 'host'
+        isHost: isUserHost
       };
       
       console.log('Sending chat message:', messageObj);
@@ -702,17 +716,18 @@ export function AgoraVideo({
           console.log("Message sent via RTM");
           
           // Add message locally for immediate feedback
-          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+          // Using the same name that will be displayed to others
+          addLocalMessage(uid.toString(), userName, chatInput, myColor, isUserHost);
         } catch (rtmError) {
           console.error("Failed to send message via RTM:", rtmError);
           
           // If RTM fails, add message locally
-          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+          addLocalMessage(uid.toString(), userName, chatInput, myColor, isUserHost);
         }
       } else {
         // Add message locally if RTM is not available
         console.log('RTM not available, adding message locally');
-        addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+        addLocalMessage(uid.toString(), userName, chatInput, myColor, isUserHost);
       }
       
       // Clear input regardless
