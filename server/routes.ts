@@ -7,7 +7,7 @@ import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
 import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions, livestreams } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
 import { log } from "./vite";
@@ -1065,17 +1065,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Query the database to check if this host has an active stream
-      let query = db.select()
-        .from(streamSessions)
-        .where(eq(streamSessions.hostId, parsedHostId));
+      let streams;
       
-      // If channel is provided, also filter by channel name
       if (channel) {
-        query = query.where(eq(streamSessions.channelName, String(channel)));
+        // If channel is provided, filter by both host ID and channel name
+        streams = await db.select()
+          .from(streamSessions)
+          .where(and(
+            eq(streamSessions.hostId, parsedHostId),
+            eq(streamSessions.channelName, String(channel))
+          ));
+      } else {
+        // Otherwise just filter by host ID
+        streams = await db.select()
+          .from(streamSessions)
+          .where(eq(streamSessions.hostId, parsedHostId));
       }
-      
-      // Execute the query
-      const streams = await query;
       
       if (streams.length === 0) {
         console.log(`No streams found for host ID: ${hostId}`);
@@ -1113,7 +1118,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         streamIdToChannel.set(activeStream.id.toString(), activeStream.channelName);
       }
       
-      const viewerData = streamViewers.get(activeStream.channelName) || {};
+      // Get viewer data with default values if not found
+      const viewerData = streamViewers.get(activeStream.channelName) || {
+        count: 1,
+        title: activeStream.streamTitle || 'Live Stream',
+        streamId: activeStream.id.toString(),
+        hostName: activeStream.hostName || "Host",
+        isActive: true,
+        lastUpdated: Date.now()
+      };
       
       console.log(`Host ${hostId} has active stream with channel ${activeStream.channelName}`);
       

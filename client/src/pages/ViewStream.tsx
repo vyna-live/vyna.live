@@ -26,12 +26,12 @@ export default function ViewStream() {
     isActive: false
   });
   
-  // Fetch stream data using the streamId and optional channel from URL
+  // Fetch stream data using the hostId (now in streamId param) and optional channel from URL
   useEffect(() => {
     async function fetchStreamData() {
       try {
         if (!params?.streamId) {
-          throw new Error('Stream ID is missing');
+          throw new Error('Host ID is missing');
         }
         
         setIsLoading(true);
@@ -41,30 +41,34 @@ export default function ViewStream() {
         const urlParams = new URLSearchParams(window.location.search);
         const channelParam = urlParams.get('channel');
         
-        // Use either the channel from URL or stream ID as the identifier
-        const streamIdOrChannel = channelParam || params.streamId;
-        console.log(`Fetching stream data for ID: ${params.streamId}, channel: ${channelParam || 'not specified'}`);
+        // The streamId param is now actually the hostId
+        const hostId = params.streamId;
+        console.log(`Validating host ID: ${hostId}, channel: ${channelParam || 'not specified'}`);
         
-        // Fetch stream information by ID
-        const streamResponse = await fetch(`/api/stream/${streamIdOrChannel}/info`);
-        
-        if (!streamResponse.ok) {
-          const errorData = await streamResponse.json();
-          throw new Error(errorData.error || 'Failed to load stream data. The stream may not exist.');
-        }
-        
-        const streamData = await streamResponse.json();
-        
-        // Check if stream is active
-        if (!streamData.isActive) {
-          throw new Error('This stream is not currently active. Please try again later.');
-        }
-        
-        // Get join credentials (includes appId, token, and uid)
-        // If we have a channel parameter, pass it as a query param
-        let credentialsUrl = `/api/stream/${params.streamId}/join-credentials`;
+        // Fetch stream data from the host validation endpoint
+        let validateUrl = `/api/livestreams/${hostId}/validate`;
         if (channelParam) {
-          credentialsUrl += `?channel=${encodeURIComponent(channelParam)}`;
+          validateUrl += `?channel=${encodeURIComponent(channelParam)}`;
+        }
+        
+        const validateResponse = await fetch(validateUrl);
+        
+        if (!validateResponse.ok) {
+          const errorData = await validateResponse.json();
+          throw new Error(errorData.error || 'Failed to find active stream for this host');
+        }
+        
+        const validateData = await validateResponse.json();
+        
+        // Check if host has an active stream
+        if (!validateData.isActive) {
+          throw new Error('This host does not have an active stream at the moment. Please try again later.');
+        }
+        
+        // Get join credentials from the active stream data
+        let credentialsUrl = `/api/stream/${validateData.streamId}/join-credentials`;
+        if (validateData.channelName) {
+          credentialsUrl += `?channel=${encodeURIComponent(validateData.channelName)}`;
         }
         
         const credentialsResponse = await fetch(credentialsUrl);
@@ -82,9 +86,9 @@ export default function ViewStream() {
           token: credentials.token,
           channelName: credentials.channelName,
           uid: credentials.uid,
-          streamTitle: streamData.streamTitle || 'Live Stream',
-          hostName: streamData.hostName || 'Host',
-          isActive: streamData.isActive
+          streamTitle: validateData.streamTitle || 'Live Stream',
+          hostName: validateData.hostName || 'Host',
+          isActive: validateData.isActive
         });
         
         setIsLoading(false);
