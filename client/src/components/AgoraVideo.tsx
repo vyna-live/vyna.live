@@ -134,6 +134,8 @@ export function AgoraVideo({
   uid = Math.floor(Math.random() * 1000000),
   role = 'audience',
   userName,
+  hostId,
+  streamTitle = 'Live Stream',
   onToggleDrawer
 }: AgoraVideoProps) {
   // State
@@ -173,112 +175,34 @@ export function AgoraVideo({
     }
   };
   
+  // State for share dialog
+  const [showShareDialog, setShowShareDialog] = useState<boolean>(false);
+  const [currentHostId, setCurrentHostId] = useState<string | number>('');
+  const { toast } = useToast();
+  
   // Handle share button click
-  const handleShareClick = () => {
-    // Create a modal dialog to show the shareable link
-    const baseUrl = window.location.origin;
-    
-    // Create modal container
-    const modalContainer = document.createElement('div');
-    modalContainer.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
-    
-    // Create modal content
-    const modal = document.createElement('div');
-    modal.className = 'bg-[#1C1C1C] rounded-lg shadow-lg p-5 max-w-md w-full mx-4';
-    
-    // Create modal heading
-    const heading = document.createElement('h3');
-    heading.className = 'text-[#CDBCAB] text-lg font-medium mb-4';
-    heading.textContent = 'Share Your Stream';
-    
-    // Create link container
-    const linkContainer = document.createElement('div');
-    linkContainer.className = 'bg-black/30 p-3 rounded-lg mb-4 break-all';
-    linkContainer.innerHTML = '<p class="text-sm text-gray-400 mb-1">Loading stream link...</p>';
-    
-    // Create buttons container
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'flex justify-end space-x-3';
-    
-    // Close button
-    const closeButton = document.createElement('button');
-    closeButton.className = 'px-4 py-2 bg-[#2C2C32] text-white rounded-lg hover:bg-[#3C3C42] transition-colors';
-    closeButton.textContent = 'Close';
-    closeButton.onclick = () => {
-      // Add fade out animation
-      modalContainer.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-      setTimeout(() => document.body.removeChild(modalContainer), 300);
-    };
-    
-    // Assemble modal
-    buttonsContainer.appendChild(closeButton);
-    modal.appendChild(heading);
-    modal.appendChild(linkContainer);
-    modal.appendChild(buttonsContainer);
-    modalContainer.appendChild(modal);
-    document.body.appendChild(modalContainer);
-    
-    // Generate the link
-    fetch('/api/user')
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        } else {
-          throw new Error('Not authenticated');
-        }
-      })
-      .then(userData => {
-        const hostId = userData.id.toString();
-        const shareUrl = `${baseUrl}/view-stream/${hostId}?channel=${channelName}`;
-        console.log('Generated share URL:', shareUrl);
-        
-        // Update the modal with the link
-        linkContainer.innerHTML = `
-          <p class="text-sm text-gray-400 mb-1">Share this link with your viewers:</p>
-          <p class="text-white font-medium select-all">${shareUrl}</p>
-        `;
-        
-        // Add copy button
-        const copyButton = document.createElement('button');
-        copyButton.className = 'px-4 py-2 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] text-white rounded-lg hover:from-[#B68D54] hover:to-[#6D2C44] transition-colors';
-        copyButton.textContent = 'Copy Link';
-        copyButton.onclick = () => {
-          // Show the link as selected text that user can manually copy
-          const range = document.createRange();
-          const selection = window.getSelection();
-          
-          // Find the paragraph with the URL
-          const linkParagraph = linkContainer.querySelector('p.select-all');
-          if (linkParagraph) {
-            range.selectNodeContents(linkParagraph);
-            selection?.removeAllRanges();
-            selection?.addRange(range);
-            
-            // Try to copy but it's okay if it fails since text is selected
-            try {
-              document.execCommand('copy');
-              copyButton.textContent = 'Copied!';
-              setTimeout(() => {
-                copyButton.textContent = 'Copy Link';
-              }, 2000);
-            } catch (e) {
-              console.log('Manual copy required');
-              copyButton.textContent = 'Select & Copy';
-            }
-          }
-        };
-        
-        // Add copy button before close button
-        buttonsContainer.insertBefore(copyButton, closeButton);
-      })
-      .catch(err => {
-        console.error('Error getting user data:', err);
-        // Show error message
-        linkContainer.innerHTML = `
-          <p class="text-red-400 mb-1">Error generating link</p>
-          <p class="text-white text-sm">Please try again or use this channel name: <span class="font-medium select-all">${channelName}</span></p>
-        `;
+  const handleShareClick = async () => {
+    try {
+      // Get host ID from user data
+      const response = await fetch('/api/user');
+      
+      if (!response.ok) {
+        throw new Error('Failed to get user data');
+      }
+      
+      const userData = await response.json();
+      setCurrentHostId(userData.id);
+      
+      // Show the share dialog
+      setShowShareDialog(true);
+    } catch (error) {
+      console.error('Error preparing share:', error);
+      toast({
+        title: "Couldn't prepare share link",
+        description: "Please try again later",
+        variant: "destructive"
       });
+    }
   };
   
   // Toggle chat visibility
@@ -914,6 +838,15 @@ export function AgoraVideo({
           </svg>
         </button>
       </div>
+
+      {/* ShareStreamDialog */}
+      <ShareStreamDialog
+        isOpen={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        hostId={currentHostId || hostId || ''}
+        channelName={channelName}
+        streamTitle={streamTitle}
+      />
     </div>
   );
 }
