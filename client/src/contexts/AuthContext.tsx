@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Register function
-  const register = async (userData: { username: string; email: string; password: string; displayName?: string }) => {
+  const register = async (userData: { username: string; email: string; password: string }) => {
     return await registerMutation.mutateAsync(userData);
   };
 
