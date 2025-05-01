@@ -511,10 +511,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentTime = Math.floor(Date.now() / 1000);
       const privilegeExpireTime = currentTime + 14400;
       
+      // Ensure channelName is a string
+      const channelName = String(streamData.channelName || '');
+      
       const token = RtcTokenBuilder.buildTokenWithUid(
         appId,
         appCertificate,
-        streamData.channelName,
+        channelName,
         uid,
         2,  // 2 = SUBSCRIBER_ROLE
         privilegeExpireTime

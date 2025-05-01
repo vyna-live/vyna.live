@@ -323,11 +323,24 @@ export function setupAuth(app: Express) {
     done(null, user.id);
   });
 
-  passport.deserializeUser(async (id: number, done: Function) => {
+  passport.deserializeUser(async (id: unknown, done: Function) => {
     try {
-      const user = await getUserById(id);
+      // Handle potential issues with id type conversion
+      let userId = typeof id === 'string' ? parseInt(id) : id as number;
+      
+      if (isNaN(userId)) {
+        return done(new Error(`Invalid user ID: ${id}`), null);
+      }
+      
+      const user = await getUserById(userId);
+      
+      if (!user) {
+        return done(new Error(`User not found for ID: ${userId}`), null);
+      }
+      
       done(null, user);
     } catch (error) {
+      console.error('User deserialization error:', error);
       done(error, null);
     }
   });
