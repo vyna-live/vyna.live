@@ -410,7 +410,13 @@ export function AgoraVideo({
 
   // Join call when ready
   const joinChannel = async () => {
-    if (!clientRef.current || !audioTrackRef.current || !videoTrackRef.current) return;
+    // For audience, only need to check clientRef
+    if (role === 'audience') {
+      if (!clientRef.current) return;
+    } else {
+      // For host, need to check all tracks
+      if (!clientRef.current || !audioTrackRef.current || !videoTrackRef.current) return;
+    }
     
     try {
       setIsLoading(true);
@@ -794,8 +800,50 @@ export function AgoraVideo({
     );
   }
 
-  // Not joined yet - "Go Live" screen
+  // Not joined yet - different screens for host and audience
   if (!isJoined) {
+    // For audience, show connecting view and automatically try to join
+    if (role === 'audience') {
+      // Auto-join for audience role
+      useEffect(() => {
+        if (!isJoined && clientRef.current) {
+          console.log('Audience attempting to auto-join stream');
+          const joinAudience = async () => {
+            try {
+              if (!clientRef.current) return;
+              
+              await clientRef.current.join(appId, channelName, token || null, uid);
+              console.log('Audience joined stream');
+              setIsJoined(true);
+              setIsLoading(false);
+            } catch (err) {
+              console.error('Error connecting audience to stream:', err);
+              setError(err instanceof Error ? err.message : 'Failed to connect to stream');
+              setIsLoading(false);
+            }
+          };
+          
+          joinAudience();
+        }
+      }, [clientRef.current, isJoined, appId, channelName, token, uid]);
+      
+      return (
+        <div className="w-full h-full flex items-center justify-center p-4">
+          <style>{customStyles}</style>
+          <div className="text-center max-w-md mx-auto p-4">
+            <div className="w-14 h-14 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-3">
+              <Loader2 className="w-7 h-7 text-[#EFE9E1] animate-spin" />
+            </div>
+            <h3 className="text-lg font-medium text-[#CDBCAB] mb-1">Connecting to Stream</h3>
+            <p className="text-sm text-[#CDBCAB] mb-3">
+              Joining the livestream. This may take a moment...
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    // For host, show the "Go Live" button
     return (
       <div className="w-full h-full flex items-center justify-center p-4">
         <style>{customStyles}</style>
