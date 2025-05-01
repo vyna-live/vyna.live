@@ -142,6 +142,7 @@ export function AgoraVideo({
   const [showChat, setShowChat] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [, setLocation] = useLocation();
+  const [connectedAudienceIds, setConnectedAudienceIds] = useState<Set<string>>(new Set());
   
   // Client reference
   const clientRef = useRef<IAgoraRTCClient | null>(null);
@@ -152,6 +153,9 @@ export function AgoraVideo({
   // RTM (Real-Time Messaging) client and channel
   const rtmClientRef = useRef<RtmClient | null>(null);
   const rtmChannelRef = useRef<RtmChannel | null>(null);
+  
+  // Reference to the interval timer for audience checking
+  const audienceCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Create client and tracks on mount
   useEffect(() => {
@@ -318,6 +322,14 @@ export function AgoraVideo({
             if (role === 'host' && memberId !== uid.toString()) {
               console.log(`Host detected new viewer: ${memberId}`);
               
+              // Track the connected audience in a Set
+              setConnectedAudienceIds(prev => {
+                const updated = new Set(prev);
+                updated.add(memberId);
+                console.log('Updated audience set:', Array.from(updated));
+                return updated;
+              });
+              
               // Force UI update with new viewer count
               setViewers(prevCount => {
                 const newCount = prevCount + 1;
@@ -344,6 +356,24 @@ export function AgoraVideo({
                 }
                 return newMessages;
               });
+              
+              // Broadcast a host message to all clients that a new viewer has joined
+              try {
+                if (rtmChannelRef.current) {
+                  const announcement = {
+                    text: `A new viewer has joined (${memberId.slice(-4)})`,
+                    name: userName,
+                    color: 'bg-emerald-500',
+                    isHost: true,
+                    isSystemMessage: true
+                  };
+                  rtmChannelRef.current.sendMessage({ text: JSON.stringify(announcement) })
+                    .then(() => console.log('Sent viewer join announcement'))
+                    .catch(err => console.error('Failed to send join announcement:', err));
+                }
+              } catch (err) {
+                console.error('Error sending join announcement:', err);
+              }
             }
           });
           
@@ -353,6 +383,14 @@ export function AgoraVideo({
             // Update viewers count when member leaves RTM channel
             if (role === 'host' && memberId !== uid.toString()) {
               console.log(`Host detected viewer leaving: ${memberId}`);
+              
+              // Remove from tracked audience set
+              setConnectedAudienceIds(prev => {
+                const updated = new Set(prev);
+                updated.delete(memberId);
+                console.log('Updated audience set after leave:', Array.from(updated));
+                return updated;
+              });
               
               // Force UI update with decreased viewer count
               setViewers(prevCount => {
@@ -380,6 +418,24 @@ export function AgoraVideo({
                 }
                 return newMessages;
               });
+              
+              // Broadcast a host message to all clients that a viewer has left
+              try {
+                if (rtmChannelRef.current) {
+                  const announcement = {
+                    text: `A viewer has left (${memberId.slice(-4)})`,
+                    name: userName,
+                    color: 'bg-pink-500',
+                    isHost: true,
+                    isSystemMessage: true
+                  };
+                  rtmChannelRef.current.sendMessage({ text: JSON.stringify(announcement) })
+                    .then(() => console.log('Sent viewer leave announcement'))
+                    .catch(err => console.error('Failed to send leave announcement:', err));
+                }
+              } catch (err) {
+                console.error('Error sending leave announcement:', err);
+              }
             }
           });
           
@@ -389,11 +445,70 @@ export function AgoraVideo({
             
             // If we're the host, count other members as viewers
             if (role === 'host') {
-              const viewerCount = members.filter(member => member !== uid.toString()).length;
+              // Filter out our own ID to get just the audience
+              const audienceMembers = members.filter(member => member !== uid.toString());
+              const viewerCount = audienceMembers.length;
               console.log(`Setting initial viewer count to ${viewerCount}`);
+              
+              // Update state with the initial audience count
               setViewers(viewerCount);
+              
+              // Also track these members in our audience set
+              if (audienceMembers.length > 0) {
+                setConnectedAudienceIds(prev => {
+                  const updated = new Set(prev);
+                  audienceMembers.forEach(member => updated.add(member));
+                  console.log('Initialized audience set:', Array.from(updated));
+                  return updated;
+                });
+                
+                // Send notifications for each existing audience member
+                audienceMembers.forEach(member => {
+                  const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+                  const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                  
+                  setChatMessages(prev => {
+                    const newMessages = [{
+                      userId: member,
+                      name: `Viewer ${member.slice(-4)}`,
+                      message: "is in the stream",
+                      color,
+                      isHost: false
+                    }, ...prev];
+                    
+                    if (newMessages.length > 8) {
+                      return newMessages.slice(0, 8);
+                    }
+                    return newMessages;
+                  });
+                });
+              }
             }
           });
+          
+          // For host role, periodically check for audience members to ensure UI is accurate
+          if (role === 'host') {
+            audienceCheckIntervalRef.current = setInterval(() => {
+              if (rtmChannelRef.current && isJoined) {
+                rtmChannelRef.current.getMembers().then(members => {
+                  // Filter out our own ID
+                  const audienceMembers = members.filter(member => member !== uid.toString());
+                  console.log(`Audience check: found ${audienceMembers.length} audience members`);
+                  
+                  // If audience count doesn't match our current count, update it
+                  if (audienceMembers.length !== viewers) {
+                    console.log(`Correcting audience count from ${viewers} to ${audienceMembers.length}`);
+                    setViewers(audienceMembers.length);
+                  }
+                  
+                  // Update our tracking set
+                  setConnectedAudienceIds(new Set(audienceMembers));
+                }).catch(err => {
+                  console.error('Error in periodic audience check:', err);
+                });
+              }
+            }, 10000); // Check every 10 seconds
+          }
           
           // Join RTM channel
           await rtmChannel.join();
@@ -540,6 +655,12 @@ export function AgoraVideo({
     // Cleanup
     return () => {
       console.log("Component unmounting, cleaning up resources...");
+      
+      // Clear any interval timers
+      if (audienceCheckIntervalId) {
+        clearInterval(audienceCheckIntervalId);
+        console.log("Cleared audience check interval");
+      }
       
       // Stop and clean up screen sharing if active
       if (screenTrackRef.current) {
