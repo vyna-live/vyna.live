@@ -487,13 +487,14 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: 'Stream session not found' });
       }
       
-      // Update the session with the new cover image
-      await db.update(streamSessions)
-        .set({
-          coverImage: coverImagePath,
-          updatedAt: new Date()
-        })
-        .where(eq(streamSessions.id, session.id));
+      // Update the session with the new cover image using SQL
+      const sql = `
+        UPDATE stream_sessions
+        SET cover_image = $1, cover_image_path = $2, updated_at = NOW()
+        WHERE id = $3
+      `;
+      
+      await db.execute(sql, [coverImagePath, coverImagePath, session.id]);
       
       // Return the updated cover image path
       return res.json({ coverImage: coverImagePath });
@@ -526,20 +527,51 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: 'Stream session not found' });
       }
       
-      // Update the session
-      await db.update(streamSessions)
-        .set({
-          streamTitle: streamTitle || session.streamTitle,
-          description: description || session.description,
-          channelName: channelName || session.channelName, // Include channel name in update
-          destination: destination || session.destination,
-          coverImage: coverImage || session.coverImage,
-          privacy: privacy || session.privacy,
-          scheduled: scheduled !== undefined ? scheduled : session.scheduled,
-          streamDate: streamDate ? new Date(streamDate) : session.streamDate,
-          updatedAt: new Date()
-        })
-        .where(eq(streamSessions.id, session.id));
+      // Convert destination array to a PostgreSQL array string if needed
+      let destinationStr = '{}';
+      if (destination && Array.isArray(destination) && destination.length > 0) {
+        destinationStr = `{${destination.map(d => `"${d}"`).join(',')}}`;  
+      } else if (session.destination) {
+        destinationStr = Array.isArray(session.destination) 
+          ? `{${session.destination.map(d => `"${d}"`).join(',')}}` 
+          : session.destination;
+      }
+      
+      // Format the date properly
+      const formattedDate = streamDate ? new Date(streamDate).toISOString() : session.streamDate;
+      
+      // Update using SQL
+      const sql = `
+        UPDATE stream_sessions
+        SET 
+          stream_title = $1,
+          description = $2,
+          channel_name = $3,
+          destination = $4::text[],
+          cover_image = $5,
+          privacy = $6,
+          scheduled = $7,
+          stream_date = $8,
+          updated_at = NOW()
+        WHERE id = $9
+        RETURNING *
+      `;
+      
+      const result = await db.execute(sql, [
+        streamTitle || session.streamTitle,
+        description || session.description,
+        channelName || session.channelName,
+        destinationStr,
+        coverImage || session.coverImage,
+        privacy || session.privacy,
+        scheduled !== undefined ? scheduled : session.scheduled,
+        formattedDate,
+        session.id
+      ]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Failed to update stream session' });
+      }
       
       // Get the updated session
       const updatedSession = await getUserStreamSession(userId);
@@ -569,13 +601,14 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: 'Stream session not found' });
       }
       
-      // Update the token
-      await db.update(streamSessions)
-        .set({
-          tokenHost: tokenHost,
-          updatedAt: new Date()
-        })
-        .where(eq(streamSessions.id, session.id));
+      // Update the token using SQL
+      const sql = `
+        UPDATE stream_sessions
+        SET token_host = $1, updated_at = NOW()
+        WHERE id = $2
+      `;
+      
+      await db.execute(sql, [tokenHost, session.id]);
       
       return res.json({ success: true, message: 'Host token updated successfully' });
     } catch (error) {

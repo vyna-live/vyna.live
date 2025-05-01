@@ -285,14 +285,22 @@ export const insertWalletTransactionSchema = createInsertSchema(walletTransactio
 
 export const insertStreamSessionSchema = createInsertSchema(streamSessions).pick({
   userId: true,
+  hostId: true,
   channelName: true,
   hostName: true,
   streamTitle: true,
   description: true,
-  isLive: true,
+  isActive: true,
   tokenHost: true,
+  startedAt: true,
+  endedAt: true,
+  viewerCount: true,
+  hostRole: true,
+  coverImagePath: true,
   streamType: true,
   thumbnailUrl: true,
+  recordingUrl: true,
+  audienceTokens: true,
   destination: true,
   coverImage: true,
   privacy: true,
@@ -450,6 +458,10 @@ export const walletTransactionsRelations = relations(walletTransactions, ({ one 
 export const streamSessionsRelations = relations(streamSessions, ({ one, many }) => ({
   user: one(users, {
     fields: [streamSessions.userId],
+    references: [users.id],
+  }),
+  host: one(users, {
+    fields: [streamSessions.hostId],
     references: [users.id],
   }),
   participants: many(livestreamParticipants),
