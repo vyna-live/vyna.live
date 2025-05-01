@@ -13,6 +13,7 @@ import fs from "fs";
 import { log } from "./vite";
 import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
+import { setupAuth } from "./auth";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -28,6 +29,8 @@ if (!fs.existsSync(LOGO_DIR)) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
   // Chat endpoint to get AI responses
   app.post("/api/chat", async (req, res) => {
     try {
