@@ -177,25 +177,46 @@ export function AgoraVideo({
         agoraClient.on('user-published', async (user, mediaType) => {
           console.log(`User ${user.uid} published ${mediaType} track`);
           
-          // Subscribe to the remote user when they publish
-          await agoraClient.subscribe(user, mediaType);
-          console.log(`Subscribed to ${user.uid}'s ${mediaType} track`);
-          
-          // Handle video track
-          if (mediaType === 'video') {
-            // Add to remote users array if not already there
-            setRemoteUsers(prev => prev.some(u => u.uid === user.uid) ? prev : [...prev, user]);
+          try {
+            // Subscribe to the remote user when they publish
+            await agoraClient.subscribe(user, mediaType);
+            console.log(`Subscribed to ${user.uid}'s ${mediaType} track successfully`);
             
-            // Play the video track
-            console.log(`Playing ${user.uid}'s video track`);
-          }
-          
-          // Handle audio track
-          if (mediaType === 'audio') {
-            if (user.audioTrack) {
-              user.audioTrack.play();
-              console.log(`Playing ${user.uid}'s audio track`);
+            // Handle video track
+            if (mediaType === 'video') {
+              // Add user to remote users array if not already there
+              setRemoteUsers(prev => prev.some(u => u.uid === user.uid) ? prev : [...prev, user]);
+              
+              // Ensure the video track plays into the correct container
+              if (user.videoTrack) {
+                // Force a small delay to ensure DOM is ready
+                setTimeout(() => {
+                  const containerId = `remote-stream-${user.uid}`;
+                  console.log(`Playing ${user.uid}'s video into container: ${containerId}`);
+                  
+                  try {
+                    user.videoTrack?.play(containerId);
+                    console.log(`Successfully played ${user.uid}'s video track`);
+                  } catch (playErr) {
+                    console.error(`Error playing video track in ${containerId}:`, playErr);
+                  }
+                }, 200);
+              }
             }
+            
+            // Handle audio track
+            if (mediaType === 'audio') {
+              if (user.audioTrack) {
+                try {
+                  user.audioTrack.play();
+                  console.log(`Successfully played ${user.uid}'s audio track`);
+                } catch (audioErr) {
+                  console.error(`Error playing audio track:`, audioErr);
+                }
+              }
+            }
+          } catch (subscribeErr) {
+            console.error(`Failed to subscribe to ${user.uid}'s ${mediaType} track:`, subscribeErr);
           }
         });
         
@@ -480,19 +501,7 @@ export function AgoraVideo({
     };
   }, [appId, role, channelName, uid, userName]);  // Added userName to dependencies as it's used for chat messages
   
-  // Auto-join for audience role
-  useEffect(() => {
-    if (role === 'audience' && clientRef.current && !isJoined && !isLoading) {
-      console.log('Audience auto-joining stream');
-      // Small delay to ensure client is ready
-      const timer = setTimeout(() => {
-        joinChannel();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [role, isJoined, isLoading]);
-
-  // Join call when ready
+  // Join call when ready is defined here
   const joinChannel = async () => {
     // For audience, only need to check clientRef
     if (role === 'audience') {
