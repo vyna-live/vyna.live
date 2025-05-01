@@ -135,9 +135,12 @@ async function createUser(userData: CreateUserData): Promise<SelectUser> {
 // Function to check if a user already has a StreamSession
 async function hasStreamSession(userId: number): Promise<boolean> {
   try {
-    const sql = `SELECT id FROM stream_sessions WHERE user_id = $1 LIMIT 1`;
-    const result = await db.execute(sql, [userId]);
-    return result.rows.length > 0;
+    const sessions = await db.select({ id: streamSessions.id })
+      .from(streamSessions)
+      .where(eq(streamSessions.userId, userId))
+      .limit(1);
+    
+    return sessions.length > 0;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log(`Error checking stream session: ${errorMessage}`, 'error');
@@ -148,48 +151,16 @@ async function hasStreamSession(userId: number): Promise<boolean> {
 // Function to get user's stream session
 async function getUserStreamSession(userId: number) {
   try {
-    const sql = `
-      SELECT *
-      FROM stream_sessions
-      WHERE user_id = $1
-      LIMIT 1
-    `;
+    const sessions = await db.select()
+      .from(streamSessions)
+      .where(eq(streamSessions.userId, userId))
+      .limit(1);
     
-    const result = await db.execute(sql, [userId]);
-    
-    if (result.rows.length === 0) {
+    if (sessions.length === 0) {
       return null;
     }
     
-    // Convert snake_case to camelCase for consistency
-    const session = result.rows[0];
-    return {
-      id: session.id,
-      userId: session.user_id,
-      hostId: session.host_id,
-      channelName: session.channel_name,
-      hostName: session.host_name,
-      streamTitle: session.stream_title,
-      description: session.description,
-      isActive: session.is_active,
-      tokenHost: session.token_host,
-      startedAt: session.started_at,
-      endedAt: session.ended_at,
-      viewerCount: session.viewer_count,
-      hostRole: session.host_role,
-      coverImagePath: session.cover_image_path,
-      streamType: session.stream_type,
-      thumbnailUrl: session.thumbnail_url,
-      recordingUrl: session.recording_url,
-      audienceTokens: session.audience_tokens,
-      destination: session.destination,
-      coverImage: session.cover_image,
-      privacy: session.privacy,
-      scheduled: session.scheduled,
-      streamDate: session.stream_date,
-      createdAt: session.created_at,
-      updatedAt: session.updated_at
-    };
+    return sessions[0];
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log(`Error getting stream session: ${errorMessage}`, 'error');
@@ -210,29 +181,23 @@ async function createStreamSession(user: SelectUser): Promise<void> {
     // Create a placeholder channel name (will be updated when stream starts)
     const placeholderChannelName = `channel_${user.id}_${Date.now()}`;
     
-    // Use a direct SQL query to insert the stream session to avoid errors
-    const sql = `
-      INSERT INTO stream_sessions (
-        host_id, user_id, channel_name, host_name, stream_title, description,
-        is_active, destination, cover_image, privacy, scheduled, stream_date,
-        created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-    `;
-    
-    await db.execute(sql, [
-      user.id, // host_id
-      user.id, // user_id (same as host_id for the creator)
-      placeholderChannelName,
-      user.username,
-      `${user.username}'s Stream`, // Default title
-      'A live streaming session powered by Vyna.live', // Default description
-      false, // is_active
-      '{}', // destination (empty array as JSON string)
-      '', // cover_image
-      'public', // privacy 
-      false, // scheduled
-      new Date() // stream_date
-    ]);
+    // Insert the stream session using Drizzle ORM
+    await db.insert(streamSessions).values({
+      hostId: user.id,
+      userId: user.id, // same as host for creator
+      channelName: placeholderChannelName,
+      hostName: user.username,
+      streamTitle: `${user.username}'s Stream`, // Default title
+      description: 'A live streaming session powered by Vyna.live', // Default description
+      isActive: false,
+      destination: [], // Empty array for destinations
+      coverImage: '',
+      privacy: 'public',
+      scheduled: false,
+      streamDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
     
     log(`Created stream session for user ${user.id}`, 'info');
   } catch (error) {
