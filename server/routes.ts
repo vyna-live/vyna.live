@@ -465,10 +465,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Also update the global map if it exists
       if (global.streamViewers && global.streamViewers.has(channelName)) {
         const viewerData = global.streamViewers.get(channelName);
-        viewerData.isActive = isActive === true;
-        viewerData.lastUpdated = Date.now();
-        global.streamViewers.set(channelName, viewerData);
-        console.log(`Updated global map for channel: ${channelName}, isActive: ${isActive}`);
+        if (viewerData) {
+          viewerData.isActive = isActive === true;
+          viewerData.lastUpdated = Date.now();
+          global.streamViewers.set(channelName, viewerData);
+          console.log(`Updated global map for channel: ${channelName}, isActive: ${isActive}`);
+        }
       }
       
       return res.status(200).json({
