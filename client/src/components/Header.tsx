@@ -1,6 +1,8 @@
 import { Sparkles, Zap } from "lucide-react";
 import Logo from "./Logo";
 import SolanaWalletButton from "./SolanaWalletButton";
+import AuthButton from "./AuthButton";
+import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface HeaderProps {
@@ -9,6 +11,8 @@ interface HeaderProps {
 
 export default function Header({ username }: HeaderProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const displayName = user?.displayName || user?.username || username;
   const handleWalletConnect = async (publicKey: string) => {
     try {
       const response = await fetch('/api/users/wallet', {
@@ -71,16 +75,19 @@ export default function Header({ username }: HeaderProps) {
             <Sparkles className="h-5 w-5 text-[#5D1C34]" />
             <span className="text-sm font-medium text-[#5D1C34]">STREAMCAST AI</span>
           </div>
-          <SolanaWalletButton 
-            onWalletConnect={handleWalletConnect}
-            onWalletDisconnect={handleWalletDisconnect}
-          />
+          <div className="flex items-center space-x-3">
+            <SolanaWalletButton 
+              onWalletConnect={handleWalletConnect}
+              onWalletDisconnect={handleWalletDisconnect}
+            />
+            <AuthButton />
+          </div>
         </div>
       </div>
       
       <div className="glass-card p-8 mb-8 bg-gradient-to-br from-[#efe9e1]/30 to-[#cdbcab]/20 border border-[#cdbcab]/30">
         <h1 className="text-4xl font-bold text-[#1F2937] mb-2 flex items-center">
-          Welcome back, <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-transparent bg-clip-text ml-2">{username}</span>
+          Welcome back, <span className="bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-transparent bg-clip-text ml-2">{displayName}</span>
         </h1>
         <h2 className="text-3xl font-bold bg-gradient-to-r from-[#A67D44] to-[#899481] text-transparent bg-clip-text mb-4">
           What would you like to know today?

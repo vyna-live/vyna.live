@@ -3,19 +3,21 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 import Home from "@/pages/Home";
 import Livestream from "@/pages/Livestream";
-import Dashboard from "@/pages/Dashboard";
 import ViewStream from "@/pages/ViewStream";
 import JoinStream from "@/pages/JoinStream";
+import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/livestream" component={Livestream} />
-      <Route path="/chat" component={Home} />
+      <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/livestream" component={Livestream} />
+      <Route path="/auth" component={AuthPage} />
       <Route path="/join-stream" component={JoinStream} />
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
@@ -27,10 +29,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
