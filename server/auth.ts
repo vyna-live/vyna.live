@@ -173,7 +173,13 @@ async function createStreamSession(user: SelectUser): Promise<void> {
       channelName: placeholderChannelName,
       hostName: user.username,
       streamTitle: `${user.username}'s Stream`,  // Default title, will be updated later
+      description: 'A live streaming session powered by Vyna.live',  // Default description
       isLive: false,
+      destination: [],  // Empty array of destinations by default
+      coverImage: '',  // No cover image by default
+      privacy: 'public',  // Public by default
+      scheduled: false,  // Not scheduled by default
+      streamDate: new Date(),  // Current date (will be updated if scheduled)
     };
     
     // Insert the stream session
@@ -409,6 +415,52 @@ export function setupAuth(app: Express) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log(`Error getting stream session data: ${errorMessage}`, 'error');
       res.status(500).json({ error: 'Failed to get stream session data' });
+    }
+  });
+
+  // Update stream session settings
+  app.post('/api/user/stream-session/update', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const {
+        streamTitle,
+        description,
+        destination,
+        coverImage,
+        privacy,
+        scheduled,
+        streamDate
+      } = req.body;
+      
+      // Get the user's stream session
+      const session = await getUserStreamSession(userId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Stream session not found' });
+      }
+      
+      // Update the session
+      await db.update(streamSessions)
+        .set({
+          streamTitle: streamTitle || session.streamTitle,
+          description: description || session.description,
+          destination: destination || session.destination,
+          coverImage: coverImage || session.coverImage,
+          privacy: privacy || session.privacy,
+          scheduled: scheduled !== undefined ? scheduled : session.scheduled,
+          streamDate: streamDate ? new Date(streamDate) : session.streamDate,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, session.id));
+      
+      // Get the updated session
+      const updatedSession = await getUserStreamSession(userId);
+      
+      return res.json(updatedSession);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Error updating stream session: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to update stream session' });
     }
   });
 }

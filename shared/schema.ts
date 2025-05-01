@@ -291,6 +291,11 @@ export const insertStreamSessionSchema = createInsertSchema(streamSessions).pick
   tokenHost: true,
   streamType: true,
   thumbnailUrl: true,
+  destination: true,
+  coverImage: true,
+  privacy: true,
+  scheduled: true,
+  streamDate: true,
 });
 
 // Types
