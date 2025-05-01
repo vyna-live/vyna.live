@@ -440,52 +440,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Stream ID is required' });
       }
 
-      // First try to find in streamSessions table
-      const streamSession = await db.query.streamSessions.findFirst({
-        where: eq(streamSessions.id, parseInt(streamId, 10)),
-      });
-
-      if (streamSession) {
-        const hostUser = await db.query.users.findFirst({
-          where: eq(users.id, streamSession.hostId),
-        });
-
-        return res.status(200).json({
-          id: streamSession.id,
-          streamTitle: streamSession.streamTitle,
-          channelName: streamSession.channelName,
-          hostName: hostUser?.username || 'Unknown',
-          hostId: streamSession.hostId,
-          isActive: streamSession.isActive || false,
-          startedAt: streamSession.startedAt,
-          description: streamSession.description,
-          coverImagePath: streamSession.coverImagePath
-        });
+      const parsedId = parseInt(streamId, 10);
+      if (isNaN(parsedId)) {
+        // Try to use the streamId as a channel name
+        // Find in stream_sessions by channel name
+        const sql = `
+          SELECT ss.*, u.username as host_username
+          FROM stream_sessions ss
+          JOIN users u ON ss.host_id = u.id
+          WHERE ss.channel_name = $1
+          LIMIT 1
+        `;
+        
+        const result = await db.execute(sql, [streamId]);
+        
+        if (result.rows.length > 0) {
+          const session = result.rows[0];
+          return res.status(200).json({
+            id: session.id,
+            streamTitle: session.stream_title,
+            channelName: session.channel_name,
+            hostName: session.host_username || 'Unknown',
+            hostId: session.host_id,
+            isActive: session.is_active || false,
+            startedAt: session.started_at,
+            description: session.description,
+            coverImagePath: session.cover_image_path
+          });
+        }
+      } else {
+        // Find by ID in stream_sessions
+        const sql = `
+          SELECT ss.*, u.username as host_username
+          FROM stream_sessions ss
+          JOIN users u ON ss.host_id = u.id
+          WHERE ss.id = $1
+          LIMIT 1
+        `;
+        
+        const result = await db.execute(sql, [parsedId]);
+        
+        if (result.rows.length > 0) {
+          const session = result.rows[0];
+          return res.status(200).json({
+            id: session.id,
+            streamTitle: session.stream_title,
+            channelName: session.channel_name,
+            hostName: session.host_username || 'Unknown',
+            hostId: session.host_id,
+            isActive: session.is_active || false,
+            startedAt: session.started_at,
+            description: session.description,
+            coverImagePath: session.cover_image_path
+          });
+        }
+        
+        // Fallback: Check in livestreams table
+        const livestreamSql = `
+          SELECT l.*, u.username as host_username
+          FROM livestreams l
+          JOIN users u ON l.user_id = u.id
+          WHERE l.id = $1
+          LIMIT 1
+        `;
+        
+        const livestreamResult = await db.execute(livestreamSql, [parsedId]);
+        
+        if (livestreamResult.rows.length > 0) {
+          const livestream = livestreamResult.rows[0];
+          return res.status(200).json({
+            id: livestream.id,
+            streamTitle: livestream.title,
+            channelName: livestream.channel_name,
+            hostName: livestream.host_username || 'Unknown',
+            hostId: livestream.user_id,
+            isActive: livestream.status === 'live',
+            startedAt: livestream.started_at,
+            description: livestream.description,
+            coverImagePath: livestream.cover_image_url
+          });
+        }
       }
 
-      // If not found, check livestreams table as fallback
-      const livestream = await db.query.livestreams.findFirst({
-        where: eq(livestreams.id, parseInt(streamId, 10)),
-      });
-
-      if (livestream) {
-        const hostUser = await db.query.users.findFirst({
-          where: eq(users.id, livestream.hostId),
-        });
-
-        return res.status(200).json({
-          id: livestream.id,
-          streamTitle: livestream.title,
-          channelName: livestream.channelName,
-          hostName: hostUser?.username || 'Unknown',
-          hostId: livestream.hostId,
-          isActive: livestream.isActive || false,
-          startedAt: livestream.startedAt,
-          description: livestream.description,
-          coverImagePath: livestream.coverImagePath
-        });
-      }
-
+      // If we get here, the stream was not found
       return res.status(404).json({ error: 'Stream not found' });
     } catch (error) {
       console.error('Error getting stream info:', error);
@@ -503,23 +540,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Stream ID is required' });
       }
 
-      // Update stream session status
-      const [updatedStream] = await db.update(streamSessions)
-        .set({ 
-          isActive: isActive,
-          viewerCount: viewerCount || 0,
-          updatedAt: new Date()
-        })
-        .where(eq(streamSessions.id, parseInt(streamId, 10)))
-        .returning();
+      // Update stream session status using raw SQL
+      const sql = `
+        UPDATE stream_sessions
+        SET is_active = $1, viewer_count = $2, updated_at = NOW()
+        WHERE id = $3
+        RETURNING id, is_active
+      `;
+      
+      const result = await db.execute(sql, [
+        isActive || false,
+        viewerCount || 0,
+        parseInt(streamId, 10)
+      ]);
 
-      if (!updatedStream) {
+      if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Stream not found' });
       }
 
+      const updatedStream = result.rows[0];
       return res.status(200).json({
         id: updatedStream.id,
-        isActive: updatedStream.isActive
+        isActive: updatedStream.is_active
       });
     } catch (error) {
       console.error('Error updating stream status:', error);
