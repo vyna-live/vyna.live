@@ -6,7 +6,7 @@ import { getAIResponse as getGeminiResponse } from "./gemini";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
-import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions } from "@shared/schema";
+import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions, livestreams } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
@@ -446,42 +446,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let streamData;
       
       if (!isNaN(parsedId)) {
-        // Find by ID
-        const sql = `
-          SELECT ss.*, u.username as host_name
-          FROM stream_sessions ss
-          JOIN users u ON ss.host_id = u.id
-          WHERE ss.id = $1 AND ss.is_active = true
-          LIMIT 1
-        `;
+        // Find by ID using Drizzle ORM
+        const result = await db
+          .select({
+            id: streamSessions.id,
+            channelName: streamSessions.channelName,
+            isActive: streamSessions.isActive,
+            hostName: users.username
+          })
+          .from(streamSessions)
+          .innerJoin(users, eq(streamSessions.hostId, users.id))
+          .where(eq(streamSessions.id, parsedId))
+          .limit(1);
         
-        const result = await db.execute(sql, [parsedId]);
-        
-        if (result.rows.length > 0) {
-          streamData = {
-            id: result.rows[0].id,
-            channelName: result.rows[0].channel_name,
-            isActive: result.rows[0].is_active
-          };
+        if (result.length > 0) {
+          streamData = result[0];
         }
       } else {
-        // Try to find by channel name
-        const sql = `
-          SELECT ss.*, u.username as host_name
-          FROM stream_sessions ss
-          JOIN users u ON ss.host_id = u.id
-          WHERE ss.channel_name = $1 AND ss.is_active = true
-          LIMIT 1
-        `;
+        // Try to find by channel name using Drizzle ORM
+        const result = await db
+          .select({
+            id: streamSessions.id,
+            channelName: streamSessions.channelName,
+            isActive: streamSessions.isActive,
+            hostName: users.username
+          })
+          .from(streamSessions)
+          .innerJoin(users, eq(streamSessions.hostId, users.id))
+          .where(eq(streamSessions.channelName, streamId))
+          .limit(1);
         
-        const result = await db.execute(sql, [streamId]);
-        
-        if (result.rows.length > 0) {
-          streamData = {
-            id: result.rows[0].id,
-            channelName: result.rows[0].channel_name,
-            isActive: result.rows[0].is_active
-          };
+        if (result.length > 0) {
+          streamData = result[0];
         }
       }
       
@@ -602,29 +598,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Fallback: Check in livestreams table
-      const livestreamSql = `
-        SELECT l.*, u.username as host_username
-        FROM livestreams l
-        JOIN users u ON l.user_id = u.id
-        WHERE l.id = $1
-        LIMIT 1
-      `;
-      
-      const livestreamResult = await db.execute(livestreamSql, [parsedId]);
-      
-      if (livestreamResult.rows.length > 0) {
-        const livestream = livestreamResult.rows[0];
-        return res.status(200).json({
-          id: livestream.id,
-          streamTitle: livestream.title,
-          channelName: livestream.channel_name,
-          hostName: livestream.host_username || 'Unknown',
-          hostId: livestream.user_id,
-          isActive: livestream.status === 'live',
-          startedAt: livestream.started_at,
-          description: livestream.description,
-          coverImagePath: livestream.cover_image_url
-        });
+      try {
+        const livestreamResult = await db
+          .select({
+            id: livestreams.id,
+            title: livestreams.title,
+            channelName: livestreams.channelName,
+            hostName: users.username,
+            userId: livestreams.userId,
+            status: livestreams.status,
+            startedAt: livestreams.startedAt,
+            description: livestreams.description,
+            coverImageUrl: livestreams.coverImageUrl
+          })
+          .from(livestreams)
+          .innerJoin(users, eq(livestreams.userId, users.id))
+          .where(eq(livestreams.id, parsedId))
+          .limit(1);
+        
+        if (livestreamResult.length > 0) {
+          const livestream = livestreamResult[0];
+          return res.status(200).json({
+            id: livestream.id,
+            streamTitle: livestream.title,
+            channelName: livestream.channelName,
+            hostName: livestream.hostName || 'Unknown',
+            hostId: livestream.userId,
+            isActive: livestream.status === 'live',
+            startedAt: livestream.startedAt,
+            description: livestream.description,
+            coverImagePath: livestream.coverImageUrl
+          });
+        }
+      } catch (error) {
+        // If there's an error, just continue to the 404 response
+        console.error('Error checking livestreams table:', error);
       }
 
       // If we get here, the stream was not found
@@ -645,28 +653,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Stream ID is required' });
       }
 
-      // Update stream session status using raw SQL
-      const sql = `
-        UPDATE stream_sessions
-        SET is_active = $1, viewer_count = $2, updated_at = NOW()
-        WHERE id = $3
-        RETURNING id, is_active
-      `;
-      
-      const result = await db.execute(sql, [
-        isActive || false,
-        viewerCount || 0,
-        parseInt(streamId, 10)
-      ]);
+      const parsedId = parseInt(streamId, 10);
+      if (isNaN(parsedId)) {
+        return res.status(400).json({ error: 'Invalid stream ID' });
+      }
 
-      if (result.rows.length === 0) {
+      // Update stream session status using Drizzle ORM
+      const result = await db.update(streamSessions)
+        .set({
+          isActive: isActive || false,
+          viewerCount: viewerCount || 0,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, parsedId))
+        .returning({
+          id: streamSessions.id,
+          isActive: streamSessions.isActive
+        });
+
+      if (result.length === 0) {
         return res.status(404).json({ error: 'Stream not found' });
       }
 
-      const updatedStream = result.rows[0];
+      const updatedStream = result[0];
       return res.status(200).json({
         id: updatedStream.id,
-        isActive: updatedStream.is_active
+        isActive: updatedStream.isActive
       });
     } catch (error) {
       console.error('Error updating stream status:', error);
