@@ -24,13 +24,20 @@ const loginSchema = z.object({
   }),
 });
 
-const registerSchema = insertUserSchema.extend({
+const registerSchema = z.object({
+  username: z.string().min(3, {
+    message: 'Username must be at least 3 characters',
+  }),
+  email: z.string().email().nullable(),
+  displayName: z.string().nullable(),
   password: z.string().min(6, {
     message: 'Password must be at least 6 characters',
   }),
   confirmPassword: z.string().min(6, {
     message: 'Password must be at least 6 characters',
   }),
+  role: z.string().optional(),
+  isEmailVerified: z.boolean().optional(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -64,8 +71,8 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: '',
-      email: '',
-      displayName: '',
+      email: null,
+      displayName: null,
       password: '',
       confirmPassword: '',
       role: 'user',

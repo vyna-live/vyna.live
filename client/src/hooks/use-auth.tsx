@@ -25,8 +25,12 @@ type LoginData = {
 type RegisterData = {
   username: string;
   password: string;
-  email?: string;
-  displayName?: string;
+  email: string | null;
+  displayName: string | null;
+  avatarUrl?: string | null;
+  googleId?: string | null;
+  walletAddress?: string | null;
+  walletProvider?: string | null;
   role?: string;
   isEmailVerified?: boolean;
 };
