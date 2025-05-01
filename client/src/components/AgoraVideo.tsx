@@ -80,6 +80,31 @@ function VideoPlayer({ videoTrack }: VideoPlayerProps) {
   );
 }
 
+// Component to display remote user video
+interface RemoteVideoPlayerProps {
+  user: IAgoraRTCRemoteUser;
+}
+
+function RemoteVideoPlayer({ user }: RemoteVideoPlayerProps) {
+  const videoRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (!videoRef.current || !user.videoTrack) return;
+    user.videoTrack.play(videoRef.current);
+    
+    return () => {
+      user.videoTrack?.stop();
+    };
+  }, [user]);
+  
+  return (
+    <div 
+      ref={videoRef} 
+      className="w-full h-full agora-video-player"
+    ></div>
+  );
+}
+
 // Component to display screen sharing video
 interface ScreenPlayerProps {
   videoTrack: ILocalVideoTrack;
@@ -313,16 +338,24 @@ export function AgoraVideo({
       client.on('user-published', async (user, mediaType) => {
         console.log('User published:', user.uid, mediaType);
         
-        await client.subscribe(user, mediaType);
-        
-        // Handle remote tracks
-        if (mediaType === 'video') {
-          remoteUsersRef.current.push(user);
-          setViewers(remoteUsersRef.current.length + 1); // +1 for host
-        }
-        
-        if (mediaType === 'audio') {
-          user.audioTrack?.play();
+        try {
+          await client.subscribe(user, mediaType);
+          console.log('Successfully subscribed to user:', user.uid, 'mediaType:', mediaType);
+          
+          // Handle remote tracks
+          if (mediaType === 'video') {
+            console.log('Adding remote video user to list, current count:', remoteUsersRef.current.length);
+            remoteUsersRef.current.push(user);
+            setViewers(remoteUsersRef.current.length + 1); // +1 for host
+            console.log('Remote users after push:', remoteUsersRef.current.map(u => u.uid));
+          }
+          
+          if (mediaType === 'audio') {
+            console.log('Playing remote audio track');
+            user.audioTrack?.play();
+          }
+        } catch (err) {
+          console.error('Error subscribing to user:', err);
         }
       });
       
@@ -708,27 +741,46 @@ export function AgoraVideo({
       
       {/* Screen share or camera view */}
       <div className="relative h-full">
-        {isScreenSharing && screenTrackRef.current ? (
-          <div className="h-full">
-            <ScreenPlayer videoTrack={screenTrackRef.current} />
-            
-            {/* Picture-in-picture for camera when screen sharing */}
-            {!isVideoMuted && videoTrackRef.current && (
-              <div className="absolute top-4 left-4 w-40 h-32 z-10 rounded-lg overflow-hidden shadow-md border border-gray-800">
+        {role === 'host' ? (
+          // Host view
+          isScreenSharing && screenTrackRef.current ? (
+            <div className="h-full">
+              <ScreenPlayer videoTrack={screenTrackRef.current} />
+              
+              {/* Picture-in-picture for camera when screen sharing */}
+              {!isVideoMuted && videoTrackRef.current && (
+                <div className="absolute top-4 left-4 w-40 h-32 z-10 rounded-lg overflow-hidden shadow-md border border-gray-800">
+                  <VideoPlayer videoTrack={videoTrackRef.current} />
+                </div>
+              )}
+            </div>
+          ) : (
+            // Regular camera view for host
+            <div className="flex items-center justify-center h-full">
+              {!isVideoMuted && videoTrackRef.current ? (
                 <VideoPlayer videoTrack={videoTrackRef.current} />
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="h-full w-full flex items-center justify-center">
+                  <div className="p-8 rounded-full bg-gray-800/50">
+                    <Video className="h-12 w-12 text-gray-400" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
         ) : (
-          // Regular camera view
+          // Audience view
           <div className="flex items-center justify-center h-full">
-            {!isVideoMuted && videoTrackRef.current ? (
-              <VideoPlayer videoTrack={videoTrackRef.current} />
+            {remoteUsersRef.current.length > 0 ? (
+              // Show the host's video
+              <RemoteVideoPlayer user={remoteUsersRef.current[0]} />
             ) : (
-              <div className="h-full w-full flex items-center justify-center">
-                <div className="p-8 rounded-full bg-gray-800/50">
+              // Loading or waiting for host
+              <div className="h-full w-full flex flex-col items-center justify-center">
+                <div className="p-8 rounded-full bg-gray-800/50 mb-4">
                   <Video className="h-12 w-12 text-gray-400" />
                 </div>
+                <p className="text-white text-center">Waiting for host to start streaming...</p>
               </div>
             )}
           </div>
