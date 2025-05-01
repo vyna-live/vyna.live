@@ -915,68 +915,7 @@ export function AgoraVideo({
 
         {/* Share button with transparent background */}
         <button
-          onClick={() => {
-            // Generate a shareable link with both host ID and channel name
-            const baseUrl = window.location.origin;
-            let shareUrl = '';
-            
-            // Get the current user's ID (host ID) through an API call
-            fetch('/api/user')
-              .then(response => {
-                if (response.ok) {
-                  return response.json();
-                } else {
-                  throw new Error('Not authenticated');
-                }
-              })
-              .then(userData => {
-                const hostId = userData.id.toString();
-                // Create a share URL with host ID and channel name
-                shareUrl = `${baseUrl}/view-stream/${hostId}?channel=${channelName}`;
-                console.log('Generated share URL:', shareUrl);
-                
-                // Try to copy to clipboard, but handle errors without breaking
-                try {
-                  return navigator.clipboard.writeText(shareUrl);
-                } catch (clipboardError) {
-                  console.error('Could not copy to clipboard:', clipboardError);
-                  // Just show the URL in a toast if copying fails
-                  return Promise.resolve();
-                }
-              })
-              .catch(err => {
-                console.error('Error getting user data:', err);
-                // Fallback to using channelName if user data can't be fetched
-                shareUrl = `${baseUrl}/view-stream/channel-${channelName}`;
-                try {
-                  return navigator.clipboard.writeText(shareUrl);
-                } catch (clipboardError) {
-                  console.error('Could not copy to clipboard:', clipboardError);
-                  // Just show the URL in a toast if copying fails
-                  return Promise.resolve();
-                }
-              })
-              .then(() => {
-                // Show toast notification
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
-                
-                if (shareUrl) {
-                  // If we couldn't copy, show the URL in the toast
-                  toast.innerHTML = `<span>Stream link: <strong>${shareUrl}</strong></span>`;
-                } else {
-                  toast.textContent = 'Stream link copied to clipboard!';
-                }
-                
-                document.body.appendChild(toast);
-                
-                // Remove the toast after 3 seconds (longer to read the URL if needed)
-                setTimeout(() => {
-                  toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                  setTimeout(() => document.body.removeChild(toast), 300);
-                }, 3000);
-              });
-          }}
+          onClick={handleShareClick}
           className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
         >
           <Share2 size={14} />
