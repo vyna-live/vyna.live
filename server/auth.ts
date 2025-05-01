@@ -134,6 +134,16 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 
 // Setup auth for Express app
 export function setupAuth(app: Express) {
+  // Add Google OAuth strategy if Firebase API key is available
+  if (process.env.VITE_FIREBASE_API_KEY) {
+    // We'll implement Google auth integration here
+    // For now, we'll just have a mock endpoint for the frontend to work with
+    app.get('/api/auth/google', (req, res) => {
+      // In a real implementation, we would redirect to Google
+      // For now, we'll simulate the flow by redirecting back with a success flag
+      res.redirect('/?google_auth_success=true');
+    });
+  }
   // Session setup
   const sessionSettings: session.SessionOptions = {
     store: sessionStore,
