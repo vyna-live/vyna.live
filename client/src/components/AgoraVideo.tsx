@@ -672,7 +672,7 @@ export function AgoraVideo({
         // Re-enable camera video
         if (videoTrackRef.current) {
           await videoTrackRef.current.setEnabled(true);
-          await clientRef.current.publish([videoTrackRef.current]);
+          await clientRef.current.publish(videoTrackRef.current);
           setIsVideoOn(true);
         }
         setIsScreenSharing(false);
