@@ -177,24 +177,12 @@ async function createStreamSession(user: SelectUser): Promise<void> {
       log(`User ${user.id} already has a stream session, skipping creation`, 'info');
       return;
     }
-
-    // Create a placeholder channel name (will be updated when stream starts)
-    const placeholderChannelName = `channel_${user.id}_${Date.now()}`;
     
-    // Insert the stream session using Drizzle ORM
+    // Just create a minimal stream session - the actual settings will be filled
+    // when the user sets up their stream on the homepage
     await db.insert(streamSessions).values({
       hostId: user.id,
       userId: user.id, // same as host for creator
-      channelName: placeholderChannelName,
-      hostName: user.username,
-      streamTitle: `${user.username}'s Stream`, // Default title
-      description: 'A live streaming session powered by Vyna.live', // Default description
-      isActive: false,
-      destination: [], // Empty array for destinations
-      coverImage: '',
-      privacy: 'public',
-      scheduled: false,
-      streamDate: new Date(),
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -470,14 +458,14 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: 'Stream session not found' });
       }
       
-      // Update the session with the new cover image using SQL
-      const sql = `
-        UPDATE stream_sessions
-        SET cover_image = $1, cover_image_path = $2, updated_at = NOW()
-        WHERE id = $3
-      `;
-      
-      await db.execute(sql, [coverImagePath, coverImagePath, session.id]);
+      // Update the session with the new cover image using Drizzle ORM
+      await db.update(streamSessions)
+        .set({
+          coverImage: coverImagePath,
+          coverImagePath: coverImagePath,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, session.id));
       
       // Return the updated cover image path
       return res.json({ coverImage: coverImagePath });
@@ -510,51 +498,29 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: 'Stream session not found' });
       }
       
-      // Convert destination array to a PostgreSQL array string if needed
-      let destinationStr = '{}';
-      if (destination && Array.isArray(destination) && destination.length > 0) {
-        destinationStr = `{${destination.map(d => `"${d}"`).join(',')}}`;  
-      } else if (session.destination) {
-        destinationStr = Array.isArray(session.destination) 
-          ? `{${session.destination.map(d => `"${d}"`).join(',')}}` 
-          : session.destination;
-      }
+      // Prepare update data
+      const updateData: any = {
+        updatedAt: new Date()
+      };
       
-      // Format the date properly
-      const formattedDate = streamDate ? new Date(streamDate).toISOString() : session.streamDate;
+      // Add fields if they are provided
+      if (streamTitle) updateData.streamTitle = streamTitle;
+      if (description) updateData.description = description;
+      if (channelName) updateData.channelName = channelName;
+      if (destination) updateData.destination = destination;
+      if (coverImage) updateData.coverImage = coverImage;
+      if (privacy) updateData.privacy = privacy;
+      if (scheduled !== undefined) updateData.scheduled = scheduled;
+      if (streamDate) updateData.streamDate = new Date(streamDate);
       
-      // Update using SQL
-      const sql = `
-        UPDATE stream_sessions
-        SET 
-          stream_title = $1,
-          description = $2,
-          channel_name = $3,
-          destination = $4::text[],
-          cover_image = $5,
-          privacy = $6,
-          scheduled = $7,
-          stream_date = $8,
-          updated_at = NOW()
-        WHERE id = $9
-        RETURNING *
-      `;
+      // Mark the host information
+      updateData.hostId = userId;
+      updateData.hostName = req.user!.username;
       
-      const result = await db.execute(sql, [
-        streamTitle || session.streamTitle,
-        description || session.description,
-        channelName || session.channelName,
-        destinationStr,
-        coverImage || session.coverImage,
-        privacy || session.privacy,
-        scheduled !== undefined ? scheduled : session.scheduled,
-        formattedDate,
-        session.id
-      ]);
-      
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Failed to update stream session' });
-      }
+      // Update using Drizzle ORM
+      await db.update(streamSessions)
+        .set(updateData)
+        .where(eq(streamSessions.id, session.id));
       
       // Get the updated session
       const updatedSession = await getUserStreamSession(userId);
@@ -584,14 +550,13 @@ export function setupAuth(app: Express) {
         return res.status(404).json({ error: 'Stream session not found' });
       }
       
-      // Update the token using SQL
-      const sql = `
-        UPDATE stream_sessions
-        SET token_host = $1, updated_at = NOW()
-        WHERE id = $2
-      `;
-      
-      await db.execute(sql, [tokenHost, session.id]);
+      // Update the token using Drizzle ORM
+      await db.update(streamSessions)
+        .set({
+          tokenHost: tokenHost,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, session.id));
       
       return res.json({ success: true, message: 'Host token updated successfully' });
     } catch (error) {
