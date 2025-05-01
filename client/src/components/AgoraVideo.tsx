@@ -893,40 +893,44 @@ export function AgoraVideo({
         {/* Share button with transparent background */}
         <button
           onClick={() => {
-            // Generate a shareable link with both stream ID and channel name
+            // Generate a shareable link with both host ID and channel name
             const baseUrl = window.location.origin;
-            // We need to extract streamId from the current URL or generate one
-            // url format: /livestream/[id] or /view-stream/[id]
-            let streamId;
-            const currentPath = window.location.pathname;
-            const pathParts = currentPath.split('/');
             
-            if (pathParts.length > 2) {
-              // Extract ID from URL if it's there
-              streamId = pathParts[pathParts.length - 1];
-            } else {
-              // Generate a unique ID using timestamp if not available 
-              streamId = `${Date.now()}`;
-            }
-            
-            // Create a formatted share URL with both ID and channel name
-            const shareUrl = `${baseUrl}/view-stream/${streamId}?channel=${channelName}`;
-            
-            navigator.clipboard.writeText(shareUrl).then(() => {
-              // Show toast notification
-              const toast = document.createElement('div');
-              toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
-              toast.textContent = 'Stream link copied to clipboard!';
-              document.body.appendChild(toast);
-              
-              // Remove the toast after 2 seconds
-              setTimeout(() => {
-                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                setTimeout(() => document.body.removeChild(toast), 300);
-              }, 2000);
-            }).catch(err => {
-              console.error('Could not copy link: ', err);
-            });
+            // Get the current user's ID (host ID) through an API call
+            fetch('/api/user')
+              .then(response => {
+                if (response.ok) {
+                  return response.json();
+                } else {
+                  throw new Error('Not authenticated');
+                }
+              })
+              .then(userData => {
+                const hostId = userData.id.toString();
+                // Create a share URL with host ID and channel name
+                const shareUrl = `${baseUrl}/view-stream/${hostId}?channel=${channelName}`;
+                console.log('Generated share URL:', shareUrl);
+                return navigator.clipboard.writeText(shareUrl);
+              })
+              .catch(err => {
+                console.error('Error getting user data:', err);
+                // Fallback to using channelName if user data can't be fetched
+                const shareUrl = `${baseUrl}/view-stream/channel-${channelName}`;
+                return navigator.clipboard.writeText(shareUrl);
+              })
+              .then(() => {
+                // Show toast notification
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
+                toast.textContent = 'Stream link copied to clipboard!';
+                document.body.appendChild(toast);
+                
+                // Remove the toast after 2 seconds
+                setTimeout(() => {
+                  toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                  setTimeout(() => document.body.removeChild(toast), 300);
+                }, 2000);
+              });
           }}
           className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
         >
