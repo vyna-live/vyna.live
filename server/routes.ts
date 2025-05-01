@@ -431,6 +431,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/agora/livestream", createAgoraLivestream);
   
+  // Get Agora credentials for a specific stream
+  app.get("/api/stream/:streamId/join-credentials", async (req, res) => {
+    try {
+      const { streamId } = req.params;
+      
+      if (!streamId) {
+        return res.status(400).json({ error: 'Stream ID is required' });
+      }
+      
+      // Get stream info from database
+      const parsedId = parseInt(streamId, 10);
+      let streamData;
+      
+      if (!isNaN(parsedId)) {
+        // Find by ID
+        const sql = `
+          SELECT ss.*, u.username as host_name
+          FROM stream_sessions ss
+          JOIN users u ON ss.host_id = u.id
+          WHERE ss.id = $1 AND ss.is_active = true
+          LIMIT 1
+        `;
+        
+        const result = await db.execute(sql, [parsedId]);
+        
+        if (result.rows.length > 0) {
+          streamData = {
+            id: result.rows[0].id,
+            channelName: result.rows[0].channel_name,
+            isActive: result.rows[0].is_active
+          };
+        }
+      } else {
+        // Try to find by channel name
+        const sql = `
+          SELECT ss.*, u.username as host_name
+          FROM stream_sessions ss
+          JOIN users u ON ss.host_id = u.id
+          WHERE ss.channel_name = $1 AND ss.is_active = true
+          LIMIT 1
+        `;
+        
+        const result = await db.execute(sql, [streamId]);
+        
+        if (result.rows.length > 0) {
+          streamData = {
+            id: result.rows[0].id,
+            channelName: result.rows[0].channel_name,
+            isActive: result.rows[0].is_active
+          };
+        }
+      }
+      
+      if (!streamData) {
+        return res.status(404).json({ error: 'Active stream not found' });
+      }
+      
+      if (!streamData.isActive) {
+        return res.status(400).json({ error: 'Stream is not currently active' });
+      }
+      
+      // Get Agora app ID
+      const appId = process.env.AGORA_APP_ID;
+      
+      if (!appId) {
+        return res.status(500).json({ error: 'Agora app ID not configured' });
+      }
+      
+      // Generate a random UID for this viewer
+      const uid = Math.floor(Math.random() * 1000000);
+      
+      // Generate a token with audience privileges
+      const token = generateAgoraToken(streamData.channelName, uid, 2, 14400); // 2 = subscriber role
+      
+      return res.json({
+        token,
+        uid,
+        appId,
+        channelName: streamData.channelName
+      });
+    } catch (error) {
+      console.error('Error generating join credentials:', error);
+      return res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to generate credentials',
+        details: error instanceof Error ? error.stack : undefined
+      });
+    }
+  });
+  
   // Stream by ID endpoint to get stream info
   app.get("/api/stream/:streamId/info", async (req, res) => {
     try {
