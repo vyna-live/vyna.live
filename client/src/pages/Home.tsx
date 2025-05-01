@@ -6,9 +6,6 @@ import Teleprompter from "@/components/Teleprompter";
 import Logo from "@/components/Logo";
 import GradientText from "@/components/GradientText";
 import CreateStreamDialog, { StreamFormData } from "@/components/CreateStreamDialog";
-import UserProfileDropdown from "@/components/UserProfileDropdown";
-import AuthButton from "@/components/AuthButton";
-import { useAuth } from "@/hooks/use-auth";
 import { InfoGraphic } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -59,7 +56,6 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
-  const { user } = useAuth();
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -196,14 +192,7 @@ export default function Home() {
   };
 
   const startLivestream = () => {
-    // Check if user is authenticated
-    if (!user) {
-      // Redirect to auth page with a return URL
-      setLocation('/auth?redirect=/livestream');
-      return;
-    }
-    
-    // Open the stream dialog if authenticated
+    // Open the stream dialog
     setIsStreamDialogOpen(true);
   };
 
@@ -383,9 +372,21 @@ export default function Home() {
         
         <div className="p-3 border-t border-[hsl(var(--ai-border))]">
           <div className="flex items-center justify-between p-2">
-            <div className="flex-1">
-              <UserProfileDropdown />
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-teal-700 flex items-center justify-center text-white">
+                V
+              </div>
+              <div className="ml-2">
+                <div className="text-sm font-medium">Livestreamer</div>
+              </div>
             </div>
+            
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] hover:shadow-md transition-all text-[#EFE9E1]">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -450,13 +451,11 @@ export default function Home() {
             
             <button 
               onClick={startLivestream}
-              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg mr-2"
+              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
             >
               <Video className="h-4 w-4" />
               <span>Go Live</span>
             </button>
-
-            <AuthButton />
           </div>
         </div>
         

@@ -9,7 +9,7 @@ import logoFullLight from '../assets/vpww.png'; // Full logo with text
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'light' | 'color' | 'full' | 'custom' | 'auto' | 'icon';
+  variant?: 'default' | 'light' | 'color' | 'full' | 'custom' | 'auto';
   className?: string;
   showText?: boolean;
 }
@@ -68,8 +68,6 @@ export default function Logo({
         return logoLight;
       case 'full':
         return logoFullLight;
-      case 'icon':
-        return logoColor; // Use color logo for icon variant
       case 'default':
       default:
         return logoDefault;
