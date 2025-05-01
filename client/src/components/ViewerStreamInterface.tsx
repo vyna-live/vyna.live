@@ -13,6 +13,7 @@ interface ViewerStreamInterfaceProps {
     uid: number | null;
     streamTitle: string | null;
     hostName: string | null;
+    hostId: string | number | null;
     isActive: boolean;
   };
 }
@@ -115,6 +116,8 @@ export default function ViewerStreamInterface({
               uid={streamInfo.uid || undefined}
               role="audience"
               userName={userName}
+              hostId={streamInfo.hostId || ''}
+              streamTitle={streamInfo.streamTitle || 'Live Stream'}
             />
 
             {/* Stream metadata overlay */}

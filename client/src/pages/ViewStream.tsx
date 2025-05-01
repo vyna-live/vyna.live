@@ -8,21 +8,25 @@ export default function ViewStream() {
   const [location, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [streamInfo, setStreamInfo] = useState<{
+  type StreamInfoType = {
     appId: string | null;
     token: string | null;
     channelName: string | null;
     uid: number | null;
     streamTitle: string | null;
     hostName: string | null;
+    hostId: string | number | null;
     isActive: boolean;
-  }>({  
+  };
+  
+  const [streamInfo, setStreamInfo] = useState<StreamInfoType>({
     appId: null,
     token: null,
     channelName: null,
     uid: null,
     streamTitle: null,
     hostName: null,
+    hostId: null,
     isActive: false
   });
   
@@ -145,6 +149,7 @@ export default function ViewStream() {
           uid: Math.floor(Math.random() * 1000000), // Generate a random uid for the audience
           streamTitle: streamData.streamTitle || streamData.title || 'Live Stream',
           hostName: streamData.hostName || 'Host',
+          hostId: params.hostId, // Use the host ID from URL params
           isActive: streamData.isActive
         });
         
