@@ -431,6 +431,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/agora/livestream", createAgoraLivestream);
   
+  // Stream by ID endpoint to get stream info
+  app.get("/api/stream/:streamId/info", async (req, res) => {
+    try {
+      const { streamId } = req.params;
+      
+      if (!streamId) {
+        return res.status(400).json({ error: 'Stream ID is required' });
+      }
+
+      // First try to find in streamSessions table
+      const streamSession = await db.query.streamSessions.findFirst({
+        where: eq(streamSessions.id, parseInt(streamId, 10)),
+      });
+
+      if (streamSession) {
+        const hostUser = await db.query.users.findFirst({
+          where: eq(users.id, streamSession.hostId),
+        });
+
+        return res.status(200).json({
+          id: streamSession.id,
+          streamTitle: streamSession.streamTitle,
+          channelName: streamSession.channelName,
+          hostName: hostUser?.username || 'Unknown',
+          hostId: streamSession.hostId,
+          isActive: streamSession.isActive || false,
+          startedAt: streamSession.startedAt,
+          description: streamSession.description,
+          coverImagePath: streamSession.coverImagePath
+        });
+      }
+
+      // If not found, check livestreams table as fallback
+      const livestream = await db.query.livestreams.findFirst({
+        where: eq(livestreams.id, parseInt(streamId, 10)),
+      });
+
+      if (livestream) {
+        const hostUser = await db.query.users.findFirst({
+          where: eq(users.id, livestream.hostId),
+        });
+
+        return res.status(200).json({
+          id: livestream.id,
+          streamTitle: livestream.title,
+          channelName: livestream.channelName,
+          hostName: hostUser?.username || 'Unknown',
+          hostId: livestream.hostId,
+          isActive: livestream.isActive || false,
+          startedAt: livestream.startedAt,
+          description: livestream.description,
+          coverImagePath: livestream.coverImagePath
+        });
+      }
+
+      return res.status(404).json({ error: 'Stream not found' });
+    } catch (error) {
+      console.error('Error getting stream info:', error);
+      return res.status(500).json({ error: 'Failed to get stream info' });
+    }
+  });
+
+  // Update stream status endpoint (for webhook integration with Agora)
+  app.post("/api/stream/:streamId/status", async (req, res) => {
+    try {
+      const { streamId } = req.params;
+      const { isActive, viewerCount } = req.body;
+      
+      if (!streamId) {
+        return res.status(400).json({ error: 'Stream ID is required' });
+      }
+
+      // Update stream session status
+      const [updatedStream] = await db.update(streamSessions)
+        .set({ 
+          isActive: isActive,
+          viewerCount: viewerCount || 0,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, parseInt(streamId, 10)))
+        .returning();
+
+      if (!updatedStream) {
+        return res.status(404).json({ error: 'Stream not found' });
+      }
+
+      return res.status(200).json({
+        id: updatedStream.id,
+        isActive: updatedStream.isActive
+      });
+    } catch (error) {
+      console.error('Error updating stream status:', error);
+      return res.status(500).json({ error: 'Failed to update stream status' });
+    }
+  });
+
   // Add endpoints to update viewer counts
   app.post("/api/streams/:channelName/join", (req, res) => {
     try {

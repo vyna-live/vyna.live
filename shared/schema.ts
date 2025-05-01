@@ -152,17 +152,19 @@ export const walletTransactions = pgTable("wallet_transactions", {
 // Stream Sessions model - for active and historical stream data
 export const streamSessions = pgTable("stream_sessions", {
   id: serial("id").primaryKey(),
+  hostId: integer("host_id").references(() => users.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   channelName: text("channel_name").notNull(),
   hostName: text("host_name").notNull(),
   streamTitle: text("stream_title").notNull(),
   description: text("description"),
-  isLive: boolean("is_live").default(false),
+  isActive: boolean("is_active").default(false),
   tokenHost: text("token_host"),
-  startTime: timestamp("start_time"),
-  endTime: timestamp("end_time"),
-  viewersCount: integer("viewers_count").default(0),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  viewerCount: integer("viewer_count").default(0),
   hostRole: varchar("host_role", { length: 20 }).default("host"),
+  coverImagePath: text("cover_image_path"),
   streamType: varchar("stream_type", { length: 20 }).default("public"), // public, private, premium
   thumbnailUrl: text("thumbnail_url"),
   recordingUrl: text("recording_url"),

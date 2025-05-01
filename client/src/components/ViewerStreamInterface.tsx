@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AgoraVideo } from "@/components/AgoraVideo";
 import Logo from "@/components/Logo";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -23,7 +22,23 @@ export default function ViewerStreamInterface({
 }: ViewerStreamInterfaceProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if viewport is mobile sized
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [userName, setUserName] = useState<string>(
     user ? user.displayName || user.username : "Anonymous Viewer"
   );
@@ -83,7 +98,7 @@ export default function ViewerStreamInterface({
         </div>
 
         <div className="flex items-center">
-          <Logo variant="light" size="xs" className="h-6" />
+          <Logo variant="light" size="sm" className="h-6" />
         </div>
       </div>
 
