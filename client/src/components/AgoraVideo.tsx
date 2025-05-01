@@ -287,25 +287,40 @@ export function AgoraVideo({
             user.audioTrack && user.audioTrack.play();
           }
           
-          // Add a chat message for user joining
-          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-          
-          setChatMessages(prev => {
-            const newMessages = [{
-              userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
-              message: "joined",
-              color,
-              isHost: user.uid === uid ? role === 'host' : false
-            }, ...prev];
+          // Add chat message for user joining, but with some delay to avoid initial connection messages
+          setTimeout(() => {
+            const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+            const color = randomColors[Math.floor(Math.random() * randomColors.length)];
             
-            // Keep only the latest 8 messages
-            if (newMessages.length > 8) {
-              return newMessages.slice(0, 8);
+            // Generate appropriate name based on role
+            let displayName;
+            if (role === 'host' && user.uid !== uid) {
+              // Audience joining host's stream
+              displayName = `Viewer ${user.uid.toString().slice(-4)}`;
+            } else if (role === 'audience' && user.uid !== uid) {
+              // Host joining stream that audience is viewing
+              displayName = userName; // Use host name passed from props
+            } else {
+              // Generic fallback
+              displayName = `User ${user.uid.toString().slice(-4)}`;
             }
-            return newMessages;
-          });
+            
+            setChatMessages(prev => {
+              const newMessages = [{
+                userId: user.uid.toString(),
+                name: displayName,
+                message: "joined",
+                color,
+                isHost: user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
+              }, ...prev];
+              
+              // Keep only the latest 8 messages
+              if (newMessages.length > 8) {
+                return newMessages.slice(0, 8);
+              }
+              return newMessages;
+            });
+          }, 2000); // Delay to avoid messages appearing for initial connections
         });
         
         // Listen for user-left events
@@ -314,17 +329,34 @@ export function AgoraVideo({
           setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
           setViewers(prev => Math.max(0, prev - 1));
           
-          // Add a chat message for user leaving
+          // Add chat message for user leaving, only if we were tracking them (not initial disconnect)
           const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
           const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+            
+          // Find if we had this user in our chat messages already
+          // to get their proper name
+          const existingUser = chatMessages.find(msg => msg.userId === user.uid.toString());
+          
+          // Generate appropriate name based on role
+          let displayName;
+          if (role === 'host' && user.uid !== uid) {
+            // Audience leaving host's stream
+            displayName = existingUser?.name || `Viewer ${user.uid.toString().slice(-4)}`;
+          } else if (role === 'audience' && user.uid !== uid) {
+            // Host leaving stream that audience is viewing
+            displayName = userName; // Use host name passed from props
+          } else {
+            // Generic fallback
+            displayName = existingUser?.name || `User ${user.uid.toString().slice(-4)}`;
+          }
           
           setChatMessages(prev => {
             const newMessages = [{
               userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
+              name: displayName,
               message: "left",
               color,
-              isHost: user.uid === uid ? role === 'host' : false
+              isHost: user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
             }, ...prev];
             
             // Keep only the latest 8 messages
@@ -446,7 +478,7 @@ export function AgoraVideo({
       
       console.log("All Agora resources cleaned up");
     };
-  }, [appId, role, channelName, uid]);  // Removed userName from dependencies as it's not used for connection
+  }, [appId, role, channelName, uid, userName]);  // Added userName to dependencies as it's used for chat messages
   
   // Auto-join for audience role
   useEffect(() => {
