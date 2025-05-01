@@ -659,16 +659,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update stream session status using Drizzle ORM
+      const updateData: any = {
+        isActive: isActive || false,
+        viewerCount: viewerCount || 0,
+        updatedAt: new Date()
+      };
+      
+      // If stream is becoming active, set the start time
+      if (isActive === true) {
+        updateData.startedAt = new Date();
+      }
+      
+      // If stream is becoming inactive, set the end time
+      if (isActive === false) {
+        updateData.endedAt = new Date();
+      }
+
       const result = await db.update(streamSessions)
-        .set({
-          isActive: isActive || false,
-          viewerCount: viewerCount || 0,
-          updatedAt: new Date()
-        })
+        .set(updateData)
         .where(eq(streamSessions.id, parsedId))
         .returning({
           id: streamSessions.id,
-          isActive: streamSessions.isActive
+          isActive: streamSessions.isActive,
+          startedAt: streamSessions.startedAt,
+          endedAt: streamSessions.endedAt
         });
 
       if (result.length === 0) {
@@ -678,7 +692,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedStream = result[0];
       return res.status(200).json({
         id: updatedStream.id,
-        isActive: updatedStream.isActive
+        isActive: updatedStream.isActive,
+        startedAt: updatedStream.startedAt,
+        endedAt: updatedStream.endedAt
       });
     } catch (error) {
       console.error('Error updating stream status:', error);
@@ -887,6 +903,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Agora webhook for stream status updates
+  app.post("/api/webhook/agora/stream-status", async (req, res) => {
+    try {
+      const { channelName, eventType, ts, properties } = req.body;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: "Channel name is required" });
+      }
+      
+      console.log(`Received Agora webhook for channel ${channelName}, event: ${eventType}`);
+      
+      // Find stream session by channel name
+      const [streamSession] = await db
+        .select()
+        .from(streamSessions)
+        .where(eq(streamSessions.channelName, channelName));
+        
+      if (!streamSession) {
+        return res.status(404).json({ error: "Stream session not found" });
+      }
+      
+      // Update the stream status based on the event type
+      let isActive = streamSession.isActive;
+      
+      if (eventType === "stream-started" || eventType === "broadcasting-started") {
+        isActive = true;
+      } else if (eventType === "stream-ended" || eventType === "broadcasting-ended") {
+        isActive = false;
+      }
+      
+      // Update the stream session
+      const updateData: any = {
+        isActive,
+        updatedAt: new Date()
+      };
+      
+      // If stream is becoming active, set the start time
+      if (isActive && !streamSession.startedAt) {
+        updateData.startedAt = new Date(ts || Date.now());
+      }
+      
+      // If stream is becoming inactive, set the end time
+      if (!isActive && streamSession.startedAt && !streamSession.endedAt) {
+        updateData.endedAt = new Date(ts || Date.now());
+      }
+      
+      // Update viewer count if provided
+      if (properties && properties.audience) {
+        updateData.viewerCount = properties.audience;
+      }
+      
+      // Update the stream session
+      await db.update(streamSessions)
+        .set(updateData)
+        .where(eq(streamSessions.id, streamSession.id));
+      
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error processing Agora webhook:", error);
+      return res.status(500).json({ error: "Failed to process webhook" });
+    }
+  });
+  
   // Stream ID validation endpoint
   app.get("/api/livestreams/:streamId/validate", async (req, res) => {
     try {
