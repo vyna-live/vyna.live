@@ -374,6 +374,9 @@ export function AgoraVideo({
       if (role === 'host') {
         console.log('Joining as host with UID:', uid);
         
+        // Set client role to host
+        await client.setClientRole('host');
+        
         // Create audio and video tracks
         const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks(
           { encoderConfig: 'high_quality' },
@@ -411,6 +414,7 @@ export function AgoraVideo({
       } else {
         // Join as audience
         console.log('Joining as audience with UID:', uid);
+        await client.setClientRole('audience');
         await client.join(appId, channelName, token, uid);
       }
       
