@@ -178,14 +178,20 @@ async function createStreamSession(user: SelectUser): Promise<void> {
       return;
     }
     
-    // Just create a minimal stream session - the actual settings will be filled
-    // when the user sets up their stream on the homepage
-    await db.insert(streamSessions).values({
-      hostId: user.id,
-      userId: user.id, // same as host for creator
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+    // Create a minimal stream session with required fields
+    // Generate a default channel name based on the user ID
+    const defaultChannelName = `channel_${user.id}_${Date.now()}`;
+    
+    // Insert with required fields, the rest will be filled when user sets up stream
+    const streamSessionData: Partial<typeof streamSessions.$inferInsert> = {
+      userId: user.id,
+      hostId: user.id, // same as host for creator
+      channelName: defaultChannelName, // Required field
+      hostName: user.username || 'Host', // Required field
+      streamTitle: `${user.username || 'Host'}'s Stream`, // Required field
+    };
+    
+    await db.insert(streamSessions).values(streamSessionData);
     
     log(`Created stream session for user ${user.id}`, 'info');
   } catch (error) {
