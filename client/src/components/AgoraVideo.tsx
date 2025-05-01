@@ -184,23 +184,47 @@ export function AgoraVideo({
             
             // Handle video track
             if (mediaType === 'video') {
+              console.log('Remote video track received, user:', user);
+              
               // Add user to remote users array if not already there
-              setRemoteUsers(prev => prev.some(u => u.uid === user.uid) ? prev : [...prev, user]);
+              setRemoteUsers(prev => {
+                const exists = prev.some(u => u.uid === user.uid);
+                if (!exists) {
+                  console.log('Adding user to remoteUsers array:', user.uid);
+                  return [...prev, user];
+                }
+                return prev;
+              });
               
               // Ensure the video track plays into the correct container
               if (user.videoTrack) {
                 // Force a small delay to ensure DOM is ready
                 setTimeout(() => {
+                  // For audience, use the correct container ID
                   const containerId = `remote-stream-${user.uid}`;
                   console.log(`Playing ${user.uid}'s video into container: ${containerId}`);
                   
                   try {
-                    user.videoTrack?.play(containerId);
-                    console.log(`Successfully played ${user.uid}'s video track`);
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                      user.videoTrack?.play(containerId);
+                      console.log(`Successfully played ${user.uid}'s video track in ${containerId}`);
+                    } else {
+                      console.error(`Container ${containerId} not found in DOM`);
+                      // Try playing directly in document body
+                      user.videoTrack?.play("");
+                    }
                   } catch (playErr) {
-                    console.error(`Error playing video track in ${containerId}:`, playErr);
+                    console.error(`Error playing video track:`, playErr);
+                    // Fallback to playing without a specific container
+                    try {
+                      user.videoTrack?.play("");
+                      console.log('Played video without specific container as fallback');
+                    } catch (fallbackErr) {
+                      console.error('Fallback play also failed:', fallbackErr);
+                    }
                   }
-                }, 200);
+                }, 300);
               }
             }
             
@@ -293,7 +317,15 @@ export function AgoraVideo({
         // Listen for user-joined events
         agoraClient.on('user-joined', (user) => {
           console.log("User joined:", user.uid);
-          setRemoteUsers(prev => [...prev, user]);
+          
+          // Add to remote users list if not already there
+          setRemoteUsers(prev => {
+            if (prev.some(u => u.uid === user.uid)) return prev;
+            console.log("Adding new remote user to state:", user.uid);
+            return [...prev, user];
+          });
+          
+          // Update viewer count
           setViewers(prev => prev + 1);
           
           // Force re-render when users join to update UI
@@ -301,11 +333,11 @@ export function AgoraVideo({
             console.log("Host notified of viewer joining, uid:", user.uid);
           }
           
-          // For audience role, subscribe to remote streams when a user (host) joins
+          // For audience role handling of host joining
           if (role === 'audience') {
-            console.log("Audience subscribing to host streams...");
-            user.videoTrack && user.videoTrack.play('remote-stream-' + user.uid);
-            user.audioTrack && user.audioTrack.play();
+            console.log("Audience detected host joining, uid:", user.uid);
+            // Note: We rely on user-published event for track playing now
+            // This is just for notification and state management
           }
           
           // Add chat message for user joining, but with some delay to avoid initial connection messages
@@ -994,11 +1026,7 @@ export function AgoraVideo({
         ) : role === 'audience' ? (
           // For audience, show remote streams (the host)
           <div id={"remote-stream-" + remoteUsers[0]?.uid} className="w-full h-full">
-            {remoteUsers.length > 0 && remoteUsers[0].videoTrack ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-sm text-white">Waiting for host video...</div>
-              </div>
-            ) : (
+            {!(remoteUsers.length > 0 && remoteUsers[0].videoTrack) && (
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-sm text-white">Waiting for host video...</div>
               </div>
