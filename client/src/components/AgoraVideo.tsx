@@ -893,10 +893,27 @@ export function AgoraVideo({
         {/* Share button with transparent background */}
         <button
           onClick={() => {
-            // Generate the shareable link
-            const shareUrl = window.location.href;
+            // Generate a shareable link with both stream ID and channel name
+            const baseUrl = window.location.origin;
+            // We need to extract streamId from the current URL or generate one
+            // url format: /livestream/[id] or /view-stream/[id]
+            let streamId;
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/');
+            
+            if (pathParts.length > 2) {
+              // Extract ID from URL if it's there
+              streamId = pathParts[pathParts.length - 1];
+            } else {
+              // Generate a unique ID using timestamp if not available 
+              streamId = `${Date.now()}`;
+            }
+            
+            // Create a formatted share URL with both ID and channel name
+            const shareUrl = `${baseUrl}/view-stream/${streamId}?channel=${channelName}`;
+            
             navigator.clipboard.writeText(shareUrl).then(() => {
-              // Show toast notification instead of alert
+              // Show toast notification
               const toast = document.createElement('div');
               toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
               toast.textContent = 'Stream link copied to clipboard!';

@@ -26,7 +26,7 @@ export default function ViewStream() {
     isActive: false
   });
   
-  // Fetch stream data using the streamId from URL
+  // Fetch stream data using the streamId and optional channel from URL
   useEffect(() => {
     async function fetchStreamData() {
       try {
@@ -37,8 +37,16 @@ export default function ViewStream() {
         setIsLoading(true);
         setError(null);
         
+        // Check if there's a channel parameter in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelParam = urlParams.get('channel');
+        
+        // Use either the channel from URL or stream ID as the identifier
+        const streamIdOrChannel = channelParam || params.streamId;
+        console.log(`Fetching stream data for ID: ${params.streamId}, channel: ${channelParam || 'not specified'}`);
+        
         // Fetch stream information by ID
-        const streamResponse = await fetch(`/api/stream/${params.streamId}/info`);
+        const streamResponse = await fetch(`/api/stream/${streamIdOrChannel}/info`);
         
         if (!streamResponse.ok) {
           const errorData = await streamResponse.json();
@@ -53,7 +61,13 @@ export default function ViewStream() {
         }
         
         // Get join credentials (includes appId, token, and uid)
-        const credentialsResponse = await fetch(`/api/stream/${params.streamId}/join-credentials`);
+        // If we have a channel parameter, pass it as a query param
+        let credentialsUrl = `/api/stream/${params.streamId}/join-credentials`;
+        if (channelParam) {
+          credentialsUrl += `?channel=${encodeURIComponent(channelParam)}`;
+        }
+        
+        const credentialsResponse = await fetch(credentialsUrl);
         
         if (!credentialsResponse.ok) {
           const errorData = await credentialsResponse.json();
@@ -68,8 +82,8 @@ export default function ViewStream() {
           token: credentials.token,
           channelName: credentials.channelName,
           uid: credentials.uid,
-          streamTitle: streamData.streamTitle,
-          hostName: streamData.hostName,
+          streamTitle: streamData.streamTitle || 'Live Stream',
+          hostName: streamData.hostName || 'Host',
           isActive: streamData.isActive
         });
         

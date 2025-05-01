@@ -436,16 +436,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stream/:streamId/join-credentials", async (req, res) => {
     try {
       const { streamId } = req.params;
+      const { channel } = req.query; // Get optional channel parameter from query
       
       if (!streamId) {
         return res.status(400).json({ error: 'Stream ID is required' });
       }
       
+      console.log(`Join credentials requested for stream ID: ${streamId}, channel: ${channel || 'not specified'}`);
+      
       // Get stream info from database
       const parsedId = parseInt(streamId, 10);
       let streamData;
       
-      if (!isNaN(parsedId)) {
+      // If channel parameter is provided, prioritize finding by channel name
+      if (channel) {
+        console.log(`Looking up stream by channel name: ${channel}`);
+        // Try to find by channel name using Drizzle ORM
+        const result = await db
+          .select({
+            id: streamSessions.id,
+            channelName: streamSessions.channelName,
+            isActive: streamSessions.isActive,
+            hostName: users.username
+          })
+          .from(streamSessions)
+          .innerJoin(users, eq(streamSessions.hostId, users.id))
+          .where(eq(streamSessions.channelName, String(channel)))
+          .limit(1);
+        
+        if (result.length > 0) {
+          streamData = result[0];
+          console.log(`Found stream by channel name: ${channel}`, streamData);
+        }
+      } else if (!isNaN(parsedId)) {
+        console.log(`Looking up stream by ID: ${parsedId}`);
         // Find by ID using Drizzle ORM
         const result = await db
           .select({
@@ -461,8 +485,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (result.length > 0) {
           streamData = result[0];
+          console.log(`Found stream by ID: ${parsedId}`, streamData);
         }
       } else {
+        console.log(`Looking up stream by string ID: ${streamId}`);
         // Try to find by channel name using Drizzle ORM
         const result = await db
           .select({
@@ -478,14 +504,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (result.length > 0) {
           streamData = result[0];
+          console.log(`Found stream by string ID: ${streamId}`, streamData);
         }
       }
       
       if (!streamData) {
+        console.log(`No active stream found for ID: ${streamId}, channel: ${channel || 'not specified'}`);
         return res.status(404).json({ error: 'Active stream not found' });
       }
       
       if (!streamData.isActive) {
+        console.log(`Stream found but not active. Stream data:`, streamData);
         return res.status(400).json({ error: 'Stream is not currently active' });
       }
       
