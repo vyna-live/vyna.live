@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     data: user,
     isLoading: isLoadingUser,
     error,
-  } = useQuery<User>({ 
+  } = useQuery<User | null>({ 
     queryKey: ['/api/user'],
     queryFn: async () => {
       try {
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user || null, // Ensure user is either the user object or null, not undefined
         isLoading,
         isAuthenticated,
         login,

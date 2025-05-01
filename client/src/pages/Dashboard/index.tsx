@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import Logo from '@/components/Logo';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, LogIn, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
 
 export default function Dashboard() {
   const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
   const [, navigate] = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
   
   // Alternating between the two image types
   const getImageForIndex = (index: number) => {
@@ -52,6 +55,17 @@ export default function Dashboard() {
     marginBottom: '20px'
   };
 
+  // Define a function to handle start streaming click
+  const handleStartStreamingClick = () => {
+    if (!isAuthenticated) {
+      // Redirect to auth page with referrer as current page
+      navigate('/auth?referrer=/');
+    } else {
+      // Open stream dialog if authenticated
+      setIsStreamDialogOpen(true);
+    }
+  };
+  
   // Define a function to handle submit form data
   const handleStreamFormSubmit = (formData: StreamFormData) => {
     console.log('Stream form submitted:', formData);
@@ -78,19 +92,38 @@ export default function Dashboard() {
         </Link>
         
         <div className="flex items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-[24px] h-[24px] rounded-full overflow-hidden">
-              <img 
-                src="https://randomuser.me/api/portraits/men/32.jpg" 
-                alt="Divine Samuel" 
-                className="w-full h-full object-cover"
-              />
+          {isLoading ? (
+            <div className="w-6 h-6 rounded-full animate-pulse bg-zinc-700"></div>
+          ) : isAuthenticated && user ? (
+            <div className="flex items-center space-x-2 bg-zinc-900/50 backdrop-blur-sm px-2 py-1 rounded-sm">
+              <div className="w-[24px] h-[24px] rounded-full overflow-hidden">
+                <img 
+                  src={user.avatarUrl || "https://randomuser.me/api/portraits/men/32.jpg"} 
+                  alt={user.displayName || user.username} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-white text-sm font-medium">{user.displayName || user.username}</span>
+              <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
-            <span className="text-white text-sm font-medium">Divine Samuel</span>
-            <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Button asChild variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
+                <Link href="/auth?referrer=/">
+                  <LogIn className="w-4 h-4 mr-1" />
+                  Sign In
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="text-white border-zinc-700 hover:bg-zinc-800">
+                <Link href="/auth?referrer=/">
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  Sign Up
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </header>
       
@@ -115,7 +148,7 @@ export default function Dashboard() {
           
           <div className="flex items-center justify-center space-x-4">
             <button 
-              onClick={() => setIsStreamDialogOpen(true)}
+              onClick={handleStartStreamingClick}
               className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity rounded-sm"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
