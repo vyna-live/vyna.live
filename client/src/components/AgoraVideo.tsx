@@ -103,6 +103,7 @@ function ScreenPlayer({ videoTrack }: ScreenPlayerProps) {
   );
 }
 
+// Chat message interface
 interface ChatMessage {
   userId: string;
   name: string;
@@ -111,6 +112,7 @@ interface ChatMessage {
   isHost?: boolean;
 }
 
+// AgoraVideo component props
 interface AgoraVideoProps {
   appId: string;
   channelName: string;
@@ -126,306 +128,340 @@ export function AgoraVideo({
   channelName, 
   token, 
   uid = Math.floor(Math.random() * 1000000),
-  role = 'host',
+  role = 'audience',
   userName,
   onToggleDrawer
 }: AgoraVideoProps) {
-  const [isJoined, setIsJoined] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isAudioOn, setIsAudioOn] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [viewers, setViewers] = useState<number>(0);
-  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
+  // State
+  const [isJoined, setIsJoined] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAudioMuted, setIsAudioMuted] = useState<boolean>(false);
+  const [isVideoMuted, setIsVideoMuted] = useState<boolean>(false);
+  const [isScreenSharing, setIsScreenSharing] = useState<boolean>(false);
+  const [showChat, setShowChat] = useState<boolean>(true);
+  const [chatInput, setChatInput] = useState<string>('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [showChat, setShowChat] = useState(true);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [, setLocation] = useLocation();
+  const [viewers, setViewers] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
   
-  // Client reference
-  const clientRef = useRef<IAgoraRTCClient | null>(null);
+  // Refs
+  const clientRef = useRef<IAgoraRTCClient>(AgoraRTC.createClient(config));
+  const rtmClientRef = useRef<RtmClient | null>(null);
+  const rtmChannelRef = useRef<RtmChannel | null>(null);
   const audioTrackRef = useRef<IMicrophoneAudioTrack | null>(null);
   const videoTrackRef = useRef<ICameraVideoTrack | null>(null);
   const screenTrackRef = useRef<ILocalVideoTrack | null>(null);
+  const remoteUsersRef = useRef<IAgoraRTCRemoteUser[]>([]);
   
-  // RTM (Real-Time Messaging) client and channel
-  const rtmClientRef = useRef<RtmClient | null>(null);
-  const rtmChannelRef = useRef<RtmChannel | null>(null);
+  // Navigation
+  const [_, setLocation] = useLocation();
   
-  // Create client and tracks on mount
-  useEffect(() => {
-    const init = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Don't try to connect if no appId
-        if (!appId) {
-          setError("Missing Agora App ID");
-          setIsLoading(false);
-          return;
+  // Handle toggling full screen
+  const handleToggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+  
+  // Handle share button click
+  const handleShareClick = () => {
+    // Create a modal dialog to show the shareable link
+    const baseUrl = window.location.origin;
+    
+    // Create modal container
+    const modalContainer = document.createElement('div');
+    modalContainer.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.className = 'bg-[#1C1C1C] rounded-lg shadow-lg p-5 max-w-md w-full mx-4';
+    
+    // Create modal heading
+    const heading = document.createElement('h3');
+    heading.className = 'text-[#CDBCAB] text-lg font-medium mb-4';
+    heading.textContent = 'Share Your Stream';
+    
+    // Create link container
+    const linkContainer = document.createElement('div');
+    linkContainer.className = 'bg-black/30 p-3 rounded-lg mb-4 break-all';
+    linkContainer.innerHTML = '<p class="text-sm text-gray-400 mb-1">Loading stream link...</p>';
+    
+    // Create buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.className = 'flex justify-end space-x-3';
+    
+    // Close button
+    const closeButton = document.createElement('button');
+    closeButton.className = 'px-4 py-2 bg-[#2C2C32] text-white rounded-lg hover:bg-[#3C3C42] transition-colors';
+    closeButton.textContent = 'Close';
+    closeButton.onclick = () => {
+      // Add fade out animation
+      modalContainer.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+      setTimeout(() => document.body.removeChild(modalContainer), 300);
+    };
+    
+    // Assemble modal
+    buttonsContainer.appendChild(closeButton);
+    modal.appendChild(heading);
+    modal.appendChild(linkContainer);
+    modal.appendChild(buttonsContainer);
+    modalContainer.appendChild(modal);
+    document.body.appendChild(modalContainer);
+    
+    // Generate the link
+    fetch('/api/user')
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error('Not authenticated');
         }
+      })
+      .then(userData => {
+        const hostId = userData.id.toString();
+        const shareUrl = `${baseUrl}/view-stream/${hostId}?channel=${channelName}`;
+        console.log('Generated share URL:', shareUrl);
         
-        // Create RTC client for video/audio
-        const agoraClient = AgoraRTC.createClient(config);
-        clientRef.current = agoraClient;
+        // Update the modal with the link
+        linkContainer.innerHTML = `
+          <p class="text-sm text-gray-400 mb-1">Share this link with your viewers:</p>
+          <p class="text-white font-medium select-all">${shareUrl}</p>
+        `;
         
-        // Set client role
-        await agoraClient.setClientRole(role === 'host' ? 'host' : 'audience');
-        
-        // Create RTM client for chat
-        try {
-          // Create RTM Client
-          const rtmClient = AgoraRTM.createInstance(appId);
-          rtmClientRef.current = rtmClient;
+        // Add copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'px-4 py-2 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] text-white rounded-lg hover:from-[#B68D54] hover:to-[#6D2C44] transition-colors';
+        copyButton.textContent = 'Copy Link';
+        copyButton.onclick = () => {
+          // Show the link as selected text that user can manually copy
+          const range = document.createRange();
+          const selection = window.getSelection();
           
-          // Initialize RTM Client
-          await rtmClient.login({
+          // Find the paragraph with the URL
+          const linkParagraph = linkContainer.querySelector('p.select-all');
+          if (linkParagraph) {
+            range.selectNodeContents(linkParagraph);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+            
+            // Try to copy but it's okay if it fails since text is selected
+            try {
+              document.execCommand('copy');
+              copyButton.textContent = 'Copied!';
+              setTimeout(() => {
+                copyButton.textContent = 'Copy Link';
+              }, 2000);
+            } catch (e) {
+              console.log('Manual copy required');
+              copyButton.textContent = 'Select & Copy';
+            }
+          }
+        };
+        
+        // Add copy button before close button
+        buttonsContainer.insertBefore(copyButton, closeButton);
+      })
+      .catch(err => {
+        console.error('Error getting user data:', err);
+        // Show error message
+        linkContainer.innerHTML = `
+          <p class="text-red-400 mb-1">Error generating link</p>
+          <p class="text-white text-sm">Please try again or use this channel name: <span class="font-medium select-all">${channelName}</span></p>
+        `;
+      });
+  };
+  
+  // Toggle chat visibility
+  const toggleChat = () => {
+    setShowChat(!showChat);
+  };
+  
+  // Join the Agora channel
+  const joinChannel = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      if (!appId) {
+        throw new Error("App ID is required");
+      }
+      
+      if (!channelName) {
+        throw new Error("Channel name is required");
+      }
+      
+      const client = clientRef.current;
+      
+      // Initialize RTM client
+      if (AgoraRTM) {
+        try {
+          rtmClientRef.current = AgoraRTM.createInstance(appId);
+          await rtmClientRef.current.login({
             uid: uid.toString()
           });
           
-          // Create RTM Channel
-          const rtmChannel = rtmClient.createChannel(channelName);
-          rtmChannelRef.current = rtmChannel;
+          rtmChannelRef.current = rtmClientRef.current.createChannel(channelName);
           
-          // Register RTM channel events
-          rtmChannel.on('ChannelMessage', (message: any, senderId: string) => {
+          // Handle channel messages
+          rtmChannelRef.current.on('ChannelMessage', (message, senderId) => {
             try {
-              // Check if message.text is defined before parsing
-              if (!message || typeof message.text !== 'string') {
-                console.error("Received invalid message format", message);
-                return;
-              }
+              const messageData = JSON.parse(message.text);
               
-              const parsedMsg = JSON.parse(message.text);
-              const { text, name, color } = parsedMsg;
-              
-              console.log(`Channel message received: ${text} from ${name || 'unknown'} (${senderId})`);
-              
-              // Add message to chat - prepend new messages so they show at the bottom
-              setChatMessages(prev => {
-                const newMessages = [{
+              setChatMessages(prev => [
+                {
                   userId: senderId,
-                  name: name || `User ${senderId.slice(-4)}`,
-                  message: text || "sent a message",
-                  color: color || 'bg-blue-500',
-                  isHost: parsedMsg.isHost || false
-                }, ...prev];
-                
-                // Keep only the latest 8 messages
-                if (newMessages.length > 8) {
-                  return newMessages.slice(0, 8);
-                }
-                return newMessages;
-              });
+                  name: messageData.name || 'Anonymous',
+                  message: messageData.text,
+                  color: messageData.color || 'bg-gray-500',
+                  isHost: messageData.isHost
+                },
+                ...prev
+              ]);
             } catch (err) {
-              console.error("Error parsing RTM message:", err);
+              console.error('Error parsing RTM message:', err);
             }
           });
           
-          // Join RTM channel
-          await rtmChannel.join();
-          console.log("Joined RTM channel:", channelName);
+          // Member joined events
+          rtmChannelRef.current.on('MemberJoined', memberId => {
+            console.log('Member joined:', memberId);
+            
+            // Update viewer count
+            setViewers(prev => prev + 1);
+            
+            // Add join message to chat
+            setChatMessages(prev => [
+              {
+                userId: memberId,
+                name: memberId === uid.toString() ? userName : 'User',
+                message: 'joined',
+                color: 'bg-orange-500'
+              },
+              ...prev
+            ]);
+          });
           
-        } catch (rtmErr) {
-          console.error("Error initializing RTM client:", rtmErr);
+          // Member left events
+          rtmChannelRef.current.on('MemberLeft', memberId => {
+            console.log('Member left:', memberId);
+            
+            // Update viewer count
+            setViewers(prev => Math.max(0, prev - 1));
+            
+            // Add leave message to chat
+            setChatMessages(prev => [
+              {
+                userId: memberId,
+                name: memberId === uid.toString() ? userName : 'User',
+                message: 'left',
+                color: 'bg-orange-500'
+              },
+              ...prev
+            ]);
+          });
+          
+          // Join the channel
+          await rtmChannelRef.current.join();
+          console.log('Joined RTM channel:', channelName);
+          
+          // Get channel member count
+          const members = await rtmChannelRef.current.getMembers();
+          setViewers(members.length);
+          console.log('Current channel members:', members.length);
+          
+        } catch (rtmError) {
+          console.error('Error initializing RTM:', rtmError);
           // Continue without RTM if it fails
         }
+      }
+      
+      // Event listeners for RTC client
+      client.on('user-published', async (user, mediaType) => {
+        console.log('User published:', user.uid, mediaType);
         
-        // Listen for connection state changes
-        agoraClient.on('connection-state-change', (curState, prevState, reason) => {
-          console.log("Agora connection state changed:", prevState, "->", curState, "reason:", reason);
+        await client.subscribe(user, mediaType);
+        
+        // Handle remote tracks
+        if (mediaType === 'video') {
+          remoteUsersRef.current.push(user);
+          setViewers(remoteUsersRef.current.length + 1); // +1 for host
+        }
+        
+        if (mediaType === 'audio') {
+          user.audioTrack?.play();
+        }
+      });
+      
+      client.on('user-unpublished', (user, mediaType) => {
+        console.log('User unpublished:', user.uid, mediaType);
+        
+        if (mediaType === 'video') {
+          remoteUsersRef.current = remoteUsersRef.current.filter(u => u.uid !== user.uid);
+          setViewers(remoteUsersRef.current.length + 1); // +1 for host
+        }
+        
+        if (mediaType === 'audio') {
+          user.audioTrack?.stop();
+        }
+      });
+      
+      client.on('user-left', user => {
+        console.log('User left:', user.uid);
+        remoteUsersRef.current = remoteUsersRef.current.filter(u => u.uid !== user.uid);
+        setViewers(remoteUsersRef.current.length + 1); // +1 for host
+      });
+      
+      client.on('user-joined', user => {
+        console.log('User joined:', user.uid);
+      });
+      
+      client.on('connection-state-change', (curState, prevState, reason) => {
+        console.log('Connection state changed:', prevState, '->', curState, 'reason:', reason);
+        
+        if (curState === 'DISCONNECTED') {
+          console.log('Disconnected from Agora channel. Reason:', reason);
           
-          if (curState === 'DISCONNECTED') {
-            setIsJoined(false);
+          // Attempt to reconnect if disconnected unexpectedly
+          if (reason !== 'LEAVE') {
+            console.log('Attempting to reconnect...');
+            client.join(appId, channelName, token, uid)
+              .then(() => {
+                console.log('Reconnected to channel');
+              })
+              .catch(err => {
+                console.error('Failed to reconnect:', err);
+                setError("Connection lost. Please refresh.");
+              });
           }
-        });
-        
-        // Listen for user-joined events
-        agoraClient.on('user-joined', (user) => {
-          console.log("User joined:", user.uid);
-          setRemoteUsers(prev => [...prev, user]);
-          setViewers(prev => prev + 1);
-          
-          // Add a chat message for user joining
-          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-          
-          setChatMessages(prev => {
-            const newMessages = [{
-              userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
-              message: "joined",
-              color,
-              isHost: user.uid === uid ? role === 'host' : false
-            }, ...prev];
-            
-            // Keep only the latest 8 messages
-            if (newMessages.length > 8) {
-              return newMessages.slice(0, 8);
-            }
-            return newMessages;
-          });
-        });
-        
-        // Listen for user-left events
-        agoraClient.on('user-left', (user) => {
-          console.log("User left:", user.uid);
-          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-          setViewers(prev => Math.max(0, prev - 1));
-          
-          // Add a chat message for user leaving
-          const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-          const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-          
-          setChatMessages(prev => {
-            const newMessages = [{
-              userId: user.uid.toString(),
-              name: `User ${user.uid.toString().slice(-4)}`,
-              message: "left",
-              color,
-              isHost: user.uid === uid ? role === 'host' : false
-            }, ...prev];
-            
-            // Keep only the latest 8 messages
-            if (newMessages.length > 8) {
-              return newMessages.slice(0, 8);
-            }
-            return newMessages;
-          });
-        });
-        
-        // Create tracks if host
-        if (role === 'host') {
-          // Create microphone and camera tracks
-          const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-          audioTrackRef.current = micTrack;
-          videoTrackRef.current = camTrack;
         }
-        
-        setIsLoading(false);
-      } catch (err) {
-        console.error("Error initializing Agora:", err);
-        setError(err instanceof Error ? err.message : "Failed to initialize stream");
-        setIsLoading(false);
-      }
-    };
-    
-    init();
-    
-    // Cleanup
-    return () => {
-      console.log("Component unmounting, cleaning up resources...");
+      });
       
-      // Stop and clean up screen sharing if active
-      if (screenTrackRef.current) {
-        try {
-          if (clientRef.current && isJoined) {
-            clientRef.current.unpublish(screenTrackRef.current).catch(err => 
-              console.error("Error unpublishing screen track:", err)
-            );
-          }
-          screenTrackRef.current.close();
-          screenTrackRef.current = null;
-          console.log("Screen track cleaned up");
-        } catch (error) {
-          console.error("Error cleaning up screen track:", error);
-        }
-      }
-      
-      // Clean up audio track
-      if (audioTrackRef.current) {
-        try {
-          if (clientRef.current && isJoined) {
-            clientRef.current.unpublish(audioTrackRef.current).catch(err => 
-              console.error("Error unpublishing audio track:", err)
-            );
-          }
-          audioTrackRef.current.close();
-          audioTrackRef.current = null;
-          console.log("Audio track cleaned up");
-        } catch (error) {
-          console.error("Error cleaning up audio track:", error);
-        }
-      }
-      
-      // Clean up video track
-      if (videoTrackRef.current) {
-        try {
-          if (clientRef.current && isJoined) {
-            clientRef.current.unpublish(videoTrackRef.current).catch(err => 
-              console.error("Error unpublishing video track:", err)
-            );
-          }
-          videoTrackRef.current.close();
-          videoTrackRef.current = null;
-          console.log("Video track cleaned up");
-        } catch (error) {
-          console.error("Error cleaning up video track:", error);
-        }
-      }
-      
-      // Leave RTC channel
-      if (clientRef.current && isJoined) {
-        try {
-          clientRef.current.leave().then(() => {
-            console.log("Left RTC channel on cleanup");
-          }).catch(err => {
-            console.error("Error leaving RTC channel on cleanup:", err);
-          });
-        } catch (error) {
-          console.error("Error leaving RTC channel:", error);
-        }
-      }
-      
-      // Leave RTM channel
-      if (rtmChannelRef.current) {
-        try {
-          rtmChannelRef.current.leave().then(() => {
-            console.log("Left RTM channel on cleanup");
-          }).catch(err => {
-            console.error("Error leaving RTM channel on cleanup:", err);
-          });
-        } catch (error) {
-          console.error("Error leaving RTM channel:", error);
-        }
-      }
-      
-      // Logout RTM client
-      if (rtmClientRef.current) {
-        try {
-          rtmClientRef.current.logout().then(() => {
-            console.log("Logged out of RTM client on cleanup");
-          }).catch(err => {
-            console.error("Error logging out of RTM client on cleanup:", err);
-          });
-        } catch (error) {
-          console.error("Error logging out of RTM client:", error);
-        }
-      }
-      
-      console.log("All Agora resources cleaned up");
-    };
-  }, [appId, role, channelName, uid, userName]);
-
-  // Join call when ready
-  const joinChannel = async () => {
-    if (!clientRef.current || !audioTrackRef.current || !videoTrackRef.current) return;
-    
-    try {
-      setIsLoading(true);
-      const client = clientRef.current;
-      
-      // Join the channel
-      await client.join(appId, channelName, token || null, uid);
-      console.log("Joined Agora channel:", channelName);
-      
-      // Publish tracks if host
+      // Join the channel as host or audience
       if (role === 'host') {
-        await client.publish([audioTrackRef.current, videoTrackRef.current]);
-        console.log("Published tracks to Agora channel");
+        console.log('Joining as host with UID:', uid);
         
-        // Update database to set stream as active
+        // Create audio and video tracks
+        const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks(
+          { encoderConfig: 'high_quality' },
+          { encoderConfig: { width: 640, height: 360, frameRate: 30 } }
+        );
+        
+        audioTrackRef.current = audioTrack;
+        videoTrackRef.current = videoTrack;
+        
+        // Join the channel with token
+        await client.join(appId, channelName, token, uid);
+        
+        // Publish tracks
+        await client.publish([audioTrack, videoTrack]);
+        
+        // Update stream status in database
         try {
           const response = await fetch('/api/stream/active', {
             method: 'POST',
@@ -439,60 +475,104 @@ export function AgoraVideo({
           });
           
           if (response.ok) {
-            console.log('Stream marked as active in database');
-          } else {
-            console.error('Failed to update stream active status in database');
+            console.log('Stream status updated in database');
           }
-        } catch (dbErr) {
-          console.error('Error updating stream status:', dbErr);
-          // Continue even if database update fails
+        } catch (err) {
+          console.error('Failed to update stream status:', err);
         }
+      } else {
+        // Join as audience
+        console.log('Joining as audience with UID:', uid);
+        await client.join(appId, channelName, token, uid);
       }
       
+      console.log('Successfully joined channel as', role);
       setIsJoined(true);
       setIsLoading(false);
-    } catch (err) {
-      console.error("Error joining Agora channel:", err);
-      setError(err instanceof Error ? err.message : "Failed to join stream");
+      
+    } catch (error) {
+      console.error('Error joining channel:', error);
+      setError(`Failed to join: ${error.message || 'Unknown error'}`);      
       setIsLoading(false);
     }
   };
-
-  // Toggle audio
+  
+  // Toggle audio mute
   const toggleAudio = async () => {
     if (!audioTrackRef.current) return;
     
-    if (isAudioOn) {
-      await audioTrackRef.current.setEnabled(false);
+    if (isAudioMuted) {
+      await audioTrackRef.current.setMuted(false);
+      setIsAudioMuted(false);
     } else {
-      await audioTrackRef.current.setEnabled(true);
+      await audioTrackRef.current.setMuted(true);
+      setIsAudioMuted(true);
     }
-    
-    setIsAudioOn(!isAudioOn);
   };
-
-  // Toggle video
+  
+  // Toggle video mute
   const toggleVideo = async () => {
     if (!videoTrackRef.current) return;
     
-    if (isVideoOn) {
-      await videoTrackRef.current.setEnabled(false);
+    if (isVideoMuted) {
+      await videoTrackRef.current.setMuted(false);
+      setIsVideoMuted(false);
     } else {
-      await videoTrackRef.current.setEnabled(true);
+      await videoTrackRef.current.setMuted(true);
+      setIsVideoMuted(true);
     }
-    
-    setIsVideoOn(!isVideoOn);
   };
-
-  // End stream
+  
+  // Toggle screen sharing
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      if (screenTrackRef.current) {
+        try {
+          await clientRef.current.unpublish(screenTrackRef.current);
+          screenTrackRef.current.close();
+          screenTrackRef.current = null;
+          setIsScreenSharing(false);
+        } catch (error) {
+          console.error("Error stopping screen sharing:", error);
+        }
+      }
+    } else {
+      try {
+        // Create a new screen track
+        const screenTrack = await AgoraRTC.createScreenVideoTrack({}, 'auto');
+        
+        if (Array.isArray(screenTrack)) {
+          // If returns array [videoTrack, audioTrack]
+          screenTrackRef.current = screenTrack[0];
+          await clientRef.current.publish(screenTrack[0]);
+        } else {
+          // If returns just video track
+          screenTrackRef.current = screenTrack;
+          await clientRef.current.publish(screenTrack);
+        }
+        
+        setIsScreenSharing(true);
+        
+        // Handle screen share stopped by browser UI
+        screenTrackRef.current.on('track-ended', async () => {
+          console.log('Screen sharing stopped via browser UI');
+          await clientRef.current.unpublish(screenTrackRef.current);
+          screenTrackRef.current.close();
+          screenTrackRef.current = null;
+          setIsScreenSharing(false);
+        });
+        
+      } catch (error) {
+        console.error("Error starting screen sharing:", error);
+      }
+    }
+  };
+  
+  // End stream and leave channel
   const endStream = async () => {
-    if (!clientRef.current) return;
-    
     try {
-      console.log("Ending stream...");
-      
-      // Stop and unpublish screen sharing if active
-      if (isScreenSharing && screenTrackRef.current) {
+      // Unpublish and close screen track if active
+      if (screenTrackRef.current) {
         try {
           await clientRef.current.unpublish(screenTrackRef.current);
           screenTrackRef.current.close();
@@ -598,303 +678,129 @@ export function AgoraVideo({
           await rtmChannelRef.current.sendMessage({ text: JSON.stringify(messageObj) });
           console.log("Message sent via RTM");
         } catch (rtmError) {
-          console.error("Failed to send message via RTM:", rtmError);
+          console.error("Error sending message via RTM:", rtmError);
           
-          // If RTM fails, add message locally
-          addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+          // Add message locally if sending fails
+          setChatMessages(prev => [
+            {
+              userId: uid.toString(),
+              name: userName,
+              message: chatInput,
+              color: myColor,
+              isHost: role === 'host'
+            },
+            ...prev
+          ]);
         }
       } else {
-        // Add message locally if RTM is not available
-        addLocalMessage(uid.toString(), userName, chatInput, myColor, role === 'host');
+        // Add message locally if RTM isn't available
+        setChatMessages(prev => [
+          {
+            userId: uid.toString(),
+            name: userName,
+            message: chatInput,
+            color: myColor,
+            isHost: role === 'host'
+          },
+          ...prev
+        ]);
       }
-      
-      // Clear input regardless
-      setChatInput('');
-    } catch (err) {
-      console.error("Error sending message:", err);
+    } catch (error) {
+      console.error("Error sending chat message:", error);
     }
   };
   
-  // Helper to add a message locally (without RTM)
-  const addLocalMessage = (userId: string, name: string, message: string, color: string, isHost: boolean = false) => {
-    setChatMessages(prev => {
-      const newMessages = [{
-        userId,
-        name,
-        message,
-        color,
-        isHost
-      }, ...prev];
-      
-      // Keep only the latest 8 messages
-      if (newMessages.length > 8) {
-        return newMessages.slice(0, 8);
-      }
-      return newMessages;
-    });
-  };
-  
-  // Handle chat input submit
+  // Handle chat form submission
   const handleChatSubmit = (e: FormEvent) => {
     e.preventDefault();
-    sendChatMessage();
-  };
-  
-  // Toggle chat visibility
-  const toggleChat = () => {
-    setShowChat(!showChat);
-  };
-  
-  // Toggle screen sharing
-  const toggleScreenSharing = async () => {
-    if (!clientRef.current) {
-      console.error("Agora client is not initialized");
-      return;
+    if (chatInput.trim()) {
+      sendChatMessage();
+      setChatInput("");
     }
+  };
+  
+  // Join channel on mount
+  useEffect(() => {
+    // Add custom styles
+    const styleElement = document.createElement('style');
+    styleElement.textContent = customStyles;
+    document.head.appendChild(styleElement);
     
-    if (isScreenSharing) {
-      // Stop screen sharing
-      try {
-        console.log("Stopping screen share...");
-        if (screenTrackRef.current) {
-          await clientRef.current.unpublish(screenTrackRef.current);
-          screenTrackRef.current.close();
-          screenTrackRef.current = null;
-        }
-        // Re-enable camera video
-        if (videoTrackRef.current) {
-          await videoTrackRef.current.setEnabled(true);
-          await clientRef.current.publish([videoTrackRef.current]);
-          setIsVideoOn(true);
-        }
-        setIsScreenSharing(false);
-        console.log("Screen sharing stopped successfully");
-      } catch (error) {
-        console.error("Error stopping screen sharing:", error);
+    // Initialize and join channel
+    joinChannel();
+    
+    // Cleanup on unmount
+    return () => {
+      // Remove custom styles
+      document.head.removeChild(styleElement);
+      
+      // Cleanup resources
+      if (isJoined) {
+        endStream();
       }
-    } else {
-      // Start screen sharing
-      try {
-        console.log("Starting screen share...");
-        
-        // Unpublish camera track first to avoid issues
-        if (videoTrackRef.current && clientRef.current) {
-          await videoTrackRef.current.setEnabled(false);
-          await clientRef.current.unpublish(videoTrackRef.current);
-        }
-        
-        // Create screen track with specific options
-        let screenShare;
-        try {
-          screenShare = await AgoraRTC.createScreenVideoTrack({
-            encoderConfig: "1080p_2",
-            optimizationMode: "detail"
-          });
-          console.log("Screen track created successfully");
-        } catch (e) {
-          console.error("Failed to create screen track:", e);
-          // Re-enable camera if screen sharing fails
-          if (videoTrackRef.current && clientRef.current) {
-            await videoTrackRef.current.setEnabled(true);
-            await clientRef.current.publish([videoTrackRef.current]);
-          }
-          return;
-        }
-        
-        // Handle the different return types from createScreenVideoTrack
-        if (Array.isArray(screenShare)) {
-          // If an array is returned (contains both video and audio)
-          const [videoTrack] = screenShare;
-          screenTrackRef.current = videoTrack;
-          console.log("Screen track is an array, using video track");
-        } else {
-          // If only video track is returned
-          screenTrackRef.current = screenShare;
-          console.log("Screen track is a single track");
-        }
-        
-        // Publish screen track
-        try {
-          await clientRef.current.publish(screenTrackRef.current);
-          console.log("Published screen track successfully");
-          setIsScreenSharing(true);
-          
-          // Handle screen sharing stopped by user through browser UI
-          screenTrackRef.current.on("track-ended", async () => {
-            console.log("Screen sharing track ended by browser");
-            if (screenTrackRef.current && clientRef.current) {
-              await clientRef.current.unpublish(screenTrackRef.current);
-              screenTrackRef.current.close();
-              screenTrackRef.current = null;
-            }
-              
-            // Re-enable camera
-            if (videoTrackRef.current && clientRef.current) {
-              await videoTrackRef.current.setEnabled(true);
-              await clientRef.current.publish([videoTrackRef.current]);
-              setIsVideoOn(true);
-            }
-              
-            setIsScreenSharing(false);
-          });
-        } catch (pubError) {
-          console.error("Failed to publish screen track:", pubError);
-          // Clean up and re-enable camera if publishing fails
-          if (screenTrackRef.current) {
-            screenTrackRef.current.close();
-            screenTrackRef.current = null;
-          }
-          
-          if (videoTrackRef.current && clientRef.current) {
-            await videoTrackRef.current.setEnabled(true);
-            await clientRef.current.publish([videoTrackRef.current]);
-          }
-        }
-      } catch (error) {
-        console.error("Error in screen sharing process:", error);
-        // Ensure camera is re-enabled in case of errors
-        if (videoTrackRef.current && clientRef.current) {
-          await videoTrackRef.current.setEnabled(true);
-          await clientRef.current.publish([videoTrackRef.current]);
-        }
-      }
-    }
-  };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center p-4">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-6 w-6 text-[#A67D44] animate-spin mb-2" />
-          <p className="text-sm text-[#CDBCAB]">Connecting to stream...</p>
-        </div>
-      </div>
-    );
-  }
-
+    };
+  }, []);
+  
   // Error state
   if (error) {
     return (
-      <div className="w-full h-full flex items-center justify-center p-4">
-        <div className="text-center max-w-md p-4 bg-black/20 rounded-xl backdrop-blur-sm">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mx-auto mb-3">
-            <X className="w-6 h-6 text-[#EFE9E1]" />
-          </div>
-          <h3 className="text-lg font-medium text-[#CDBCAB] mb-1">Stream Error</h3>
-          <p className="text-sm text-[#CDBCAB] mb-3">{error}</p>
+      <div className="h-full flex items-center justify-center bg-[#0F1015]">
+        <div className="text-center p-4">
+          <p className="text-red-500 mb-2">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-4 py-1.5 text-sm bg-gradient-to-r from-[#A67D44] to-[#5D1C34] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
+            className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
           >
-            Try Again
+            Retry
           </button>
         </div>
       </div>
     );
   }
-
-  // Not joined yet - "Go Live" screen
-  if (!isJoined) {
+  
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="w-full h-full flex items-center justify-center p-4">
-        <style>{customStyles}</style>
-        <div className="text-center max-w-md mx-auto p-4">
-          <div className="w-14 h-14 rounded-full mx-auto bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-3">
-            <Video className="w-7 h-7 text-[#EFE9E1]" />
-          </div>
-          <h3 className="text-lg font-medium text-[#CDBCAB] mb-1">Ready to Stream</h3>
-          <p className="text-sm text-[#CDBCAB] mb-3">
-            You're about to go live as <strong>{userName}</strong>. Click "Go Live" to start streaming.
-          </p>
-          
-          {/* Preview of local video */}
-          {videoTrackRef.current && (
-            <div className="mb-4 relative rounded-lg overflow-hidden shadow-lg">
-              <div className="w-full pb-[56.25%] relative"> {/* 16:9 aspect ratio */}
-                <div className="absolute inset-0">
-                  <VideoPlayer videoTrack={videoTrackRef.current} />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Controls */}
-          <div className="mb-4 flex justify-center space-x-3">
-            <button 
-              onClick={toggleAudio}
-              className="p-2 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
-            >
-              {isAudioOn ? <Mic size={16} /> : <MicOff size={16} className="text-red-500" />}
-            </button>
-            <button 
-              onClick={toggleVideo}
-              className="p-2 rounded-full bg-[#242428] hover:bg-[#2C2C32] text-white"
-            >
-              {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-500" />}
-            </button>
-          </div>
-          
-          <button 
-            onClick={joinChannel}
-            className="px-5 py-2 text-sm bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] rounded-lg text-[#EFE9E1] hover:shadow-md transition-all"
-          >
-            Go Live
-          </button>
-        </div>
+      <div className="h-full flex flex-col items-center justify-center gap-4 bg-[#0F1015] text-white">
+        <Loader2 className="animate-spin h-8 w-8" />
+        <p>Connecting to stream...</p>
       </div>
     );
   }
-
-  // Live stream view
+  
+  // Render video interface
   return (
-    <div className="h-full relative">
+    <div className="relative h-full overflow-hidden bg-[#0F1015]">
+      {/* Inject custom styles */}
       <style>{customStyles}</style>
       
-      {/* Main video stream - show screen share when active or regular video */}
-      <div className="absolute inset-0 bg-black rounded-lg overflow-hidden">
+      {/* Screen share or camera view */}
+      <div className="relative h-full">
         {isScreenSharing && screenTrackRef.current ? (
-          // For screen sharing track
-          <ScreenPlayer videoTrack={screenTrackRef.current} />
+          <div className="h-full">
+            <ScreenPlayer videoTrack={screenTrackRef.current} />
+            
+            {/* Picture-in-picture for camera when screen sharing */}
+            {!isVideoMuted && videoTrackRef.current && (
+              <div className="absolute top-4 left-4 w-40 h-32 z-10 rounded-lg overflow-hidden shadow-md border border-gray-800">
+                <VideoPlayer videoTrack={videoTrackRef.current} />
+              </div>
+            )}
+          </div>
         ) : (
-          // For camera track
-          videoTrackRef.current && <VideoPlayer videoTrack={videoTrackRef.current} />
+          // Regular camera view
+          <div className="flex items-center justify-center h-full">
+            {!isVideoMuted && videoTrackRef.current ? (
+              <VideoPlayer videoTrack={videoTrackRef.current} />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <div className="p-8 rounded-full bg-gray-800/50">
+                  <Video className="h-12 w-12 text-gray-400" />
+                </div>
+              </div>
+            )}
+          </div>
         )}
-      </div>
-      
-      {/* PIP camera view when screen sharing */}
-      {isScreenSharing && videoTrackRef.current && (
-        <div className="absolute top-4 left-4 w-40 h-24 rounded-lg overflow-hidden border border-gray-700 z-20">
-          <VideoPlayer videoTrack={videoTrackRef.current} />
-        </div>
-      )}
-      
-      {/* Custom controls - centered at the bottom */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-5 bg-black/40 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/10 shadow-lg">
-        <button 
-          onClick={toggleAudio}
-          className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          {isAudioOn ? <Mic size={16} /> : <MicOff size={16} className="text-red-400" />}
-        </button>
-        <button 
-          onClick={toggleVideo}
-          className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
-        </button>
-        <button 
-          onClick={toggleScreenSharing}
-          className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
-        >
-          <ScreenShare size={16} />
-        </button>
-        <button 
-          onClick={endStream}
-          className="w-8 h-8 bg-red-500/80 hover:bg-red-600/90 rounded-full flex items-center justify-center text-white shadow-sm hover:shadow-md transition-all"
-        >
-          <X size={16} />
-        </button>
       </div>
       
       {/* Live indicator - repositioned when screen sharing is active */}

@@ -1229,6 +1229,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Find stream by channel name
+  app.get("/api/stream/channel/:channelName", async (req, res) => {
+    try {
+      const { channelName } = req.params;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: "Channel name is required" });
+      }
+      
+      console.log(`Looking for stream with channel name: ${channelName}`);
+      
+      // Search for stream sessions with this channel name
+      const streams = await db.select()
+        .from(streamSessions)
+        .where(eq(streamSessions.channelName, channelName));
+      
+      if (streams.length === 0) {
+        return res.status(404).json({ 
+          error: "No streams found with this channel name",
+          isActive: false
+        });
+      }
+      
+      // Find the active stream if any
+      const activeStream = streams.find(stream => stream.isActive);
+      
+      if (!activeStream) {
+        return res.status(200).json({ 
+          isActive: false,
+          channelName: streams[0].channelName, 
+          message: "Channel exists but stream is not currently active"
+        });
+      }
+      
+      // Get viewer count from global map or defaults
+      const viewerData = streamViewers.get(activeStream.channelName) || {
+        count: 1,
+        title: activeStream.streamTitle || 'Live Stream',
+        streamId: activeStream.id.toString(),
+        hostName: activeStream.hostName || "Host",
+        isActive: true,
+        lastUpdated: Date.now()
+      };
+      
+      return res.status(200).json({ 
+        isActive: true,
+        channelName: activeStream.channelName,
+        hostId: activeStream.hostId,
+        streamId: activeStream.id,
+        streamTitle: activeStream.streamTitle,
+        ...viewerData
+      });
+    } catch (error) {
+      console.error("Error finding stream by channel name:", error);
+      return res.status(500).json({ error: "Failed to find stream" });
+    }
+  });
+  
+  // New audience token endpoint that only requires channel name
+  app.post("/api/stream/audience-token", async (req, res) => {
+    try {
+      const { channelName } = req.body;
+      
+      if (!channelName) {
+        return res.status(400).json({ error: "Channel name is required" });
+      }
+      
+      // Generate a random UID for audience
+      const uid = Math.floor(Math.random() * 1000000);
+      
+      // Get audience token using SUBSCRIBER role (value is 2)
+      const token = generateAgoraToken(channelName, uid, 2); // 2 is the value for RtcRole.SUBSCRIBER
+      
+      return res.status(200).json({ token, uid });
+    } catch (error) {
+      console.error("Error generating audience token:", error);
+      return res.status(500).json({ error: "Failed to generate token" });
+    }
+  });
+  
   // End of stream-related API routes
 
   const httpServer = createServer(app);
