@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from 'crypto';
 import { promisify } from 'util';
 import connectPg from 'connect-pg-simple';
 import { pool, db } from './db';
-import { User as SelectUser, users } from '@shared/schema';
+import { User as SelectUser, users, streamSessions, InsertStreamSession } from '@shared/schema';
 import { eq, SQL } from 'drizzle-orm';
 import { log } from './vite';
 
