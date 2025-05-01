@@ -14,6 +14,8 @@ import AgoraRTC, {
 import AgoraRTM, { RtmClient, RtmMessage, RtmChannel } from 'agora-rtm-sdk';
 import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp, Share2, Copy } from 'lucide-react';
 import { useLocation } from 'wouter';
+import ShareStreamDialog from './ShareStreamDialog';
+import { useToast } from "@/hooks/use-toast";
 
 // Define Agora config
 const config: ClientConfig = { 
@@ -120,6 +122,8 @@ interface AgoraVideoProps {
   uid?: number;
   role?: 'host' | 'audience';
   userName: string;
+  hostId?: string | number;
+  streamTitle?: string;
   onToggleDrawer?: () => void;
 }
 
