@@ -22,9 +22,10 @@ export function ProtectedRoute({
   }
 
   if (!user) {
+    // Save the redirect path for after login
     return (
       <Route path={path}>
-        <Redirect to="/auth" />
+        <Redirect to={`/auth?redirect=${path}`} />
       </Route>
     );
   }

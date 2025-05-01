@@ -7,6 +7,8 @@ import Logo from "@/components/Logo";
 import GradientText from "@/components/GradientText";
 import CreateStreamDialog, { StreamFormData } from "@/components/CreateStreamDialog";
 import UserProfileDropdown from "@/components/UserProfileDropdown";
+import AuthButton from "@/components/AuthButton";
+import { useAuth } from "@/hooks/use-auth";
 import { InfoGraphic } from "@shared/schema";
 import { 
   ArrowLeft, 
@@ -57,6 +59,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
   const [isStreamDialogOpen, setIsStreamDialogOpen] = useState(false);
+  const { user } = useAuth();
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -193,7 +196,14 @@ export default function Home() {
   };
 
   const startLivestream = () => {
-    // Open the stream dialog
+    // Check if user is authenticated
+    if (!user) {
+      // Redirect to auth page with a return URL
+      setLocation('/auth?redirect=/livestream');
+      return;
+    }
+    
+    // Open the stream dialog if authenticated
     setIsStreamDialogOpen(true);
   };
 
@@ -440,11 +450,13 @@ export default function Home() {
             
             <button 
               onClick={startLivestream}
-              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
+              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg mr-2"
             >
               <Video className="h-4 w-4" />
               <span>Go Live</span>
             </button>
+
+            <AuthButton />
           </div>
         </div>
         
