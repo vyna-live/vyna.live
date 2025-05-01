@@ -6,7 +6,7 @@ import { getAIResponse as getGeminiResponse } from "./gemini";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
-import { siteConfig, researchSessions, messages, uploadedFiles, users } from "@shared/schema";
+import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
@@ -548,85 +548,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const parsedId = parseInt(streamId, 10);
+      let streamSession;
+
       if (isNaN(parsedId)) {
-        // Try to use the streamId as a channel name
-        // Find in stream_sessions by channel name
-        const sql = `
-          SELECT ss.*, u.username as host_username
-          FROM stream_sessions ss
-          JOIN users u ON ss.host_id = u.id
-          WHERE ss.channel_name = $1
-          LIMIT 1
-        `;
+        // Try to find by channel name using Drizzle ORM
+        const result = await db
+          .select({
+            id: streamSessions.id,
+            streamTitle: streamSessions.streamTitle,
+            channelName: streamSessions.channelName,
+            hostName: users.username,
+            hostId: streamSessions.hostId,
+            isActive: streamSessions.isActive,
+            startedAt: streamSessions.startedAt,
+            description: streamSessions.description,
+            coverImagePath: streamSessions.coverImagePath
+          })
+          .from(streamSessions)
+          .innerJoin(users, eq(streamSessions.hostId, users.id))
+          .where(eq(streamSessions.channelName, streamId))
+          .limit(1);
         
-        const result = await db.execute(sql, [streamId]);
-        
-        if (result.rows.length > 0) {
-          const session = result.rows[0];
-          return res.status(200).json({
-            id: session.id,
-            streamTitle: session.stream_title,
-            channelName: session.channel_name,
-            hostName: session.host_username || 'Unknown',
-            hostId: session.host_id,
-            isActive: session.is_active || false,
-            startedAt: session.started_at,
-            description: session.description,
-            coverImagePath: session.cover_image_path
-          });
+        if (result.length > 0) {
+          streamSession = result[0];
         }
       } else {
-        // Find by ID in stream_sessions
-        const sql = `
-          SELECT ss.*, u.username as host_username
-          FROM stream_sessions ss
-          JOIN users u ON ss.host_id = u.id
-          WHERE ss.id = $1
-          LIMIT 1
-        `;
+        // Find by ID using Drizzle ORM
+        const result = await db
+          .select({
+            id: streamSessions.id,
+            streamTitle: streamSessions.streamTitle,
+            channelName: streamSessions.channelName,
+            hostName: users.username,
+            hostId: streamSessions.hostId,
+            isActive: streamSessions.isActive,
+            startedAt: streamSessions.startedAt,
+            description: streamSessions.description,
+            coverImagePath: streamSessions.coverImagePath
+          })
+          .from(streamSessions)
+          .innerJoin(users, eq(streamSessions.hostId, users.id))
+          .where(eq(streamSessions.id, parsedId))
+          .limit(1);
         
-        const result = await db.execute(sql, [parsedId]);
-        
-        if (result.rows.length > 0) {
-          const session = result.rows[0];
-          return res.status(200).json({
-            id: session.id,
-            streamTitle: session.stream_title,
-            channelName: session.channel_name,
-            hostName: session.host_username || 'Unknown',
-            hostId: session.host_id,
-            isActive: session.is_active || false,
-            startedAt: session.started_at,
-            description: session.description,
-            coverImagePath: session.cover_image_path
-          });
+        if (result.length > 0) {
+          streamSession = result[0];
         }
-        
-        // Fallback: Check in livestreams table
-        const livestreamSql = `
-          SELECT l.*, u.username as host_username
-          FROM livestreams l
-          JOIN users u ON l.user_id = u.id
-          WHERE l.id = $1
-          LIMIT 1
-        `;
-        
-        const livestreamResult = await db.execute(livestreamSql, [parsedId]);
-        
-        if (livestreamResult.rows.length > 0) {
-          const livestream = livestreamResult.rows[0];
-          return res.status(200).json({
-            id: livestream.id,
-            streamTitle: livestream.title,
-            channelName: livestream.channel_name,
-            hostName: livestream.host_username || 'Unknown',
-            hostId: livestream.user_id,
-            isActive: livestream.status === 'live',
-            startedAt: livestream.started_at,
-            description: livestream.description,
-            coverImagePath: livestream.cover_image_url
-          });
-        }
+      }
+      
+      // Return the stream session if found
+      if (streamSession) {
+        return res.status(200).json(streamSession);
+      }
+      
+      // Fallback: Check in livestreams table
+      const livestreamSql = `
+        SELECT l.*, u.username as host_username
+        FROM livestreams l
+        JOIN users u ON l.user_id = u.id
+        WHERE l.id = $1
+        LIMIT 1
+      `;
+      
+      const livestreamResult = await db.execute(livestreamSql, [parsedId]);
+      
+      if (livestreamResult.rows.length > 0) {
+        const livestream = livestreamResult.rows[0];
+        return res.status(200).json({
+          id: livestream.id,
+          streamTitle: livestream.title,
+          channelName: livestream.channel_name,
+          hostName: livestream.host_username || 'Unknown',
+          hostId: livestream.user_id,
+          isActive: livestream.status === 'live',
+          startedAt: livestream.started_at,
+          description: livestream.description,
+          coverImagePath: livestream.cover_image_url
+        });
       }
 
       // If we get here, the stream was not found
