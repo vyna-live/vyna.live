@@ -7,7 +7,19 @@ import {
   ChevronRight,
   MoreHorizontal,
   Menu,
+  User,
+  Settings,
+  LogOut,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 import Teleprompter from "./Teleprompter";
 import Logo from "./Logo";
 import AgoraVideo from "./AgoraVideo";
@@ -108,6 +120,7 @@ export default function LivestreamInterface({
   >([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const isMobile = useIsMobile();
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Notepad functionality
   const [showNewNote, setShowNewNote] = useState<boolean>(false);
@@ -139,8 +152,8 @@ export default function LivestreamInterface({
   const [isStreamActive, setIsStreamActive] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>("Divine Samuel");
-  const [streamTitle, setStreamTitle] = useState<string>("Jaja Games");
+  const [userName, setUserName] = useState<string>(isAuthenticated && user ? user.displayName || user.username : "Anonymous");
+  const [streamTitle, setStreamTitle] = useState<string>("Vyna.live Stream");
   const [streamId, setStreamId] = useState<string>("");
   const [shareableLink, setShareableLink] = useState<string>("");
   const [showShareLink, setShowShareLink] = useState<boolean>(false);
@@ -190,6 +203,13 @@ export default function LivestreamInterface({
       showErrorToast(agoraError.message);
     }
   }, [agoraError]);
+  
+  // Update username when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setUserName(user.displayName || user.username);
+    }
+  }, [isAuthenticated, user]);
 
   // Handler for going live
   const handleGoLive = useCallback(async () => {
@@ -374,31 +394,61 @@ export default function LivestreamInterface({
         </div>
 
         <div className="flex items-center">
-          <div className="flex items-center">
-            <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden mr-2">
-              <img
-                src="https://randomuser.me/api/portraits/men/32.jpg"
-                alt="User"
-                className="w-full h-full object-cover"
-              />
+          {isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="flex items-center space-x-2 bg-zinc-900/50 backdrop-blur-sm px-2 py-1 rounded-sm cursor-pointer hover:bg-zinc-800/60 transition-colors">
+                  <div className="w-[24px] h-[24px] rounded-full overflow-hidden">
+                    <img 
+                      src={user.avatarUrl || "https://randomuser.me/api/portraits/men/32.jpg"} 
+                      alt={user.displayName || user.username} 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-white text-sm font-medium">{user.displayName || user.username}</span>
+                  <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white shadow-lg">
+                <DropdownMenuLabel className="text-zinc-400 border-b border-zinc-800 pb-2">
+                  My Account
+                </DropdownMenuLabel>
+                <DropdownMenuItem className="text-white hover:bg-zinc-800 cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-white hover:bg-zinc-800 cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-zinc-800" />
+                <DropdownMenuItem 
+                  className="text-red-500 hover:bg-zinc-800 hover:text-red-500 cursor-pointer"
+                  onClick={() => {
+                    logout();
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center">
+              <div className="w-6 h-6 rounded-full bg-gray-700 overflow-hidden mr-2">
+                <img
+                  src="https://randomuser.me/api/portraits/men/32.jpg"
+                  alt="User"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-white text-sm font-medium mr-1">
+                {userName}
+              </span>
             </div>
-            <span className="text-white text-sm font-medium mr-1">
-              {userName}
-            </span>
-            <svg
-              className="w-4 h-4 text-white"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                d="M6 9L10 13L14 9"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
+          )}
         </div>
       </div>
 

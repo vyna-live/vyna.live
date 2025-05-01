@@ -167,6 +167,11 @@ export const streamSessions = pgTable("stream_sessions", {
   thumbnailUrl: text("thumbnail_url"),
   recordingUrl: text("recording_url"),
   audienceTokens: jsonb("audience_tokens").default([]),
+  destination: text("destination").array(),  // List of destinations where stream is published
+  coverImage: text("cover_image"),  // URL or base64 string of the cover image
+  privacy: varchar("privacy", { length: 20 }).default("public"),  // public, unlisted, private
+  scheduled: boolean("scheduled").default(false),  // If the stream is scheduled for later
+  streamDate: timestamp("stream_date"),  // The date and time when the stream is scheduled
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
