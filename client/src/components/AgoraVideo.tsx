@@ -264,56 +264,134 @@ export function AgoraVideo({
           // Register RTM channel events
           rtmChannel.on('ChannelMessage', (message: any, senderId: string) => {
             try {
-              // Check if message.text is defined before parsing
-              if (!message || typeof message.text !== 'string') {
+              console.log(`Raw Channel message received from ${senderId}:`, message);
+              
+              let messageText;
+              // Handle different message formats based on RTM SDK version
+              if (typeof message === 'string') {
+                // Legacy format: message is directly the string
+                messageText = message;
+                console.log('Detected legacy RTM message format (string)');
+              } else if (message && typeof message.text === 'string') {
+                // New format: message is an object with a text property
+                messageText = message.text;
+                console.log('Detected new RTM message format (object with text)'); 
+              } else {
                 console.error("Received invalid message format", message);
                 return;
               }
               
-              console.log(`Raw Channel message received from ${senderId}:`, message.text);
-              
-              const parsedMsg = JSON.parse(message.text);
+              // Try to parse the message content
+              const parsedMsg = JSON.parse(messageText);
               const { text, name, color } = parsedMsg;
               
               console.log(`Channel message parsed: ${text} from ${name || 'unknown'} (${senderId})`);
               
-              // Add message to chat - prepend new messages so they show at the bottom
-              setChatMessages(prev => {
-                const newMessages = [{
-                  userId: senderId,
-                  name: name || `User ${senderId.slice(-4)}`,
-                  message: text || "sent a message",
-                  color: color || 'bg-blue-500',
-                  isHost: parsedMsg.isHost || false
-                }, ...prev];
-                
-                // Keep only the latest 8 messages
-                if (newMessages.length > 8) {
-                  return newMessages.slice(0, 8);
-                }
-                return newMessages;
-              });
+              // Only process if we have valid text content
+              if (text) {
+                // Add message to chat - prepend new messages so they show at the bottom
+                setChatMessages(prev => {
+                  const newMessages = [{
+                    userId: senderId,
+                    name: name || `User ${senderId.slice(-4)}`,
+                    message: text,
+                    color: color || 'bg-blue-500',
+                    isHost: parsedMsg.isHost || false
+                  }, ...prev];
+                  
+                  if (newMessages.length > 8) {
+                    return newMessages.slice(0, 8);
+                  }
+                  return newMessages;
+                });
+              }
             } catch (err) {
-              console.error("Error parsing RTM message:", err);
+              console.error("Error processing RTM message:", err);
             }
           });
           
           // Add specific handlers for RTM channel events
           rtmChannel.on('MemberJoined', (memberId) => {
-            console.log(`RTM Member joined: ${memberId}`);
+            console.log(`RTM Member joined: ${memberId}, current role: ${role}`);
+            
             // Update viewers count when member joins RTM channel - fixes audience count issue
             if (role === 'host' && memberId !== uid.toString()) {
-              setViewers(prev => prev + 1);
-              console.log(`Host increased viewer count for ${memberId}, new count:`, viewers + 1);
+              console.log(`Host detected new viewer: ${memberId}`);
+              
+              // Force UI update with new viewer count
+              setViewers(prevCount => {
+                const newCount = prevCount + 1;
+                console.log(`Viewer count updated: ${prevCount} -> ${newCount}`);
+                return newCount;
+              });
+              
+              // Add system notification for new viewer joining
+              const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+              const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+              
+              // Add a visible notification message
+              setChatMessages(prev => {
+                const newMessages = [{
+                  userId: memberId,
+                  name: `Viewer ${memberId.slice(-4)}`,
+                  message: "joined the stream",
+                  color,
+                  isHost: false
+                }, ...prev];
+                
+                if (newMessages.length > 8) {
+                  return newMessages.slice(0, 8);
+                }
+                return newMessages;
+              });
             }
           });
           
           rtmChannel.on('MemberLeft', (memberId) => {
-            console.log(`RTM Member left: ${memberId}`);
+            console.log(`RTM Member left: ${memberId}, current role: ${role}`);
+            
             // Update viewers count when member leaves RTM channel
             if (role === 'host' && memberId !== uid.toString()) {
-              setViewers(prev => Math.max(0, prev - 1));
-              console.log(`Host decreased viewer count for ${memberId}`);
+              console.log(`Host detected viewer leaving: ${memberId}`);
+              
+              // Force UI update with decreased viewer count
+              setViewers(prevCount => {
+                const newCount = Math.max(0, prevCount - 1);
+                console.log(`Viewer count updated: ${prevCount} -> ${newCount}`);
+                return newCount;
+              });
+              
+              // Add system notification for viewer leaving
+              const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+              const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+              
+              // Add a visible notification message
+              setChatMessages(prev => {
+                const newMessages = [{
+                  userId: memberId,
+                  name: `Viewer ${memberId.slice(-4)}`,
+                  message: "left the stream",
+                  color,
+                  isHost: false
+                }, ...prev];
+                
+                if (newMessages.length > 8) {
+                  return newMessages.slice(0, 8);
+                }
+                return newMessages;
+              });
+            }
+          });
+          
+          // Get the initial member count when joining the channel
+          rtmChannel.getMembers().then(members => {
+            console.log(`RTM channel has ${members.length} members:`, members);
+            
+            // If we're the host, count other members as viewers
+            if (role === 'host') {
+              const viewerCount = members.filter(member => member !== uid.toString()).length;
+              console.log(`Setting initial viewer count to ${viewerCount}`);
+              setViewers(viewerCount);
             }
           });
           
@@ -781,8 +859,18 @@ export function AgoraVideo({
           console.log('Sending RTM message:', stringifiedMessage);
           
           // Use explicit format to ensure message is properly sent
-          const result = await rtmChannelRef.current.sendMessage({ text: stringifiedMessage });
-          console.log("Message successfully sent via RTM. Result:", result);
+          // The message method is different depending on the version of Agora RTM SDK
+          try {
+            // First try the new API format
+            const result = await rtmChannelRef.current.sendMessage({ text: stringifiedMessage });
+            console.log("Message successfully sent via RTM (new API). Result:", result);
+          } catch (apiError) {
+            // If the above fails, try the legacy format
+            console.log("Falling back to legacy RTM API format");
+            // @ts-ignore - This is for backward compatibility with older RTM SDK
+            await rtmChannelRef.current.sendMessage(stringifiedMessage);
+            console.log("Message sent via RTM (legacy API)");
+          }
         } catch (rtmError) {
           console.error("Failed to send message via RTM:", rtmError);
           // Message is already added locally, so we don't need to do it again
