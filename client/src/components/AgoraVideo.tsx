@@ -948,17 +948,52 @@ export function AgoraVideo({
 
       {/* Debug info for audience */}
       {role === 'audience' && (
-        <div className="absolute top-24 left-4 bg-black/80 text-white p-2 rounded text-xs max-w-xs overflow-auto">
-          <details>
-            <summary>Debug Info</summary>
+        <div className="absolute top-24 left-4 bg-black/80 text-white p-2 rounded text-xs max-w-xs overflow-auto z-50">
+          <details open>
+            <summary className="font-bold text-orange-400 cursor-pointer">Debug Info (click to hide)</summary>
             <div className="mt-2 space-y-1">
               <p>Channel: {channelName}</p>
               <p>Role: {role}</p>
-              <p>Remote Users: {remoteUsersRef.current.length}</p>
+              <p>Remote Users (ref): {remoteUsersRef.current.length}</p>
+              <p>Remote Users (state): {remoteUsers.length}</p>
               <p>Connection: {clientRef.current.connectionState}</p>
-              <p>UIDs: {remoteUsersRef.current.map(u => u.uid).join(', ') || 'none'}</p>
-              <p>Has Video Tracks: {remoteUsersRef.current.filter(u => u.videoTrack).length}</p>
-              <p>Has Audio Tracks: {remoteUsersRef.current.filter(u => u.audioTrack).length}</p>
+              <p>UIDs: {remoteUsers.map(u => u.uid).join(', ') || 'none'}</p>
+              <p>Has Video Tracks: {remoteUsers.filter(u => u.videoTrack).length}</p>
+              <p>Has Audio Tracks: {remoteUsers.filter(u => u.audioTrack).length}</p>
+              <div className="mt-2 p-1 bg-gray-800 rounded">
+                <p>Detailed States:</p>
+                <pre className="text-[10px] overflow-x-auto">
+                  {JSON.stringify({videoMute: isVideoMuted, audioMute: isAudioMuted, joined: isJoined, viewers}, null, 2)}
+                </pre>
+              </div>
+              
+              {/* Debug actions */}
+              <div className="mt-3 space-y-2">
+                <button 
+                  onClick={() => {
+                    console.log('Force refreshing remote user display');
+                    // Force re-render by creating a new array
+                    setRemoteUsers([...remoteUsersRef.current]);
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded text-xs w-full"
+                >
+                  Force Refresh Video
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    console.log('Reconnecting to channel');
+                    endStream().then(() => {
+                      setTimeout(() => {
+                        joinChannel();
+                      }, 1000);
+                    });
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs w-full"
+                >
+                  Reconnect to Channel
+                </button>
+              </div>
             </div>
           </details>
         </div>
