@@ -80,6 +80,9 @@ export default function Dashboard() {
       console.log('Stream form submitted:', formData);
       setIsStreamDialogOpen(false);
       
+      // Generate channel name from title by replacing spaces with underscores
+      const channelName = formData.title.trim().replace(/\s+/g, '_');
+      
       // Update stream session with form data
       const response = await fetch('/api/user/stream-session/update', {
         method: 'POST',
@@ -89,6 +92,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           streamTitle: formData.title,
           description: formData.description,
+          channelName: channelName, // Set the channel name based on title
           destination: formData.destination,
           coverImage: formData.coverImagePath || '', // Use the path returned from the upload endpoint
           privacy: formData.privacy,
@@ -101,7 +105,8 @@ export default function Dashboard() {
         throw new Error('Failed to update stream settings');
       }
       
-      // Navigate to the livestream page after submitting
+      // Navigate to the livestream page without query parameters
+      // The LivestreamInterface will get the data from the database
       navigate('/livestream');
     } catch (error) {
       console.error('Error updating stream session:', error);

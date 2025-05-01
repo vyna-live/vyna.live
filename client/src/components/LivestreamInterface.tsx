@@ -37,6 +37,7 @@ interface LivestreamInterfaceProps {
     token: string | null;
     channelName: string | null;
     uid: number | null;
+    streamTitle: string | null;
   };
 }
 
@@ -169,6 +170,11 @@ export default function LivestreamInterface({
           streamInfo.channelName
         ) {
           console.log("Using provided stream info:", streamInfo);
+
+          // Set the stream title if it's provided
+          if (streamInfo.streamTitle) {
+            setStreamTitle(streamInfo.streamTitle);
+          }
 
           // We already have all the info needed to connect, set stream as active
           setIsStreamActive(true);

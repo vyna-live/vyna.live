@@ -469,6 +469,7 @@ export function setupAuth(app: Express) {
       const {
         streamTitle,
         description,
+        channelName,
         destination,
         coverImage,
         privacy,
@@ -488,6 +489,7 @@ export function setupAuth(app: Express) {
         .set({
           streamTitle: streamTitle || session.streamTitle,
           description: description || session.description,
+          channelName: channelName || session.channelName, // Include channel name in update
           destination: destination || session.destination,
           coverImage: coverImage || session.coverImage,
           privacy: privacy || session.privacy,
@@ -505,6 +507,39 @@ export function setupAuth(app: Express) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log(`Error updating stream session: ${errorMessage}`, 'error');
       res.status(500).json({ error: 'Failed to update stream session' });
+    }
+  });
+  
+  // Update host token in stream session
+  app.post('/api/user/stream-session/update-token', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { tokenHost } = req.body;
+      
+      if (!tokenHost) {
+        return res.status(400).json({ error: 'Token is required' });
+      }
+      
+      // Get the user's stream session
+      const session = await getUserStreamSession(userId);
+      
+      if (!session) {
+        return res.status(404).json({ error: 'Stream session not found' });
+      }
+      
+      // Update the token
+      await db.update(streamSessions)
+        .set({
+          tokenHost: tokenHost,
+          updatedAt: new Date()
+        })
+        .where(eq(streamSessions.id, session.id));
+      
+      return res.json({ success: true, message: 'Host token updated successfully' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Error updating host token: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to update host token' });
     }
   });
 }
