@@ -87,21 +87,61 @@ interface RemoteVideoPlayerProps {
 
 function RemoteVideoPlayer({ user }: RemoteVideoPlayerProps) {
   const videoRef = useRef<HTMLDivElement>(null);
+  const [hasVideo, setHasVideo] = useState<boolean>(!!user.videoTrack);
   
   useEffect(() => {
-    if (!videoRef.current || !user.videoTrack) return;
-    user.videoTrack.play(videoRef.current);
+    console.log('RemoteVideoPlayer mounted for user:', user.uid);
+    console.log('Remote user video track exists:', !!user.videoTrack);
+    
+    if (!videoRef.current) {
+      console.error('Video ref is not available');
+      return;
+    }
+    
+    if (!user.videoTrack) {
+      console.error('Remote user has no video track');
+      setHasVideo(false);
+      return;
+    }
+    
+    try {
+      console.log('Attempting to play remote video');
+      user.videoTrack.play(videoRef.current);
+      setHasVideo(true);
+      console.log('Remote video playing successfully');
+    } catch (err) {
+      console.error('Error playing remote video:', err);
+      setHasVideo(false);
+    }
     
     return () => {
-      user.videoTrack?.stop();
+      console.log('RemoteVideoPlayer unmounting for user:', user.uid);
+      try {
+        if (user.videoTrack) {
+          user.videoTrack.stop();
+          console.log('Stopped remote video track');
+        }
+      } catch (err) {
+        console.error('Error stopping remote video:', err);
+      }
     };
   }, [user]);
   
   return (
-    <div 
-      ref={videoRef} 
-      className="w-full h-full agora-video-player"
-    ></div>
+    <div className="w-full h-full relative">
+      <div 
+        ref={videoRef} 
+        className="w-full h-full agora-video-player"
+      ></div>
+      {!hasVideo && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/50">
+          <div className="p-8 rounded-full bg-gray-800/50 mb-4">
+            <Video className="h-12 w-12 text-gray-400" />
+          </div>
+          <p className="text-white text-center">No video stream available</p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -174,6 +214,8 @@ export function AgoraVideo({
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [viewers, setViewers] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  // State for remote users to ensure UI updates
+  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   
   // Refs
   const clientRef = useRef<IAgoraRTCClient>(AgoraRTC.createClient(config));
@@ -345,7 +387,12 @@ export function AgoraVideo({
           // Handle remote tracks
           if (mediaType === 'video') {
             console.log('Adding remote video user to list, current count:', remoteUsersRef.current.length);
-            remoteUsersRef.current.push(user);
+            // Update both ref and state
+            if (!remoteUsersRef.current.some(u => u.uid === user.uid)) {
+              remoteUsersRef.current.push(user);
+            }
+            // Create a new array for state update to trigger re-render
+            setRemoteUsers([...remoteUsersRef.current]);
             setViewers(remoteUsersRef.current.length + 1); // +1 for host
             console.log('Remote users after push:', remoteUsersRef.current.map(u => u.uid));
           }
@@ -363,7 +410,9 @@ export function AgoraVideo({
         console.log('User unpublished:', user.uid, mediaType);
         
         if (mediaType === 'video') {
+          // Update both ref and state
           remoteUsersRef.current = remoteUsersRef.current.filter(u => u.uid !== user.uid);
+          setRemoteUsers([...remoteUsersRef.current]);
           setViewers(remoteUsersRef.current.length + 1); // +1 for host
         }
         
@@ -374,7 +423,9 @@ export function AgoraVideo({
       
       client.on('user-left', user => {
         console.log('User left:', user.uid);
+        // Update both ref and state
         remoteUsersRef.current = remoteUsersRef.current.filter(u => u.uid !== user.uid);
+        setRemoteUsers([...remoteUsersRef.current]);
         setViewers(remoteUsersRef.current.length + 1); // +1 for host
       });
       
@@ -771,9 +822,9 @@ export function AgoraVideo({
         ) : (
           // Audience view
           <div className="flex items-center justify-center h-full">
-            {remoteUsersRef.current.length > 0 ? (
+            {remoteUsers.length > 0 ? (
               // Show the host's video
-              <RemoteVideoPlayer user={remoteUsersRef.current[0]} />
+              <RemoteVideoPlayer user={remoteUsers[0]} />
             ) : (
               // Loading or waiting for host
               <div className="h-full w-full flex flex-col items-center justify-center">
@@ -895,6 +946,24 @@ export function AgoraVideo({
         </button>
       </div>
 
+      {/* Debug info for audience */}
+      {role === 'audience' && (
+        <div className="absolute top-24 left-4 bg-black/80 text-white p-2 rounded text-xs max-w-xs overflow-auto">
+          <details>
+            <summary>Debug Info</summary>
+            <div className="mt-2 space-y-1">
+              <p>Channel: {channelName}</p>
+              <p>Role: {role}</p>
+              <p>Remote Users: {remoteUsersRef.current.length}</p>
+              <p>Connection: {clientRef.current.connectionState}</p>
+              <p>UIDs: {remoteUsersRef.current.map(u => u.uid).join(', ') || 'none'}</p>
+              <p>Has Video Tracks: {remoteUsersRef.current.filter(u => u.videoTrack).length}</p>
+              <p>Has Audio Tracks: {remoteUsersRef.current.filter(u => u.audioTrack).length}</p>
+            </div>
+          </details>
+        </div>
+      )}
+      
       {/* ShareStreamDialog */}
       <ShareStreamDialog
         isOpen={showShareDialog}
