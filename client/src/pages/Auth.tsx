@@ -23,7 +23,6 @@ const registerSchema = z.object({
   username: z.string().min(3, 'Username must be at least 3 characters').max(50),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  displayName: z.string().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -55,7 +54,6 @@ export default function Auth() {
       username: '',
       email: '',
       password: '',
-      displayName: '',
     },
   });
 
@@ -262,19 +260,7 @@ export default function Auth() {
                     )}
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="displayName" className="text-zinc-300">Display Name (optional)</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-2.5 h-5 w-5 text-zinc-500" />
-                      <Input
-                        id="displayName"
-                        placeholder="Enter your display name"
-                        className="pl-10 bg-zinc-950 border-zinc-800 text-white"
-                        {...registerForm.register('displayName')}
-                      />
-                    </div>
-                  </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="register-password" className="text-zinc-300">Password</Label>
                     <div className="relative">
