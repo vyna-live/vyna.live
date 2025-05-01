@@ -1,246 +1,128 @@
-import { useState, useEffect } from 'react';
-import { useLocation, useParams } from 'wouter';
-import ViewerStreamInterface from '../components/ViewerStreamInterface';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface StreamParams {
-  channelName?: string;
-  streamId?: string;
-}
-
-// Helper to check if a string is a valid stream ID format
-function isValidStreamId(id: string): boolean {
-  return /^[a-zA-Z0-9_-]{6,}$/.test(id);
-}
+import { useState, useEffect } from "react";
+import { useParams, useLocation } from "wouter";
+import LivestreamInterface from "@/components/LivestreamInterface";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ViewStream() {
-  const [, setLocation] = useLocation();
-  const params = useParams<StreamParams>();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const params = useParams<{ id: string }>();
+  const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [streamInfo, setStreamInfo] = useState<{
+    appId: string | null;
+    token: string | null;
+    channelName: string | null;
+    uid: number | null;
+    streamTitle: string | null;
+  }>({
+    appId: null,
+    token: null,
+    channelName: null,
+    uid: null,
+    streamTitle: null
+  });
   
-  // Stream information
-  const [streamData, setStreamData] = useState<{
-    appId: string;
-    token: string;
-    channelName: string;
-    streamTitle: string;
-    hostName: string;
-    hostAvatar?: string;
-    viewerCount?: number;
-    uid?: number;
-  } | null>(null);
-  
-  // Get audience token and stream info
   useEffect(() => {
-    const fetchStreamInfo = async () => {
+    async function fetchStreamData() {
       try {
-        console.log('ViewStream: Trying to load stream with params:', params);
+        setIsLoading(true);
+        setError(null);
         
-        // Determine if we're using streamId or channelName
-        let channelName = params.channelName;
-        let streamId = params.streamId;
-        
-        // Start by validating the stream ID if we have one
-        if (streamId) {
-          console.log('ViewStream: Validating stream ID:', streamId);
-          
-          // First validate the stream - this checks if it's active
-          const validateResponse = await fetch(`/api/livestreams/${streamId}/validate`);
-          
-          if (!validateResponse.ok) {
-            throw new Error('Stream cannot be found or is no longer active');
-          }
-          
-          const validateData = await validateResponse.json();
-          
-          if (!validateData.isActive) {
-            throw new Error('This stream is not currently active');
-          }
-          
-          // Now get the full stream details
-          console.log('ViewStream: Getting stream details for:', streamId);
-          const streamLookupResponse = await fetch(`/api/livestreams/${streamId}`);
-          
-          if (!streamLookupResponse.ok) {
-            throw new Error('Stream not found or no longer active');
-          }
-          
-          const streamInfo = await streamLookupResponse.json();
-          channelName = streamInfo.channelName;
-          
-          console.log('ViewStream: Found channel name:', channelName);
-          
-          if (!channelName) {
-            throw new Error('Invalid stream data - missing channel information');
-          }
+        if (!params.id) {
+          throw new Error('No stream ID provided');
         }
         
-        if (!channelName) {
-          throw new Error('No channel name specified');
+        // Fetch stream data by ID
+        const streamResponse = await fetch(`/api/streams/${params.id}`);
+        
+        if (!streamResponse.ok) {
+          const errorData = await streamResponse.json();
+          throw new Error(errorData.message || 'Could not fetch stream data');
         }
         
-        console.log('ViewStream: Getting Agora App ID');
-        // First get the app ID
+        const streamData = await streamResponse.json();
+        
+        // Check if the stream is active
+        if (!streamData.isLive) {
+          throw new Error('This stream is not currently live');
+        }
+        
+        // Fetch Agora application ID
         const appIdResponse = await fetch('/api/agora/app-id');
-        if (!appIdResponse.ok) {
-          throw new Error('Failed to get Agora App ID');
-        }
         const appIdData = await appIdResponse.json();
         
-        // Generate a random UID for the audience member
-        const audienceUid = Math.floor(Math.random() * 1000000);
-        
-        console.log('ViewStream: Getting Agora audience token for channel:', channelName);
-        // Get audience token - make sure we pass the EXACT same channel name that the host used
+        // Generate audience token
         const tokenResponse = await fetch('/api/agora/audience-token', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            channelName,
-            uid: audienceUid
-          })
+            channelName: streamData.channelName
+          }),
         });
-        
-        if (!tokenResponse.ok) {
-          throw new Error('Failed to get audience token');
-        }
         
         const tokenData = await tokenResponse.json();
-        console.log('ViewStream: Got token for channel:', tokenData.channelName);
         
-        // Get stream details from our API
-        console.log('ViewStream: Getting stream details for channel:', channelName);
-        const streamDetailsResponse = await fetch(`/api/streams/${channelName}`);
-        
-        if (!streamDetailsResponse.ok) {
-          throw new Error('Failed to get stream details');
-        }
-        
-        const streamDetails = await streamDetailsResponse.json();
-        
-        console.log('ViewStream: Joining stream:', channelName);
-        // Track that this viewer joined the stream to increment the count
-        await fetch(`/api/streams/${channelName}/join`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        console.log('ViewStream: Setting stream data', {
-          appId: appIdData.appId,
-          channelName,
-          streamTitle: streamDetails.title,
-          hostName: streamDetails.hostName,
-        });
-        
-        setStreamData({
+        // Set stream info
+        setStreamInfo({
           appId: appIdData.appId,
           token: tokenData.token,
-          channelName,
-          streamTitle: streamDetails.title,
-          hostName: streamDetails.hostName,
-          hostAvatar: streamDetails.hostAvatar,
-          viewerCount: streamDetails.viewerCount,
-          uid: audienceUid
+          channelName: streamData.channelName,
+          uid: Math.floor(Math.random() * 100000), // Generate random UID for audience
+          streamTitle: streamData.streamTitle
         });
         
-        // Setup leaving event handler
-        const handleBeforeUnload = () => {
-          // Track that this viewer left the stream
-          fetch(`/api/streams/${channelName}/leave`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            // Use keepalive to ensure the request completes even if the page is unloading
-            keepalive: true
-          });
-        };
-        
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        
         setIsLoading(false);
-        
-        // Cleanup function
-        return () => {
-          window.removeEventListener('beforeunload', handleBeforeUnload);
-          handleBeforeUnload();
-        };
-      } catch (err) {
-        console.error('Error fetching stream info:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load stream');
+      } catch (error) {
+        console.error('Error fetching stream data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load stream');
         setIsLoading(false);
         
         toast({
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to load stream',
+          title: 'Error loading stream',
+          description: error instanceof Error ? error.message : 'Could not load stream data',
           variant: 'destructive'
         });
       }
-    };
-    
-    fetchStreamInfo();
-  }, [params.channelName, params.streamId, toast]);
+    }
+
+    fetchStreamData();
+  }, [params.id, toast]);
   
   if (isLoading) {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-black">
-        <Loader2 className="h-12 w-12 text-white animate-spin mb-4" />
-        <div className="text-white text-xl">Loading Stream...</div>
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#D8C6AF]" />
+        <span className="ml-2 text-white">Loading stream...</span>
       </div>
     );
   }
   
-  if (error || !streamData) {
+  if (error) {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-black p-4">
-        <div className="max-w-lg bg-black/70 backdrop-blur-sm p-6 rounded-lg border border-red-500/30">
-          <div className="text-red-500 text-2xl mb-4">Stream Error</div>
-          <div className="text-white text-lg mb-4">{error || 'Unable to load stream'}</div>
-          <div className="text-gray-400 text-sm mb-6">
-            {error?.includes("not found") ? 
-              "The stream you're looking for may have ended or never existed. Please check the stream link and try again." : 
-            error?.includes("token") ?
-              "Authentication failed. The stream may have expired or the streamer is no longer broadcasting." :
-              "There was a problem connecting to the stream. Please check your connection and try again."}
-          </div>
-          <div className="flex gap-3">
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-            >
-              Try Again
-            </button>
-            <button 
-              onClick={() => setLocation('/')}
-              className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors"
-            >
-              Back to Home
-            </button>
-          </div>
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
+        <div className="bg-[#121212] p-6 rounded-lg max-w-md text-center">
+          <div className="text-red-500 mb-4 text-4xl">⚠️</div>
+          <h2 className="text-white text-xl font-bold mb-3">Stream Error</h2>
+          <p className="text-zinc-400 mb-6">{error}</p>
+          <button 
+            onClick={() => setLocation('/join-stream')} 
+            className="px-4 py-2 bg-[#D8C6AF] text-black rounded hover:bg-opacity-90 transition-opacity"
+          >
+            Try Another Stream
+          </button>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="w-full h-screen overflow-hidden bg-black">
-      <ViewerStreamInterface
-        appId={streamData.appId}
-        channelName={streamData.channelName}
-        token={streamData.token}
-        username="Viewer" // In a real app, this would be the logged-in user's name
-        streamTitle={streamData.streamTitle}
-        hostName={streamData.hostName}
-        hostAvatar={streamData.hostAvatar}
-        viewerCount={streamData.viewerCount}
-      />
-    </div>
+    <LivestreamInterface 
+      streamInfo={streamInfo}
+      isAudience={true}
+    />
   );
 }

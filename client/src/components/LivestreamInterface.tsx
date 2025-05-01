@@ -39,6 +39,7 @@ interface LivestreamInterfaceProps {
     uid: number | null;
     streamTitle: string | null;
   };
+  isAudience?: boolean;
 }
 
 // Mock chat messages for the right sidebar
@@ -108,6 +109,7 @@ const MOCK_NOTES = [
 export default function LivestreamInterface({
   initialText = "",
   streamInfo,
+  isAudience = false,
 }: LivestreamInterfaceProps) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<"vynaai" | "notepad">("vynaai");
