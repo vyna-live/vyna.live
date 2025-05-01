@@ -329,19 +329,24 @@ export function setupAuth(app: Express) {
       let userId = typeof id === 'string' ? parseInt(id) : id as number;
       
       if (isNaN(userId)) {
-        return done(new Error(`Invalid user ID: ${id}`), null);
+        // If ID is invalid, clear the session instead of returning an error
+        console.log(`Invalid user ID: ${id}, clearing session`);
+        return done(null, false);
       }
       
       const user = await getUserById(userId);
       
       if (!user) {
-        return done(new Error(`User not found for ID: ${userId}`), null);
+        // If user not found, clear the session instead of returning an error
+        console.log(`User not found for ID: ${userId}, clearing session`);
+        return done(null, false);
       }
       
       done(null, user);
     } catch (error) {
       console.error('User deserialization error:', error);
-      done(error, null);
+      // Don't break the app, just clear the session
+      done(null, false);
     }
   });
 
