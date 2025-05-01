@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent, useCallback } from 'react';
 import AgoraRTC, { 
   ClientConfig, 
   IAgoraRTCClient, 
@@ -534,7 +534,7 @@ export function AgoraVideo({
   }, [appId, role, channelName, uid, userName]);  // Added userName to dependencies as it's used for chat messages
   
   // Join call when ready is defined here
-  const joinChannel = async () => {
+  const joinChannel = useCallback(async () => {
     // For audience, only need to check clientRef
     if (role === 'audience') {
       if (!clientRef.current) return;
@@ -596,7 +596,20 @@ export function AgoraVideo({
       setError(err instanceof Error ? err.message : "Failed to join stream");
       setIsLoading(false);
     }
-  };
+  }, [appId, channelName, token, uid, role]);
+  
+  // Auto-join for audience role
+  useEffect(() => {
+    if (role === 'audience' && clientRef.current && !isJoined && !isLoading) {
+      console.log('Audience auto-joining stream');
+      // Small delay to ensure client is ready
+      const timer = setTimeout(() => {
+        console.log('Executing audience auto-join now...');
+        joinChannel();
+      }, 800); // Increased delay for client readiness
+      return () => clearTimeout(timer);
+    }
+  }, [role, isJoined, isLoading, joinChannel]);
 
   // Toggle audio
   const toggleAudio = async () => {
