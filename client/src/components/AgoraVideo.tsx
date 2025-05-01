@@ -287,12 +287,57 @@ export function AgoraVideo({
               
               // Try to parse the message content
               const parsedMsg = JSON.parse(messageText);
-              const { text, name, color } = parsedMsg;
+              const { text, name, color, type } = parsedMsg;
               
-              console.log(`Channel message parsed: ${text} from ${name || 'unknown'} (${senderId})`);
+              console.log(`Channel message parsed: ${text} from ${name || 'unknown'} (${senderId})`, parsedMsg);
               
-              // Only process if we have valid text content
-              if (text) {
+              // Special message handling for viewer notifications
+              if (role === 'host' && type === 'viewer_join') {
+                console.log('Received explicit viewer join notification:', parsedMsg);
+                
+                // Update viewers count directly through the DOM for immediate feedback
+                const viewersElement = document.querySelector('.viewer-count-display');
+                if (viewersElement) {
+                  // Get the current count and increment
+                  const currentCount = Number(viewersElement.textContent || '0');
+                  const newCount = currentCount + 1;
+                  
+                  // Update DOM directly
+                  viewersElement.textContent = String(newCount);
+                  if (viewersElement instanceof HTMLElement) {
+                    viewersElement.setAttribute('data-count', String(newCount));
+                  }
+                  
+                  // Also update React state to keep it in sync
+                  setViewers(newCount);
+                  console.log(`Force-updated viewer count to ${newCount} via DOM`);
+                }
+                
+                // Add the viewer to our tracking set
+                setConnectedAudienceIds(prev => {
+                  const updated = new Set(prev);
+                  updated.add(senderId);
+                  return updated;
+                });
+                
+                // Add notification to chat
+                setChatMessages(prev => {
+                  const newMessages = [{
+                    userId: senderId,
+                    name: name || `Viewer ${senderId.slice(-4)}`,
+                    message: "joined via explicit notification",
+                    color: color || 'bg-green-500',
+                    isHost: false
+                  }, ...prev];
+                  
+                  if (newMessages.length > 8) {
+                    return newMessages.slice(0, 8);
+                  }
+                  return newMessages;
+                });
+              }
+              // Regular chat message handling
+              else if (text) {
                 // Add message to chat - prepend new messages so they show at the bottom
                 setChatMessages(prev => {
                   const newMessages = [{
@@ -493,21 +538,72 @@ export function AgoraVideo({
                 rtmChannelRef.current.getMembers().then(members => {
                   // Filter out our own ID
                   const audienceMembers = members.filter(member => member !== uid.toString());
-                  console.log(`Audience check: found ${audienceMembers.length} audience members`);
+                  console.log(`Audience check: found ${audienceMembers.length} audience members:`, audienceMembers);
                   
                   // If audience count doesn't match our current count, update it
                   if (audienceMembers.length !== viewers) {
                     console.log(`Correcting audience count from ${viewers} to ${audienceMembers.length}`);
+                    
+                    // Force UI update with new count - using a callback to ensure fresh state
                     setViewers(audienceMembers.length);
+                    
+                    // Force component to re-render with the new value
+                    setTimeout(() => {
+                      console.log('Force re-render with new viewer count:', audienceMembers.length);
+                      // This is redundant but forces state updates to be applied
+                      setViewers(prevCount => {
+                        if (prevCount !== audienceMembers.length) {
+                          return audienceMembers.length;
+                        }
+                        return prevCount;
+                      });
+                    }, 100);
                   }
                   
-                  // Update our tracking set
-                  setConnectedAudienceIds(new Set(audienceMembers));
+                  // Update our tracking set - this must happen BEFORE the visualization
+                  const prevSize = connectedAudienceIds.size;
+                  const newAudienceIds = new Set(audienceMembers);
+                  setConnectedAudienceIds(newAudienceIds);
+                  
+                  // Find any new audience members that we haven't announced yet
+                  if (prevSize !== newAudienceIds.size) {
+                    console.log(`Audience set size changed: ${prevSize} -> ${newAudienceIds.size}`);
+                    
+                    // Find new audience members
+                    const newMembers = audienceMembers.filter(member => !Array.from(connectedAudienceIds).includes(member));
+                    
+                    if (newMembers.length > 0) {
+                      console.log('Detected new audience members not in current set:', newMembers);
+                      
+                      // Add chat notifications for each new member
+                      newMembers.forEach(member => {
+                        // Add a visible notification message
+                        const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+                        const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                        
+                        setChatMessages(prev => {
+                          const newMessages = [{
+                            userId: member,
+                            name: `Viewer ${member.slice(-4)}`,
+                            message: "newly detected in stream",
+                            color,
+                            isHost: false
+                          }, ...prev];
+                          
+                          if (newMessages.length > 8) {
+                            return newMessages.slice(0, 8);
+                          }
+                          return newMessages;
+                        });
+                      });
+                    }
+                  }
+                  
                 }).catch(err => {
                   console.error('Error in periodic audience check:', err);
                 });
               }
-            }, 10000); // Check every 10 seconds
+            }, 5000); // Check every 5 seconds (reduced from 10)
           }
           
           // Join RTM channel
@@ -1370,7 +1466,13 @@ export function AgoraVideo({
         <div className="flex items-center bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
           <div className="flex items-center">
             <Users size={12} className="text-white mr-1" />
-            <span className="text-white text-xs">{viewers}</span>
+            <span 
+              className="text-white text-xs viewer-count-display"
+              data-count={viewers} // Added data attribute for easier debugging
+              key={`viewers-${viewers}`} // Force re-render when count changes
+            >
+              {viewers}
+            </span>
           </div>
         </div>
 
