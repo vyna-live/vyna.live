@@ -945,6 +945,40 @@ export function AgoraVideo({
         }
       }
       
+      // Send explicit viewer_join notification when audience joins
+      if (role === 'audience' && rtmChannelRef.current) {
+        try {
+          console.log('Audience sending explicit viewer_join notification');
+          // Create and send a special notification that the host will recognize
+          const viewerJoinMsg = {
+            type: 'viewer_join',
+            text: 'Viewer has joined the stream',
+            name: userName,
+            color: 'bg-green-500',
+            timestamp: new Date().toISOString()
+          };
+          
+          rtmChannelRef.current.sendMessage({ text: JSON.stringify(viewerJoinMsg) })
+            .then(() => {
+              console.log('Successfully sent viewer_join notification');
+            })
+            .catch(err => {
+              console.error('Failed to send viewer_join notification:', err);
+              // Try legacy format if modern format fails
+              try {
+                // @ts-ignore - For backward compatibility
+                rtmChannelRef.current?.sendMessage(JSON.stringify(viewerJoinMsg));
+                console.log('Sent viewer_join notification via legacy API');
+              } catch (legacyErr) {
+                console.error('Legacy sendMessage also failed:', legacyErr);
+              }
+            });
+        } catch (notifyErr) {
+          console.error('Error in viewer join notification:', notifyErr);
+          // Continue even if notification fails
+        }
+      }
+      
       setIsJoined(true);
       setIsLoading(false);
     } catch (err) {
