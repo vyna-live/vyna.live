@@ -657,8 +657,9 @@ export function AgoraVideo({
       console.log("Component unmounting, cleaning up resources...");
       
       // Clear any interval timers
-      if (audienceCheckIntervalId) {
-        clearInterval(audienceCheckIntervalId);
+      if (audienceCheckIntervalRef.current) {
+        clearInterval(audienceCheckIntervalRef.current);
+        audienceCheckIntervalRef.current = null;
         console.log("Cleared audience check interval");
       }
       
@@ -773,6 +774,7 @@ export function AgoraVideo({
       
       // Publish tracks if host
       if (role === 'host') {
+        console.log('Host joined channel, checking for audience members');
         // Publish audio and video tracks separately to avoid type errors
         // Add null checks to ensure tracks exist before publishing
         if (audioTrackRef.current) {
@@ -800,6 +802,44 @@ export function AgoraVideo({
           
           if (response.ok) {
             console.log('Stream marked as active in database');
+            
+            // Check for any existing audience members right after host joins
+            if (rtmChannelRef.current) {
+              rtmChannelRef.current.getMembers().then(members => {
+                const audienceMembers = members.filter(member => member !== uid.toString());
+                console.log(`Initial audience check after host join: ${audienceMembers.length} members:`, audienceMembers);
+                
+                // Update the audience count immediately
+                if (audienceMembers.length > 0) {
+                  setViewers(audienceMembers.length);
+                  setConnectedAudienceIds(new Set(audienceMembers));
+                  
+                  // Notify about existing audience
+                  audienceMembers.forEach(member => {
+                    // Add a visible notification message
+                    const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+                    const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                    
+                    setChatMessages(prev => {
+                      const newMessages = [{
+                        userId: member,
+                        name: `Viewer ${member.slice(-4)}`,
+                        message: "is already in the stream",
+                        color,
+                        isHost: false
+                      }, ...prev];
+                      
+                      if (newMessages.length > 8) {
+                        return newMessages.slice(0, 8);
+                      }
+                      return newMessages;
+                    });
+                  });
+                }
+              }).catch(err => {
+                console.error('Error checking for audience after host join:', err);
+              });
+            }
           } else {
             console.error('Failed to update stream active status in database');
           }
