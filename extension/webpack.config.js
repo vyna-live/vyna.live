@@ -1,5 +1,6 @@
 const path = require('path');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
   mode: 'production',
@@ -9,44 +10,48 @@ module.exports = {
     content: './content/content.ts'
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist/chrome'),
     filename: '[name]/[name].js',
+    clean: true
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    extensions: ['.tsx', '.ts', '.js'],
     alias: {
-      '@components': path.resolve(__dirname, 'libs/components'),
-      '@assets': path.resolve(__dirname, 'libs/assets'),
-      '@utils': path.resolve(__dirname, 'libs/utils'),
-      '@hooks': path.resolve(__dirname, 'libs/hooks'),
-      '@types': path.resolve(__dirname, 'libs/types'),
-    },
+      '@libs': path.resolve(__dirname, 'libs')
+    }
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: /node_modules/,
+        exclude: /node_modules/
       },
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
+        use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.(png|jpe?g|gif|svg)$/i,
-        type: 'asset/resource',
+        test: /\.svg$/,
+        use: ['@svgr/webpack']
       },
-    ],
+      {
+        test: /\.(png|jpg|jpeg|gif)$/i,
+        type: 'asset/resource'
+      }
+    ]
   },
   plugins: [
-    new CopyWebpackPlugin({
+    new CopyPlugin({
       patterns: [
-        { from: 'manifest.json', to: 'manifest.json' },
-        { from: 'icons', to: 'icons' },
-        { from: 'popup/popup.html', to: 'popup/popup.html' },
-        { from: 'popup/styles', to: 'popup/styles' },
-      ],
+        { from: 'manifest.json', to: '../chrome/manifest.json' },
+        { from: 'icons', to: '../chrome/icons' }
+      ]
     }),
-  ],
+    new HtmlWebpackPlugin({
+      template: './popup/popup.html',
+      filename: 'popup/popup.html',
+      chunks: ['popup']
+    })
+  ]
 };
