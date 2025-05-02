@@ -1,9 +1,31 @@
+# Dependencies
 node_modules/
+
+# Build directories
 dist/
 dist-firefox/
-.DS_Store
-*.log
-.idea/
+packages/
+
+# Environment files
+.env
+.env.local
+
+# IDE and editor files
 .vscode/
-*.zip
-*.xpi
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Temporary files
+.tmp/
+.temp/
+temp/
