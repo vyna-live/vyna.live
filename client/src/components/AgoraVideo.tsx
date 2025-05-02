@@ -566,79 +566,101 @@ export function AgoraVideo({
             }
           });
           
-          // For host role, periodically check for audience members to ensure UI is accurate
+          // For host role, more aggressively check for audience members on a shorter interval
           if (role === 'host') {
             audienceCheckIntervalRef.current = setInterval(() => {
               if (rtmChannelRef.current && isJoined) {
+                console.log('HOST FORCE-CHECKING AUDIENCE MEMBERS');
+                
                 rtmChannelRef.current.getMembers().then(members => {
                   // Filter out our own ID
                   const audienceMembers = members.filter(member => member !== uid.toString());
-                  console.log(`Audience check: found ${audienceMembers.length} audience members:`, audienceMembers);
+                  console.log(`HOST AUDIENCE CHECK: found ${audienceMembers.length} members:`, audienceMembers);
                   
-                  // If audience count doesn't match our current count, update it
-                  if (audienceMembers.length !== viewers) {
-                    console.log(`Correcting audience count from ${viewers} to ${audienceMembers.length}`);
-                    
-                    // Force UI update with new count - using a callback to ensure fresh state
-                    setViewers(audienceMembers.length);
-                    
-                    // Force component to re-render with the new value
-                    setTimeout(() => {
-                      console.log('Force re-render with new viewer count:', audienceMembers.length);
-                      // This is redundant but forces state updates to be applied
-                      setViewers(prevCount => {
-                        if (prevCount !== audienceMembers.length) {
-                          return audienceMembers.length;
-                        }
-                        return prevCount;
-                      });
-                    }, 100);
-                  }
-                  
-                  // Update our tracking set - this must happen BEFORE the visualization
-                  const prevSize = connectedAudienceIds.size;
-                  const newAudienceIds = new Set(audienceMembers);
-                  setConnectedAudienceIds(newAudienceIds);
-                  
-                  // Find any new audience members that we haven't announced yet
-                  if (prevSize !== newAudienceIds.size) {
-                    console.log(`Audience set size changed: ${prevSize} -> ${newAudienceIds.size}`);
-                    
-                    // Find new audience members
-                    const newMembers = audienceMembers.filter(member => !Array.from(connectedAudienceIds).includes(member));
-                    
-                    if (newMembers.length > 0) {
-                      console.log('Detected new audience members not in current set:', newMembers);
-                      
-                      // Add chat notifications for each new member
-                      newMembers.forEach(member => {
-                        // Add a visible notification message
-                        const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
-                        const color = randomColors[Math.floor(Math.random() * randomColors.length)];
-                        
-                        setChatMessages(prev => {
-                          const newMessages = [{
-                            userId: member,
-                            name: `Viewer ${member.slice(-4)}`,
-                            message: "newly detected in stream",
-                            color,
-                            isHost: false
-                          }, ...prev];
-                          
-                          if (newMessages.length > 8) {
-                            return newMessages.slice(0, 8);
-                          }
-                          return newMessages;
-                        });
-                      });
+                  // ALWAYS update the viewer count directly in the DOM
+                  const viewersElement = document.querySelector('.viewer-count-display');
+                  if (viewersElement) {
+                    viewersElement.textContent = String(audienceMembers.length);
+                    if (viewersElement instanceof HTMLElement) {
+                      viewersElement.setAttribute('data-count', String(audienceMembers.length));
+                      console.log(`DOM viewer count updated to ${audienceMembers.length}`);
                     }
+                  } else {
+                    console.error('Could not find viewer count display element!');
                   }
                   
+                  // ALWAYS update state even if values appear the same
+                  setViewers(audienceMembers.length);
+                  console.log(`STATE - Setting viewers to ${audienceMembers.length}`);
+                  
+                  // Take a snapshot of the current audience IDs before updating
+                  const currentAudienceIds = new Set(connectedAudienceIds);
+                  
+                  // Always update our tracking set
+                  setConnectedAudienceIds(new Set(audienceMembers));
+                  
+                  // Find any new audience members we haven't announced yet
+                  const newMembers = audienceMembers.filter(member => !currentAudienceIds.has(member));
+                  
+                  if (newMembers.length > 0) {
+                    console.log('New viewers detected:', newMembers);
+                    
+                    // Add chat notifications for each new member
+                    newMembers.forEach(member => {
+                      // Add a visible notification message
+                      const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500'];
+                      const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                      
+                      setChatMessages(prev => {
+                        const newMessages = [{
+                          userId: member,
+                          name: `Viewer ${member.slice(-4)}`,
+                          message: "joined (auto-detected)",
+                          color,
+                          isHost: false
+                        }, ...prev];
+                        
+                        if (newMessages.length > 8) {
+                          return newMessages.slice(0, 8);
+                        }
+                        return newMessages;
+                      });
+                    });
+                  }
+                  
+                  // Also check for members who left
+                  const departedMembers = Array.from(currentAudienceIds)
+                    .filter(member => !audienceMembers.includes(member as string));
+                  
+                  if (departedMembers.length > 0) {
+                    console.log('Viewers who left:', departedMembers);
+                    
+                    // Add chat notifications for each departed member
+                    departedMembers.forEach(member => {
+                      const randomColors = ['bg-red-500', 'bg-pink-500'];
+                      const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                      
+                      setChatMessages(prev => {
+                        const newMessages = [{
+                          userId: member as string,
+                          name: `Viewer ${(member as string).slice(-4)}`,
+                          message: "left (auto-detected)",
+                          color,
+                          isHost: false
+                        }, ...prev];
+                        
+                        if (newMessages.length > 8) {
+                          return newMessages.slice(0, 8);
+                        }
+                        return newMessages;
+                      });
+                    });
+                  }
                 }).catch(err => {
-                  console.error('Error in periodic audience check:', err);
+                  console.error('Error in audience check:', err);
                 });
               }
-            }, 5000); // Check every 5 seconds (reduced from 10)
+            }, 2000); // Check more frequently (every 2 seconds)
           }
           
           // Join RTM channel
