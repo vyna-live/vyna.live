@@ -76,6 +76,7 @@ export default function LivestreamInterface({
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
   const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
   const [teleprompterText, setTeleprompterText] = useState(initialText);
+  const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [viewerCount, setViewerCount] = useState("123.5k");
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<
