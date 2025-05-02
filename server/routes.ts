@@ -6,7 +6,7 @@ import { getAIResponse, getAIResponse as getGeminiResponse } from "./gemini";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
-import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions, livestreams, aiChats, notepads } from "@shared/schema";
+import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions, livestreams, aiChats, aiChatSessions, aiChatMessages, notepads } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
@@ -34,7 +34,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   
   // AI Chat endpoints
-  // Get AI chats for a specific host
+  // Get all chat sessions for a specific host
+  app.get("/api/ai-chat-sessions/:hostId", async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: "Invalid host ID" });
+      }
+      
+      // Get chat sessions for the specified host
+      const sessions = await db.select()
+        .from(aiChatSessions)
+        .where(and(
+          eq(aiChatSessions.hostId, hostId),
+          eq(aiChatSessions.isDeleted, false)
+        ))
+        .orderBy(desc(aiChatSessions.updatedAt));
+      
+      return res.status(200).json(sessions);
+    } catch (error) {
+      console.error("Error fetching AI chat sessions:", error);
+      return res.status(500).json({ error: "Failed to fetch AI chat sessions" });
+    }
+  });
+  
+  // Get messages for a specific chat session
+  app.get("/api/ai-chat-messages/:sessionId", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ error: "Invalid session ID" });
+      }
+      
+      // Get messages for the specified session
+      const messages = await db.select()
+        .from(aiChatMessages)
+        .where(and(
+          eq(aiChatMessages.sessionId, sessionId),
+          eq(aiChatMessages.isDeleted, false)
+        ))
+        .orderBy(aiChatMessages.createdAt);
+      
+      return res.status(200).json(messages);
+    } catch (error) {
+      console.error("Error fetching AI chat messages:", error);
+      return res.status(500).json({ error: "Failed to fetch AI chat messages" });
+    }
+  });
+  
+  // For backward compatibility - Get individual AI chats for a specific host
   app.get("/api/ai-chats/:hostId", async (req, res) => {
     try {
       const hostId = parseInt(req.params.hostId);
@@ -58,10 +106,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create new AI chat
+  // Create or continue AI chat session
   app.post("/api/ai-chat", async (req, res) => {
     try {
-      const { hostId, message } = req.body;
+      const { hostId, message, sessionId } = req.body;
       
       if (!hostId || !message) {
         return res.status(400).json({ error: "Host ID and message are required" });
@@ -85,7 +133,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiResponse = "Sorry, I couldn't process your request at the moment. Please try again later.";
       }
       
-      // Insert the new chat into the database
+      let activeSessionId = sessionId;
+      let isNewSession = false;
+      
+      // Create a new session if one doesn't exist
+      if (!activeSessionId) {
+        isNewSession = true;
+        // Generate a title from the first message
+        const title = message.length > 50 ? message.substring(0, 47) + '...' : message;
+        
+        // Create a new chat session
+        const [newSession] = await db.insert(aiChatSessions)
+          .values({
+            hostId,
+            title,
+            isDeleted: false,
+          })
+          .returning();
+        
+        activeSessionId = newSession.id;
+      } else {
+        // Update the session's updatedAt timestamp
+        await db.update(aiChatSessions)
+          .set({ updatedAt: new Date() })
+          .where(eq(aiChatSessions.id, activeSessionId));
+      }
+      
+      // Add user message to the session
+      await db.insert(aiChatMessages)
+        .values({
+          sessionId: activeSessionId,
+          role: 'user',
+          content: message,
+          isDeleted: false,
+        });
+      
+      // Add AI response to the session
+      const [aiMsg] = await db.insert(aiChatMessages)
+        .values({
+          sessionId: activeSessionId,
+          role: 'assistant',
+          content: aiResponse,
+          isDeleted: false,
+        })
+        .returning();
+        
+      // For backward compatibility - also insert into the old aiChats table
       const [newChat] = await db.insert(aiChats)
         .values({
           hostId,
@@ -95,7 +188,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .returning();
       
-      return res.status(201).json(newChat);
+      // Return both the new AI message and session info
+      return res.status(201).json({
+        ...newChat, // For backward compatibility
+        sessionId: activeSessionId,
+        isNewSession,
+        aiMessage: aiMsg
+      });
     } catch (error) {
       console.error("Error creating AI chat:", error);
       return res.status(500).json({ error: "Failed to create AI chat" });
@@ -547,7 +646,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get GetStream API key for frontend
   app.get("/api/stream/key", getStreamApiKey);
   
-  // AI Chat and Notepad routes for streamers
+  // AI Chat and Notepad routes for streamers - redirecting to main endpoints
+  // Get all chat sessions for a host
+  app.get('/api/ai-chat-sessions/:hostId', async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: 'Invalid host ID' });
+      }
+      
+      // Get chat sessions for the specified host
+      const sessions = await db.select()
+        .from(aiChatSessions)
+        .where(and(
+          eq(aiChatSessions.hostId, hostId),
+          eq(aiChatSessions.isDeleted, false)
+        ))
+        .orderBy(desc(aiChatSessions.updatedAt));
+      
+      return res.status(200).json(sessions);
+    } catch (error) {
+      console.error('Error fetching AI chat sessions:', error);
+      return res.status(500).json({ error: 'Failed to fetch AI chat sessions' });
+    }
+  });
+  
+  // For backward compatibility
   app.get('/api/ai-chats/:hostId', async (req, res) => {
     try {
       const hostId = parseInt(req.params.hostId);
@@ -572,6 +696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // For backward compatibility
   app.post('/api/ai-chats', async (req, res) => {
     try {
       const { message, response, hostId } = req.body;
