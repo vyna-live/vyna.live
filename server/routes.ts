@@ -110,7 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create or continue AI chat session
   app.post("/api/ai-chat", async (req, res) => {
     try {
-      const { hostId, message, sessionId } = req.body;
+      const { hostId, message, sessionId, commentaryStyle } = req.body;
       
       if (!hostId || !message) {
         return res.status(400).json({ error: "Host ID and message are required" });
@@ -118,16 +118,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get AI response
       let aiResponse = "";
+      let aiResponseObj = null;
       try {
-        // Use Gemini by default, with OpenAI as fallback
-        if (process.env.GEMINI_API_KEY) {
-          const aiResult = await getGeminiResponse(message);
-          aiResponse = aiResult.text || "Response unavailable";
+        // Prioritize Claude, then Gemini, then OpenAI as fallback
+        if (process.env.ANTHROPIC_API_KEY) {
+          try {
+            console.log("Using Claude for AI response");
+            // Use provided commentaryStyle or detect from message
+            const detectedStyle = commentaryStyle || (
+              message.toLowerCase().includes('play-by-play') || 
+              message.toLowerCase().includes('play by play') ||
+              message.toLowerCase().includes('step by step') ? 'play-by-play' : 'color'
+            );
+            
+            console.log(`Using commentary style: ${detectedStyle}`);
+            aiResponseObj = await getClaudeResponse(message, detectedStyle);
+            aiResponse = aiResponseObj.text || "Response unavailable";
+          } catch (claudeError) {
+            console.error("Error using Claude API:", claudeError);
+            // Fall back to Gemini or OpenAI
+            if (process.env.GEMINI_API_KEY) {
+              const geminiResult = await getGeminiResponse(message);
+              aiResponse = geminiResult.text || "Response unavailable";
+            } else if (process.env.OPENAI_API_KEY) {
+              const openaiResult = await getOpenAIResponse(message);
+              aiResponse = openaiResult.text || "Response unavailable";
+            } else {
+              throw claudeError; // No fallback available
+            }
+          }
+        } else if (process.env.GEMINI_API_KEY) {
+          const geminiResult = await getGeminiResponse(message);
+          aiResponse = geminiResult.text || "Response unavailable";
         } else if (process.env.OPENAI_API_KEY) {
-          const aiResult = await getOpenAIResponse(message);
-          aiResponse = aiResult.text || "Response unavailable";
+          const openaiResult = await getOpenAIResponse(message);
+          aiResponse = openaiResult.text || "Response unavailable";
         } else {
-          aiResponse = "No AI service API keys are configured. Please provide either a Gemini or OpenAI API key.";
+          aiResponse = "No AI service API keys are configured. Please provide an Anthropic Claude, Google Gemini, or OpenAI API key.";
         }
       } catch (aiError) {
         console.error("Error getting AI response:", aiError);
@@ -189,12 +216,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .returning();
       
+      // Include any additional metadata from aiResponseObj if available
+      const responseMetadata: { commentaryStyle?: 'play-by-play' | 'color' } = {};
+      if (aiResponseObj && typeof aiResponseObj === 'object' && 'commentaryStyle' in aiResponseObj) {
+        const style = aiResponseObj.commentaryStyle;
+        if (style === 'play-by-play' || style === 'color') {
+          responseMetadata.commentaryStyle = style;
+        }
+      }
+      
       // Return both the new AI message and session info
       return res.status(201).json({
         ...newChat, // For backward compatibility
         sessionId: activeSessionId,
         isNewSession,
-        aiMessage: aiMsg
+        aiMessage: aiMsg,
+        ...responseMetadata
       });
     } catch (error) {
       console.error("Error creating AI chat:", error);

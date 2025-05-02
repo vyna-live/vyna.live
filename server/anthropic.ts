@@ -106,9 +106,27 @@ function detectCommentaryStyle(message: string): 'play-by-play' | 'color' {
   const playByPlayIndicators = [
     'play-by-play', 'play by play', 'step by step', 'walkthrough', 
     'describe what', 'happening now', 'real-time', 'real time',
-    'action', 'moment', 'what is going on', 'current', 'right now'
+    'action', 'moment', 'what is going on', 'current', 'right now',
+    'live', 'action-by-action', 'move by move', 'second by second',
+    'as it happens', 'running commentary', 'narrate'
   ];
   
+  // Check for explicit requests for a particular style
+  if (message.toLowerCase().includes('play-by-play style') || 
+      message.toLowerCase().includes('play by play style') ||
+      message.toLowerCase().includes('use play-by-play') ||
+      message.toLowerCase().includes('use play by play')) {
+    return 'play-by-play';
+  }
+  
+  if (message.toLowerCase().includes('color commentary') ||
+      message.toLowerCase().includes('use color commentary') ||
+      message.toLowerCase().includes('color style') ||
+      message.toLowerCase().includes('analytical style')) {
+    return 'color';
+  }
+  
+  // Check for implicit indicators
   for (const indicator of playByPlayIndicators) {
     if (message.toLowerCase().includes(indicator)) {
       return 'play-by-play';
