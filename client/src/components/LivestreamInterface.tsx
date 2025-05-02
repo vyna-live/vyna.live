@@ -20,6 +20,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import Teleprompter from "./Teleprompter";
 import Logo from "./Logo";
@@ -103,6 +109,7 @@ export default function LivestreamInterface({
   const [activeTab, setActiveTab] = useState<"vynaai" | "notepad">("vynaai");
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
   const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
+  const [commentaryStyle, setCommentaryStyle] = useState<'color' | 'play-by-play'>('color'); // Default to color commentary
   const [teleprompterText, setTeleprompterText] = useState(
     initialText || 
     "Welcome to my Vyna.live stream!\n\nToday we'll be discussing the latest advancements in AI technology and how it's transforming content creation.\n\nI'll cover three main topics:\n1. The evolution of AI models\n2. How AI is helping content creators\n3. Practical applications for livestreamers\n\nFeel free to ask questions in the chat as we go along!"
@@ -513,7 +520,8 @@ export default function LivestreamInterface({
         body: JSON.stringify({
           hostId: user.id,
           message: userMessage.content,
-          sessionId: currentSessionId // Include current session ID if continuing a conversation
+          sessionId: currentSessionId, // Include current session ID if continuing a conversation
+          commentaryStyle: commentaryStyle // Include the selected commentary style
         }),
       });
 
@@ -1575,7 +1583,43 @@ export default function LivestreamInterface({
                           />
                         </div>
                         <div className="flex items-center justify-between mt-2">
-                          <div className="flex space-x-3 text-zinc-400">
+                          <div className="flex items-center space-x-3 text-zinc-400">
+                            {/* Commentary style selector */}
+                            <div className="flex space-x-2 mr-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => setCommentaryStyle('color')}
+                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${commentaryStyle === 'color' 
+                                        ? 'bg-[#5D1C34] text-white' 
+                                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                    >
+                                      CC
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p className="text-xs">Color Commentary - detailed, insightful analysis</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                                
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={() => setCommentaryStyle('play-by-play')}
+                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${commentaryStyle === 'play-by-play' 
+                                        ? 'bg-[#A67D44] text-white' 
+                                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                    >
+                                      PP
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <p className="text-xs">Play-by-Play - quick, action-oriented commentary</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
                               <svg
                                 width="16"
