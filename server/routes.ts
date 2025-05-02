@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getAIResponse as getOpenAIResponse } from "./openai";
-import { getAIResponse as getGeminiResponse } from "./gemini";
+import { getAIResponse, getAIResponse as getGeminiResponse } from "./gemini";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
@@ -32,6 +32,130 @@ if (!fs.existsSync(LOGO_DIR)) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  
+  // AI Chat endpoints
+  // Get AI chats for a specific host
+  app.get("/api/ai-chats/:hostId", async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: "Invalid host ID" });
+      }
+      
+      // Get AI chats for the specified host
+      const chats = await db.select()
+        .from(aiChats)
+        .where(and(
+          eq(aiChats.hostId, hostId),
+          eq(aiChats.isDeleted, false)
+        ))
+        .orderBy(desc(aiChats.createdAt));
+      
+      return res.status(200).json(chats);
+    } catch (error) {
+      console.error("Error fetching AI chats:", error);
+      return res.status(500).json({ error: "Failed to fetch AI chats" });
+    }
+  });
+  
+  // Create new AI chat
+  app.post("/api/ai-chat", async (req, res) => {
+    try {
+      const { hostId, message } = req.body;
+      
+      if (!hostId || !message) {
+        return res.status(400).json({ error: "Host ID and message are required" });
+      }
+      
+      // Get AI response
+      let aiResponse = "";
+      try {
+        // Use Gemini by default, with OpenAI as fallback
+        if (process.env.GEMINI_API_KEY) {
+          const aiResult = await getGeminiResponse(message);
+          aiResponse = aiResult.text || "Response unavailable";
+        } else if (process.env.OPENAI_API_KEY) {
+          const aiResult = await getOpenAIResponse(message);
+          aiResponse = aiResult.text || "Response unavailable";
+        } else {
+          aiResponse = "No AI service API keys are configured. Please provide either a Gemini or OpenAI API key.";
+        }
+      } catch (aiError) {
+        console.error("Error getting AI response:", aiError);
+        aiResponse = "Sorry, I couldn't process your request at the moment. Please try again later.";
+      }
+      
+      // Insert the new chat into the database
+      const [newChat] = await db.insert(aiChats)
+        .values({
+          hostId,
+          message,
+          response: aiResponse,
+          isDeleted: false,
+        })
+        .returning();
+      
+      return res.status(201).json(newChat);
+    } catch (error) {
+      console.error("Error creating AI chat:", error);
+      return res.status(500).json({ error: "Failed to create AI chat" });
+    }
+  });
+  
+  // Notepad endpoints
+  // Get notepads for a specific host
+  app.get("/api/notepads/:hostId", async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: "Invalid host ID" });
+      }
+      
+      // Get notepads for the specified host
+      const notes = await db.select()
+        .from(notepads)
+        .where(and(
+          eq(notepads.hostId, hostId),
+          eq(notepads.isDeleted, false)
+        ))
+        .orderBy(desc(notepads.createdAt));
+      
+      return res.status(200).json(notes);
+    } catch (error) {
+      console.error("Error fetching notepads:", error);
+      return res.status(500).json({ error: "Failed to fetch notepads" });
+    }
+  });
+  
+  // Create new notepad
+  app.post("/api/notepads", async (req, res) => {
+    try {
+      const { hostId, title, content } = req.body;
+      
+      if (!hostId || !content) {
+        return res.status(400).json({ error: "Host ID and content are required" });
+      }
+      
+      // Set default title if not provided
+      const noteTitle = title || content.substring(0, 50) + (content.length > 50 ? "..." : "");
+      
+      // Insert the new notepad into the database
+      const [newNote] = await db.insert(notepads)
+        .values({
+          hostId,
+          title: noteTitle,
+          content,
+          isDeleted: false,
+        })
+        .returning();
+      
+      return res.status(201).json(newNote);
+    } catch (error) {
+      console.error("Error creating notepad:", error);
+      return res.status(500).json({ error: "Failed to create notepad" });
+    }
+  });
+  
   // Chat endpoint to get AI responses
   app.post("/api/chat", async (req, res) => {
     try {
