@@ -1586,39 +1586,37 @@ export default function LivestreamInterface({
                           <div className="flex items-center space-x-3 text-zinc-400">
                             {/* Commentary style selector */}
                             <div className="flex space-x-2 mr-2">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => setCommentaryStyle('color')}
-                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${commentaryStyle === 'color' 
-                                        ? 'bg-[#5D1C34] text-white' 
-                                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
-                                    >
-                                      CC
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p className="text-xs">Color Commentary - detailed, insightful analysis</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      onClick={() => setCommentaryStyle('play-by-play')}
-                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${commentaryStyle === 'play-by-play' 
-                                        ? 'bg-[#A67D44] text-white' 
-                                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
-                                    >
-                                      PP
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <p className="text-xs">Play-by-Play - quick, action-oriented commentary</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => setCommentaryStyle('color')}
+                                    className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${commentaryStyle === 'color' 
+                                      ? 'bg-[#5D1C34] text-white' 
+                                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                  >
+                                    CC
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="text-xs">Color Commentary - detailed, insightful analysis</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => setCommentaryStyle('play-by-play')}
+                                    className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${commentaryStyle === 'play-by-play' 
+                                      ? 'bg-[#A67D44] text-white' 
+                                      : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                  >
+                                    PP
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p className="text-xs">Play-by-Play - quick, action-oriented commentary</p>
+                                </TooltipContent>
+                              </Tooltip>
                             </div>
                             <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
                               <svg
