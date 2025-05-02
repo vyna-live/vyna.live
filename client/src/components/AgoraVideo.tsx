@@ -265,102 +265,402 @@ export function AgoraVideo({
           const rtmChannel = rtmClient.createChannel(channelName);
           rtmChannelRef.current = rtmChannel;
           
-          // Register simplified RTM channel events - just handle chat messages
+          // Register RTM channel events
           rtmChannel.on('ChannelMessage', (message: any, senderId: string) => {
-            console.log(`RTM message from ${senderId}:`, message);
-            
             try {
+              // Alert when host receives any message
+              if (role === 'host') {
+                console.log(`HOST GOT RAW CHANNEL MESSAGE FROM ${senderId}:`, message);
+              } else {
+                console.log(`AUDIENCE GOT RAW CHANNEL MESSAGE FROM ${senderId}:`, message);
+              }
+              
               let messageText;
               // Handle different message formats based on RTM SDK version
               if (typeof message === 'string') {
+                // Legacy format: message is directly the string
                 messageText = message;
+                console.log('Detected legacy RTM message format (string)');
               } else if (message && typeof message.text === 'string') {
+                // New format: message is an object with a text property
                 messageText = message.text;
-              } else if (message && typeof message === 'object') {
-                messageText = JSON.stringify(message);
+                console.log('Detected new RTM message format (object with text)'); 
               } else {
-                return; // Can't process this message
+                console.error("Received invalid message format", message);
+                // Add a fallback to prevent errors
+                if (message && typeof message === 'object') {
+                  messageText = JSON.stringify(message);
+                } else {
+                  return; // Can't process this message
+                }
               }
               
-              console.log(`⚠️ RTM message content:`, messageText); // Enhanced logging
-              
-              // Try to parse the message as JSON
+              // Try to parse the message content with extra error handling
+              let parsedMsg;
               try {
-                const parsedMsg = JSON.parse(messageText);
-                console.log('Parsed RTM message successfully:', parsedMsg);
-                
-                // Handle only regular chat messages - let Agora handle join/leave notifications
-                if (parsedMsg.text) {
-                  // Extract safe message properties
-                  const text = parsedMsg.text;
-                  const name = parsedMsg.name || `User ${senderId.slice(-4)}`;
-                  const color = parsedMsg.color || 'bg-blue-500';
-                  
-                  console.log(`Adding chat message from ${name}: ${text}`);
-                  
-                  // Use our enhanced direct message function for reliability
-                  addLocalMessage(
-                    senderId,
-                    name,
-                    text,
-                    color,
-                    parsedMsg.isHost || false
-                  );
-                }
+                parsedMsg = JSON.parse(messageText);
               } catch (parseError) {
-                console.log('RTM parse error:', parseError, 'Handling as plain text');
-                // Message wasn't JSON - show it as a plain text message if appropriate
-                if (typeof messageText === 'string' && messageText.length > 0 && !messageText.includes('VIEWER_JOIN')) {
-                  // Use enhanced message function for plain text too
-                  addLocalMessage(
-                    senderId,
-                    `User ${senderId.slice(-4)}`,
-                    messageText,
-                    'bg-gray-500',
-                    false
-                  );
+                console.error('Failed to parse message as JSON:', parseError, 'Original message:', messageText);
+                // Still show raw message
+                addLocalMessage(senderId, `User ${senderId.slice(-4)}`, messageText, 'bg-blue-500');
+                return;
+              }
+              
+              // Safely extract message properties
+              const text = parsedMsg.text || '';
+              const name = parsedMsg.name || `User ${senderId.slice(-4)}`;
+              const color = parsedMsg.color || 'bg-blue-500';
+              const type = parsedMsg.type || null;
+              
+              console.log(`Channel message parsed successfully: ${text} from ${name} (${senderId})`, parsedMsg);
+              
+              // Add explicit console logs for any message on host side
+              if (role === 'host') {
+                console.log('HOST RECEIVED MESSAGE:', {
+                  type,
+                  text,
+                  sender: senderId,
+                  fullMessage: parsedMsg
+                });
+              }
+              
+              // Special message handling for viewer notifications
+              if (role === 'host' && type === 'viewer_join') {
+                console.log('Received explicit viewer join notification:', parsedMsg);
+                
+                // Debug the DOM elements we're trying to update
+                console.log('Looking for viewer count display element');
+                const viewersElement = document.querySelector('.viewer-count-display');
+                console.log('Viewer count element found:', viewersElement !== null);
+                if (viewersElement) {
+                  // Get the current count and increment
+                  const currentCount = Number(viewersElement.textContent || '0');
+                  const newCount = currentCount + 1;
+                  
+                  // Update DOM directly
+                  viewersElement.textContent = String(newCount);
+                  if (viewersElement instanceof HTMLElement) {
+                    viewersElement.setAttribute('data-count', String(newCount));
+                  }
+                  
+                  // Also update React state to keep it in sync
+                  setViewers(newCount);
+                  console.log(`Force-updated viewer count to ${newCount} via DOM`);
                 }
+                
+                // Add the viewer to our tracking set
+                setConnectedAudienceIds(prev => {
+                  const updated = new Set(prev);
+                  updated.add(senderId);
+                  return updated;
+                });
+                
+                // Add notification to chat
+                setChatMessages(prev => {
+                  const newMessages = [{
+                    userId: senderId,
+                    name: name || `Viewer ${senderId.slice(-4)}`,
+                    message: "joined via explicit notification",
+                    color: color || 'bg-green-500',
+                    isHost: false
+                  }, ...prev];
+                  
+                  if (newMessages.length > 8) {
+                    return newMessages.slice(0, 8);
+                  }
+                  return newMessages;
+                });
+              }
+              // Regular chat message handling
+              else if (text) {
+                // Add message to chat - prepend new messages so they show at the bottom
+                setChatMessages(prev => {
+                  const newMessages = [{
+                    userId: senderId,
+                    name: name || `User ${senderId.slice(-4)}`,
+                    message: text,
+                    color: color || 'bg-blue-500',
+                    isHost: parsedMsg.isHost || false
+                  }, ...prev];
+                  
+                  if (newMessages.length > 8) {
+                    return newMessages.slice(0, 8);
+                  }
+                  return newMessages;
+                });
               }
             } catch (err) {
               console.error("Error processing RTM message:", err);
             }
           });
           
-          // Simplified RTM channel event handlers - just log events and rely on RTC events for UI updates
+          // Add specific handlers for RTM channel events
           rtmChannel.on('MemberJoined', (memberId) => {
-            console.log(`RTM Member joined: ${memberId}, role: ${role}`);
+            console.log(`RTM Member joined: ${memberId}, current role: ${role}`);
             
-            // Just log the event but let Agora RTC handle UI updates
+            // Update viewers count when member joins RTM channel - fixes audience count issue
             if (role === 'host' && memberId !== uid.toString()) {
-              console.log(`Host detected RTM member join: ${memberId}`);
+              console.log(`Host detected new viewer: ${memberId}`);
+              
+              // Track the connected audience in a Set
+              setConnectedAudienceIds(prev => {
+                const updated = new Set(prev);
+                updated.add(memberId);
+                console.log('Updated audience set:', Array.from(updated));
+                return updated;
+              });
+              
+              // Force UI update with new viewer count
+              setViewers(prevCount => {
+                const newCount = prevCount + 1;
+                console.log(`Viewer count updated: ${prevCount} -> ${newCount}`);
+                return newCount;
+              });
+              
+              // Add system notification for new viewer joining
+              const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+              const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+              
+              // Add a visible notification message
+              setChatMessages(prev => {
+                const newMessages = [{
+                  userId: memberId,
+                  name: `Viewer ${memberId.slice(-4)}`,
+                  message: "joined the stream",
+                  color,
+                  isHost: false
+                }, ...prev];
+                
+                if (newMessages.length > 8) {
+                  return newMessages.slice(0, 8);
+                }
+                return newMessages;
+              });
+              
+              // Broadcast a host message to all clients that a new viewer has joined
+              try {
+                if (rtmChannelRef.current) {
+                  const announcement = {
+                    text: `A new viewer has joined (${memberId.slice(-4)})`,
+                    name: userName,
+                    color: 'bg-emerald-500',
+                    isHost: true,
+                    isSystemMessage: true
+                  };
+                  rtmChannelRef.current.sendMessage({ text: JSON.stringify(announcement) })
+                    .then(() => console.log('Sent viewer join announcement'))
+                    .catch(err => console.error('Failed to send join announcement:', err));
+                }
+              } catch (err) {
+                console.error('Error sending join announcement:', err);
+              }
             }
           });
           
           rtmChannel.on('MemberLeft', (memberId) => {
-            console.log(`RTM Member left: ${memberId}, role: ${role}`);
+            console.log(`RTM Member left: ${memberId}, current role: ${role}`);
             
-            // Just log the event but let Agora RTC handle UI updates
+            // Update viewers count when member leaves RTM channel
             if (role === 'host' && memberId !== uid.toString()) {
-              console.log(`Host detected RTM member leave: ${memberId}`);
+              console.log(`Host detected viewer leaving: ${memberId}`);
+              
+              // Remove from tracked audience set
+              setConnectedAudienceIds(prev => {
+                const updated = new Set(prev);
+                updated.delete(memberId);
+                console.log('Updated audience set after leave:', Array.from(updated));
+                return updated;
+              });
+              
+              // Force UI update with decreased viewer count
+              setViewers(prevCount => {
+                const newCount = Math.max(0, prevCount - 1);
+                console.log(`Viewer count updated: ${prevCount} -> ${newCount}`);
+                return newCount;
+              });
+              
+              // Add system notification for viewer leaving
+              const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+              const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+              
+              // Add a visible notification message
+              setChatMessages(prev => {
+                const newMessages = [{
+                  userId: memberId,
+                  name: `Viewer ${memberId.slice(-4)}`,
+                  message: "left the stream",
+                  color,
+                  isHost: false
+                }, ...prev];
+                
+                if (newMessages.length > 8) {
+                  return newMessages.slice(0, 8);
+                }
+                return newMessages;
+              });
+              
+              // Broadcast a host message to all clients that a viewer has left
+              try {
+                if (rtmChannelRef.current) {
+                  const announcement = {
+                    text: `A viewer has left (${memberId.slice(-4)})`,
+                    name: userName,
+                    color: 'bg-pink-500',
+                    isHost: true,
+                    isSystemMessage: true
+                  };
+                  rtmChannelRef.current.sendMessage({ text: JSON.stringify(announcement) })
+                    .then(() => console.log('Sent viewer leave announcement'))
+                    .catch(err => console.error('Failed to send leave announcement:', err));
+                }
+              } catch (err) {
+                console.error('Error sending leave announcement:', err);
+              }
             }
           });
           
-          // Just log the initial member count but rely on RTC events for UI updates
+          // Get the initial member count when joining the channel
           rtmChannel.getMembers().then(members => {
-            console.log(`RTM channel has ${members.length} members on init:`, members);
+            console.log(`RTM channel has ${members.length} members:`, members);
             
-            // Let Agora RTC handle UI updates for audience tracking
+            // If we're the host, count other members as viewers
             if (role === 'host') {
-              // Just for debugging - list initial audience members
+              // Filter out our own ID to get just the audience
               const audienceMembers = members.filter(member => member !== uid.toString());
-              console.log(`Initial audience members (${audienceMembers.length}):`, audienceMembers);
+              const viewerCount = audienceMembers.length;
+              console.log(`Setting initial viewer count to ${viewerCount}`);
+              
+              // Update state with the initial audience count
+              setViewers(viewerCount);
+              
+              // Also track these members in our audience set
+              if (audienceMembers.length > 0) {
+                setConnectedAudienceIds(prev => {
+                  const updated = new Set(prev);
+                  audienceMembers.forEach(member => updated.add(member));
+                  console.log('Initialized audience set:', Array.from(updated));
+                  return updated;
+                });
+                
+                // Send notifications for each existing audience member
+                audienceMembers.forEach(member => {
+                  const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
+                  const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                  
+                  setChatMessages(prev => {
+                    const newMessages = [{
+                      userId: member,
+                      name: `Viewer ${member.slice(-4)}`,
+                      message: "is in the stream",
+                      color,
+                      isHost: false
+                    }, ...prev];
+                    
+                    if (newMessages.length > 8) {
+                      return newMessages.slice(0, 8);
+                    }
+                    return newMessages;
+                  });
+                });
+              }
             }
           });
           
-                  // For host role, just set up the RTM channel but let Agora handle most functionality
+          // For host role, more aggressively check for audience members on a shorter interval
           if (role === 'host') {
-            console.log('Host role detected - relying on Agora for audience tracking');
-            // We'll let Agora's native events handle user joins and messaging
+            audienceCheckIntervalRef.current = setInterval(() => {
+              if (rtmChannelRef.current && isJoined) {
+                console.log('HOST FORCE-CHECKING AUDIENCE MEMBERS');
+                
+                rtmChannelRef.current.getMembers().then(members => {
+                  // Filter out our own ID
+                  const audienceMembers = members.filter(member => member !== uid.toString());
+                  console.log(`HOST AUDIENCE CHECK: found ${audienceMembers.length} members:`, audienceMembers);
+                  
+                  // ALWAYS update the viewer count directly in the DOM
+                  const viewersElement = document.querySelector('.viewer-count-display');
+                  if (viewersElement) {
+                    viewersElement.textContent = String(audienceMembers.length);
+                    if (viewersElement instanceof HTMLElement) {
+                      viewersElement.setAttribute('data-count', String(audienceMembers.length));
+                      console.log(`DOM viewer count updated to ${audienceMembers.length}`);
+                    }
+                  } else {
+                    console.error('Could not find viewer count display element!');
+                  }
+                  
+                  // ALWAYS update state even if values appear the same
+                  setViewers(audienceMembers.length);
+                  console.log(`STATE - Setting viewers to ${audienceMembers.length}`);
+                  
+                  // Take a snapshot of the current audience IDs before updating
+                  const currentAudienceIds = new Set(connectedAudienceIds);
+                  
+                  // Always update our tracking set
+                  setConnectedAudienceIds(new Set(audienceMembers));
+                  
+                  // Find any new audience members we haven't announced yet
+                  const newMembers = audienceMembers.filter(member => !currentAudienceIds.has(member));
+                  
+                  if (newMembers.length > 0) {
+                    console.log('New viewers detected:', newMembers);
+                    
+                    // Add chat notifications for each new member
+                    newMembers.forEach(member => {
+                      // Add a visible notification message
+                      const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500'];
+                      const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                      
+                      setChatMessages(prev => {
+                        const newMessages = [{
+                          userId: member,
+                          name: `Viewer ${member.slice(-4)}`,
+                          message: "joined (auto-detected)",
+                          color,
+                          isHost: false
+                        }, ...prev];
+                        
+                        if (newMessages.length > 8) {
+                          return newMessages.slice(0, 8);
+                        }
+                        return newMessages;
+                      });
+                    });
+                  }
+                  
+                  // Also check for members who left
+                  const departedMembers = Array.from(currentAudienceIds)
+                    .filter(member => !audienceMembers.includes(member as string));
+                  
+                  if (departedMembers.length > 0) {
+                    console.log('Viewers who left:', departedMembers);
+                    
+                    // Add chat notifications for each departed member
+                    departedMembers.forEach(member => {
+                      const randomColors = ['bg-red-500', 'bg-pink-500'];
+                      const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+                      
+                      setChatMessages(prev => {
+                        const newMessages = [{
+                          userId: member as string,
+                          name: `Viewer ${(member as string).slice(-4)}`,
+                          message: "left (auto-detected)",
+                          color,
+                          isHost: false
+                        }, ...prev];
+                        
+                        if (newMessages.length > 8) {
+                          return newMessages.slice(0, 8);
+                        }
+                        return newMessages;
+                      });
+                    });
+                  }
+                }).catch(err => {
+                  console.error('Error in audience check:', err);
+                });
+              }
+            }, 2000); // Check more frequently (every 2 seconds)
           }
           
           // Join RTM channel
@@ -381,9 +681,9 @@ export function AgoraVideo({
           }
         });
         
-        // Enhanced listener for user-joined events with explicit DOM updates
+        // Listen for user-joined events
         agoraClient.on('user-joined', (user) => {
-          console.log("RTC EVENT: User joined:", user.uid);
+          console.log("User joined:", user.uid);
           
           // Add to remote users list if not already there
           setRemoteUsers(prev => {
@@ -392,38 +692,18 @@ export function AgoraVideo({
             return [...prev, user];
           });
           
-          // Update viewer count - critical for host UI
-          const newViewerCount = viewers + 1;
-          setViewers(newViewerCount);
-          console.log(`⚠️ Viewer count updated: ${viewers} → ${newViewerCount}`);
+          // Update viewer count
+          setViewers(prev => prev + 1);
           
-          // For host, ensure direct DOM manipulation as well
+          // Force re-render when users join to update UI
           if (role === 'host') {
-            console.log("⚠️ HOST DETECTED AUDIENCE JOIN, uid:", user.uid);
-            
-            // Force immediate DOM update for viewer count
-            try {
-              const viewerElement = document.querySelector('.viewer-count-display');
-              if (viewerElement) {
-                viewerElement.textContent = String(newViewerCount);
-                console.log('Forced DOM update of viewer count to', newViewerCount);
-              }
-            } catch (err) {
-              console.error('Could not update DOM directly', err);
-            }
-            
-            // Trigger global document event to ensure UI updates
-            try {
-              document.dispatchEvent(new CustomEvent('viewer-joined', { 
-                detail: { uid: user.uid, count: newViewerCount } 
-              }));
-            } catch (err) {}
+            console.log("Host notified of viewer joining, uid:", user.uid);
           }
           
           // For audience role handling of host joining
           if (role === 'audience') {
             console.log("Audience detected host joining, uid:", user.uid);
-            // We rely on user-published event for track playing
+            // Note: We rely on user-published event for track playing now
             // This is just for notification and state management
           }
           
@@ -445,49 +725,31 @@ export function AgoraVideo({
               displayName = `User ${user.uid.toString().slice(-4)}`;
             }
             
-            // Use enhanced addLocalMessage for join notifications too
-            addLocalMessage(
-              user.uid.toString(),
-              displayName,
-              "joined",
-              color,
-              user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
-            );
+            setChatMessages(prev => {
+              const newMessages = [{
+                userId: user.uid.toString(),
+                name: displayName,
+                message: "joined",
+                color,
+                isHost: user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
+              }, ...prev];
+              
+              // Keep only the latest 8 messages
+              if (newMessages.length > 8) {
+                return newMessages.slice(0, 8);
+              }
+              return newMessages;
+            });
           }, 2000); // Delay to avoid messages appearing for initial connections
         });
         
-        // Enhanced listener for user-left events
+        // Listen for user-left events
         agoraClient.on('user-left', (user) => {
-          console.log("RTC EVENT: User left:", user.uid);
-          
-          // Remove from remote users list
+          console.log("User left:", user.uid);
           setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+          setViewers(prev => Math.max(0, prev - 1));
           
-          // Update viewer count
-          const newViewerCount = Math.max(0, viewers - 1);
-          console.log(`⚠️ Viewer count decreased: ${viewers} → ${newViewerCount}`);
-          setViewers(newViewerCount);
-          
-          // For host, ensure immediate DOM update for viewer count
-          if (role === 'host') {
-            try {
-              const viewerElement = document.querySelector('.viewer-count-display');
-              if (viewerElement) {
-                viewerElement.textContent = String(newViewerCount);
-                console.log('Forced DOM update of viewer count to', newViewerCount);
-                
-                // Add visual indicator that count decreased
-                viewerElement.classList.add('bg-red-500/30', 'px-1', 'rounded');
-                setTimeout(() => {
-                  viewerElement.classList.remove('bg-red-500/30', 'px-1', 'rounded');
-                }, 1000);
-              }
-            } catch (err) {
-              console.error('Could not update DOM directly for leave event', err);
-            }
-          }
-          
-          // Add chat message for user leaving
+          // Add chat message for user leaving, only if we were tracking them (not initial disconnect)
           const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
           const color = randomColors[Math.floor(Math.random() * randomColors.length)];
             
@@ -508,19 +770,21 @@ export function AgoraVideo({
             displayName = existingUser?.name || `User ${user.uid.toString().slice(-4)}`;
           }
           
-          // Use enhanced addLocalMessage instead of direct state update
-          addLocalMessage(
-            user.uid.toString(),
-            displayName,
-            "left",
-            color,
-            user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
-          );
-          
-          // If this is an audience member leaving, also announce it in console
-          if (role === 'host' && user.uid !== uid) {
-            console.log(`🚨 Audience member left host's stream: ${user.uid}`);
-          }
+          setChatMessages(prev => {
+            const newMessages = [{
+              userId: user.uid.toString(),
+              name: displayName,
+              message: "left",
+              color,
+              isHost: user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
+            }, ...prev];
+            
+            // Keep only the latest 8 messages
+            if (newMessages.length > 8) {
+              return newMessages.slice(0, 8);
+            }
+            return newMessages;
+          });
         });
         
         // Create tracks if host
@@ -703,36 +967,27 @@ export function AgoraVideo({
                   setViewers(audienceMembers.length);
                   setConnectedAudienceIds(new Set(audienceMembers));
                   
-                  // Notify about existing audience using enhanced message function
+                  // Notify about existing audience
                   audienceMembers.forEach(member => {
+                    // Add a visible notification message
                     const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
                     const color = randomColors[Math.floor(Math.random() * randomColors.length)];
                     
-                    // Use enhanced addLocalMessage for existing viewers too
-                    addLocalMessage(
-                      member,
-                      `Viewer ${member.slice(-4)}`,
-                      "is already in the stream",
-                      color,
-                      false
-                    );
+                    setChatMessages(prev => {
+                      const newMessages = [{
+                        userId: member,
+                        name: `Viewer ${member.slice(-4)}`,
+                        message: "is already in the stream",
+                        color,
+                        isHost: false
+                      }, ...prev];
+                      
+                      if (newMessages.length > 8) {
+                        return newMessages.slice(0, 8);
+                      }
+                      return newMessages;
+                    });
                   });
-                  
-                  // Force DOM update of viewer count when host joins
-                  try {
-                    const viewerElement = document.querySelector('.viewer-count-display');
-                    if (viewerElement) {
-                      viewerElement.textContent = String(audienceMembers.length);
-                      console.log('🚨 Forced viewer count DOM update to', audienceMembers.length);
-                      // Add highlight animation
-                      viewerElement.classList.add('bg-blue-500/30', 'px-1', 'rounded');
-                      setTimeout(() => {
-                        viewerElement.classList.remove('bg-blue-500/30', 'px-1', 'rounded');
-                      }, 1000);
-                    }
-                  } catch (err) {
-                    console.error('Could not update DOM directly for initial viewers', err);
-                  }
                 }
               }).catch(err => {
                 console.error('Error checking for audience after host join:', err);
@@ -747,10 +1002,65 @@ export function AgoraVideo({
         }
       }
       
-      // Let Agora handle audience join notifications - no custom handling
-      if (role === 'audience') {
-        console.log('Audience joined - relying on Agora to handle join notifications');
-        // No custom notification sending - let Agora handle this
+      // Send explicit viewer_join notification when audience joins
+      if (role === 'audience' && rtmChannelRef.current) {
+        try {
+          console.log('AUDIENCE SENDING VIEWER JOIN NOTIFICATION - THIS SHOULD BE VISIBLE');
+          // Create and send a special notification that the host will recognize
+          const viewerJoinMsg = {
+            type: 'viewer_join',
+            text: 'Viewer has joined the stream',
+            name: userName,
+            color: 'bg-green-500',
+            timestamp: new Date().toISOString(),
+            senderId: uid.toString()  // Add explicit sender ID
+          };
+          
+          // Give RTM connection time to fully establish
+          setTimeout(() => {
+            try {
+              if (!rtmChannelRef.current) {
+                console.error('RTM channel ref lost before sending notification');
+                return;
+              }
+              
+              console.log('Sending delayed viewer_join notification with:', viewerJoinMsg);
+              const msgStr = JSON.stringify(viewerJoinMsg);
+              
+              // Try the modern format first
+              rtmChannelRef.current.sendMessage({ text: msgStr })
+                .then(() => {
+                  console.log('Successfully sent viewer_join notification (modern API)');
+                })
+                .catch(err => {
+                  console.error('Failed to send viewer_join notification (modern API):', err);
+                  // Try legacy format if modern format fails
+                  try {
+                    // @ts-ignore - For backward compatibility
+                    rtmChannelRef.current?.sendMessage(msgStr);
+                    console.log('Sent viewer_join notification via legacy API');
+                  } catch (legacyErr) {
+                    console.error('Legacy sendMessage also failed:', legacyErr);
+                    
+                    // Last resort: try plain text message
+                    try {
+                      const plainMsg = `VIEWER_JOIN:${uid}`;
+                      // @ts-ignore
+                      rtmChannelRef.current?.sendMessage(plainMsg);
+                      console.log('Sent simple plain text notification as last resort');
+                    } catch (plainErr) {
+                      console.error('All message sending methods failed');
+                    }
+                  }
+                });
+            } catch (delayedErr) {
+              console.error('Delayed notification send error:', delayedErr);
+            }
+          }, 2000); // Delay by 2 seconds to ensure RTM connection is ready
+        } catch (notifyErr) {
+          console.error('Error in viewer join notification setup:', notifyErr);
+          // Continue even if notification fails
+        }
       }
       
       setIsJoined(true);
@@ -952,20 +1262,16 @@ export function AgoraVideo({
     }
   };
   
-  // Enhanced helper to add a message locally with DOM updates for reliability
+  // Helper to add a message locally (without RTM)
   const addLocalMessage = (userId: string, name: string, message: string, color: string, isHost: boolean = false) => {
-    // Create the new message object
-    const newMsg = {
-      userId,
-      name, 
-      message,
-      color,
-      isHost
-    };
-    
-    // Update React state
     setChatMessages(prev => {
-      const newMessages = [newMsg, ...prev];
+      const newMessages = [{
+        userId,
+        name,
+        message,
+        color,
+        isHost
+      }, ...prev];
       
       // Keep only the latest 8 messages
       if (newMessages.length > 8) {
@@ -973,79 +1279,6 @@ export function AgoraVideo({
       }
       return newMessages;
     });
-    
-    // Ensure the message appears by also adding it directly to DOM if chat is visible
-    if (showChat) {
-      try {
-        // Try to find the chat container using both class and DOM structure
-        const chatContainer = document.querySelector('.mb-2.overflow-y-auto.max-h-48.flex.flex-col-reverse');
-        
-        if (chatContainer) {
-          // Create a new message element
-          const msgEl = document.createElement('div');
-          msgEl.className = 'animate-slideInUp mb-2';
-          
-          // Create the inner structure
-          const innerContent = document.createElement('div');
-          innerContent.className = 'flex items-center space-x-1.5 py-1';
-          
-          // Avatar
-          const avatar = document.createElement('div');
-          avatar.className = `w-5 h-5 rounded-full ${color} overflow-hidden flex items-center justify-center text-xs shadow-sm`;
-          avatar.textContent = name.charAt(0);
-          
-          // Name container
-          const nameContainer = document.createElement('div');
-          nameContainer.className = 'flex items-center';
-          
-          // Name
-          const nameEl = document.createElement('span');
-          nameEl.className = 'text-white text-xs font-medium';
-          nameEl.textContent = name;
-          nameContainer.appendChild(nameEl);
-          
-          // Host badge if applicable
-          if (isHost) {
-            const hostBadge = document.createElement('span');
-            hostBadge.className = 'bg-gradient-to-r from-[#5D1C34] to-[#A67D44] text-[9px] ml-1 px-1 py-0.5 rounded text-white font-medium';
-            hostBadge.textContent = 'HOST';
-            nameContainer.appendChild(hostBadge);
-          }
-          
-          // Message content
-          const msgContent = document.createElement('div');
-          if (message === 'joined' || message === 'left') {
-            msgContent.className = message === 'joined' ? 'text-green-400 text-xs ml-0.5' : 'text-red-400 text-xs ml-0.5';
-          } else {
-            msgContent.className = isHost ? 'text-[#CDBCAB] text-xs font-medium' : 'text-gray-300 text-xs';
-          }
-          msgContent.textContent = message;
-          
-          // Assemble the structure
-          innerContent.appendChild(avatar);
-          innerContent.appendChild(nameContainer);
-          innerContent.appendChild(msgContent);
-          msgEl.appendChild(innerContent);
-          
-          // Add divider
-          const divider = document.createElement('div');
-          divider.className = 'border-t border-gray-800/30 my-1';
-          msgEl.appendChild(divider);
-          
-          // Insert at the beginning of the container (latest message first)
-          if (chatContainer.firstChild) {
-            chatContainer.insertBefore(msgEl, chatContainer.firstChild);
-          } else {
-            chatContainer.appendChild(msgEl);
-          }
-          
-          console.log('Chat message added directly to DOM:', message);
-        }
-      } catch (err) {
-        console.error('Failed to directly add chat message to DOM:', err);
-        // State update above will still work even if this fails
-      }
-    }
   };
   
   // Handle chat input submit
@@ -1347,27 +1580,19 @@ export function AgoraVideo({
       
       {/* Viewer count, share button, and drawer toggle */}
       <div className="absolute top-4 right-4 flex items-center space-x-3">
-        {/* Enhanced viewer count with glassmorphic background and guaranteed update mechanism */}
+        {/* Viewer count with glassmorphic background */}
         <div className="flex items-center bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full border border-white/10">
           <div className="flex items-center">
             <Users size={12} className="text-white mr-1" />
             <span 
-              className="text-white text-xs viewer-count-display font-medium"
+              className="text-white text-xs viewer-count-display"
               data-count={viewers} // Added data attribute for easier debugging
-              key={`viewers-${viewers}-${Date.now()}`} // Force re-render on viewer count change
+              key={Date.now()} // Force re-render on every render to ensure updates
               ref={(el) => {
                 if (el) {
-                  // Enhanced DOM updating - double check with React state
-                  const currentCount = Number(el.textContent || '0');
-                  if (currentCount !== viewers) {
-                    console.log(`Forcing view count update: ${currentCount} → ${viewers}`);
-                    el.textContent = String(viewers);
-                    // Add highlight animation
-                    el.classList.add('bg-green-500/30', 'px-1', 'rounded');
-                    setTimeout(() => {
-                      el.classList.remove('bg-green-500/30', 'px-1', 'rounded');
-                    }, 1000);
-                  }
+                  // Always make sure the element text matches the state
+                  el.textContent = String(viewers);
+                  console.log('Viewer count element rendered with value:', viewers);
                 }
               }}
             >
