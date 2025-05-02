@@ -6,7 +6,7 @@ import { getAIResponse as getGeminiResponse } from "./gemini";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
-import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions, livestreams } from "@shared/schema";
+import { siteConfig, researchSessions, messages, uploadedFiles, users, streamSessions, livestreams, aiChats, notepads } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 import path from "path";
 import fs from "fs";
