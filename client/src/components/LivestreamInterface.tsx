@@ -138,6 +138,11 @@ export default function LivestreamInterface({
   const [chatSessions, setChatSessions] = useState<AiChatSession[]>(EMPTY_CHAT_SESSIONS);
   const [currentChatMessages, setCurrentChatMessages] = useState<AiChatMessage[]>(EMPTY_CHAT_MESSAGES);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  
+  // Refs for file upload inputs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
 
@@ -1618,7 +1623,11 @@ export default function LivestreamInterface({
                                 </TooltipContent>
                               </Tooltip>
                             </div>
-                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                            <button 
+                              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
+                              onClick={() => fileInputRef.current?.click()}
+                              title="Upload document"
+                            >
                               <svg
                                 width="16"
                                 height="16"
@@ -1632,7 +1641,11 @@ export default function LivestreamInterface({
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
                               </svg>
                             </button>
-                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                            <button 
+                              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
+                              onClick={() => audioInputRef.current?.click()}
+                              title="Record audio"
+                            >
                               <svg
                                 width="16"
                                 height="16"
