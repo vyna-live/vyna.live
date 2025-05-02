@@ -12,7 +12,7 @@ import AgoraRTC, {
   ILocalVideoTrack
 } from "agora-rtc-sdk-ng";
 import AgoraRTM, { RtmClient, RtmMessage, RtmChannel } from 'agora-rtm-sdk';
-import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp, Share2, Copy } from 'lucide-react';
+import { Loader2, Video, X, Mic, MicOff, Camera, CameraOff, Users, Send, ScreenShare, MonitorUp, Share2, Copy, FileText } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 // Define Agora config
@@ -1704,6 +1704,12 @@ export function AgoraVideo({
               className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
             >
               <ScreenShare size={16} />
+            </button>
+            <button 
+              onClick={onToggleTeleprompter}
+              className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              <FileText size={16} />
             </button>
           </>
         )}
