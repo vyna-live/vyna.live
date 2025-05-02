@@ -119,13 +119,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine which session ID to use (from request or lookup most recent active session)
       let activeSessionId = sessionId;
       
-      // Handle 'new' session ID explicitly - this forces creation of a new session
-      if (activeSessionId === 'new') {
+      // Handle explicit requests for a new session
+      // This includes when sessionId is 'new' or null from the frontend explicitly requesting a new chat
+      const isExplicitNewChat = activeSessionId === 'new' || (activeSessionId === null && req.body.hasOwnProperty('sessionId'));
+      
+      if (isExplicitNewChat) {
         // Force activeSessionId to null to create a new session
         activeSessionId = null;
-        console.log("Creating new chat session as requested");
+        console.log("Creating new chat session as explicitly requested");
       } 
-      // If no sessionId provided, look up the most recent active session
+      // If no sessionId provided (undefined), look up the most recent active session
       else if (!activeSessionId) {
         const [mostRecentSession] = await db.select()
           .from(aiChatSessions)
