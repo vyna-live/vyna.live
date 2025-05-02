@@ -291,12 +291,24 @@ export function AgoraVideo({
               
               console.log(`Channel message parsed: ${text} from ${name || 'unknown'} (${senderId})`, parsedMsg);
               
+              // Add explicit console logs for any message on host side
+              if (role === 'host') {
+                console.log('HOST RECEIVED MESSAGE:', {
+                  type,
+                  text,
+                  sender: senderId,
+                  fullMessage: parsedMsg
+                });
+              }
+              
               // Special message handling for viewer notifications
               if (role === 'host' && type === 'viewer_join') {
                 console.log('Received explicit viewer join notification:', parsedMsg);
                 
-                // Update viewers count directly through the DOM for immediate feedback
+                // Debug the DOM elements we're trying to update
+                console.log('Looking for viewer count display element');
                 const viewersElement = document.querySelector('.viewer-count-display');
+                console.log('Viewer count element found:', viewersElement !== null);
                 if (viewersElement) {
                   // Get the current count and increment
                   const currentCount = Number(viewersElement.textContent || '0');
@@ -948,7 +960,7 @@ export function AgoraVideo({
       // Send explicit viewer_join notification when audience joins
       if (role === 'audience' && rtmChannelRef.current) {
         try {
-          console.log('Audience sending explicit viewer_join notification');
+          console.log('AUDIENCE SENDING VIEWER JOIN NOTIFICATION - THIS SHOULD BE VISIBLE');
           // Create and send a special notification that the host will recognize
           const viewerJoinMsg = {
             type: 'viewer_join',
@@ -1503,7 +1515,14 @@ export function AgoraVideo({
             <span 
               className="text-white text-xs viewer-count-display"
               data-count={viewers} // Added data attribute for easier debugging
-              key={`viewers-${viewers}`} // Force re-render when count changes
+              key={Date.now()} // Force re-render on every render to ensure updates
+              ref={(el) => {
+                if (el) {
+                  // Always make sure the element text matches the state
+                  el.textContent = String(viewers);
+                  console.log('Viewer count element rendered with value:', viewers);
+                }
+              }}
             >
               {viewers}
             </span>
