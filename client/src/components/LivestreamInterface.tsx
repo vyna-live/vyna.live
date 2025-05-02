@@ -1952,6 +1952,8 @@ export default function LivestreamInterface({
                   onClick={() => {
                     setShowNewChat(true);
                     setShowChatHistory(false); // Show the empty star state when opening a new chat
+                    setCurrentSessionId(null); // Reset current session to force creation of a new one
+                    setMessages([]); // Clear any existing messages
                   }}
                   className="w-full py-2 bg-[#2A2A2D] hover:bg-zinc-700 rounded-[14px] text-white text-xs flex items-center justify-center transition-colors"
                 >
