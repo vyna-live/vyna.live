@@ -119,8 +119,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine which session ID to use (from request or lookup most recent active session)
       let activeSessionId = sessionId;
       
-      // If explicitly creating a new session or if no sessionId provided, look up the most recent active session
-      if (!activeSessionId || activeSessionId === 'new') {
+      // Handle 'new' session ID explicitly - this forces creation of a new session
+      if (activeSessionId === 'new') {
+        // Force activeSessionId to null to create a new session
+        activeSessionId = null;
+        console.log("Creating new chat session as requested");
+      } 
+      // If no sessionId provided, look up the most recent active session
+      else if (!activeSessionId) {
         const [mostRecentSession] = await db.select()
           .from(aiChatSessions)
           .where(and(
@@ -130,16 +136,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .orderBy(desc(aiChatSessions.updatedAt))
           .limit(1);
           
-        // Only use the existing session if one exists and we're not explicitly creating a new session
-        if (mostRecentSession && activeSessionId !== 'new') {
+        // Use the existing session if one exists
+        if (mostRecentSession) {
           activeSessionId = mostRecentSession.id;
+          console.log(`Using existing session: ${activeSessionId}`);
         }
       }
       
       // Get conversation history for this session if it exists
       let conversationHistory: { role: 'user' | 'assistant', content: string }[] = [];
       
-      if (activeSessionId && activeSessionId !== 'new') {
+      if (activeSessionId) {
         const previousMessages = await db.select()
           .from(aiChatMessages)
           .where(and(
@@ -204,8 +211,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let isNewSession = false;
       
-      // Create a new session if needed (if sessionId is 'new' or still undefined after looking up)
-      if (!activeSessionId || activeSessionId === 'new') {
+      // Create a new session if we don't have an active session ID
+      // (this happens when either no sessionId was provided, or sessionId was 'new')
+      if (!activeSessionId) {
         isNewSession = true;
         // Generate a title from the first message
         const title = message.length > 50 ? message.substring(0, 47) + '...' : message;
