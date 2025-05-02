@@ -1262,36 +1262,107 @@ export default function LivestreamInterface({
                                           <span className="text-xs">T</span>
                                         </button>
 
-                                        {/* Add note button */}
-                                        <button 
-                                          onClick={() => {
-                                            // Add AI message to note lines
-                                            const lines = msg.content.split('\n');
-                                            setNoteLines(lines);
-                                            // Switch to notepad tab and show new note
-                                            setActiveTab("notepad");
-                                            setShowNewNote(true);
-                                            toast({
-                                              title: "Added to notes",
-                                              description: "The AI response has been added to a new note",
-                                            });
-                                          }}
-                                          className="flex items-center justify-center text-zinc-400 hover:text-white"
-                                        >
-                                          <svg
-                                            width="14"
-                                            height="14"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                          >
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                          </svg>
-                                        </button>
+                                        {/* Add note button with dropdown */}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <button 
+                                              className="flex items-center justify-center text-zinc-400 hover:text-white"
+                                            >
+                                              <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                              >
+                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                              </svg>
+                                            </button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" className="w-56 bg-zinc-900 border-zinc-800 text-white shadow-lg">
+                                            <DropdownMenuLabel className="text-zinc-400 border-b border-zinc-800 pb-2">
+                                              Add to Notes
+                                            </DropdownMenuLabel>
+                                            <DropdownMenuItem 
+                                              className="text-white hover:bg-zinc-800 cursor-pointer"
+                                              onClick={() => {
+                                                // Add AI message to note lines for a new note
+                                                const lines = msg.content.split('\n');
+                                                setNoteLines(lines);
+                                                // Switch to notepad tab and show new note
+                                                setActiveTab("notepad");
+                                                setShowNewNote(true);
+                                                setEditingNoteId(null);
+                                                toast({
+                                                  title: "Added to notes",
+                                                  description: "The AI response has been added to a new note",
+                                                });
+                                              }}
+                                            >
+                                              <svg
+                                                className="mr-2 h-4 w-4"
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                              >
+                                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                              </svg>
+                                              Create New Note
+                                            </DropdownMenuItem>
+                                            
+                                            {savedNotes.length > 0 && <DropdownMenuSeparator className="bg-zinc-800" />}
+                                            
+                                            {savedNotes.map((note) => (
+                                              <DropdownMenuItem 
+                                                key={note.id}
+                                                className="text-white hover:bg-zinc-800 cursor-pointer"
+                                                onClick={() => {
+                                                  // Get existing content and add new content
+                                                  const existingLines = note.content.split('\n');
+                                                  const newLines = msg.content.split('\n');
+                                                  const combinedLines = [...existingLines, "", ...newLines];
+                                                  
+                                                  // Set up for editing the existing note
+                                                  setNoteLines(combinedLines);
+                                                  setActiveTab("notepad");
+                                                  setShowNewNote(true);
+                                                  setEditingNoteId(note.id);
+                                                  
+                                                  toast({
+                                                    title: "Added to existing note",
+                                                    description: `The AI response has been appended to "${note.title}"`
+                                                  });
+                                                }}
+                                              >
+                                                <svg
+                                                  className="mr-2 h-4 w-4"
+                                                  width="14"
+                                                  height="14"
+                                                  viewBox="0 0 24 24"
+                                                  fill="none"
+                                                  stroke="currentColor"
+                                                  strokeWidth="2"
+                                                  strokeLinecap="round"
+                                                  strokeLinejoin="round"
+                                                >
+                                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                                {note.title || "Untitled Note"}
+                                              </DropdownMenuItem>
+                                            ))}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
                                       </div>
                                     </div>
                                   </div>
