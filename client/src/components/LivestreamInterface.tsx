@@ -86,6 +86,9 @@ export default function LivestreamInterface({
   
   // AI Chat state
   const [aiChats, setAiChats] = useState<AiChat[]>(EMPTY_CHATS);
+  const [chatSessions, setChatSessions] = useState<AiChatSession[]>(EMPTY_CHAT_SESSIONS);
+  const [currentChatMessages, setCurrentChatMessages] = useState<AiChatMessage[]>(EMPTY_CHAT_MESSAGES);
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
 
   const { toast } = useToast();
 
@@ -226,7 +229,14 @@ export default function LivestreamInterface({
       if (!isAuthenticated || !user) return;
       
       try {
-        // Fetch AI chats
+        // Fetch AI chat sessions
+        const sessionsResponse = await fetch(`/api/ai-chat-sessions/${user.id}`);
+        if (sessionsResponse.ok) {
+          const sessionsData = await sessionsResponse.json();
+          setChatSessions(sessionsData);
+        }
+        
+        // Fetch legacy AI chats for backward compatibility
         const chatResponse = await fetch(`/api/ai-chats/${user.id}`);
         if (chatResponse.ok) {
           const chatData = await chatResponse.json();
@@ -246,6 +256,34 @@ export default function LivestreamInterface({
     
     fetchAiChatsAndNotes();
   }, [isAuthenticated, user]);
+  
+  // Fetch messages for a specific session when currentSessionId changes
+  useEffect(() => {
+    const fetchSessionMessages = async () => {
+      if (!currentSessionId) return;
+      
+      try {
+        const response = await fetch(`/api/ai-chat-messages/${currentSessionId}`);
+        if (response.ok) {
+          const messages = await response.json();
+          setCurrentChatMessages(messages);
+          
+          // Update the UI messages
+          setMessages(
+            messages.map(msg => ({
+              id: `${msg.id}`,
+              content: msg.content,
+              role: msg.role as 'user' | 'assistant'
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching session messages:', error);
+      }
+    };
+    
+    fetchSessionMessages();
+  }, [currentSessionId]);
 
   // Handle viewing a note
   const handleViewNote = useCallback((note: Note) => {
@@ -424,7 +462,7 @@ export default function LivestreamInterface({
     setIsAiLoading(true);
 
     try {
-      // Call the API to get a response
+      // Call the API to get a response with session support
       const response = await fetch("/api/ai-chat", {
         method: "POST",
         headers: {
@@ -432,7 +470,8 @@ export default function LivestreamInterface({
         },
         body: JSON.stringify({
           hostId: user.id,
-          message: userMessage.content
+          message: userMessage.content,
+          sessionId: currentSessionId // Include current session ID if continuing a conversation
         }),
       });
 
@@ -445,14 +484,32 @@ export default function LivestreamInterface({
       // Add AI response message
       const aiMessage = {
         id: Date.now().toString(),
-        content: data.response, // Updated field name to match API response
+        content: data.aiMessage?.content || data.response, // Support both new and old response formats
         role: "assistant" as const,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
       
-      // Add to AI chats history
-      setAiChats((prev: AiChat[]) => [data, ...prev]);
+      // If this is a new session, update our session state
+      if (data.isNewSession && data.sessionId) {
+        // Fetch the updated session list
+        const sessionsResponse = await fetch(`/api/ai-chat-sessions/${user.id}`);
+        if (sessionsResponse.ok) {
+          const sessionsData = await sessionsResponse.json();
+          setChatSessions(sessionsData);
+          // Set the current session ID to the new one
+          setCurrentSessionId(data.sessionId);
+        }
+      } else if (data.sessionId && !currentSessionId) {
+        // If we got a session ID back but didn't have one before, set it
+        setCurrentSessionId(data.sessionId);
+      }
+      
+      // For backward compatibility - update legacy chats
+      setAiChats((prev: AiChat[]) => [
+        { ...data, message: userMessage.content, response: aiMessage.content, id: data.id }, 
+        ...prev
+      ]);
       
     } catch (error) {
       console.error("Error getting AI response:", error);
@@ -469,7 +526,7 @@ export default function LivestreamInterface({
     } finally {
       setIsAiLoading(false);
     }
-  }, [inputValue, isAuthenticated, user, toast]);
+  }, [inputValue, isAuthenticated, user, toast, currentSessionId]);
 
   // No more chat simulation - chat is now handled by the AgoraVideo component with RTM
 
@@ -920,24 +977,22 @@ export default function LivestreamInterface({
                       <div className="text-white text-xs font-medium mb-2 uppercase">
                         RECENTS
                       </div>
+                      {/* Show chat sessions */}
                       <div className="space-y-1">
-                        {aiChats.length > 0 ? (
-                          aiChats.map((chat, index) => (
-                            <div key={chat.id}>
+                        {chatSessions.length > 0 ? (
+                          chatSessions.map((session, index) => (
+                            <div key={session.id}>
                               <div 
-                                className="flex justify-between items-center p-2 rounded-[8px] hover:bg-zinc-800/50 group transition-colors cursor-pointer"
+                                className={`flex justify-between items-center p-2 rounded-[8px] hover:bg-zinc-800/50 group transition-colors cursor-pointer ${currentSessionId === session.id ? 'bg-zinc-800/60' : ''}`}
                                 onClick={() => {
-                                  // Set the message and response in the chat
-                                  setMessages([
-                                    { id: `user-${chat.id}`, content: chat.message, role: 'user' as const },
-                                    { id: `ai-${chat.id}`, content: chat.response, role: 'assistant' as const }
-                                  ]);
+                                  // Set the current session ID to fetch messages
+                                  setCurrentSessionId(session.id);
                                   setShowNewChat(true);
                                   setShowChatHistory(true);
                                 }}
                               >
                                 <div className="text-zinc-200 text-xs hover:text-white transition-colors truncate pr-2">
-                                  {chat.message}
+                                  {session.title || `Chat from ${new Date(session.createdAt).toLocaleString()}`}
                                 </div>
                                 <button 
                                   className="text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
@@ -967,6 +1022,32 @@ export default function LivestreamInterface({
                                     />
                                   </svg>
                                 </button>
+                              </div>
+                              {index < chatSessions.length - 1 && (
+                                <div className="border-t border-zinc-800/40 mx-2 mt-1"></div>
+                              )}
+                            </div>
+                          ))
+                        ) : aiChats.length > 0 ? (
+                          // Legacy chats for backward compatibility
+                          aiChats.map((chat, index) => (
+                            <div key={chat.id}>
+                              <div 
+                                className="flex justify-between items-center p-2 rounded-[8px] hover:bg-zinc-800/50 group transition-colors cursor-pointer"
+                                onClick={() => {
+                                  // Set the message and response in the chat
+                                  setMessages([
+                                    { id: `user-${chat.id}`, content: chat.message, role: 'user' as const },
+                                    { id: `ai-${chat.id}`, content: chat.response, role: 'assistant' as const }
+                                  ]);
+                                  setCurrentSessionId(null); // Reset current session
+                                  setShowNewChat(true);
+                                  setShowChatHistory(true);
+                                }}
+                              >
+                                <div className="text-zinc-200 text-xs hover:text-white transition-colors truncate pr-2">
+                                  {chat.message}
+                                </div>
                               </div>
                               {index < aiChats.length - 1 && (
                                 <div className="border-t border-zinc-800/40 mx-2 mt-1"></div>
