@@ -1,0 +1,69 @@
+:root {
+  /* Vyna brand colors */
+  --vyna-primary: #5D1C34; /* Maroon */
+  --vyna-secondary: #A67D44; /* Golden */
+  --vyna-tertiary: #899481; /* Sage */
+  --vyna-surface: #CDBCAB; /* Taupe */
+  --vyna-background: #EFE9E1; /* Cream */
+  
+  /* UI elements */
+  --vyna-border: #E0E0E0;
+  --vyna-text-primary: #1E1E1E;
+  --vyna-text-secondary: #666666;
+  --vyna-text-tertiary: #999999;
+  --vyna-success: #4CAF50;
+  --vyna-warning: #FFC107;
+  --vyna-error: #F44336;
+  --vyna-info: #2196F3;
+  
+  /* Theme variables */
+  --vyna-bg-main: var(--vyna-background);
+  --vyna-bg-card: #FFFFFF;
+  --vyna-bg-input: #FFFFFF;
+  --vyna-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  /* Font sizes */
+  --vyna-font-xs: 12px;
+  --vyna-font-sm: 14px;
+  --vyna-font-md: 16px;
+  --vyna-font-lg: 18px;
+  --vyna-font-xl: 20px;
+  --vyna-font-2xl: 24px;
+  
+  /* Spacing */
+  --vyna-spacing-xs: 4px;
+  --vyna-spacing-sm: 8px;
+  --vyna-spacing-md: 16px;
+  --vyna-spacing-lg: 24px;
+  --vyna-spacing-xl: 32px;
+  
+  /* Border radius */
+  --vyna-radius-sm: 4px;
+  --vyna-radius-md: 8px;
+  --vyna-radius-lg: 14px;
+  --vyna-radius-full: 9999px;
+  
+  /* Animations */
+  --vyna-transition-fast: 150ms ease;
+  --vyna-transition-normal: 250ms ease;
+  --vyna-transition-slow: 350ms ease;
+}
+
+/* Dark theme variables */
+[data-theme="dark"] {
+  --vyna-primary: #8A2C4D; /* Lighter maroon */
+  --vyna-secondary: #C09963; /* Lighter golden */
+  --vyna-tertiary: #A0AEA0; /* Lighter sage */
+  --vyna-surface: #685D55; /* Darker taupe */
+  --vyna-background: #1E1E1E; /* Dark background */
+  
+  --vyna-border: #444444;
+  --vyna-text-primary: #EFEFEF;
+  --vyna-text-secondary: #BBBBBB;
+  --vyna-text-tertiary: #888888;
+  
+  --vyna-bg-main: var(--vyna-background);
+  --vyna-bg-card: #2E2E2E;
+  --vyna-bg-input: #3A3A3A;
+  --vyna-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

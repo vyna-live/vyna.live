@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { login, register } from '../utils/api';
+import '../../../popup/styles/popup.css';
 
 export interface AuthPageProps {
   onLogin: (credentials: { username: string; password: string }) => void;
@@ -8,10 +10,13 @@ export interface AuthPageProps {
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
 
@@ -26,173 +31,164 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
       return;
     }
 
-    onLogin({ username, password });
+    if (mode === 'register' && !email.trim()) {
+      setLocalError('Email is required');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      if (mode === 'login') {
+        // Call login API
+        onLogin({ username, password });
+      } else {
+        // Call register API with additional fields
+        const response = await register({
+          username,
+          password,
+          email,
+          displayName: displayName.trim() || username
+        });
+        
+        if (response.success && response.data) {
+          // Auto-login after successful registration
+          onLogin({ username, password });
+        } else {
+          setLocalError(response.error || 'Registration failed');
+        }
+      }
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="vyna-auth-page">
-      <div className="vyna-auth-header">
-        <h1>Vyna.live Assistant</h1>
-        <p className="vyna-auth-subtitle">
-          {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
-        </p>
+    <div className="container">
+      <div className="header">
+        <h2>Vyna.live Assistant</h2>
       </div>
 
-      <div className="vyna-auth-content">
-        <form className="vyna-auth-form" onSubmit={handleSubmit}>
-          <div className="vyna-form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-            />
-          </div>
-
-          <div className="vyna-form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-            />
-          </div>
-
-          {(error || localError) && (
-            <div className="vyna-error-message">
-              {error || localError}
+      <div className="content p-md">
+        <div className="card">
+          <h3 className="text-center">
+            {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
+          </h3>
+          
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="username">Username</label>
+              <input
+                className="form-input"
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                disabled={isLoading}
+              />
             </div>
-          )}
 
-          <button 
-            type="submit" 
-            className="vyna-auth-button"
-          >
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
+            {mode === 'register' && (
+              <>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="email">Email</label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    disabled={isLoading}
+                  />
+                </div>
 
-        <div className="vyna-auth-switch">
-          {mode === 'login' ? (
-            <p>
-              Don't have an account?{' '}
-              <button 
-                className="vyna-text-button"
-                onClick={() => setMode('register')}
-              >
-                Sign up
-              </button>
-            </p>
-          ) : (
-            <p>
-              Already have an account?{' '}
-              <button 
-                className="vyna-text-button"
-                onClick={() => setMode('login')}
-              >
-                Sign in
-              </button>
-            </p>
-          )}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="displayName">Display Name (optional)</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    id="displayName"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your display name"
+                    disabled={isLoading}
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="password">Password</label>
+              <input
+                className="form-input"
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                disabled={isLoading}
+              />
+            </div>
+
+            {(error || localError) && (
+              <div className="form-error">
+                {error || localError}
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              className="btn btn-secondary w-full mt-md"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-sm">
+                  <span className="animate-spin">⟳</span> 
+                  {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+                </span>
+              ) : (
+                mode === 'login' ? 'Sign In' : 'Create Account'
+              )}
+            </button>
+          </form>
+
+          <div className="text-center m-md">
+            {mode === 'login' ? (
+              <p>
+                Don't have an account?{' '}
+                <button 
+                  className="btn-text"
+                  onClick={() => setMode('register')}
+                  disabled={isLoading}
+                >
+                  Sign up
+                </button>
+              </p>
+            ) : (
+              <p>
+                Already have an account?{' '}
+                <button 
+                  className="btn-text"
+                  onClick={() => setMode('login')}
+                  disabled={isLoading}
+                >
+                  Sign in
+                </button>
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
-      <style>{`
-        .vyna-auth-page {
-          display: flex;
-          flex-direction: column;
-          width: 100%;
-          height: 100%;
-        }
-
-        .vyna-auth-header {
-          padding: 24px 16px;
-          background-color: var(--vyna-primary);
-          color: white;
-          text-align: center;
-        }
-
-        .vyna-auth-header h1 {
-          font-size: 18px;
-          margin-bottom: 8px;
-        }
-
-        .vyna-auth-subtitle {
-          font-size: 14px;
-          opacity: 0.9;
-        }
-
-        .vyna-auth-content {
-          flex: 1;
-          padding: 24px 16px;
-          overflow-y: auto;
-        }
-
-        .vyna-auth-form {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .vyna-form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .vyna-form-group label {
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .vyna-form-group input {
-          padding: 10px 12px;
-          border: 1px solid var(--vyna-border);
-          border-radius: 6px;
-          font-size: 14px;
-        }
-
-        .vyna-auth-button {
-          margin-top: 8px;
-          padding: 12px 16px;
-          background-color: var(--vyna-secondary);
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        .vyna-auth-button:hover {
-          background-color: #906c38;
-        }
-
-        .vyna-auth-switch {
-          margin-top: 24px;
-          text-align: center;
-          font-size: 14px;
-        }
-
-        .vyna-text-button {
-          background: none;
-          border: none;
-          color: var(--vyna-secondary);
-          font-weight: 500;
-          cursor: pointer;
-          padding: 0;
-          font-size: inherit;
-        }
-
-        .vyna-text-button:hover {
-          text-decoration: underline;
-        }
-      `}</style>
+      <div className="footer text-center">
+        <p className="text-sm text-secondary">
+          © {new Date().getFullYear()} Vyna.live - All rights reserved
+        </p>
+      </div>
     </div>
   );
 };
