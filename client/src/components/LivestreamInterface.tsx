@@ -230,6 +230,9 @@ export default function LivestreamInterface({
     setShowNewNote(true);
     setShowNoteView(false);
     setCurrentNote(null);
+    setNoteLines([]);
+    setNoteInput("");
+    setEditingNoteId(null); // Reset the editing state
   }, []);
 
   // Fetch AI chats and notepads when the component mounts or user changes
@@ -303,8 +306,7 @@ export default function LivestreamInterface({
     const title = noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? "..." : "");
     
     try {
-      let response;
-      let savedNote: Note;
+      let response: Response;
       
       if (editingNoteId) {
         // Update existing note
@@ -324,11 +326,11 @@ export default function LivestreamInterface({
           throw new Error('Failed to update note');
         }
         
-        savedNote = await response.json();
+        const updatedNote: Note = await response.json();
         
         // Update the note in the saved notes list
         setSavedNotes((prev: Note[]) => 
-          prev.map(note => note.id === editingNoteId ? savedNote : note)
+          prev.map(note => note.id === editingNoteId ? updatedNote : note)
         );
         
         toast({
@@ -353,10 +355,10 @@ export default function LivestreamInterface({
           throw new Error('Failed to save note');
         }
         
-        savedNote = await response.json();
+        const newNote: Note = await response.json();
         
         // Add the new note to the beginning of saved notes
-        setSavedNotes((prev: Note[]) => [savedNote, ...prev]);
+        setSavedNotes((prev: Note[]) => [newNote, ...prev]);
         
         toast({
           title: "Note saved",
@@ -1541,8 +1543,10 @@ export default function LivestreamInterface({
                       <div className="flex items-center p-2 border-b border-zinc-800">
                         <button
                           onClick={() => {
-                            // Just go back to the notes list without saving
+                            // Go back to the notes list without saving
                             setShowNewNote(false);
+                            setEditingNoteId(null); // Reset editing state
+                            setNoteLines([]);
                           }}
                           className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 mr-2"
                         >
@@ -1563,14 +1567,14 @@ export default function LivestreamInterface({
                           </svg>
                         </button>
                         <span className="text-white text-sm font-medium flex-1">
-                          New Note
+                          {editingNoteId ? "Edit Note" : "New Note"}
                         </span>
                         <button
                           onClick={handleSaveNote}
                           className="px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-white hover:bg-zinc-700 transition-colors"
                           disabled={noteLines.length === 0}
                         >
-                          Save
+                          {editingNoteId ? "Update" : "Save"}
                         </button>
                       </div>
 
