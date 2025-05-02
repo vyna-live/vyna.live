@@ -1,121 +1,112 @@
-// Background script for the Vyna AI Assistant extension
+// Background script for Vyna browser extension
 
-import { PageContent } from '../libs/utils/api';
-import { initStorage, getUserAuth } from '../libs/utils/storage';
+// Import PageContent type from content script
+import { PageContent } from '../content/content';
 
-// State for storing the current extracted content
+// Store page content temporarily
 let currentPageContent: PageContent | null = null;
 
-// Initialize the extension
-async function initExtension() {
-  try {
-    // Initialize storage with default settings if needed
-    await initStorage();
-    
-    // Check authentication status
-    const auth = await getUserAuth();
-    
-    // Set badge text based on auth status
-    chrome.action.setBadgeText({
-      text: auth ? 'ON' : ''
-    });
-    
-    chrome.action.setBadgeBackgroundColor({
-      color: '#5D1C34'
-    });
-    
-    console.log('Vyna extension initialized successfully');
-  } catch (error) {
-    console.error('Error initializing Vyna extension:', error);
-  }
-}
+// Store user's selection
+let currentSelection: string = '';
 
-// Handle getting content from the active tab
-async function getActiveTabContent(): Promise<PageContent | null> {
-  try {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    
-    if (tabs.length === 0) {
-      console.warn('No active tab found');
-      return null;
-    }
-    
-    const activeTab = tabs[0];
-    
-    if (!activeTab.id) {
-      console.warn('Active tab has no ID');
-      return null;
-    }
-    
-    // Inject and execute content script if needed
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: activeTab.id },
-        files: ['content/content.js']
-      });
-    } catch (error) {
-      console.warn('Could not execute content script (might already be injected):', error);
-    }
-    
-    // Send message to content script to extract content
-    return new Promise((resolve) => {
-      chrome.tabs.sendMessage(
-        activeTab.id!,
-        { action: 'extractContent' },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            console.error('Error extracting content:', chrome.runtime.lastError);
-            resolve(null);
-          } else {
-            resolve(response as PageContent);
-          }
-        }
-      );
-    });
-  } catch (error) {
-    console.error('Error getting active tab content:', error);
-    return null;
-  }
-}
+// Initialize badge
+chrome.action.setBadgeBackgroundColor({ color: '#5D1C34' }); // Vyna maroon color
 
-// Listen for messages from content scripts or popup
+// Listen for messages from content scripts and popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Background script received message:', message);
-  
-  if (message.action === 'getPageContent') {
-    // Get content from the current active tab
-    getActiveTabContent().then((content) => {
-      if (content) {
-        currentPageContent = content;
-      }
-      sendResponse({ success: true, content: currentPageContent });
-    });
-    return true; // Required for async response
-  }
-  
+  // Handle content script loading
   if (message.action === 'contentScriptLoaded') {
-    // Content script is loaded, we can now extract content
-    console.log('Content script loaded on:', message.url);
-    sendResponse({ success: true });
-    return false;
+    // Content script loaded on a page, can track this if needed
+    chrome.action.setBadgeText({ text: '✓' });
+    setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2000);
+    
+    // Clear the current page content as we're on a new page
+    currentPageContent = null;
   }
   
-  if (message.action === 'openPopup') {
-    // Try to open the popup programmatically
-    chrome.action.openPopup();
-    sendResponse({ success: true });
-    return false;
+  // Handle selection updates from content script
+  else if (message.action === 'updateSelection') {
+    currentSelection = message.selection;
   }
   
-  // Return false for unhandled messages
-  return false;
+  // Handle page content requests from popup
+  else if (message.action === 'getPageContent') {
+    // If we already have page content cached, return it immediately
+    if (currentPageContent) {
+      // Update with latest selection
+      currentPageContent.selection = currentSelection;
+      sendResponse({
+        success: true,
+        content: currentPageContent
+      });
+      return true;
+    }
+    
+    // Otherwise, get it from the active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0] || !tabs[0].id) {
+        sendResponse({
+          success: false,
+          error: 'No active tab found'
+        });
+        return;
+      }
+      
+      // Send message to content script to get page content
+      chrome.tabs.sendMessage(tabs[0].id, { action: 'getPageContent' }, (response) => {
+        if (chrome.runtime.lastError) {
+          // Content script might not be loaded
+          sendResponse({
+            success: false,
+            error: chrome.runtime.lastError.message || 'Could not communicate with page'
+          });
+          return;
+        }
+        
+        if (response && response.success) {
+          // Cache the page content
+          currentPageContent = response.content;
+          // Make sure we have the most recent selection
+          if (currentSelection) {
+            currentPageContent.selection = currentSelection;
+          }
+          
+          sendResponse({
+            success: true,
+            content: currentPageContent
+          });
+        } else {
+          sendResponse({
+            success: false,
+            error: 'Failed to extract page content'
+          });
+        }
+      });
+    });
+    
+    // Return true to indicate we'll respond asynchronously
+    return true;
+  }
 });
 
-// Run initialization when the extension is installed or updated
-chrome.runtime.onInstalled.addListener(() => {
-  initExtension();
-  console.log('Vyna extension installed/updated');
+// Listen for tab updates to reset page content
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete') {
+    // Reset page content when a tab completes loading
+    currentPageContent = null;
+    currentSelection = '';
+  }
 });
 
-// Run initialization when the extension is started
-initExtension();
+// Listen for installation or update
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    // First time installation
+    chrome.tabs.create({
+      url: 'https://vyna.live/welcome-extension'
+    });
+  } else if (details.reason === 'update') {
+    // Extension updated - could show release notes
+    console.log('Vyna extension updated to version', chrome.runtime.getManifest().version);
+  }
+});

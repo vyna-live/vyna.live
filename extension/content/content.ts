@@ -1,128 +1,139 @@
-// Content script for the Vyna AI Assistant extension
-// This script runs on web pages to extract content for AI analysis
+// Content script for Vyna browser extension
+// This script extracts content from the current web page to provide context for the AI assistant
 
-import { PageContent } from '../libs/utils/api';
+// Define the structure of page content
+export interface PageContent {
+  url: string;
+  title: string;
+  description: string;
+  selection: string;
+  mainText: string;
+  metaData: {
+    [key: string]: string;
+  };
+}
 
-// Function to extract text content from the page
-function extractPageContent(): PageContent {
-  const selection = window.getSelection()?.toString() || '';
-  const metaTags = document.getElementsByTagName('meta');
-  let metaDescription = '';
+// Extract the meta description from the page
+function getMetaDescription(): string {
+  const metaDesc = document.querySelector('meta[name="description"]');
+  return metaDesc ? (metaDesc as HTMLMetaElement).content : '';
+}
+
+// Extract meta data from the page
+function getMetaData(): { [key: string]: string } {
+  const metaData: { [key: string]: string } = {};
+  const metaTags = document.querySelectorAll('meta');
   
-  // Extract meta description if available
-  for (let i = 0; i < metaTags.length; i++) {
-    if (metaTags[i].getAttribute('name') === 'description') {
-      metaDescription = metaTags[i].getAttribute('content') || '';
+  metaTags.forEach((tag) => {
+    const name = tag.getAttribute('name') || tag.getAttribute('property');
+    const content = tag.getAttribute('content');
+    
+    if (name && content) {
+      metaData[name] = content;
+    }
+  });
+  
+  return metaData;
+}
+
+// Extract the main content text from the page
+function getMainText(): string {
+  // Try to identify the main content area (this is heuristic and may need improvement)
+  const contentSelectors = [
+    'article',
+    '[role="main"]',
+    'main',
+    '.content',
+    '#content',
+    '.post-content',
+    '.article-content',
+    '.main-content'
+  ];
+  
+  let mainContent = '';
+  
+  // Try each selector until we find content
+  for (const selector of contentSelectors) {
+    const element = document.querySelector(selector);
+    if (element && element.textContent && element.textContent.trim().length > 150) {
+      mainContent = element.textContent.trim();
       break;
     }
   }
   
-  // Extract main page text, prioritizing article content
-  let pageText = '';
-  
-  // Try to get content from article elements first
-  const articleElements = document.querySelectorAll('article, [role="article"], .article, .post, .content, main');
-  
-  if (articleElements.length > 0) {
-    // Combine text from all article elements
-    for (let i = 0; i < articleElements.length; i++) {
-      pageText += articleElements[i].textContent || '';
-    }
-  } else {
-    // Fallback to body content
-    pageText = document.body.innerText || '';
+  // If we couldn't find main content with selectors, use body text
+  if (!mainContent && document.body.textContent) {
+    // Get all paragraphs and headings
+    const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
+    const textArray: string[] = [];
+    
+    textElements.forEach((el) => {
+      const text = el.textContent?.trim();
+      if (text && text.length > 20) { // Only include substantive pieces of text
+        textArray.push(text);
+      }
+    });
+    
+    mainContent = textArray.join('\n\n');
   }
   
-  // Clean up the page text (remove excessive whitespace)
-  pageText = pageText.replace(/\s+/g, ' ').trim();
-  
-  // Limit the page text to a reasonable size (e.g., first 10000 characters)
-  if (pageText.length > 10000) {
-    pageText = pageText.substring(0, 10000) + '... (content truncated)';
+  // If still no content, use the entire body text
+  if (!mainContent && document.body.textContent) {
+    mainContent = document.body.textContent.trim();
   }
   
+  // Limit text length to prevent very large messages
+  const maxLength = 5000;
+  if (mainContent.length > maxLength) {
+    mainContent = mainContent.substring(0, maxLength) + '... (content truncated)';
+  }
+  
+  return mainContent;
+}
+
+// Get the user's text selection
+function getUserSelection(): string {
+  const selection = window.getSelection();
+  return selection ? selection.toString().trim() : '';
+}
+
+// Extract all content
+function extractPageContent(): PageContent {
   return {
-    title: document.title,
     url: window.location.href,
-    selection,
-    metaDescription,
-    pageText
+    title: document.title,
+    description: getMetaDescription(),
+    selection: getUserSelection(),
+    mainText: getMainText(),
+    metaData: getMetaData()
   };
 }
 
-// Listen for messages from the popup or background script
+// Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'extractContent') {
-    const content = extractPageContent();
-    sendResponse(content);
-    return true; // Required for async response
+  if (message.action === 'getPageContent') {
+    sendResponse({
+      success: true,
+      content: extractPageContent()
+    });
+  }
+  return true; // Required for async sendResponse
+});
+
+// Also listen for selection changes to update available context
+document.addEventListener('selectionchange', () => {
+  const selection = getUserSelection();
+  if (selection) {
+    // Store selection in runtime so it's accessible when needed
+    chrome.runtime.sendMessage({
+      action: 'updateSelection',
+      selection: selection
+    });
   }
 });
 
-// Inject a button on the page for quick access (optional)
-function injectVynaButton() {
-  const buttonId = 'vyna-ai-button';
-  
-  // Don't add the button if it already exists
-  if (document.getElementById(buttonId)) {
-    return;
-  }
-  
-  const button = document.createElement('div');
-  button.id = buttonId;
-  button.innerHTML = `
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="#5D1C34"/>
-      <path d="M15 9L9 15M9 9L15 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  `;
-  
-  button.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #5D1C34;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 9999;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s;
-  `;
-  
-  button.addEventListener('mouseover', () => {
-    button.style.transform = 'scale(1.1)';
-  });
-  
-  button.addEventListener('mouseout', () => {
-    button.style.transform = 'scale(1)';
-  });
-  
-  button.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'openPopup' });
-  });
-  
-  document.body.appendChild(button);
-}
-
-// Initialize the content script
-function init() {
-  // Decide whether to inject the button based on user settings
-  // For now, let's temporarily disable it
-  // injectVynaButton();
-  
-  // Let the background script know that the content script is loaded
-  chrome.runtime.sendMessage({ action: 'contentScriptLoaded', url: window.location.href });
-}
-
-// Run initialization when the page is fully loaded
-if (document.readyState === 'complete') {
-  init();
-} else {
-  window.addEventListener('load', init);
-}
+// Send a message when the content script is first loaded
+chrome.runtime.sendMessage({
+  action: 'contentScriptLoaded',
+  url: window.location.href
+});
