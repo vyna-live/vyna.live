@@ -675,12 +675,145 @@ export function AgoraVideo({
           // Continue without RTM if it fails
         }
         
+        // Add direct peer tracking for improved audience detection
+        agoraClient.on('peer-online', (evt) => {
+          console.log(`DIRECT PEER ONLINE DETECTED: ${evt.uid}, current role: ${role}`);
+          
+          // If host, immediately record audience connection
+          if (role === 'host' && evt.uid !== uid) {
+            console.log(`Host detected direct peer connection: ${evt.uid}`);
+            
+            // Real-time DOM updates for viewer count
+            setViewers(prev => {
+              const newCount = prev + 1;
+              console.log(`Direct peer count update: ${prev} → ${newCount}`);
+              
+              // Directly update DOM for maximum reliability
+              setTimeout(() => {
+                const viewersElement = document.querySelector('.viewer-count-display');
+                if (viewersElement) {
+                  viewersElement.textContent = String(newCount);
+                  console.log('DOM viewer count updated via direct peer event');
+                }
+              }, 10);
+              
+              return newCount;
+            });
+            
+            // Track the connected audience in raw data
+            setConnectedAudienceIds(prev => {
+              const updated = new Set(prev);
+              updated.add(evt.uid.toString());
+              console.log('Updated audience set via direct peer detection:', Array.from(updated));
+              return updated;
+            });
+            
+            // Add chat notification for new viewer joining
+            const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500'];
+            const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+            
+            setChatMessages(prev => {
+              const newMessages = [{
+                userId: evt.uid.toString(),
+                name: `Viewer ${evt.uid.toString().slice(-4)}`,
+                message: "joined via direct peer detection",
+                color,
+                isHost: false
+              }, ...prev];
+              
+              if (newMessages.length > 8) {
+                return newMessages.slice(0, 8);
+              }
+              return newMessages;
+            });
+          }
+        });
+        
+        // Handle peer leaving with direct UI updates
+        agoraClient.on('peer-leave', (evt) => {
+          console.log(`DIRECT PEER LEAVE DETECTED: ${evt.uid}, current role: ${role}`);
+          
+          // If host, immediately remove audience connection
+          if (role === 'host' && evt.uid !== uid) {
+            console.log(`Host detected peer disconnection: ${evt.uid}`);
+            
+            // Update viewers count with direct DOM updates
+            setViewers(prev => {
+              const newCount = Math.max(0, prev - 1);
+              console.log(`Direct peer leave count update: ${prev} → ${newCount}`);
+              
+              // Directly update DOM for maximum reliability
+              setTimeout(() => {
+                const viewersElement = document.querySelector('.viewer-count-display');
+                if (viewersElement) {
+                  viewersElement.textContent = String(newCount);
+                  console.log('DOM viewer count updated via direct peer leave event');
+                }
+              }, 10);
+              
+              return newCount;
+            });
+            
+            // Remove from audience tracking
+            setConnectedAudienceIds(prev => {
+              const updated = new Set(prev);
+              updated.delete(evt.uid.toString());
+              console.log('Updated audience set after peer leave:', Array.from(updated));
+              return updated;
+            });
+            
+            // Add chat notification for viewer leaving
+            const randomColors = ['bg-red-500', 'bg-pink-500'];
+            const color = randomColors[Math.floor(Math.random() * randomColors.length)];
+            
+            setChatMessages(prev => {
+              const newMessages = [{
+                userId: evt.uid.toString(),
+                name: `Viewer ${evt.uid.toString().slice(-4)}`,
+                message: "left via direct peer detection",
+                color,
+                isHost: false
+              }, ...prev];
+              
+              if (newMessages.length > 8) {
+                return newMessages.slice(0, 8);
+              }
+              return newMessages;
+            });
+          }
+        });
+        
         // Listen for connection state changes
         agoraClient.on('connection-state-change', (curState, prevState, reason) => {
           console.log("Agora connection state changed:", prevState, "->", curState, "reason:", reason);
           
           if (curState === 'DISCONNECTED') {
             setIsJoined(false);
+          }
+          
+          // If reconnected, immediately refresh audience count for host
+          if (role === 'host' && curState === 'CONNECTED' && prevState === 'RECONNECTING') {
+            console.log('Host reconnected - forcing audience refresh');
+            
+            // Force audience check on reconnection
+            if (rtmChannelRef.current) {
+              rtmChannelRef.current.getMembers().then(members => {
+                const audienceMembers = members.filter(member => member !== uid.toString());
+                console.log(`Post-reconnect audience check: ${audienceMembers.length} members`, audienceMembers);
+                
+                // Force update counts and tracking
+                setViewers(audienceMembers.length);
+                setConnectedAudienceIds(new Set(audienceMembers));
+                
+                // Direct DOM update
+                const viewersElement = document.querySelector('.viewer-count-display');
+                if (viewersElement) {
+                  viewersElement.textContent = String(audienceMembers.length);
+                }
+              }).catch(err => {
+                console.error('Error checking audience after reconnection:', err);
+              });
+            }
           }
         });
         
