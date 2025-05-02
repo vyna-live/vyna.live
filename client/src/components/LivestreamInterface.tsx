@@ -97,6 +97,7 @@ export default function LivestreamInterface({
   const [noteInput, setNoteInput] = useState("");
   const [savedNotes, setSavedNotes] = useState<Note[]>(EMPTY_NOTES);
   const [noteLines, setNoteLines] = useState<string[]>([]);
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   
   // AI Chat state
   const [aiChats, setAiChats] = useState<AiChat[]>(EMPTY_CHATS);
@@ -302,37 +303,73 @@ export default function LivestreamInterface({
     const title = noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? "..." : "");
     
     try {
-      // Send to API
-      const response = await fetch('/api/notepads', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hostId: user.id,
-          title,
-          content,
-        }),
-      });
+      let response;
+      let savedNote: Note;
       
-      if (!response.ok) {
-        throw new Error('Failed to save note');
+      if (editingNoteId) {
+        // Update existing note
+        response = await fetch(`/api/notepads/${editingNoteId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            hostId: user.id,
+            title,
+            content,
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update note');
+        }
+        
+        savedNote = await response.json();
+        
+        // Update the note in the saved notes list
+        setSavedNotes((prev: Note[]) => 
+          prev.map(note => note.id === editingNoteId ? savedNote : note)
+        );
+        
+        toast({
+          title: "Note updated",
+          description: "Your note has been updated",
+        });
+      } else {
+        // Create new note
+        response = await fetch('/api/notepads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            hostId: user.id,
+            title,
+            content,
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save note');
+        }
+        
+        savedNote = await response.json();
+        
+        // Add the new note to the beginning of saved notes
+        setSavedNotes((prev: Note[]) => [savedNote, ...prev]);
+        
+        toast({
+          title: "Note saved",
+          description: "Your note has been saved",
+        });
       }
-      
-      const savedNote = await response.json();
-      
-      // Add the new note to the beginning of saved notes
-      setSavedNotes((prev: Note[]) => [savedNote, ...prev]);
 
       // Reset state
       setNoteLines([]);
       setNoteInput("");
       setShowNewNote(false);
-
-      toast({
-        title: "Note saved",
-        description: "Your note has been saved",
-      });
+      setEditingNoteId(null);
+      
     } catch (error) {
       console.error('Error saving note:', error);
       toast({
@@ -341,7 +378,21 @@ export default function LivestreamInterface({
         variant: "destructive",
       });
     }
-  }, [noteLines, toast, isAuthenticated, user]);
+  }, [noteLines, toast, isAuthenticated, user, editingNoteId]);
+
+  // Handler for editing an existing note
+  const handleEditNote = useCallback(async (note: Note) => {
+    // Set up the note for editing
+    const lines = note.content.split('\n');
+    setNoteLines(lines);
+    setShowNewNote(true);
+    setShowNoteView(false);
+    setCurrentNote(null);
+    
+    // We'll add state to track that we're editing an existing note
+    // This way we can update instead of creating a new note
+    setEditingNoteId(note.id);
+  }, []);
 
   // Toggle the side drawer
   const toggleDrawer = useCallback(() => {
@@ -1511,9 +1562,16 @@ export default function LivestreamInterface({
                             />
                           </svg>
                         </button>
-                        <span className="text-white text-sm font-medium">
+                        <span className="text-white text-sm font-medium flex-1">
                           New Note
                         </span>
+                        <button
+                          onClick={handleSaveNote}
+                          className="px-3 py-1 rounded-full text-xs font-medium bg-zinc-800 text-white hover:bg-zinc-700 transition-colors"
+                          disabled={noteLines.length === 0}
+                        >
+                          Save
+                        </button>
                       </div>
 
                       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col h-full">
@@ -1658,7 +1716,15 @@ export default function LivestreamInterface({
                         <span className="text-white text-sm font-medium truncate flex-1 max-w-[70%]">
                           {currentNote.title}
                         </span>
-                        <button className="ml-auto text-zinc-400 hover:text-white">
+                        <button 
+                          onClick={() => {
+                            // Call the edit function with the current note
+                            if (currentNote) {
+                              handleEditNote(currentNote);
+                            }
+                          }}
+                          className="ml-auto text-zinc-400 hover:text-white"
+                        >
                           <svg
                             width="16"
                             height="16"
