@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { getNotes, getNote, saveNote, updateNote, deleteNote } from '../utils/api';
+import '../../../popup/styles/popup.css';
 
 interface NotepadViewProps {
   currentPageTitle: string;
@@ -34,21 +36,13 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
     setError(null);
     
     try {
-      const response = await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          type: 'apiRequest',
-          method: 'GET',
-          endpoint: '/notepads'
-        }, (response) => {
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            reject(response?.error || 'Failed to fetch notes');
-          }
-        });
-      });
+      const response = await getNotes();
       
-      setNotes(response);
+      if (response.success && response.data) {
+        setNotes(response.data);
+      } else {
+        setError(response.error || 'Failed to fetch notes');
+      }
     } catch (error) {
       console.error('Error fetching notes:', error);
       setError('Failed to load notes. Please try again.');
@@ -58,116 +52,87 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
   };
 
   // Function to create a new note
-  const createNote = async () => {
+  const createNewNote = async () => {
+    if (!content.trim()) return;
+    
     setIsSaving(true);
     setError(null);
     
     try {
-      const newTitle = title || `Notes from ${currentPageTitle || 'Vyna Extension'}`;
+      const newTitle = title.trim() || `Notes from ${currentPageTitle || 'Vyna Extension'}`;
       
-      const response = await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          type: 'apiRequest',
-          method: 'POST',
-          endpoint: '/notepads',
-          data: {
-            title: newTitle,
-            content: content,
-            source: 'extension',
-            sourceUrl: currentPageUrl
-          }
-        }, (response) => {
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            reject(response?.error || 'Failed to create note');
-          }
-        });
-      });
+      const response = await saveNote(newTitle, content, currentPageUrl);
       
-      // Add new note to list and select it
-      setNotes(prev => [response, ...prev]);
-      setSelectedNote(response);
-      resetForm();
-      
-      // Exit edit mode
-      setIsEditing(false);
+      if (response.success && response.data) {
+        // Add new note to list and select it
+        setNotes(prev => [response.data, ...prev]);
+        setSelectedNote(response.data);
+        resetForm();
+        
+        // Exit edit mode
+        setIsEditing(false);
+      } else {
+        setError(response.error || 'Failed to create note');
+      }
     } catch (error) {
       console.error('Error creating note:', error);
-      setError('Failed to save note. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to save note');
     } finally {
       setIsSaving(false);
     }
   };
 
   // Function to update a note
-  const updateNote = async () => {
-    if (!selectedNote) return;
+  const updateExistingNote = async () => {
+    if (!selectedNote || !content.trim()) return;
     
     setIsSaving(true);
     setError(null);
     
     try {
-      const updatedNote = await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          type: 'apiRequest',
-          method: 'PATCH',
-          endpoint: `/notepads/${selectedNote.id}`,
-          data: {
-            title: title,
-            content: content
-          }
-        }, (response) => {
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            reject(response?.error || 'Failed to update note');
-          }
-        });
+      const response = await updateNote(selectedNote.id, {
+        title: title.trim() || selectedNote.title,
+        content: content
       });
       
-      // Update notes list
-      setNotes(prev => prev.map(note => 
-        note.id === updatedNote.id ? updatedNote : note
-      ));
-      
-      setSelectedNote(updatedNote);
-      // Exit edit mode
-      setIsEditing(false);
+      if (response.success && response.data) {
+        // Update notes list
+        setNotes(prev => prev.map(note => 
+          note.id === response.data.id ? response.data : note
+        ));
+        
+        setSelectedNote(response.data);
+        // Exit edit mode
+        setIsEditing(false);
+      } else {
+        setError(response.error || 'Failed to update note');
+      }
     } catch (error) {
       console.error('Error updating note:', error);
-      setError('Failed to update note. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to update note');
     } finally {
       setIsSaving(false);
     }
   };
 
   // Function to delete a note
-  const deleteNote = async (noteId: number) => {
+  const deleteNoteById = async (noteId: number) => {
     if (!confirm('Are you sure you want to delete this note?')) return;
     
     try {
-      await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          type: 'apiRequest',
-          method: 'DELETE',
-          endpoint: `/notepads/${noteId}`
-        }, (response) => {
-          if (response && response.success) {
-            resolve(true);
-          } else {
-            reject(response?.error || 'Failed to delete note');
-          }
-        });
-      });
+      const response = await deleteNote(noteId);
       
-      // Remove from list
-      setNotes(prev => prev.filter(note => note.id !== noteId));
-      
-      // If the selected note was deleted, clear selection
-      if (selectedNote && selectedNote.id === noteId) {
-        setSelectedNote(null);
-        resetForm();
+      if (response.success) {
+        // Remove from list
+        setNotes(prev => prev.filter(note => note.id !== noteId));
+        
+        // If the selected note was deleted, clear selection
+        if (selectedNote && selectedNote.id === noteId) {
+          setSelectedNote(null);
+          resetForm();
+        }
+      } else {
+        alert(response.error || 'Failed to delete note');
       }
     } catch (error) {
       console.error('Error deleting note:', error);
@@ -199,12 +164,14 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
         );
       });
       
-      // Append content to current note or create new note
+      // Create a formatted content block
       const extractedContent = `# ${pageData.title}\n\nURL: ${pageData.url}\n\n${pageData.content}`;
       
       if (selectedNote && isEditing) {
+        // Append to existing content
         setContent(prev => prev + '\n\n' + extractedContent);
       } else {
+        // Create new note with extracted content
         setTitle(`Notes from ${pageData.title}`);
         setContent(extractedContent);
         setIsEditing(true);
@@ -229,9 +196,9 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
     if (!content.trim()) return;
     
     if (isEditing && selectedNote) {
-      updateNote();
+      updateExistingNote();
     } else {
-      createNote();
+      createNewNote();
     }
   };
 
@@ -243,52 +210,53 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
   };
 
   return (
-    <div className="vyna-notepad-view">
-      <div className="vyna-notepad-header">
-        <div className="vyna-notepad-actions">
-          <button 
-            className="vyna-action-btn" 
-            onClick={handleNewNote}
-          >
-            New Note
-          </button>
-          <button 
-            className="vyna-action-btn" 
-            onClick={extractPageContent}
-          >
-            Extract Page
-          </button>
-        </div>
+    <div className="flex flex-col h-full">
+      {/* Header with actions */}
+      <div className="p-sm border-b flex gap-sm">
+        <button 
+          className="btn btn-sm btn-secondary"
+          onClick={handleNewNote}
+        >
+          New Note
+        </button>
+        <button 
+          className="btn btn-sm btn-primary"
+          onClick={extractPageContent}
+        >
+          Extract Page
+        </button>
       </div>
 
-      <div className="vyna-notepad-container">
-        <div className="vyna-notes-list">
-          <h3>Your Notes</h3>
+      {/* Notes container */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Notes list */}
+        <div className="w-1/3 border-r overflow-y-auto bg-gray-50">
+          <h3 className="p-sm m-0 text-md font-semibold border-b">Your Notes</h3>
           
           {isLoading ? (
-            <div className="vyna-loading-notes">Loading notes...</div>
+            <div className="p-md text-center text-secondary">Loading notes...</div>
           ) : error ? (
-            <div className="vyna-notes-error">{error}</div>
+            <div className="p-md text-center text-error">{error}</div>
           ) : notes.length === 0 ? (
-            <div className="vyna-empty-notes">No notes yet</div>
+            <div className="p-md text-center text-secondary">No notes yet</div>
           ) : (
-            <ul>
+            <ul className="list-none p-0 m-0">
               {notes.map(note => (
                 <li 
                   key={note.id}
-                  className={`vyna-note-item ${selectedNote?.id === note.id ? 'active' : ''}`}
+                  className={`p-sm border-b cursor-pointer hover:bg-gray-100 ${selectedNote?.id === note.id ? 'bg-white border-l-4 border-l-secondary' : ''}`}
                   onClick={() => handleSelectNote(note)}
                 >
-                  <div className="vyna-note-title">{note.title}</div>
-                  <div className="vyna-note-meta">
-                    <span className="vyna-note-date">
+                  <div className="font-medium mb-xs text-sm truncate">{note.title}</div>
+                  <div className="flex justify-between items-center text-xs text-secondary">
+                    <span>
                       {new Date(note.updatedAt).toLocaleDateString()}
                     </span>
                     <button
-                      className="vyna-note-delete"
+                      className="bg-transparent border-none text-secondary hover:text-error text-lg p-0 leading-none"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteNote(note.id);
+                        deleteNoteById(note.id);
                       }}
                       title="Delete note"
                     >
@@ -301,45 +269,46 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
           )}
         </div>
 
-        <div className="vyna-note-editor">
+        {/* Note editor/viewer */}
+        <div className="flex-1 overflow-y-auto p-md bg-white">
           {selectedNote && !isEditing ? (
-            <div className="vyna-note-view">
-              <div className="vyna-note-view-header">
-                <h2>{selectedNote.title}</h2>
+            <div>
+              <div className="flex justify-between items-center mb-md">
+                <h2 className="m-0 text-lg">{selectedNote.title}</h2>
                 <button 
-                  className="vyna-edit-btn"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => setIsEditing(true)}
                 >
                   Edit
                 </button>
               </div>
-              <div className="vyna-note-content">
+              <div className="whitespace-pre-wrap text-md">
                 {selectedNote.content.split('\n').map((line, i) => (
                   <p key={i}>{line}</p>
                 ))}
               </div>
             </div>
           ) : (
-            <form className="vyna-note-form" onSubmit={handleSubmit}>
+            <form className="flex flex-col gap-md" onSubmit={handleSubmit}>
               <input
                 type="text"
                 placeholder="Note title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="vyna-note-title-input"
+                className="form-input text-md"
               />
               <textarea
                 placeholder="Write your note here..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="vyna-note-content-input"
-                rows={15}
+                className="form-input text-md flex-1"
+                rows={12}
               />
-              <div className="vyna-form-actions">
+              <div className="flex justify-end gap-sm">
                 {selectedNote && (
                   <button 
                     type="button" 
-                    className="vyna-cancel-btn"
+                    className="btn"
                     onClick={() => {
                       setIsEditing(false);
                       setTitle(selectedNote.title);
@@ -351,7 +320,7 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
                 )}
                 <button 
                   type="submit" 
-                  className="vyna-save-btn"
+                  className="btn btn-secondary"
                   disabled={!content.trim() || isSaving}
                 >
                   {isSaving ? 'Saving...' : 'Save Note'}
@@ -361,209 +330,6 @@ const NotepadView: React.FC<NotepadViewProps> = ({ currentPageTitle, currentPage
           )}
         </div>
       </div>
-
-      <style>{`
-        .vyna-notepad-view {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          overflow: hidden;
-        }
-
-        .vyna-notepad-header {
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--vyna-border);
-          background-color: white;
-        }
-
-        .vyna-notepad-actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .vyna-action-btn {
-          font-size: 12px;
-          padding: 6px 12px;
-          background-color: var(--vyna-primary);
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .vyna-notepad-container {
-          display: flex;
-          flex: 1;
-          overflow: hidden;
-        }
-
-        .vyna-notes-list {
-          width: 30%;
-          border-right: 1px solid var(--vyna-border);
-          overflow-y: auto;
-          background-color: #f5f5f5;
-        }
-
-        .vyna-notes-list h3 {
-          padding: 12px 16px;
-          margin: 0;
-          font-size: 14px;
-          font-weight: 600;
-          border-bottom: 1px solid var(--vyna-border);
-        }
-
-        .vyna-notes-list ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .vyna-note-item {
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--vyna-border);
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        .vyna-note-item:hover {
-          background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .vyna-note-item.active {
-          background-color: white;
-          border-left: 3px solid var(--vyna-secondary);
-        }
-
-        .vyna-note-title {
-          font-weight: 500;
-          margin-bottom: 4px;
-          font-size: 13px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .vyna-note-meta {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 11px;
-          color: #666;
-        }
-
-        .vyna-note-delete {
-          background: none;
-          border: none;
-          color: #999;
-          font-size: 18px;
-          cursor: pointer;
-          padding: 0 4px;
-          line-height: 1;
-        }
-
-        .vyna-note-delete:hover {
-          color: var(--vyna-error);
-        }
-
-        .vyna-loading-notes,
-        .vyna-empty-notes,
-        .vyna-notes-error {
-          padding: 16px;
-          color: #666;
-          font-size: 13px;
-          text-align: center;
-        }
-
-        .vyna-notes-error {
-          color: var(--vyna-error);
-        }
-
-        .vyna-note-editor {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px;
-          background-color: white;
-        }
-
-        .vyna-note-view-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
-        }
-
-        .vyna-note-view-header h2 {
-          margin: 0;
-          font-size: 18px;
-        }
-
-        .vyna-edit-btn {
-          padding: 4px 12px;
-          background-color: var(--vyna-secondary);
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 12px;
-        }
-
-        .vyna-note-content {
-          line-height: 1.6;
-          white-space: pre-wrap;
-          font-size: 14px;
-        }
-
-        .vyna-note-form {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .vyna-note-title-input {
-          padding: 8px 12px;
-          font-size: 16px;
-          border: 1px solid var(--vyna-border);
-          border-radius: 4px;
-        }
-
-        .vyna-note-content-input {
-          padding: 12px;
-          font-size: 14px;
-          border: 1px solid var(--vyna-border);
-          border-radius: 4px;
-          resize: none;
-          font-family: inherit;
-          line-height: 1.5;
-        }
-
-        .vyna-form-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-        }
-
-        .vyna-cancel-btn {
-          padding: 8px 16px;
-          background-color: #f5f5f5;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .vyna-save-btn {
-          padding: 8px 16px;
-          background-color: var(--vyna-secondary);
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .vyna-save-btn:disabled {
-          background-color: #ccc;
-          cursor: not-allowed;
-        }
-      `}</style>
     </div>
   );
 };

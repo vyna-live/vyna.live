@@ -25,7 +25,11 @@ export async function apiRequest<T>(
     // Get saved token if not provided
     let token = options.token;
     if (!token) {
-      const storage = await chrome.storage.local.get('token');
+      const storage = await new Promise<{token?: string}>((resolve) => {
+        chrome.storage.local.get(['token'], (items) => {
+          resolve(items as {token?: string});
+        });
+      });
       token = storage.token;
     }
 

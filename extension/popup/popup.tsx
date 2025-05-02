@@ -1,103 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import AuthPage from '../libs/components/AuthPage';
 import Dashboard from '../libs/components/Dashboard';
+import { getCurrentUser, login } from '../libs/utils/api';
+import { getStorageData, setUserAuth, clearUserAuth } from '../libs/utils/storage';
+import './styles/popup.css';
 
 const Popup: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user is logged in
-    chrome.storage.local.get(['user', 'token'], (result) => {
-      if (result.user && result.token) {
-        setUser(result.user);
-        setIsAuthenticated(true);
+    const checkAuth = async () => {
+      try {
+        const storage = await getStorageData();
         
-        // Verify token is still valid
-        fetch('https://vyna.live/api/user', {
-          headers: {
-            'Authorization': `Bearer ${result.token}`
-          }
-        })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error('Token expired');
-            }
-            return response.json();
-          })
-          .then(userData => {
-            setUser(userData);
-          })
-          .catch(() => {
+        if (storage.user && storage.token) {
+          setUser(storage.user);
+          setIsAuthenticated(true);
+          
+          // Verify token is still valid
+          const response = await getCurrentUser();
+          
+          if (response.success && response.data) {
+            setUser(response.data);
+          } else {
             // Token expired, clear storage
-            chrome.storage.local.remove(['user', 'token']);
+            await clearUserAuth();
             setUser(null);
             setIsAuthenticated(false);
-          })
-          .finally(() => {
-            setIsLoading(false);
-          });
-      } else {
+          }
+        }
+      } catch (err) {
+        console.error('Auth check error:', err);
+        setIsAuthenticated(false);
+      } finally {
         setIsLoading(false);
       }
-    });
+    };
+    
+    checkAuth();
   }, []);
 
-  const handleLogin = (credentials: { username: string; password: string }) => {
-    // Make actual login API call
-    setIsLoading(true);
-    fetch('https://vyna.live/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(credentials)
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Login failed');
-        }
-        return response.json();
-      })
-      .then(data => {
-        const { user, token } = data;
-        // Save user data and token to storage
-        chrome.storage.local.set({ user, token }, () => {
-          setUser(user);
-          setIsAuthenticated(true);
-        });
-      })
-      .catch(error => {
-        console.error('Login error:', error);
-        // Handle login error (could set an error state here)
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+  const handleLogin = async (credentials: { username: string; password: string }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await login(credentials.username, credentials.password);
+      
+      if (response.success && response.data) {
+        const { user, token } = response.data;
+        await setUserAuth(user, token);
+        setUser(user);
+        setIsAuthenticated(true);
+      } else {
+        setError(response.error || 'Login failed');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleLogout = () => {
-    chrome.storage.local.remove(['user', 'token'], () => {
+  const handleLogout = async () => {
+    try {
+      await clearUserAuth();
       setUser(null);
       setIsAuthenticated(false);
-    });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <p className="ml.md">Loading...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-full bg-black text-white">
+    <div className="container">
       {isAuthenticated ? (
         <Dashboard user={user} onLogout={handleLogout} />
       ) : (
-        <AuthPage onLogin={handleLogin} />
+        <AuthPage onLogin={handleLogin} error={error} />
       )}
     </div>
   );

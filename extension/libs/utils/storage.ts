@@ -76,9 +76,9 @@ export async function getUser(): Promise<any | null> {
 }
 
 // Get auth token
-export async function getToken(): Promise<string | null> {
+export async function getToken(): Promise<string | undefined> {
   const data = await getStorageData();
-  return data.token || null;
+  return data.token;
 }
 
 // Set user and token
@@ -88,7 +88,7 @@ export async function setUserAuth(user: any, token: string): Promise<void> {
 
 // Clear user and token
 export async function clearUserAuth(): Promise<void> {
-  await setStorageData({ user: null, token: null });
+  await setStorageData({ user: undefined, token: undefined });
 }
 
 // Get settings
