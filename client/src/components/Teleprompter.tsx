@@ -32,7 +32,7 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
         {/* Text container with scrolling content */}
         <div
           ref={teleprompterTextRef}
-          className="h-full p-6 pb-16 overflow-hidden"
+          className="h-full p-6 pb-16 overflow-y-auto"
           style={{ fontSize: `${textSize}px` }}
         >
           {text.split('\n').map((line, i) => (

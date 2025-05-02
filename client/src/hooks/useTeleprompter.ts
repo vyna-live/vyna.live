@@ -17,6 +17,8 @@ export default function useTeleprompter(text: string) {
     currentScrollPositionRef.current = 0;
     if (teleprompterTextRef.current) {
       teleprompterTextRef.current.style.transform = 'translateY(0)';
+      // Reset scroll position
+      teleprompterTextRef.current.scrollTop = 0;
     }
     
     return () => {
@@ -33,11 +35,12 @@ export default function useTeleprompter(text: string) {
     const containerHeight = containerRef.current.clientHeight;
     const scrollDistance = textHeight - containerHeight;
     
-    if (currentScrollPositionRef.current < scrollDistance) {
+    // Use the scrollTop property for smoother scrolling and better compatibility
+    if (teleprompterTextRef.current.scrollTop < scrollDistance) {
       // Adjust speed factor (higher number = faster)
       const speedFactor = speed * 0.1;
-      currentScrollPositionRef.current += speedFactor;
-      teleprompterTextRef.current.style.transform = `translateY(-${currentScrollPositionRef.current}px)`;
+      teleprompterTextRef.current.scrollTop += speedFactor;
+      currentScrollPositionRef.current = teleprompterTextRef.current.scrollTop;
       animationRef.current = requestAnimationFrame(animate);
     } else {
       setIsPlaying(false);
@@ -66,7 +69,7 @@ export default function useTeleprompter(text: string) {
     setIsPlaying(false);
     currentScrollPositionRef.current = 0;
     if (teleprompterTextRef.current) {
-      teleprompterTextRef.current.style.transform = 'translateY(0)';
+      teleprompterTextRef.current.scrollTop = 0;
     }
   };
 
