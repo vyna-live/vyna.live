@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2018",
+    "module": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -9,13 +10,17 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
+    "noEmit": false,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@libs/*": ["libs/*"]
+    },
+    "typeRoots": ["node_modules/@types", "types"]
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts", "**/*.tsx", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "dist-firefox"]
 }

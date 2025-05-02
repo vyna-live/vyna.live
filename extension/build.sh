@@ -1,38 +1,32 @@
 #!/bin/bash
 
-# Build script for Vyna.live extension
+set -e
 
-# Check if npm is installed
-if ! [ -x "$(command -v npm)" ]; then
-  echo 'Error: npm is not installed.' >&2
-  exit 1
-fi
+# Ensure directories exist
+mkdir -p dist/icons
+mkdir -p dist-firefox/icons
 
-# Set variables
-EXTENSION_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DIST_DIR="$EXTENSION_DIR/dist"
-FIREFOX_DIST_DIR="$EXTENSION_DIR/dist-firefox"
-ZIP_DIR="$EXTENSION_DIR/packages"
+# Build for Chrome/Edge (Manifest V3)
+echo "Building extension for Chrome/Edge..."
+npx webpack --config webpack.config.js
 
-# Create packages directory if it doesn't exist
-mkdir -p "$ZIP_DIR"
+# Build for Firefox (Manifest V2)
+echo "Building extension for Firefox..."
+npx webpack --config webpack.firefox.config.js
 
-# Build Chrome/Edge extension
-echo "Building Chrome/Edge extension..."
-cd "$EXTENSION_DIR" && npm run build
+# Create ZIP archives
+echo "Creating ZIP archives..."
 
-# Create Chrome/Edge zip package
-echo "Creating Chrome/Edge package..."
-cd "$DIST_DIR" && zip -r "$ZIP_DIR/vyna-extension-chrome-v1.0.0.zip" *
+# Chrome/Edge
+cd dist
+zip -r ../vyna-extension-chrome.zip .
+cd ..
 
-# Build Firefox extension
-echo "Building Firefox extension..."
-cd "$EXTENSION_DIR" && npm run build:firefox
+# Firefox
+cd dist-firefox
+zip -r ../vyna-extension-firefox.zip .
+cd ..
 
-# Create Firefox zip package
-echo "Creating Firefox package..."
-cd "$FIREFOX_DIST_DIR" && zip -r "$ZIP_DIR/vyna-extension-firefox-v1.0.0.zip" *
-
-echo "Build completed."
-echo "Chrome/Edge package: $ZIP_DIR/vyna-extension-chrome-v1.0.0.zip"
-echo "Firefox package: $ZIP_DIR/vyna-extension-firefox-v1.0.0.zip"
+echo "Build complete!"
+echo "Chrome/Edge extension: vyna-extension-chrome.zip"
+echo "Firefox extension: vyna-extension-firefox.zip"

@@ -1,14 +1,17 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import Popup from './popup';
-import './popup.css';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import App from './App';
+import './styles/popup.css';
 
-const container = document.getElementById('root');
-if (!container) throw new Error('Root element not found');
+const root = ReactDOM.createRoot(document.getElementById('app-root') as HTMLElement);
 
-const root = createRoot(container);
 root.render(
   <React.StrictMode>
-    <Popup />
+    <Router>
+      <Routes>
+        <Route path="/*" element={<App />} />
+      </Routes>
+    </Router>
   </React.StrictMode>
 );

@@ -1,23 +1,22 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   entry: {
-    popup: path.resolve(__dirname, 'popup/popup.tsx'),
-    dashboard: path.resolve(__dirname, 'dashboard/index.tsx'),
-    content: path.resolve(__dirname, 'content/content.ts'),
-    background: path.resolve(__dirname, 'background/background.ts'),
+    popup: './popup/index.tsx',
+    content: './content/content.ts',
+    background: './background/background.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].js',
+    clean: true,
   },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.(ts|tsx)$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },
@@ -37,22 +36,17 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     alias: {
-      '@components': path.resolve(__dirname, 'libs/components'),
-      '@hooks': path.resolve(__dirname, 'libs/hooks'),
-      '@utils': path.resolve(__dirname, 'libs/utils'),
+      '@libs': path.resolve(__dirname, 'libs'),
     },
   },
   plugins: [
-    new CleanWebpackPlugin(),
     new CopyPlugin({
       patterns: [
         { from: 'manifest.json', to: '.' },
-        { from: 'assets', to: 'assets' },
-        { from: 'popup/popup.html', to: 'popup.html' },
-        { from: 'popup/popup.css', to: 'popup.css' },
-        { from: 'dashboard/index.html', to: 'dashboard.html' },
+        { from: 'popup.html', to: '.' },
+        { from: 'icons', to: 'icons' },
+        { from: 'popup/styles', to: 'popup/styles' },
       ],
     }),
   ],
-  devtool: 'cheap-module-source-map',
 };
