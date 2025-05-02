@@ -268,7 +268,12 @@ export function AgoraVideo({
           // Register RTM channel events
           rtmChannel.on('ChannelMessage', (message: any, senderId: string) => {
             try {
-              console.log(`Raw Channel message received from ${senderId}:`, message);
+              // Alert when host receives any message
+              if (role === 'host') {
+                console.log(`HOST GOT RAW CHANNEL MESSAGE FROM ${senderId}:`, message);
+              } else {
+                console.log(`AUDIENCE GOT RAW CHANNEL MESSAGE FROM ${senderId}:`, message);
+              }
               
               let messageText;
               // Handle different message formats based on RTM SDK version
@@ -282,14 +287,32 @@ export function AgoraVideo({
                 console.log('Detected new RTM message format (object with text)'); 
               } else {
                 console.error("Received invalid message format", message);
+                // Add a fallback to prevent errors
+                if (message && typeof message === 'object') {
+                  messageText = JSON.stringify(message);
+                } else {
+                  return; // Can't process this message
+                }
+              }
+              
+              // Try to parse the message content with extra error handling
+              let parsedMsg;
+              try {
+                parsedMsg = JSON.parse(messageText);
+              } catch (parseError) {
+                console.error('Failed to parse message as JSON:', parseError, 'Original message:', messageText);
+                // Still show raw message
+                addLocalMessage(senderId, `User ${senderId.slice(-4)}`, messageText, 'bg-blue-500');
                 return;
               }
               
-              // Try to parse the message content
-              const parsedMsg = JSON.parse(messageText);
-              const { text, name, color, type } = parsedMsg;
+              // Safely extract message properties
+              const text = parsedMsg.text || '';
+              const name = parsedMsg.name || `User ${senderId.slice(-4)}`;
+              const color = parsedMsg.color || 'bg-blue-500';
+              const type = parsedMsg.type || null;
               
-              console.log(`Channel message parsed: ${text} from ${name || 'unknown'} (${senderId})`, parsedMsg);
+              console.log(`Channel message parsed successfully: ${text} from ${name} (${senderId})`, parsedMsg);
               
               // Add explicit console logs for any message on host side
               if (role === 'host') {
@@ -967,26 +990,53 @@ export function AgoraVideo({
             text: 'Viewer has joined the stream',
             name: userName,
             color: 'bg-green-500',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            senderId: uid.toString()  // Add explicit sender ID
           };
           
-          rtmChannelRef.current.sendMessage({ text: JSON.stringify(viewerJoinMsg) })
-            .then(() => {
-              console.log('Successfully sent viewer_join notification');
-            })
-            .catch(err => {
-              console.error('Failed to send viewer_join notification:', err);
-              // Try legacy format if modern format fails
-              try {
-                // @ts-ignore - For backward compatibility
-                rtmChannelRef.current?.sendMessage(JSON.stringify(viewerJoinMsg));
-                console.log('Sent viewer_join notification via legacy API');
-              } catch (legacyErr) {
-                console.error('Legacy sendMessage also failed:', legacyErr);
+          // Give RTM connection time to fully establish
+          setTimeout(() => {
+            try {
+              if (!rtmChannelRef.current) {
+                console.error('RTM channel ref lost before sending notification');
+                return;
               }
-            });
+              
+              console.log('Sending delayed viewer_join notification with:', viewerJoinMsg);
+              const msgStr = JSON.stringify(viewerJoinMsg);
+              
+              // Try the modern format first
+              rtmChannelRef.current.sendMessage({ text: msgStr })
+                .then(() => {
+                  console.log('Successfully sent viewer_join notification (modern API)');
+                })
+                .catch(err => {
+                  console.error('Failed to send viewer_join notification (modern API):', err);
+                  // Try legacy format if modern format fails
+                  try {
+                    // @ts-ignore - For backward compatibility
+                    rtmChannelRef.current?.sendMessage(msgStr);
+                    console.log('Sent viewer_join notification via legacy API');
+                  } catch (legacyErr) {
+                    console.error('Legacy sendMessage also failed:', legacyErr);
+                    
+                    // Last resort: try plain text message
+                    try {
+                      const plainMsg = `VIEWER_JOIN:${uid}`;
+                      // @ts-ignore
+                      rtmChannelRef.current?.sendMessage(plainMsg);
+                      console.log('Sent simple plain text notification as last resort');
+                    } catch (plainErr) {
+                      console.error('All message sending methods failed');
+                    }
+                  }
+                });
+            } catch (delayedErr) {
+              console.error('Delayed notification send error:', delayedErr);
+            }
+          }, 2000); // Delay by 2 seconds to ensure RTM connection is ready
         } catch (notifyErr) {
-          console.error('Error in viewer join notification:', notifyErr);
+          console.error('Error in viewer join notification setup:', notifyErr);
           // Continue even if notification fails
         }
       }
