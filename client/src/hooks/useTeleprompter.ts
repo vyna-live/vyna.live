@@ -2,7 +2,9 @@ import { useRef, useState, useEffect } from "react";
 
 export default function useTeleprompter(text: string) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(5);
+  const [speed, setSpeed] = useState(24); // Default speed value
+  const [textSize, setTextSize] = useState(24); // Default text size value
+  const [showSettings, setShowSettings] = useState(false);
   
   const teleprompterTextRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -72,13 +74,25 @@ export default function useTeleprompter(text: string) {
     setSpeed(parseInt(e.target.value));
   };
 
+  const handleTextSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTextSize(parseInt(e.target.value));
+  };
+
+  const toggleSettings = () => {
+    setShowSettings(!showSettings);
+  };
+
   return {
     teleprompterTextRef,
     containerRef,
     isPlaying,
     speed,
+    textSize,
+    showSettings,
     togglePlayPause,
     handleRestart,
-    handleSpeedChange
+    handleSpeedChange,
+    handleTextSizeChange,
+    toggleSettings
   };
 }
