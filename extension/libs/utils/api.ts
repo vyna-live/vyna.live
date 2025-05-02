@@ -1,152 +1,133 @@
-// API utilities for the extension
+// API utility functions for the extension
 
-import { getStoredToken } from './storage';
-
-export interface ApiRequestOptions {
-  method: string;
-  endpoint: string;
-  data?: any;
-  token?: string;
-}
-
-// Base URL for the API
 const API_BASE_URL = 'https://vyna.live/api';
 
-// Function to make API requests
-export const apiRequest = async <T>(
-  method: string,
-  endpoint: string,
-  data?: any
-): Promise<T> => {
-  try {
-    // Request through background script to handle cross-origin requests
-    const response = await new Promise<{ success: boolean; data?: T; error?: string }>(
-      (resolve) => {
-        chrome.runtime.sendMessage(
-          {
-            type: 'apiRequest',
-            method,
-            endpoint,
-            data,
-          },
-          (response) => {
-            resolve(response);
-          }
-        );
-      }
-    );
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
 
-    if (!response.success) {
-      throw new Error(response.error || 'API request failed');
+interface LoginResponse {
+  token: string;
+  user: {
+    id: number;
+    username: string;
+    email?: string;
+    displayName?: string;
+    role?: string;
+  };
+}
+
+// Generic API request function
+export async function apiRequest<T>(
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  endpoint: string,
+  data?: any,
+  token?: string
+): Promise<ApiResponse<T>> {
+  try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    return response.data as T;
+    const config: RequestInit = {
+      method,
+      headers,
+      credentials: 'include',
+    };
+
+    if (data) {
+      config.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: responseData.error || 'An unknown error occurred',
+      };
+    }
+
+    return {
+      success: true,
+      data: responseData,
+    };
   } catch (error) {
-    console.error(`API Error (${method} ${endpoint}):`, error);
-    throw error;
+    console.error('API error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unknown error occurred',
+    };
   }
-};
+}
 
-// Authentication API calls
-export const login = async (username: string, password: string) => {
-  return apiRequest<any>('POST', '/login', { username, password });
-};
+// Authentication functions
+export async function login(username: string, password: string): Promise<ApiResponse<LoginResponse>> {
+  return apiRequest<LoginResponse>('POST', '/login', { username, password });
+}
 
-export const register = async (userData: {
-  username: string;
-  email: string;
-  password: string;
-  displayName?: string;
-}) => {
-  return apiRequest<any>('POST', '/register', userData);
-};
+export async function register(username: string, email: string, password: string): Promise<ApiResponse<LoginResponse>> {
+  return apiRequest<LoginResponse>('POST', '/register', { username, email, password });
+}
 
-export const logout = async () => {
-  return apiRequest<void>('POST', '/logout');
-};
+export async function logout(token: string): Promise<ApiResponse<null>> {
+  return apiRequest<null>('POST', '/logout', undefined, token);
+}
 
-export const getCurrentUser = async () => {
-  return apiRequest<any>('GET', '/user');
-};
+export async function getCurrentUser(token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('GET', '/user', undefined, token);
+}
 
-// AI Chat API calls
-export const getAiChats = async () => {
-  return apiRequest<any[]>('GET', '/ai-chats');
-};
+// AI Chat functions
+export async function getAiResponse(message: string, commentaryStyle: 'play-by-play' | 'color', token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('POST', '/chat/ai', { message, commentaryStyle }, token);
+}
 
-export const getAiChatById = async (chatId: number) => {
-  return apiRequest<any>('GET', `/ai-chats/${chatId}`);
-};
+export async function getChatHistory(token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('GET', '/chat/history', undefined, token);
+}
 
-export const createAiChat = async (title: string, initialMessage?: string) => {
-  return apiRequest<any>('POST', '/ai-chats', { title, initialMessage });
-};
+export async function getChatSession(sessionId: number, token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('GET', `/chat/session/${sessionId}`, undefined, token);
+}
 
-export const sendChatMessage = async (
-  chatId: number,
-  message: string,
-  style?: 'play-by-play' | 'color',
-  pageContent?: string
-) => {
-  return apiRequest<any>('POST', `/ai-chats/${chatId}/messages`, {
-    content: message,
-    commentaryStyle: style,
-    pageContent,
-  });
-};
+export async function createChatSession(title: string, token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('POST', '/chat/session/create', { title }, token);
+}
 
-export const renameAiChat = async (chatId: number, title: string) => {
-  return apiRequest<any>('PATCH', `/ai-chats/${chatId}`, { title });
-};
+// Notepad functions
+export async function saveNote(title: string, content: string, token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('POST', '/notes/create', { title, content }, token);
+}
 
-export const deleteAiChat = async (chatId: number) => {
-  return apiRequest<void>('DELETE', `/ai-chats/${chatId}`);
-};
+export async function getNotes(token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('GET', '/notes', undefined, token);
+}
 
-// Notepad API calls
-export const getNotepads = async () => {
-  return apiRequest<any[]>('GET', '/notepads');
-};
+export async function getNote(noteId: number, token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('GET', `/notes/${noteId}`, undefined, token);
+}
 
-export const getNotepadById = async (notepadId: number) => {
-  return apiRequest<any>('GET', `/notepads/${notepadId}`);
-};
+export async function updateNote(noteId: number, title: string, content: string, token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('PUT', `/notes/${noteId}`, { title, content }, token);
+}
 
-export const createNotepad = async (title: string, content: string) => {
-  return apiRequest<any>('POST', '/notepads', { title, content });
-};
+export async function deleteNote(noteId: number, token: string): Promise<ApiResponse<any>> {
+  return apiRequest<any>('DELETE', `/notes/${noteId}`, undefined, token);
+}
 
-export const updateNotepad = async (notepadId: number, content: string, title?: string) => {
-  const updateData: { content: string; title?: string } = { content };
-  if (title) updateData.title = title;
-  
-  return apiRequest<any>('PATCH', `/notepads/${notepadId}`, updateData);
-};
-
-export const deleteNotepad = async (notepadId: number) => {
-  return apiRequest<void>('DELETE', `/notepads/${notepadId}`);
-};
-
-// Utility to extract content from current page
-export const extractCurrentPageContent = async (): Promise<{
+// Extract page content (for content script to background communication)
+export interface PageContent {
   title: string;
   url: string;
-  content: string;
-}> => {
-  return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(
-      { type: 'extractCurrentPageContent' },
-      (response) => {
-        if (response && response.success) {
-          resolve({
-            title: response.title,
-            url: response.url,
-            content: response.content,
-          });
-        } else {
-          reject(new Error(response?.error || 'Failed to extract page content'));
-        }
-      }
-    );
-  });
-};
+  selection: string;
+  metaDescription: string;
+  pageText: string;
+}

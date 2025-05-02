@@ -1,129 +1,84 @@
-// Storage utility for the extension
+// Storage utility functions for the extension
 
-// User data type
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  displayName?: string;
-  role?: string;
+interface UserAuth {
   token: string;
+  user: {
+    id: number;
+    username: string;
+    email?: string;
+    displayName?: string;
+    role?: string;
+  };
 }
 
-// Settings type
-export interface ExtensionSettings {
-  theme: 'light' | 'dark';
-  commentaryStyle: 'play-by-play' | 'color';
-  extractPageContent: boolean;
+interface StorageData {
+  userAuth: UserAuth | null;
+  settings: {
+    theme: 'light' | 'dark' | 'system';
+    defaultCommentaryStyle: 'play-by-play' | 'color';
+    autoSaveNotes: boolean;
+  };
 }
 
 // Default settings
-export const DEFAULT_SETTINGS: ExtensionSettings = {
-  theme: 'light',
-  commentaryStyle: 'color',
-  extractPageContent: true,
+const DEFAULT_SETTINGS: StorageData['settings'] = {
+  theme: 'system',
+  defaultCommentaryStyle: 'color',
+  autoSaveNotes: true
 };
 
-// Store user data
-export const storeUser = async (userData: User): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ user: userData }, () => {
-      resolve();
-    });
-  });
-};
+// Initialize storage with default values if not set
+export async function initStorage(): Promise<void> {
+  const data = await chrome.storage.local.get(['userAuth', 'settings']);
+  
+  if (!data.settings) {
+    await chrome.storage.local.set({ settings: DEFAULT_SETTINGS });
+  }
+}
 
-// Get stored user data
-export const getStoredUser = async (): Promise<User | null> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['user'], (result) => {
-      resolve(result.user || null);
-    });
-  });
-};
+// Get user authentication data
+export async function getUserAuth(): Promise<UserAuth | null> {
+  const data = await chrome.storage.local.get('userAuth');
+  return data.userAuth || null;
+}
 
-// Clear user data
-export const clearUserData = async (): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.remove(['user'], () => {
-      resolve();
-    });
-  });
-};
+// Set user authentication data
+export async function setUserAuth(authData: UserAuth): Promise<void> {
+  await chrome.storage.local.set({ userAuth: authData });
+}
 
-// Store auth token
-export const storeToken = async (token: string): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ token }, () => {
-      resolve();
-    });
-  });
-};
+// Clear user authentication data (logout)
+export async function clearUserAuth(): Promise<void> {
+  await chrome.storage.local.remove('userAuth');
+}
 
-// Get stored auth token
-export const getStoredToken = async (): Promise<string | null> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['token'], (result) => {
-      resolve(result.token || null);
-    });
-  });
-};
+// Get all storage data
+export async function getStorageData(): Promise<StorageData> {
+  const data = await chrome.storage.local.get(['userAuth', 'settings']);
+  
+  return {
+    userAuth: data.userAuth || null,
+    settings: data.settings || DEFAULT_SETTINGS
+  };
+}
 
-// Store settings
-export const storeSettings = async (settings: Partial<ExtensionSettings>): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['settings'], (result) => {
-      const currentSettings = result.settings || DEFAULT_SETTINGS;
-      const updatedSettings = { ...currentSettings, ...settings };
-      
-      chrome.storage.local.set({ settings: updatedSettings }, () => {
-        resolve();
-      });
-    });
+// Update settings
+export async function updateSettings(settings: Partial<StorageData['settings']>): Promise<void> {
+  const data = await chrome.storage.local.get('settings');
+  const currentSettings = data.settings || DEFAULT_SETTINGS;
+  
+  await chrome.storage.local.set({
+    settings: { ...currentSettings, ...settings }
   });
-};
+}
 
-// Get stored settings
-export const getStoredSettings = async (): Promise<ExtensionSettings> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['settings'], (result) => {
-      resolve(result.settings || DEFAULT_SETTINGS);
-    });
-  });
-};
+// Get settings
+export async function getSettings(): Promise<StorageData['settings']> {
+  const data = await chrome.storage.local.get('settings');
+  return data.settings || DEFAULT_SETTINGS;
+}
 
-// Store chat history for quick access
-export const storeChatHistory = async (chats: any[]): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ recentChats: chats.slice(0, 10) }, () => {
-      resolve();
-    });
-  });
-};
-
-// Get stored chat history
-export const getStoredChatHistory = async (): Promise<any[]> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['recentChats'], (result) => {
-      resolve(result.recentChats || []);
-    });
-  });
-};
-
-// Store notepad history for quick access
-export const storeNotepadHistory = async (notepads: any[]): Promise<void> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.set({ recentNotepads: notepads.slice(0, 10) }, () => {
-      resolve();
-    });
-  });
-};
-
-// Get stored notepad history
-export const getStoredNotepadHistory = async (): Promise<any[]> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['recentNotepads'], (result) => {
-      resolve(result.recentNotepads || []);
-    });
-  });
-};
+// Clear all stored data
+export async function clearUserData(): Promise<void> {
+  await chrome.storage.local.remove(['userAuth']);
+}

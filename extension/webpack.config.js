@@ -1,50 +1,50 @@
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   mode: 'production',
   entry: {
     popup: './popup/index.tsx',
-    content: './content/content.ts',
     background: './background/background.ts',
+    content: './content/content.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
-    clean: true,
+    filename: '[name]/[name].js',
+  },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    alias: {
+      '@components': path.resolve(__dirname, 'libs/components'),
+      '@assets': path.resolve(__dirname, 'libs/assets'),
+      '@utils': path.resolve(__dirname, 'libs/utils'),
+      '@hooks': path.resolve(__dirname, 'libs/hooks'),
+      '@types': path.resolve(__dirname, 'libs/types'),
+    },
   },
   module: {
     rules: [
       {
-        test: /\.(ts|tsx)$/,
+        test: /\.tsx?$/,
         use: 'ts-loader',
         exclude: /node_modules/,
       },
       {
-        test: /\.css$/,
+        test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
       {
-        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        test: /\.(png|jpe?g|gif|svg)$/i,
         type: 'asset/resource',
-        generator: {
-          filename: 'assets/[name][ext]',
-        },
       },
     ],
   },
-  resolve: {
-    extensions: ['.tsx', '.ts', '.js'],
-    alias: {
-      '@libs': path.resolve(__dirname, 'libs'),
-    },
-  },
   plugins: [
-    new CopyPlugin({
+    new CopyWebpackPlugin({
       patterns: [
-        { from: 'manifest.json', to: '.' },
-        { from: 'popup.html', to: '.' },
+        { from: 'manifest.json', to: 'manifest.json' },
         { from: 'icons', to: 'icons' },
+        { from: 'popup/popup.html', to: 'popup/popup.html' },
         { from: 'popup/styles', to: 'popup/styles' },
       ],
     }),

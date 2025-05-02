@@ -1,128 +1,128 @@
-// Content script for Vyna.live browser extension
+// Content script for the Vyna AI Assistant extension
+// This script runs on web pages to extract content for AI analysis
 
-// Listen for messages from background script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // Handle content extraction request
-  if (request.action === 'extractContent') {
-    const content = extractPageContent();
-    sendResponse({ content });
-    return true;
+import { PageContent } from '../libs/utils/api';
+
+// Function to extract text content from the page
+function extractPageContent(): PageContent {
+  const selection = window.getSelection()?.toString() || '';
+  const metaTags = document.getElementsByTagName('meta');
+  let metaDescription = '';
+  
+  // Extract meta description if available
+  for (let i = 0; i < metaTags.length; i++) {
+    if (metaTags[i].getAttribute('name') === 'description') {
+      metaDescription = metaTags[i].getAttribute('content') || '';
+      break;
+    }
   }
   
-  // Handle other actions here
-});
-
-// Extract content from current page
-function extractPageContent(): string {
-  try {
-    // Get the main content (prioritize article or main content)
-    const mainContent = document.querySelector('article, [role="main"], main') || document.body;
-    
-    // Extract visible text, ignoring scripts, styles, etc.
-    let visibleText = '';
-    
-    // Function to extract text from an element
-    function extractTextFromElement(element: Element): void {
-      // Skip hidden elements
-      const style = window.getComputedStyle(element);
-      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-        return;
-      }
-      
-      // Skip script, style, and other non-content elements
-      const tagName = element.tagName.toLowerCase();
-      if (['script', 'style', 'noscript', 'iframe', 'svg', 'path', 'symbol', 'meta', 'link'].includes(tagName)) {
-        return;
-      }
-      
-      // Process headers with special formatting
-      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
-        const headerLevel = parseInt(tagName.substring(1), 10);
-        const prefix = '#'.repeat(headerLevel) + ' ';
-        const headerText = element.textContent?.trim();
-        if (headerText) {
-          visibleText += prefix + headerText + '\n\n';
-        }
-        return;
-      }
-      
-      // Process paragraphs
-      if (tagName === 'p') {
-        const paragraphText = element.textContent?.trim();
-        if (paragraphText) {
-          visibleText += paragraphText + '\n\n';
-        }
-        return;
-      }
-      
-      // Process list items
-      if (tagName === 'li') {
-        const listItemText = element.textContent?.trim();
-        if (listItemText) {
-          visibleText += '• ' + listItemText + '\n';
-        }
-        return;
-      }
-      
-      // Process other elements with text content
-      if (element.childNodes.length === 0) {
-        const text = element.textContent?.trim();
-        if (text) {
-          visibleText += text + ' ';
-        }
-        return;
-      }
-      
-      // Recursively process child elements
-      element.childNodes.forEach(child => {
-        if (child.nodeType === Node.ELEMENT_NODE) {
-          extractTextFromElement(child as Element);
-        } else if (child.nodeType === Node.TEXT_NODE) {
-          const text = child.textContent?.trim();
-          if (text) {
-            visibleText += text + ' ';
-          }
-        }
-      });
-      
-      // Add line break after block elements
-      if (['div', 'section', 'article', 'aside', 'header', 'footer', 'nav', 'blockquote'].includes(tagName)) {
-        visibleText += '\n';
-      }
+  // Extract main page text, prioritizing article content
+  let pageText = '';
+  
+  // Try to get content from article elements first
+  const articleElements = document.querySelectorAll('article, [role="article"], .article, .post, .content, main');
+  
+  if (articleElements.length > 0) {
+    // Combine text from all article elements
+    for (let i = 0; i < articleElements.length; i++) {
+      pageText += articleElements[i].textContent || '';
     }
-    
-    // Start extraction
-    extractTextFromElement(mainContent);
-    
-    // Clean up the text (remove excessive whitespace)
-    const cleanedText = visibleText
-      .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
-      .replace(/\n\s+/g, '\n') // Remove spaces at the beginning of lines
-      .replace(/\n{3,}/g, '\n\n') // Replace 3+ consecutive line breaks with just 2
-      .trim(); // Remove leading/trailing whitespace
-    
-    // Limit the content length (max 2000 characters)
-    const maxLength = 2000;
-    const truncatedText = cleanedText.length > maxLength
-      ? cleanedText.substring(0, maxLength) + '\n\n[Content truncated due to length...]'
-      : cleanedText;
-    
-    return truncatedText;
-  } catch (error) {
-    console.error('Error extracting page content:', error);
-    return 'Could not extract content from this page.';
+  } else {
+    // Fallback to body content
+    pageText = document.body.innerText || '';
   }
+  
+  // Clean up the page text (remove excessive whitespace)
+  pageText = pageText.replace(/\s+/g, ' ').trim();
+  
+  // Limit the page text to a reasonable size (e.g., first 10000 characters)
+  if (pageText.length > 10000) {
+    pageText = pageText.substring(0, 10000) + '... (content truncated)';
+  }
+  
+  return {
+    title: document.title,
+    url: window.location.href,
+    selection,
+    metaDescription,
+    pageText
+  };
 }
 
-// Function to check if element is visible
-function isElementVisible(element: Element): boolean {
-  if (!element) return false;
+// Listen for messages from the popup or background script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'extractContent') {
+    const content = extractPageContent();
+    sendResponse(content);
+    return true; // Required for async response
+  }
+});
+
+// Inject a button on the page for quick access (optional)
+function injectVynaButton() {
+  const buttonId = 'vyna-ai-button';
   
-  const style = window.getComputedStyle(element);
-  return !(
-    style.display === 'none' ||
-    style.visibility === 'hidden' ||
-    style.opacity === '0' ||
-    element.getAttribute('aria-hidden') === 'true'
-  );
+  // Don't add the button if it already exists
+  if (document.getElementById(buttonId)) {
+    return;
+  }
+  
+  const button = document.createElement('div');
+  button.id = buttonId;
+  button.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="#5D1C34"/>
+      <path d="M15 9L9 15M9 9L15 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `;
+  
+  button.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #5D1C34;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 9999;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+  `;
+  
+  button.addEventListener('mouseover', () => {
+    button.style.transform = 'scale(1.1)';
+  });
+  
+  button.addEventListener('mouseout', () => {
+    button.style.transform = 'scale(1)';
+  });
+  
+  button.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'openPopup' });
+  });
+  
+  document.body.appendChild(button);
+}
+
+// Initialize the content script
+function init() {
+  // Decide whether to inject the button based on user settings
+  // For now, let's temporarily disable it
+  // injectVynaButton();
+  
+  // Let the background script know that the content script is loaded
+  chrome.runtime.sendMessage({ action: 'contentScriptLoaded', url: window.location.href });
+}
+
+// Run initialization when the page is fully loaded
+if (document.readyState === 'complete') {
+  init();
+} else {
+  window.addEventListener('load', init);
 }
