@@ -456,13 +456,38 @@ export function AgoraVideo({
           }, 2000); // Delay to avoid messages appearing for initial connections
         });
         
-        // Listen for user-left events
+        // Enhanced listener for user-left events
         agoraClient.on('user-left', (user) => {
-          console.log("User left:", user.uid);
-          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-          setViewers(prev => Math.max(0, prev - 1));
+          console.log("RTC EVENT: User left:", user.uid);
           
-          // Add chat message for user leaving, only if we were tracking them (not initial disconnect)
+          // Remove from remote users list
+          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+          
+          // Update viewer count
+          const newViewerCount = Math.max(0, viewers - 1);
+          console.log(`⚠️ Viewer count decreased: ${viewers} → ${newViewerCount}`);
+          setViewers(newViewerCount);
+          
+          // For host, ensure immediate DOM update for viewer count
+          if (role === 'host') {
+            try {
+              const viewerElement = document.querySelector('.viewer-count-display');
+              if (viewerElement) {
+                viewerElement.textContent = String(newViewerCount);
+                console.log('Forced DOM update of viewer count to', newViewerCount);
+                
+                // Add visual indicator that count decreased
+                viewerElement.classList.add('bg-red-500/30', 'px-1', 'rounded');
+                setTimeout(() => {
+                  viewerElement.classList.remove('bg-red-500/30', 'px-1', 'rounded');
+                }, 1000);
+              }
+            } catch (err) {
+              console.error('Could not update DOM directly for leave event', err);
+            }
+          }
+          
+          // Add chat message for user leaving
           const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
           const color = randomColors[Math.floor(Math.random() * randomColors.length)];
             
@@ -483,21 +508,19 @@ export function AgoraVideo({
             displayName = existingUser?.name || `User ${user.uid.toString().slice(-4)}`;
           }
           
-          setChatMessages(prev => {
-            const newMessages = [{
-              userId: user.uid.toString(),
-              name: displayName,
-              message: "left",
-              color,
-              isHost: user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
-            }, ...prev];
-            
-            // Keep only the latest 8 messages
-            if (newMessages.length > 8) {
-              return newMessages.slice(0, 8);
-            }
-            return newMessages;
-          });
+          // Use enhanced addLocalMessage instead of direct state update
+          addLocalMessage(
+            user.uid.toString(),
+            displayName,
+            "left",
+            color,
+            user.uid !== uid && role === 'audience' // The host is the remote user when in audience mode
+          );
+          
+          // If this is an audience member leaving, also announce it in console
+          if (role === 'host' && user.uid !== uid) {
+            console.log(`🚨 Audience member left host's stream: ${user.uid}`);
+          }
         });
         
         // Create tracks if host
@@ -680,27 +703,36 @@ export function AgoraVideo({
                   setViewers(audienceMembers.length);
                   setConnectedAudienceIds(new Set(audienceMembers));
                   
-                  // Notify about existing audience
+                  // Notify about existing audience using enhanced message function
                   audienceMembers.forEach(member => {
-                    // Add a visible notification message
                     const randomColors = ['bg-orange-500', 'bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-pink-500', 'bg-indigo-500'];
                     const color = randomColors[Math.floor(Math.random() * randomColors.length)];
                     
-                    setChatMessages(prev => {
-                      const newMessages = [{
-                        userId: member,
-                        name: `Viewer ${member.slice(-4)}`,
-                        message: "is already in the stream",
-                        color,
-                        isHost: false
-                      }, ...prev];
-                      
-                      if (newMessages.length > 8) {
-                        return newMessages.slice(0, 8);
-                      }
-                      return newMessages;
-                    });
+                    // Use enhanced addLocalMessage for existing viewers too
+                    addLocalMessage(
+                      member,
+                      `Viewer ${member.slice(-4)}`,
+                      "is already in the stream",
+                      color,
+                      false
+                    );
                   });
+                  
+                  // Force DOM update of viewer count when host joins
+                  try {
+                    const viewerElement = document.querySelector('.viewer-count-display');
+                    if (viewerElement) {
+                      viewerElement.textContent = String(audienceMembers.length);
+                      console.log('🚨 Forced viewer count DOM update to', audienceMembers.length);
+                      // Add highlight animation
+                      viewerElement.classList.add('bg-blue-500/30', 'px-1', 'rounded');
+                      setTimeout(() => {
+                        viewerElement.classList.remove('bg-blue-500/30', 'px-1', 'rounded');
+                      }, 1000);
+                    }
+                  } catch (err) {
+                    console.error('Could not update DOM directly for initial viewers', err);
+                  }
                 }
               }).catch(err => {
                 console.error('Error checking for audience after host join:', err);
