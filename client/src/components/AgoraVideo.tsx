@@ -1683,24 +1683,28 @@ export function AgoraVideo({
       
       {/* Custom controls - centered at the bottom */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-5 bg-black/40 backdrop-blur-sm px-5 py-2.5 rounded-full border border-white/10 shadow-lg">
-        <button 
-          onClick={toggleAudio}
-          className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          {isAudioOn ? <Mic size={16} /> : <MicOff size={16} className="text-red-400" />}
-        </button>
-        <button 
-          onClick={toggleVideo}
-          className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
-        </button>
-        <button 
-          onClick={toggleScreenSharing}
-          className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
-        >
-          <ScreenShare size={16} />
-        </button>
+        {role === 'host' && (
+          <>
+            <button 
+              onClick={toggleAudio}
+              className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              {isAudioOn ? <Mic size={16} /> : <MicOff size={16} className="text-red-400" />}
+            </button>
+            <button 
+              onClick={toggleVideo}
+              className="w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              {isVideoOn ? <Camera size={16} /> : <CameraOff size={16} className="text-red-400" />}
+            </button>
+            <button 
+              onClick={toggleScreenSharing}
+              className={`w-8 h-8 ${isScreenSharing ? 'bg-green-500/70' : 'bg-black/50'} hover:bg-opacity-80 rounded-full flex items-center justify-center text-white transition-colors`}
+            >
+              <ScreenShare size={16} />
+            </button>
+          </>
+        )}
         <button 
           onClick={endStream}
           className="w-8 h-8 bg-red-500/80 hover:bg-red-600/90 rounded-full flex items-center justify-center text-white shadow-sm hover:shadow-md transition-all"
@@ -1738,84 +1742,89 @@ export function AgoraVideo({
           </div>
         </div>
 
-        {/* Share button with transparent background */}
-        <button
-          onClick={() => {
-            // Generate a shareable link with both host ID and channel name
-            const baseUrl = window.location.origin;
-            let shareUrl = '';
+        {/* Only show share and drawer buttons for hosts */}
+        {role === 'host' && (
+          <>
+            {/* Share button with transparent background */}
+            <button
+              onClick={() => {
+                // Generate a shareable link with both host ID and channel name
+                const baseUrl = window.location.origin;
+                let shareUrl = '';
+                
+                // Get the current user's ID (host ID) through an API call
+                fetch('/api/user')
+                  .then(response => {
+                    if (response.ok) {
+                      return response.json();
+                    } else {
+                      throw new Error('Not authenticated');
+                    }
+                  })
+                  .then(userData => {
+                    const hostId = userData.id.toString();
+                    // Create a share URL with host ID and channel name
+                    shareUrl = `${baseUrl}/view-stream/${hostId}?channel=${channelName}`;
+                    console.log('Generated share URL:', shareUrl);
+                    
+                    // Try to copy to clipboard, but handle errors without breaking
+                    try {
+                      return navigator.clipboard.writeText(shareUrl);
+                    } catch (clipboardError) {
+                      console.error('Could not copy to clipboard:', clipboardError);
+                      // Just show the URL in a toast if copying fails
+                      return Promise.resolve();
+                    }
+                  })
+                  .catch(err => {
+                    console.error('Error getting user data:', err);
+                    // Fallback to using channelName if user data can't be fetched
+                    shareUrl = `${baseUrl}/view-stream/channel-${channelName}`;
+                    try {
+                      return navigator.clipboard.writeText(shareUrl);
+                    } catch (clipboardError) {
+                      console.error('Could not copy to clipboard:', clipboardError);
+                      // Just show the URL in a toast if copying fails
+                      return Promise.resolve();
+                    }
+                  })
+                  .then(() => {
+                    // Show toast notification
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
+                    
+                    if (shareUrl) {
+                      // If we couldn't copy, show the URL in the toast
+                      toast.innerHTML = `<span>Stream link: <strong>${shareUrl}</strong></span>`;
+                    } else {
+                      toast.textContent = 'Stream link copied to clipboard!';
+                    }
+                    
+                    document.body.appendChild(toast);
+                    
+                    // Remove the toast after 3 seconds (longer to read the URL if needed)
+                    setTimeout(() => {
+                      toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                      setTimeout(() => document.body.removeChild(toast), 300);
+                    }, 3000);
+                  });
+              }}
+              className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
+            >
+              <Share2 size={14} />
+            </button>
             
-            // Get the current user's ID (host ID) through an API call
-            fetch('/api/user')
-              .then(response => {
-                if (response.ok) {
-                  return response.json();
-                } else {
-                  throw new Error('Not authenticated');
-                }
-              })
-              .then(userData => {
-                const hostId = userData.id.toString();
-                // Create a share URL with host ID and channel name
-                shareUrl = `${baseUrl}/view-stream/${hostId}?channel=${channelName}`;
-                console.log('Generated share URL:', shareUrl);
-                
-                // Try to copy to clipboard, but handle errors without breaking
-                try {
-                  return navigator.clipboard.writeText(shareUrl);
-                } catch (clipboardError) {
-                  console.error('Could not copy to clipboard:', clipboardError);
-                  // Just show the URL in a toast if copying fails
-                  return Promise.resolve();
-                }
-              })
-              .catch(err => {
-                console.error('Error getting user data:', err);
-                // Fallback to using channelName if user data can't be fetched
-                shareUrl = `${baseUrl}/view-stream/channel-${channelName}`;
-                try {
-                  return navigator.clipboard.writeText(shareUrl);
-                } catch (clipboardError) {
-                  console.error('Could not copy to clipboard:', clipboardError);
-                  // Just show the URL in a toast if copying fails
-                  return Promise.resolve();
-                }
-              })
-              .then(() => {
-                // Show toast notification
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-sm py-2 px-4 rounded-full backdrop-blur-sm z-50';
-                
-                if (shareUrl) {
-                  // If we couldn't copy, show the URL in the toast
-                  toast.innerHTML = `<span>Stream link: <strong>${shareUrl}</strong></span>`;
-                } else {
-                  toast.textContent = 'Stream link copied to clipboard!';
-                }
-                
-                document.body.appendChild(toast);
-                
-                // Remove the toast after 3 seconds (longer to read the URL if needed)
-                setTimeout(() => {
-                  toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                  setTimeout(() => document.body.removeChild(toast), 300);
-                }, 3000);
-              });
-          }}
-          className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
-        >
-          <Share2 size={14} />
-        </button>
-        
-        {/* Drawer toggle button with glassmorphic background */}
-        <button 
-          onClick={onToggleDrawer} 
-          className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+            {/* Drawer toggle button with glassmorphic background */}
+            <button 
+              onClick={onToggleDrawer} 
+              className="flex items-center justify-center w-8 h-8 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-white hover:bg-black/50 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 7L13 12L8 17M16 7L21 12L16 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </>
+        )}
       </div>
       
       {/* Chat container */}

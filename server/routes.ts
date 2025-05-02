@@ -423,6 +423,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get GetStream API key for frontend
   app.get("/api/stream/key", getStreamApiKey);
   
+  // AI Chat and Notepad routes for streamers
+  app.get('/api/ai-chats/:hostId', async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: 'Invalid host ID' });
+      }
+
+      // Fetch AI chats for the specified host
+      const chats = await db.select()
+        .from(aiChats)
+        .where(and(
+          eq(aiChats.hostId, hostId),
+          eq(aiChats.isDeleted, false)
+        ))
+        .orderBy(desc(aiChats.createdAt))
+        .limit(20);
+
+      return res.json(chats);
+    } catch (error) {
+      console.error('Error fetching AI chats:', error);
+      return res.status(500).json({ error: 'Failed to fetch AI chats' });
+    }
+  });
+
+  app.post('/api/ai-chats', async (req, res) => {
+    try {
+      const { message, response, hostId } = req.body;
+
+      if (!message || !response) {
+        return res.status(400).json({ error: 'Message and response are required' });
+      }
+
+      if (!hostId) {
+        return res.status(400).json({ error: 'Host ID is required' });
+      }
+
+      // Insert new AI chat
+      const [newChat] = await db.insert(aiChats)
+        .values({
+          hostId,
+          message,
+          response,
+          isDeleted: false,
+        })
+        .returning();
+
+      return res.status(201).json(newChat);
+    } catch (error) {
+      console.error('Error creating AI chat:', error);
+      return res.status(500).json({ error: 'Failed to create AI chat' });
+    }
+  });
+
+  // Notepad endpoints
+  app.get('/api/notepads/:hostId', async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: 'Invalid host ID' });
+      }
+
+      // Fetch notepads for the specified host
+      const notes = await db.select()
+        .from(notepads)
+        .where(and(
+          eq(notepads.hostId, hostId),
+          eq(notepads.isDeleted, false)
+        ))
+        .orderBy(desc(notepads.updatedAt));
+
+      return res.json(notes);
+    } catch (error) {
+      console.error('Error fetching notepads:', error);
+      return res.status(500).json({ error: 'Failed to fetch notepads' });
+    }
+  });
+
+  app.post('/api/notepads', async (req, res) => {
+    try {
+      const { title, content, hostId } = req.body;
+
+      if (!content) {
+        return res.status(400).json({ error: 'Content is required' });
+      }
+
+      if (!hostId) {
+        return res.status(400).json({ error: 'Host ID is required' });
+      }
+
+      // Insert new notepad
+      const [newNotepad] = await db.insert(notepads)
+        .values({
+          hostId,
+          title: title || '',
+          content,
+          isDeleted: false,
+        })
+        .returning();
+
+      return res.status(201).json(newNotepad);
+    } catch (error) {
+      console.error('Error creating notepad:', error);
+      return res.status(500).json({ error: 'Failed to create notepad' });
+    }
+  });
+
+  app.put('/api/notepads/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { title, content, hostId } = req.body;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid notepad ID' });
+      }
+
+      if (!content) {
+        return res.status(400).json({ error: 'Content is required' });
+      }
+
+      if (!hostId) {
+        return res.status(400).json({ error: 'Host ID is required' });
+      }
+
+      // Update notepad
+      const [updatedNotepad] = await db.update(notepads)
+        .set({
+          title: title || '',
+          content,
+          updatedAt: new Date(),
+        })
+        .where(and(
+          eq(notepads.id, id),
+          eq(notepads.hostId, hostId)
+        ))
+        .returning();
+
+      if (!updatedNotepad) {
+        return res.status(404).json({ error: 'Notepad not found or you don\'t have permission to update it' });
+      }
+
+      return res.json(updatedNotepad);
+    } catch (error) {
+      console.error('Error updating notepad:', error);
+      return res.status(500).json({ error: 'Failed to update notepad' });
+    }
+  });
+  
   // Agora API endpoints for livestreaming
   app.get("/api/agora/app-id", getAgoraAppId);
   
