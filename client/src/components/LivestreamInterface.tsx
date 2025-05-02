@@ -591,6 +591,7 @@ export default function LivestreamInterface({
                       role={"host"}
                       userName={userName}
                       onToggleDrawer={toggleDrawer}
+                      onToggleTeleprompter={toggleTeleprompter}
                     />
                   ) : appId && token ? (
                     <AgoraVideo
@@ -601,6 +602,7 @@ export default function LivestreamInterface({
                       role={role}
                       userName={userName}
                       onToggleDrawer={toggleDrawer}
+                      onToggleTeleprompter={toggleTeleprompter}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -610,18 +612,7 @@ export default function LivestreamInterface({
                 </div>
               )}
 
-              {/* Add teleprompter controls - only for host */}
-              {role === 'host' && isStreamActive && (
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center justify-center space-x-2">
-                  <button
-                    onClick={toggleTeleprompter}
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-zinc-700/30 shadow-lg hover:bg-black/80 transition-colors"
-                    title="Toggle Teleprompter"
-                  >
-                    <FileText className="h-5 w-5 text-white" />
-                  </button>
-                </div>
-              )}
+              {/* Teleprompter controls now integrated into AgoraVideo bottom controls */}
               
               {/* Teleprompter overlay - centered in view */}
               {showTeleprompter && role === 'host' && (

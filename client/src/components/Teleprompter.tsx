@@ -27,12 +27,12 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
       {/* Main teleprompter container - glassmorphic background */}
       <div 
         ref={containerRef}
-        className="relative w-[509px] h-[248px] bg-black/60 backdrop-blur-md border border-zinc-800/60 rounded-xl overflow-hidden"
+        className="relative w-[499px] h-[238px] bg-black/60 backdrop-blur-md border border-zinc-800/60 rounded-xl overflow-hidden"
       >
         {/* Text container with scrolling content */}
         <div
           ref={teleprompterTextRef}
-          className="h-full p-6 pb-14 overflow-hidden"
+          className="h-full p-6 pb-16 overflow-hidden"
           style={{ fontSize: `${textSize}px` }}
         >
           {text.split('\n').map((line, i) => (
@@ -82,7 +82,7 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
 
       {/* Settings panel that appears below */}
       {showSettings && (
-        <div className="absolute top-full mt-2 w-[272px] h-[138px] bg-black/80 backdrop-blur-md border border-zinc-800/60 rounded-xl p-4 z-10">
+        <div className="absolute top-full mt-2 w-[272px] h-[138px] bg-black/80 backdrop-blur-md border border-zinc-800/60 rounded-xl p-4 z-10 shadow-lg">
           <div className="space-y-6">
             {/* Text size slider */}
             <div className="space-y-2">
