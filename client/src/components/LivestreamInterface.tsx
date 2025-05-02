@@ -1193,12 +1193,38 @@ export default function LivestreamInterface({
                                         </button>
 
                                         {/* Teleprompter button */}
-                                        <button className="flex items-center justify-center text-zinc-400 hover:text-white font-medium">
+                                        <button 
+                                          onClick={() => {
+                                            // Set the teleprompter text to the AI message content
+                                            setTeleprompterText(msg.content);
+                                            // Show the teleprompter
+                                            setShowTeleprompter(true);
+                                            toast({
+                                              title: "Sent to teleprompter",
+                                              description: "The AI response has been sent to the teleprompter",
+                                            });
+                                          }}
+                                          className="flex items-center justify-center text-zinc-400 hover:text-white font-medium"
+                                        >
                                           <span className="text-xs">T</span>
                                         </button>
 
                                         {/* Add note button */}
-                                        <button className="flex items-center justify-center text-zinc-400 hover:text-white">
+                                        <button 
+                                          onClick={() => {
+                                            // Add AI message to note lines
+                                            const lines = msg.content.split('\n');
+                                            setNoteLines(lines);
+                                            // Switch to notepad tab and show new note
+                                            setActiveTab("notepad");
+                                            setShowNewNote(true);
+                                            toast({
+                                              title: "Added to notes",
+                                              description: "The AI response has been added to a new note",
+                                            });
+                                          }}
+                                          className="flex items-center justify-center text-zinc-400 hover:text-white"
+                                        >
                                           <svg
                                             width="14"
                                             height="14"
@@ -1464,12 +1490,8 @@ export default function LivestreamInterface({
                       <div className="flex items-center p-2 border-b border-zinc-800">
                         <button
                           onClick={() => {
-                            // Save the note when going back if there are any lines
-                            if (noteLines.length > 0) {
-                              handleSaveNote();
-                            } else {
-                              setShowNewNote(false);
-                            }
+                            // Just go back to the notes list without saving
+                            setShowNewNote(false);
                           }}
                           className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 mr-2"
                         >
