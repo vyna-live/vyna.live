@@ -479,6 +479,19 @@ export default function LivestreamInterface({
     setEditingNoteId(note.id);
   }, []);
 
+  // Handler for creating a new chat session
+  const handleCreateNewChat = useCallback(() => {
+    setShowNewChat(true);
+    setShowChatHistory(false); // Show the empty state when opening a new chat
+    setCurrentSessionId(null); // Reset current session to force creation of a new one
+    setMessages([]); // Clear any existing messages
+    // Clear the input value as well
+    setInputValue("");
+    
+    // Set commentary style to default
+    setCommentaryStyle("color"); // Default to color commentary
+  }, []);
+  
   // Toggle the side drawer
   const toggleDrawer = useCallback(() => {
     setDrawerVisible((prev) => !prev);
@@ -1869,6 +1882,7 @@ export default function LivestreamInterface({
                               className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
                               onClick={() => fileInputRef.current?.click()}
                               title="Upload document"
+                              disabled={isUploading}
                             >
                               <svg
                                 width="16"
@@ -1884,9 +1898,10 @@ export default function LivestreamInterface({
                               </svg>
                             </button>
                             <button 
-                              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
-                              onClick={() => audioInputRef.current?.click()}
-                              title="Record audio"
+                              className={`w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors ${isRecording ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                              onClick={handleAudioClick}
+                              title={isRecording ? "Stop recording" : "Record audio"}
+                              disabled={isUploading && !isRecording}
                             >
                               <svg
                                 width="16"
@@ -1908,6 +1923,7 @@ export default function LivestreamInterface({
                               className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
                               onClick={() => imageInputRef.current?.click()}
                               title="Upload image"
+                              disabled={isUploading}
                             >
                               <svg
                                 width="16"
@@ -2250,12 +2266,7 @@ export default function LivestreamInterface({
             <div className="p-3">
               {!showNewChat && activeTab === "vynaai" && (
                 <button
-                  onClick={() => {
-                    setShowNewChat(true);
-                    setShowChatHistory(false); // Show the empty star state when opening a new chat
-                    setCurrentSessionId(null); // Reset current session to force creation of a new one
-                    setMessages([]); // Clear any existing messages
-                  }}
+                  onClick={handleCreateNewChat}
                   className="w-full py-2 bg-[#2A2A2D] hover:bg-zinc-700 rounded-[14px] text-white text-xs flex items-center justify-center transition-colors"
                 >
                   <span className="font-medium">+ New chat</span>
