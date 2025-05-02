@@ -1,192 +1,152 @@
-// API utility functions for browser extension
+// API utilities for the extension
 
-// Base API URL
-const API_BASE_URL = 'https://vyna.live/api';
+import { getStoredToken } from './storage';
 
-// Types
-interface ApiRequestOptions {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+export interface ApiRequestOptions {
+  method: string;
   endpoint: string;
   data?: any;
   token?: string;
 }
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+// Base URL for the API
+const API_BASE_URL = 'https://vyna.live/api';
 
 // Function to make API requests
-export async function apiRequest<T>(
-  options: ApiRequestOptions
-): Promise<ApiResponse<T>> {
+export const apiRequest = async <T>(
+  method: string,
+  endpoint: string,
+  data?: any
+): Promise<T> => {
   try {
-    // Get saved token if not provided
-    let token = options.token;
-    if (!token) {
-      const storage = await new Promise<{token?: string}>((resolve) => {
-        chrome.storage.local.get(['token'], (items) => {
-          resolve(items as {token?: string});
-        });
-      });
-      token = storage.token;
-    }
-
-    // Build request URL
-    const url = `${API_BASE_URL}${options.endpoint}`;
-
-    // Build request options
-    const fetchOptions: RequestInit = {
-      method: options.method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-
-    // Add authorization header if token exists
-    if (token) {
-      fetchOptions.headers = {
-        ...fetchOptions.headers,
-        Authorization: `Bearer ${token}`,
-      };
-    }
-
-    // Add body for POST/PUT requests
-    if (['POST', 'PUT'].includes(options.method) && options.data) {
-      fetchOptions.body = JSON.stringify(options.data);
-    }
-
-    // Make the request
-    const response = await fetch(url, fetchOptions);
-
-    // Handle non-OK responses
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired or invalid
-        throw new Error('Authentication error. Please log in again.');
+    // Request through background script to handle cross-origin requests
+    const response = await new Promise<{ success: boolean; data?: T; error?: string }>(
+      (resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            type: 'apiRequest',
+            method,
+            endpoint,
+            data,
+          },
+          (response) => {
+            resolve(response);
+          }
+        );
       }
-      
-      // Try to parse error message from response
-      try {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Request failed with status ${response.status}`);
-      } catch {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
+    );
+
+    if (!response.success) {
+      throw new Error(response.error || 'API request failed');
     }
 
-    // Parse and return successful response
-    const data = await response.json();
-    return { success: true, data };
+    return response.data as T;
   } catch (error) {
-    console.error('API request error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
+    console.error(`API Error (${method} ${endpoint}):`, error);
+    throw error;
   }
-}
+};
 
-// Authentication functions
-export async function login(username: string, password: string): Promise<ApiResponse<{user: any, token: string}>> {
-  return apiRequest({
-    method: 'POST',
-    endpoint: '/login',
-    data: { username, password },
-  });
-}
+// Authentication API calls
+export const login = async (username: string, password: string) => {
+  return apiRequest<any>('POST', '/login', { username, password });
+};
 
-export async function register(userData: {
+export const register = async (userData: {
   username: string;
   email: string;
   password: string;
   displayName?: string;
-}): Promise<ApiResponse<{user: any, token: string}>> {
-  return apiRequest({
-    method: 'POST',
-    endpoint: '/register',
-    data: userData,
+}) => {
+  return apiRequest<any>('POST', '/register', userData);
+};
+
+export const logout = async () => {
+  return apiRequest<void>('POST', '/logout');
+};
+
+export const getCurrentUser = async () => {
+  return apiRequest<any>('GET', '/user');
+};
+
+// AI Chat API calls
+export const getAiChats = async () => {
+  return apiRequest<any[]>('GET', '/ai-chats');
+};
+
+export const getAiChatById = async (chatId: number) => {
+  return apiRequest<any>('GET', `/ai-chats/${chatId}`);
+};
+
+export const createAiChat = async (title: string, initialMessage?: string) => {
+  return apiRequest<any>('POST', '/ai-chats', { title, initialMessage });
+};
+
+export const sendChatMessage = async (
+  chatId: number,
+  message: string,
+  style?: 'play-by-play' | 'color',
+  pageContent?: string
+) => {
+  return apiRequest<any>('POST', `/ai-chats/${chatId}/messages`, {
+    content: message,
+    commentaryStyle: style,
+    pageContent,
   });
-}
+};
 
-export async function logout(): Promise<ApiResponse<void>> {
-  return apiRequest({
-    method: 'POST',
-    endpoint: '/logout',
+export const renameAiChat = async (chatId: number, title: string) => {
+  return apiRequest<any>('PATCH', `/ai-chats/${chatId}`, { title });
+};
+
+export const deleteAiChat = async (chatId: number) => {
+  return apiRequest<void>('DELETE', `/ai-chats/${chatId}`);
+};
+
+// Notepad API calls
+export const getNotepads = async () => {
+  return apiRequest<any[]>('GET', '/notepads');
+};
+
+export const getNotepadById = async (notepadId: number) => {
+  return apiRequest<any>('GET', `/notepads/${notepadId}`);
+};
+
+export const createNotepad = async (title: string, content: string) => {
+  return apiRequest<any>('POST', '/notepads', { title, content });
+};
+
+export const updateNotepad = async (notepadId: number, content: string, title?: string) => {
+  const updateData: { content: string; title?: string } = { content };
+  if (title) updateData.title = title;
+  
+  return apiRequest<any>('PATCH', `/notepads/${notepadId}`, updateData);
+};
+
+export const deleteNotepad = async (notepadId: number) => {
+  return apiRequest<void>('DELETE', `/notepads/${notepadId}`);
+};
+
+// Utility to extract content from current page
+export const extractCurrentPageContent = async (): Promise<{
+  title: string;
+  url: string;
+  content: string;
+}> => {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      { type: 'extractCurrentPageContent' },
+      (response) => {
+        if (response && response.success) {
+          resolve({
+            title: response.title,
+            url: response.url,
+            content: response.content,
+          });
+        } else {
+          reject(new Error(response?.error || 'Failed to extract page content'));
+        }
+      }
+    );
   });
-}
-
-export async function getCurrentUser(): Promise<ApiResponse<any>> {
-  return apiRequest({
-    method: 'GET',
-    endpoint: '/user',
-  });
-}
-
-// AI Chat functions
-export async function sendChatMessage(message: string, commentaryStyle: 'play-by-play' | 'color', pageInfo?: { title: string, url: string, content?: string }): Promise<ApiResponse<any>> {
-  const data: any = {
-    message,
-    commentaryStyle,
-    source: 'extension',
-  };
-
-  // Add page info if available
-  if (pageInfo) {
-    data.pageTitle = pageInfo.title;
-    data.pageUrl = pageInfo.url;
-    if (pageInfo.content) {
-      data.pageContent = pageInfo.content;
-    }
-  }
-
-  return apiRequest({
-    method: 'POST',
-    endpoint: '/ai/chat',
-    data,
-  });
-}
-
-// Notes functions
-export async function saveNote(title: string, content: string, sourceUrl?: string): Promise<ApiResponse<any>> {
-  return apiRequest({
-    method: 'POST',
-    endpoint: '/notepads',
-    data: {
-      title,
-      content,
-      source: 'extension',
-      sourceUrl,
-    },
-  });
-}
-
-export async function getNotes(): Promise<ApiResponse<any[]>> {
-  return apiRequest({
-    method: 'GET',
-    endpoint: '/notepads',
-  });
-}
-
-export async function getNote(id: number): Promise<ApiResponse<any>> {
-  return apiRequest({
-    method: 'GET',
-    endpoint: `/notepads/${id}`,
-  });
-}
-
-export async function updateNote(id: number, data: { title?: string, content?: string }): Promise<ApiResponse<any>> {
-  return apiRequest({
-    method: 'PUT',
-    endpoint: `/notepads/${id}`,
-    data,
-  });
-}
-
-export async function deleteNote(id: number): Promise<ApiResponse<void>> {
-  return apiRequest({
-    method: 'DELETE',
-    endpoint: `/notepads/${id}`,
-  });
-}
+};

@@ -1,358 +1,308 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { sendChatMessage } from '../utils/api';
-import '../../../popup/styles/popup.css';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import {
+  getAiChatById,
+  createAiChat,
+  sendChatMessage,
+  renameAiChat,
+  deleteAiChat,
+  extractCurrentPageContent,
+} from '@libs/utils/api';
+import { getStoredSettings } from '@libs/utils/storage';
+import Logo from '@libs/components/ui/Logo';
 
-interface AiChatViewProps {
-  currentPageTitle: string;
-  currentPageUrl: string;
+export interface AiChatViewProps {
+  currentPageTitle?: string;
+  currentPageUrl?: string;
 }
 
-interface Message {
-  id: string;
+interface ChatMessage {
+  id: number;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
+  createdAt: string;
+  commentaryStyle?: 'play-by-play' | 'color';
 }
 
 const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUrl }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedCommentaryStyle, setSelectedCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const [chatId, setChatId] = useState<number | null>(id ? parseInt(id) : null);
+  const [chatTitle, setChatTitle] = useState<string>('New Chat');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSending, setIsSending] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [commentaryStyle, setCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
+  const [pageContent, setPageContent] = useState<string>('');
+  
+  // Get chat data on component mount
+  useEffect(() => {
+    const initChat = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // If chatId exists, fetch chat data
+        if (chatId) {
+          const chatData = await getAiChatById(chatId);
+          setChatTitle(chatData.title || 'Untitled Chat');
+          setMessages(chatData.messages || []);
+        } else {
+          // Create a new chat
+          const settings = await getStoredSettings();
+          setCommentaryStyle(settings.commentaryStyle);
+          
+          // Try to extract current page content
+          try {
+            if (settings.extractPageContent) {
+              const extractedContent = await extractCurrentPageContent();
+              setPageContent(extractedContent.content);
+            }
+          } catch (pageError) {
+            console.error('Failed to extract page content:', pageError);
+            // Don't set error state here, it's not critical
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing chat:', err);
+        setError('Failed to load chat data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    initChat();
+  }, [chatId]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
-    scrollToBottom();
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
   }, [messages]);
   
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Handle input changes and auto-resize textarea
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputMessage(e.target.value);
+    
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(100, textareaRef.current.scrollHeight)}px`;
+    }
   };
-
-  // Function to send message to API
-  const handleSendMessage = async (text: string) => {
-    if (!text.trim()) return;
-    
-    // Create new user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      timestamp: new Date()
-    };
-    
-    // Add user message to chat
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
+  
+  // Handle send message
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isSending) return;
     
     try {
-      // Send message to API
-      const response = await sendChatMessage(
-        text, 
-        selectedCommentaryStyle, 
-        {
-          title: currentPageTitle,
-          url: currentPageUrl
+      setIsSending(true);
+      setError(null);
+      
+      // Create a new chat if it doesn't exist
+      if (!chatId) {
+        const newChat = await createAiChat('New Chat', inputMessage);
+        setChatId(newChat.id);
+        navigate(`/ai-chat/${newChat.id}`, { replace: true });
+        
+        // Update with messages from the response
+        if (newChat.messages && newChat.messages.length > 0) {
+          setMessages(newChat.messages);
+          setInputMessage('');
+          return;
         }
-      );
-      
-      if (response.success && response.data) {
-        // Add AI response to chat
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: response.data.text || response.data.message || 'Sorry, I couldn\'t process that request.',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        // Handle error
-        const errorMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: response.error || 'Sorry, there was an error processing your request. Please try again later.',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, errorMessage]);
       }
-    } catch (error) {
-      console.error('Error sending message:', error);
       
-      // Add error message
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `Sorry, there was an error processing your request. Please try again later.`,
-        timestamp: new Date()
+      // Optimistically add user message to UI
+      const userMessage: ChatMessage = {
+        id: Date.now(), // Temporary ID
+        role: 'user',
+        content: inputMessage,
+        createdAt: new Date().toISOString(),
       };
       
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleSendMessage(input);
-  };
-  
-  // Create a new chat
-  const handleNewChat = () => {
-    setMessages([]);
-  };
-  
-  // Save to notes
-  const saveToNotes = async (content: string) => {
-    try {
-      await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          type: 'apiRequest',
-          method: 'POST',
-          endpoint: '/notepads',
-          data: {
-            title: `Notes from ${currentPageTitle || 'Chat'}`,
-            content: content,
-            source: 'extension',
-            sourceUrl: currentPageUrl
-          }
-        }, (response) => {
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            reject(response?.error || 'Failed to save note');
-          }
-        });
-      });
+      setMessages((prev) => [...prev, userMessage]);
+      setInputMessage('');
       
-      alert('Saved to notes successfully!');
-    } catch (error) {
-      console.error('Error saving to notes:', error);
-      alert('Failed to save to notes. Please try again.');
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+      
+      // Send message to API
+      const response = await sendChatMessage(
+        chatId!,
+        inputMessage,
+        commentaryStyle,
+        pageContent || undefined
+      );
+      
+      // Update messages with API response
+      setMessages(response.messages || []);
+      
+      // Update chat title if this is the first message
+      if (messages.length === 0 && response.title && response.title !== 'New Chat') {
+        setChatTitle(response.title);
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError('Failed to send message. Please try again.');
+    } finally {
+      setIsSending(false);
     }
   };
-
+  
+  // Handle commentary style change
+  const handleStyleChange = (style: 'play-by-play' | 'color') => {
+    setCommentaryStyle(style);
+  };
+  
+  // Handle enter key press to send message
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
+  // Format timestamp for display
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+  
   return (
-    <div className="flex flex-col h-full">
-      {/* Chat actions */}
-      <div className="p-sm border-b">
-        <button 
-          className="btn btn-sm btn-primary"
-          onClick={handleNewChat}
-        >
-          New Chat
-        </button>
-      </div>
-
+    <div className="chat-view-container flex flex-col h-full max-h-[600px]">
+      {/* Header */}
+      <header className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="mr-3 text-gray-600 hover:text-primary"
+          >
+            ←
+          </button>
+          <div>
+            <h1 className="font-medium text-sm truncate max-w-[180px]">{chatTitle}</h1>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-1">
+          <button
+            className={`px-2 py-1 text-xs rounded-full ${commentaryStyle === 'play-by-play' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'}`}
+            onClick={() => handleStyleChange('play-by-play')}
+            title="Play-by-play: Quick, action-oriented responses"
+          >
+            PP
+          </button>
+          <button
+            className={`px-2 py-1 text-xs rounded-full ${commentaryStyle === 'color' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'}`}
+            onClick={() => handleStyleChange('color')}
+            title="Color commentary: Detailed, insightful responses"
+          >
+            CC
+          </button>
+        </div>
+      </header>
+      
+      {/* Error message */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-3 text-sm">
+          {error}
+        </div>
+      )}
+      
       {/* Message list */}
-      <div className="flex-1 overflow-y-auto p-md flex flex-col gap-md">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-secondary text-center">
-            <div>
-              <p>Start a new conversation with Vyna AI</p>
-              <p className="text-sm mt-sm">Try asking something about the current page</p>
-            </div>
+      <div
+        ref={messageListRef}
+        className="message-list flex-1 overflow-y-auto p-4 space-y-4"
+      >
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+            <Logo size={40} />
+            <p className="mt-4 text-sm">Start a conversation with Vyna's AI Assistant</p>
+            <p className="text-xs mt-2">
+              {commentaryStyle === 'play-by-play'
+                ? 'Using Play-by-Play style: Quick, action-oriented responses'
+                : 'Using Color Commentary style: Detailed, insightful responses'}
+            </p>
           </div>
         ) : (
           messages.map((message) => (
-            <div 
-              key={message.id} 
-              className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
+            <div
+              key={message.id}
+              className={`message flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className="message-header">
-                <span className="message-sender">
-                  {message.role === 'user' ? 'You' : 'Vyna AI'}
-                </span>
-                <span className="message-time">
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
-              <div className="message-content">{message.content}</div>
-              {message.role === 'assistant' && (
-                <div className="message-actions">
-                  <button 
-                    className="btn btn-sm btn-text"
-                    onClick={() => saveToNotes(message.content)}
-                    title="Save to notes"
-                  >
-                    Save to Notes
-                  </button>
+              <div
+                className={`max-w-[85%] rounded-lg px-4 py-2 ${message.role === 'user' ? 'bg-primary/10 text-gray-900' : 'bg-gray-100 text-gray-800'}`}
+              >
+                <div className="message-content text-sm whitespace-pre-wrap">{message.content}</div>
+                <div className="message-meta text-xs text-gray-500 mt-1 text-right">
+                  {formatTime(message.createdAt)}
+                  {message.commentaryStyle && (
+                    <span className="ml-1 px-1 bg-gray-200 rounded text-[10px]">
+                      {message.commentaryStyle === 'play-by-play' ? 'PP' : 'CC'}
+                    </span>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           ))
         )}
-        {isLoading && (
-          <div className="loading-message">
-            <div className="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
+        
+        {isSending && (
+          <div className="message flex justify-start">
+            <div className="inline-flex items-center bg-gray-100 rounded-lg px-4 py-2">
+              <div className="animate-pulse flex space-x-1">
+                <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
+                <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
+                <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
+              </div>
             </div>
-            <p>Vyna AI is thinking...</p>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
-
-      {/* Input form */}
-      <form className="p-sm border-t bg-white" onSubmit={handleSubmit}>
+      
+      {/* Input area */}
+      <div className="input-area p-4 border-t">
         <div className="relative">
-          <div className="absolute left-sm top-1/2 transform -translate-y-1/2 flex flex-col gap-xs z-10">
-            <button
-              type="button"
-              className={`commentary-style-btn ${selectedCommentaryStyle === 'play-by-play' ? 'active' : ''}`}
-              onClick={() => setSelectedCommentaryStyle('play-by-play')}
-              title="Play-by-Play Commentary (Short, action-oriented responses)"
-            >
-              PP
-            </button>
-            <button
-              type="button"
-              className={`commentary-style-btn ${selectedCommentaryStyle === 'color' ? 'active' : ''}`}
-              onClick={() => setSelectedCommentaryStyle('color')}
-              title="Color Commentary (Detailed, insightful responses)"
-            >
-              CC
-            </button>
-          </div>
-          
-          <textarea 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Vyna AI..."
-            className="form-input pl-xl"
-            rows={2}
-            disabled={isLoading}
+          <textarea
+            ref={textareaRef}
+            className="w-full p-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            placeholder="Message Vyna..."
+            rows={1}
+            value={inputMessage}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading || isSending}
           />
-          
-          <button 
-            type="submit" 
-            className="btn btn-primary absolute right-sm top-1/2 transform -translate-y-1/2"
-            disabled={!input.trim() || isLoading}
+          <button
+            className="absolute right-3 bottom-3 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
+            onClick={handleSendMessage}
+            disabled={!inputMessage.trim() || isLoading || isSending}
           >
-            Send
+            ↑
           </button>
         </div>
-      </form>
-
-      <style>{`
-        .message {
-          display: flex;
-          flex-direction: column;
-          max-width: 100%;
-          padding: var(--vyna-spacing-sm);
-          border-radius: var(--vyna-border-radius);
-          font-size: var(--vyna-font-sm);
-        }
-
-        .user-message {
-          align-self: flex-end;
-          background-color: var(--vyna-primary-light);
-          border: 1px solid var(--vyna-primary-lighter);
-          margin-left: 32px;
-        }
-
-        .assistant-message {
-          align-self: flex-start;
-          background-color: white;
-          border: 1px solid var(--vyna-border);
-          margin-right: 32px;
-        }
-
-        .message-header {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: var(--vyna-spacing-xs);
-          font-size: var(--vyna-font-xs);
-        }
-
-        .message-sender {
-          font-weight: 600;
-        }
-
-        .message-time {
-          color: var(--vyna-text-secondary);
-        }
-
-        .message-content {
-          white-space: pre-wrap;
-          line-height: 1.5;
-        }
-
-        .message-actions {
-          display: flex;
-          justify-content: flex-end;
-          margin-top: var(--vyna-spacing-xs);
-        }
-
-        .loading-message {
-          align-self: flex-start;
-          padding: var(--vyna-spacing-sm);
-          display: flex;
-          align-items: center;
-          gap: var(--vyna-spacing-sm);
-          color: var(--vyna-text-secondary);
-        }
-
-        .typing-indicator {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .typing-indicator span {
-          width: 6px;
-          height: 6px;
-          background-color: var(--vyna-text-secondary);
-          border-radius: 50%;
-          animation: typing 1.4s infinite ease-in-out both;
-        }
-
-        .typing-indicator span:nth-child(1) {
-          animation-delay: 0s;
-        }
-
-        .typing-indicator span:nth-child(2) {
-          animation-delay: 0.2s;
-        }
-
-        .typing-indicator span:nth-child(3) {
-          animation-delay: 0.4s;
-        }
-
-        @keyframes typing {
-          0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-
-        .commentary-style-btn {
-          width: 28px;
-          height: 28px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          border: 1px solid var(--vyna-border);
-          background-color: white;
-          font-size: var(--vyna-font-xs);
-          font-weight: 600;
-          cursor: pointer;
-          color: var(--vyna-text-secondary);
-          transition: all 0.2s;
-        }
-
-        .commentary-style-btn.active {
-          background-color: var(--vyna-secondary);
-          color: white;
-          border-color: var(--vyna-secondary);
-        }
-      `}</style>
+        
+        {pageContent && (
+          <div className="mt-2 text-xs text-gray-500 flex items-center">
+            <span className="inline-block mr-1 w-3 h-3 bg-green-500 rounded-full"></span>
+            Using content from current page
+          </div>
+        )}
+      </div>
     </div>
   );
 };
