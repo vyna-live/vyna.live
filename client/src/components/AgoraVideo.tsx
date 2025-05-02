@@ -676,7 +676,7 @@ export function AgoraVideo({
         }
         
         // Add direct peer tracking for improved audience detection
-        agoraClient.on('peer-online', (evt) => {
+        agoraClient.on('peer-online', (evt: { uid: number | string }) => {
           console.log(`DIRECT PEER ONLINE DETECTED: ${evt.uid}, current role: ${role}`);
           
           // If host, immediately record audience connection
@@ -730,7 +730,7 @@ export function AgoraVideo({
         });
         
         // Handle peer leaving with direct UI updates
-        agoraClient.on('peer-leave', (evt) => {
+        agoraClient.on('peer-leave', (evt: { uid: number | string }) => {
           console.log(`DIRECT PEER LEAVE DETECTED: ${evt.uid}, current role: ${role}`);
           
           // If host, immediately remove audience connection

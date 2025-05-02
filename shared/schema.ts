@@ -364,6 +364,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   receivedInvitations: many(livestreamInvitations, { relationName: "invitee" }),
   walletTransactions: many(walletTransactions),
   streamSessions: many(streamSessions),
+  aiChats: many(aiChats),
+  notepads: many(notepads),
 }));
 
 export const researchSessionsRelations = relations(researchSessions, ({ many }) => ({
@@ -465,4 +467,63 @@ export const streamSessionsRelations = relations(streamSessions, ({ one, many })
     references: [users.id],
   }),
   participants: many(livestreamParticipants),
+}));
+
+// AI Chats table for storing host's AI chat history
+export const aiChats = pgTable("ai_chats", {
+  id: serial("id").primaryKey(),
+  hostId: integer("host_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  response: text("response").notNull(),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Notepads table for storing host's notes
+export const notepads = pgTable("notepads", {
+  id: serial("id").primaryKey(),
+  hostId: integer("host_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  title: varchar("title", { length: 255 }).default(""),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Create insert schemas for new tables
+export const insertAiChatSchema = createInsertSchema(aiChats).pick({
+  hostId: true,
+  message: true,
+  response: true,
+  isDeleted: true,
+});
+
+export const insertNotepadSchema = createInsertSchema(notepads).pick({
+  hostId: true,
+  content: true,
+  title: true,
+  isDeleted: true,
+});
+
+// Create types for new tables
+export type InsertAiChat = z.infer<typeof insertAiChatSchema>;
+export type AiChat = typeof aiChats.$inferSelect;
+
+export type InsertNotepad = z.infer<typeof insertNotepadSchema>;
+export type Notepad = typeof notepads.$inferSelect;
+
+// Set up relations for AI chats and notepads
+export const aiChatsRelations = relations(aiChats, ({ one }) => ({
+  host: one(users, {
+    fields: [aiChats.hostId],
+    references: [users.id],
+  }),
+}));
+
+export const notepadsRelations = relations(notepads, ({ one }) => ({
+  host: one(users, {
+    fields: [notepads.hostId],
+    references: [users.id],
+  }),
 }));
