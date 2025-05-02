@@ -257,12 +257,14 @@ export function AgoraVideo({
           // Initialize RTM Client with detailed logging
           console.log(`Logging in to RTM with uid: ${uid.toString()}`);
           await rtmClient.login({
-            uid: uid.toString()
+            uid: uid.toString(),
+            // token: token || undefined
           });
           
           // Create RTM Channel
           console.log(`Creating RTM channel: ${channelName}`);
           const rtmChannel = rtmClient.createChannel(channelName);
+          await rtmChannel.join();
           rtmChannelRef.current = rtmChannel;
           
           // Register RTM channel events
@@ -315,17 +317,18 @@ export function AgoraVideo({
               console.log(`Channel message parsed successfully: ${text} from ${name} (${senderId})`, parsedMsg);
               
               // Add explicit console logs for any message on host side
-              if (role === 'host') {
-                console.log('HOST RECEIVED MESSAGE:', {
-                  type,
-                  text,
-                  sender: senderId,
-                  fullMessage: parsedMsg
-                });
-              }
+              // if (role === 'host') {
+              //   console.log('HOST RECEIVED MESSAGE:', {
+              //     type,
+              //     text,
+              //     sender: senderId,
+              //     fullMessage: parsedMsg
+              //   });
+              // }
               
               // Special message handling for viewer notifications
-              if (role === 'host' && type === 'viewer_join') {
+              // && type === 'viewer_join'
+              if (role === 'host' ) {
                 console.log('Received explicit viewer join notification:', parsedMsg);
                 
                 // Debug the DOM elements we're trying to update
@@ -630,7 +633,7 @@ export function AgoraVideo({
                   
                   // Also check for members who left
                   const departedMembers = Array.from(currentAudienceIds)
-                    .filter(member => !audienceMembers.includes(member as string));
+                    .filter(member => !audienceMembers.includes(member.toString()));
                   
                   if (departedMembers.length > 0) {
                     console.log('Viewers who left:', departedMembers);
@@ -642,8 +645,8 @@ export function AgoraVideo({
                       
                       setChatMessages(prev => {
                         const newMessages = [{
-                          userId: member as string,
-                          name: `Viewer ${(member as string).slice(-4)}`,
+                          userId: member.toString(),
+                          name: `Viewer ${member.toString().slice(-4)}`,
                           message: "left (auto-detected)",
                           color,
                           isHost: false
@@ -1003,7 +1006,8 @@ export function AgoraVideo({
       }
       
       // Send explicit viewer_join notification when audience joins
-      if (role === 'audience' && rtmChannelRef.current) {
+      // && rtmChannelRef.current
+      if (role === 'audience' ) {
         try {
           console.log('AUDIENCE SENDING VIEWER JOIN NOTIFICATION - THIS SHOULD BE VISIBLE');
           // Create and send a special notification that the host will recognize
