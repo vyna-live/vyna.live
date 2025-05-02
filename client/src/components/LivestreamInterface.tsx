@@ -43,28 +43,13 @@ interface LivestreamInterfaceProps {
 }
 
 // Types for notes and AI chats
-interface Note {
-  id: number;
-  hostId: number;
-  title: string;
-  content: string;
-  isDeleted: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface AiChat {
-  id: number;
-  hostId: number;
-  message: string;
-  response: string;
-  isDeleted: boolean;
-  createdAt: string;
-}
+import type { Note, AiChat, AiChatSession, AiChatMessage } from "@/types";
 
 // Empty initial arrays - we'll fetch from API
 const EMPTY_CHATS: AiChat[] = [];
 const EMPTY_NOTES: Note[] = [];
+const EMPTY_CHAT_SESSIONS: AiChatSession[] = [];
+const EMPTY_CHAT_MESSAGES: AiChatMessage[] = [];
 
 // RTM chat messages will be handled by AgoraVideo component now
 
