@@ -1662,7 +1662,11 @@ export default function LivestreamInterface({
                                 <line x1="8" y1="23" x2="16" y2="23"></line>
                               </svg>
                             </button>
-                            <button className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors">
+                            <button 
+                              className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-800 transition-colors"
+                              onClick={() => imageInputRef.current?.click()}
+                              title="Upload image"
+                            >
                               <svg
                                 width="16"
                                 height="16"
