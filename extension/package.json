@@ -1,44 +1,33 @@
 {
-  "name": "vyna-live-extension",
+  "name": "vyna-extension",
   "version": "1.0.0",
-  "description": "Vyna.live Assistant - Browser Extension",
-  "main": "popup.js",
+  "description": "Vyna AI Assistant browser extension",
+  "main": "index.js",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "build:firefox": "webpack --config webpack.firefox.config.js",
-    "watch": "webpack --watch --config webpack.config.js",
-    "watch:firefox": "webpack --watch --config webpack.firefox.config.js",
-    "dev": "npm run watch",
-    "dev:firefox": "npm run watch:firefox"
+    "build:all": "npm run build && npm run build:firefox && npm run package",
+    "package": "node scripts/package.js"
   },
   "keywords": [
-    "extension",
-    "browser",
-    "chrome",
-    "firefox",
-    "edge",
+    "vyna",
     "ai",
-    "productivity"
+    "assistant",
+    "extension"
   ],
   "author": "Vyna.live",
-  "license": "UNLICENSED",
-  "private": true,
-  "devDependencies": {
-    "@types/chrome": "^0.0.254",
-    "@types/node": "^18.15.11",
-    "@types/react": "^18.0.33",
-    "@types/react-dom": "^18.0.11",
-    "clean-webpack-plugin": "^4.0.0",
-    "copy-webpack-plugin": "^11.0.0",
-    "css-loader": "^6.7.3",
-    "style-loader": "^3.3.2",
-    "ts-loader": "^9.4.2",
-    "typescript": "^5.0.3",
-    "webpack": "^5.78.0",
-    "webpack-cli": "^5.0.1"
-  },
+  "license": "MIT",
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.4.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
 }
