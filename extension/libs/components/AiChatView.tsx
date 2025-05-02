@@ -28,13 +28,20 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Define the expected response type
+  interface PageContentResponse {
+    success: boolean;
+    content: string;
+    error?: string;
+  }
+
   // Function to extract content from current page
-  const extractPageContent = async () => {
+  const extractPageContent = async (): Promise<PageContentResponse | null> => {
     try {
-      return await new Promise((resolve, reject) => {
+      return await new Promise<PageContentResponse>((resolve, reject) => {
         chrome.runtime.sendMessage(
           { type: 'extractCurrentPageContent' },
-          (response) => {
+          (response: PageContentResponse) => {
             if (response && response.success) {
               resolve(response);
             } else {

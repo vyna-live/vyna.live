@@ -1,149 +1,106 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import './popup.css';
-
-// Components
 import AuthPage from '../libs/components/AuthPage';
 import Dashboard from '../libs/components/Dashboard';
 
-// Main Popup component
-function Popup() {
+const Popup: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Check authentication status on mount
   useEffect(() => {
-    chrome.runtime.sendMessage({ type: 'getAuthStatus' }, (response) => {
-      setIsAuthenticated(response.isAuthenticated);
-      setUser(response.user);
-      setLoading(false);
-    });
-
-    // Listen for auth status changes from background script
-    const handleAuthChange = (message: any) => {
-      if (message.type === 'authStatusChanged') {
-        setIsAuthenticated(message.isAuthenticated);
-        setUser(message.user);
+    // Check if user is logged in
+    chrome.storage.local.get(['user', 'token'], (result) => {
+      if (result.user && result.token) {
+        setUser(result.user);
+        setIsAuthenticated(true);
+        
+        // Verify token is still valid
+        fetch('https://vyna.live/api/user', {
+          headers: {
+            'Authorization': `Bearer ${result.token}`
+          }
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Token expired');
+            }
+            return response.json();
+          })
+          .then(userData => {
+            setUser(userData);
+          })
+          .catch(() => {
+            // Token expired, clear storage
+            chrome.storage.local.remove(['user', 'token']);
+            setUser(null);
+            setIsAuthenticated(false);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
       }
-    };
-
-    chrome.runtime.onMessage.addListener(handleAuthChange);
-
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleAuthChange);
-    };
+    });
   }, []);
 
-  // Handle login
-  const handleLogin = async (credentials: { username: string; password: string }) => {
-    setLoading(true);
-    setError(null);
-
-    chrome.runtime.sendMessage(
-      { type: 'login', credentials },
-      (response) => {
-        setLoading(false);
-        
-        if (response.success) {
+  const handleLogin = (credentials: { username: string; password: string }) => {
+    // Make actual login API call
+    setIsLoading(true);
+    fetch('https://vyna.live/api/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(credentials)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Login failed');
+        }
+        return response.json();
+      })
+      .then(data => {
+        const { user, token } = data;
+        // Save user data and token to storage
+        chrome.storage.local.set({ user, token }, () => {
+          setUser(user);
           setIsAuthenticated(true);
-          setUser(response.user);
-        } else {
-          setError(response.error || 'Login failed');
-        }
-      }
-    );
+        });
+      })
+      .catch(error => {
+        console.error('Login error:', error);
+        // Handle login error (could set an error state here)
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
-  // Handle logout
   const handleLogout = () => {
-    chrome.runtime.sendMessage({ type: 'logout' }, () => {
-      setIsAuthenticated(false);
+    chrome.storage.local.remove(['user', 'token'], () => {
       setUser(null);
+      setIsAuthenticated(false);
     });
   };
 
-  // Extract content from current page
-  const extractPageContent = () => {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        { type: 'extractCurrentPageContent' },
-        (response) => {
-          if (response && response.success) {
-            resolve(response);
-          } else {
-            reject(response?.error || 'Failed to extract page content');
-          }
-        }
-      );
-    });
-  };
-
-  // Open dashboard in new tab
-  const openDashboard = () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') });
-  };
-
-  // Render loading state
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="vyna-popup-loading">
-        <div className="vyna-spinner"></div>
-        <p>Loading...</p>
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // Show login page if not authenticated
-  if (!isAuthenticated) {
-    return <AuthPage onLogin={handleLogin} error={error} />;
-  }
-
-  // Show main popup content if authenticated
   return (
-    <div className="vyna-popup">
-      <header className="vyna-popup-header">
-        <h1>Vyna.live Assistant</h1>
-        <div className="vyna-user-info">
-          {user?.username ? `Hello, ${user.username}` : 'Welcome'}
-        </div>
-      </header>
-
-      <div className="vyna-popup-content">
-        <div className="vyna-actions">
-          <button 
-            className="vyna-action-button"
-            onClick={extractPageContent}
-          >
-            Extract Page Content
-          </button>
-          
-          <button 
-            className="vyna-action-button"
-            onClick={openDashboard}
-          >
-            Open Dashboard
-          </button>
-        </div>
-      </div>
-
-      <footer className="vyna-popup-footer">
-        <button 
-          className="vyna-logout-button"
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
-      </footer>
+    <div className="w-full h-full bg-black text-white">
+      {isAuthenticated ? (
+        <Dashboard user={user} onLogout={handleLogout} />
+      ) : (
+        <AuthPage onLogin={handleLogin} />
+      )}
     </div>
   );
-}
+};
 
-// Render the popup
-const root = ReactDOM.createRoot(document.getElementById('popup-root')!);
-root.render(
-  <React.StrictMode>
-    <Popup />
-  </React.StrictMode>
-);
+export default Popup;

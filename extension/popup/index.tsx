@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import Popup from './Popup';
+import Popup from './popup';
 import './popup.css';
 
 const container = document.getElementById('root');
