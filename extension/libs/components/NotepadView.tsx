@@ -18,7 +18,7 @@ const NotepadView: React.FC<NotepadViewProps> = ({ userId }) => {
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [saveTimeout, setSaveTimeout] = useState<number | null>(null);
 
   // Fetch user's notepads
   useEffect(() => {
