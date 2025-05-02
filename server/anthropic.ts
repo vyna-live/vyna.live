@@ -1,0 +1,244 @@
+import Anthropic from '@anthropic-ai/sdk';
+
+// The newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Rate limiting mechanism
+const rateLimiter = {
+  tokens: 100000,  // Token budget per hour (conservative estimate)
+  lastReset: Date.now(),
+  resetInterval: 60 * 60 * 1000, // 1 hour in milliseconds
+  tokensUsed: 0,
+  
+  canMakeRequest(estimatedTokens: number = 1000): boolean {
+    // Reset counter if it's been more than resetInterval
+    if (Date.now() - this.lastReset > this.resetInterval) {
+      this.tokensUsed = 0;
+      this.lastReset = Date.now();
+    }
+    
+    return (this.tokensUsed + estimatedTokens) <= this.tokens;
+  },
+  
+  trackUsage(tokens: number): void {
+    this.tokensUsed += tokens;
+    console.log(`Claude Rate limiter: ${this.tokensUsed}/${this.tokens} tokens used this hour`);
+  }
+};
+
+// Sample stock images for infographics
+const STOCK_IMAGES = {
+  livestreamer: [
+    "https://images.unsplash.com/photo-1603481546579-65d935ba9cdd?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1598550476439-6847785fcea6?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1599508704512-2f19efd1e35f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1587614382346-4ec70e388b28?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+  ],
+  infographics: [
+    "https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+  ],
+  workspace: [
+    "https://images.unsplash.com/photo-1593062096033-9a26b09da705?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+  ]
+};
+
+// Get a random image from a category
+function getRandomImage(category: 'livestreamer' | 'infographics' | 'workspace'): string {
+  const images = STOCK_IMAGES[category];
+  return images[Math.floor(Math.random() * images.length)];
+}
+
+// Helper function to determine if response should include an infographic
+function shouldHaveInfoGraphic(message: string): boolean {
+  // Include an infographic for research/data-heavy questions
+  const infoGraphicKeywords = [
+    'research', 'data', 'statistics', 'compare', 'best practices',
+    'steps', 'how to', 'tutorial', 'guide', 'tips', 'setup',
+    'explain', 'information', 'facts', 'study', 'analysis',
+    'breakdown', 'list', 'methods', 'procedure', 'process',
+    'livestream', 'streaming', 'broadcast', 'content creation'
+  ];
+  
+  return infoGraphicKeywords.some(keyword => 
+    message.toLowerCase().includes(keyword.toLowerCase())
+  );
+}
+
+// Generate infographic data based on user query and AI response
+function generateInfoGraphicData(userQuery: string, aiResponse: string) {
+  let category: 'livestreamer' | 'infographics' | 'workspace';
+  let title = '';
+  
+  if (userQuery.toLowerCase().includes('setup') || 
+      userQuery.toLowerCase().includes('equipment') ||
+      userQuery.toLowerCase().includes('livestream')) {
+    category = 'livestreamer';
+    title = 'Livestreamer Setup';
+  } else if (userQuery.toLowerCase().includes('workspace') || 
+             userQuery.toLowerCase().includes('environment')) {
+    category = 'workspace';
+    title = 'Optimal Research Environment';
+  } else {
+    category = 'infographics';
+    title = 'Research Insights';
+  }
+  
+  // Extract a concise summary for the infographic (first 150 chars)
+  const content = aiResponse.length > 150 
+    ? aiResponse.substring(0, 150) + '...' 
+    : aiResponse;
+  
+  return {
+    title,
+    content,
+    imageUrl: getRandomImage(category)
+  };
+}
+
+// Detect the preferred commentary style from user input
+function detectCommentaryStyle(message: string): 'play-by-play' | 'color' {
+  const playByPlayIndicators = [
+    'play-by-play', 'play by play', 'step by step', 'walkthrough', 
+    'describe what', 'happening now', 'real-time', 'real time',
+    'action', 'moment', 'what is going on', 'current', 'right now'
+  ];
+  
+  for (const indicator of playByPlayIndicators) {
+    if (message.toLowerCase().includes(indicator)) {
+      return 'play-by-play';
+    }
+  }
+  
+  return 'color'; // Default to color commentary if no explicit indicator
+}
+
+export async function getAIResponse(message: string, commentaryStyle?: 'play-by-play' | 'color') {
+  try {
+    // Check for API key
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error("No ANTHROPIC_API_KEY environment variable found");
+      return {
+        text: "I need an Anthropic Claude API key to function. Please provide one in the environment variables.",
+        hasInfoGraphic: false,
+        infoGraphicData: null,
+        error: "NO_API_KEY"
+      };
+    }
+
+    // Check if we can make a request based on our rate limiting
+    const estimatedTokens = message.length * 2; // Rough estimate: input tokens + expected output tokens
+    
+    if (!rateLimiter.canMakeRequest(estimatedTokens)) {
+      console.log("Rate limit reached, returning fallback response");
+      return {
+        text: "I apologize, but I'm currently handling a lot of requests. To prevent hitting rate limits, I'm taking a short break. Please try again in a little while.",
+        hasInfoGraphic: false,
+        infoGraphicData: null,
+        error: "RATE_LIMITED"
+      };
+    }
+    
+    // If commentaryStyle is not provided, try to detect it from the message
+    const style = commentaryStyle || detectCommentaryStyle(message);
+    
+    // Determine commentary style-specific instructions
+    let styleInstructions = '';
+    if (style === 'play-by-play') {
+      styleInstructions = `
+        🕹 Play-by-Play Commentary Style:
+        - Describe what's happening right now in real time
+        - Be clear, quick, action-oriented, and immersive
+        - Prioritize moment-to-moment details
+        - Only include generated visuals if they help clarify what's being seen
+        - Speak like a broadcaster guiding the viewer through each action
+      `;
+    } else {
+      styleInstructions = `
+        🎨 Color Commentary Style:
+        - Add personality, depth, backstory, emotion, and broader insight
+        - Bring in analysis, historical comparisons, behind-the-scenes trivia, and light humor
+        - Generate custom visuals or statistics when relevant
+        - Use a natural and engaging style, not rushed
+      `;
+    }
+    
+    // Create the system prompt with Vyna's persona
+    const systemPrompt = `
+      You are Vyna, an advanced AI commentator built for live streaming. Your role is to provide engaging, intelligent, and expressive commentary that will be teleprompted on screen during a user's live stream.
+
+      ${styleInstructions}
+      
+      🧠 General Rules for Vyna:
+      - Your responses will be teleprompted, so be expressive but readable
+      - Make your responses rich and not short—we want immersion, not summaries
+      - You can reference generated images or data if allowed
+      - Adjust tone to match the stream type: gaming, music, art, tech, education, etc.
+      - Do not repeat ideas; evolve the commentary as the stream progresses
+      - Be creative, intelligent, and helpful. You're not just reporting — you're enhancing the experience
+      
+      💡 You are Vyna. The voice on screen. Be vivid. Be bold. Be alive.
+    `;
+
+    const response = await anthropic.messages.create({
+      model: "claude-3-7-sonnet-20250219",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [
+        { role: "user", content: message }
+      ],
+      temperature: 0.7,
+    });
+
+    // Track usage for rate limiting
+    const tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
+    rateLimiter.trackUsage(tokensUsed);
+
+    // Safely extract text from the response
+    let responseText = "I'm sorry, I couldn't generate a response.";
+    if (response.content[0].type === 'text') {
+      responseText = response.content[0].text;
+    }
+    
+    const hasInfoGraphic = shouldHaveInfoGraphic(message);
+    
+    return {
+      text: responseText,
+      hasInfoGraphic,
+      infoGraphicData: hasInfoGraphic ? generateInfoGraphicData(message, responseText) : null,
+      commentaryStyle: style  // Include the commentary style in the response
+    };
+  } catch (error: any) {
+    console.error("Error generating AI response with Claude:", error);
+    
+    if (error.status === 401) {
+      return {
+        text: "There's an issue with the Claude API key. It might be invalid or might not have the necessary permissions.",
+        hasInfoGraphic: false,
+        infoGraphicData: null,
+        error: "API_AUTHENTICATION_ERROR"
+      };
+    }
+    
+    if (error.status === 429) {
+      return {
+        text: "The Claude API rate limit has been exceeded. Please try again later when the quota resets.",
+        hasInfoGraphic: false,
+        infoGraphicData: null,
+        error: "API_RATE_LIMIT_EXCEEDED"
+      };
+    }
+    
+    return {
+      text: "I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment.",
+      hasInfoGraphic: false,
+      infoGraphicData: null,
+      error: "API_ERROR"
+    };
+  }
+}

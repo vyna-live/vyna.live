@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getAIResponse as getOpenAIResponse } from "./openai";
-import { getAIResponse, getAIResponse as getGeminiResponse } from "./gemini";
+import { getAIResponse as getGeminiResponse } from "./gemini";
+import { getAIResponse as getClaudeResponse } from "./anthropic";
 import multer from "multer";
 import { db } from "./db";
 import { saveUploadedFile, getFileById, processUploadedFile, deleteFile } from "./fileUpload";
@@ -264,13 +265,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      // Use Gemini by default, with OpenAI as fallback
+      // Prioritize Claude, then Gemini, then OpenAI as fallback
       let aiResponse;
       
-      // Check if we have a Gemini API key
-      if (process.env.GEMINI_API_KEY) {
+      // Check if we have a Claude API key
+      if (process.env.ANTHROPIC_API_KEY) {
         try {
-          console.log("Using Gemini for AI response");
+          console.log("Using Claude for AI response");
+          // Detect commentary style from the message
+          const isPlayByPlay = message.toLowerCase().includes('play-by-play') || 
+                              message.toLowerCase().includes('play by play') ||
+                              message.toLowerCase().includes('step by step');
+          
+          const commentaryStyle = isPlayByPlay ? 'play-by-play' : 'color';
+          console.log(`Using commentary style: ${commentaryStyle}`);
+          
+          aiResponse = await getClaudeResponse(message, commentaryStyle);
+        } catch (error) {
+          console.error("Error using Claude API:", error);
+          // If Claude fails, try Gemini as fallback
+          if (process.env.GEMINI_API_KEY) {
+            console.log("Claude failed, falling back to Gemini");
+            aiResponse = await getGeminiResponse(message);
+          } 
+          // If no Gemini, try OpenAI
+          else if (process.env.OPENAI_API_KEY) {
+            console.log("Claude failed, no Gemini API key, falling back to OpenAI");
+            aiResponse = await getOpenAIResponse(message);
+          } else {
+            throw error; // No fallback available, propagate the error
+          }
+        }
+      }
+      // If no Claude key, try Gemini
+      else if (process.env.GEMINI_API_KEY) {
+        try {
+          console.log("No Claude API key, using Gemini");
           aiResponse = await getGeminiResponse(message);
         } catch (error) {
           console.error("Error using Gemini API:", error);
@@ -283,15 +313,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       } 
-      // If no Gemini key, try OpenAI
+      // If no Claude or Gemini key, try OpenAI
       else if (process.env.OPENAI_API_KEY) {
-        console.log("No Gemini API key, using OpenAI");
+        console.log("No Claude or Gemini API key, using OpenAI");
         aiResponse = await getOpenAIResponse(message);
       } 
       // No API keys available
       else {
         return res.status(200).json({
-          text: "No AI service API keys are configured. Please provide either a Gemini or OpenAI API key.",
+          text: "No AI service API keys are configured. Please provide an Anthropic Claude, Google Gemini, or OpenAI API key.",
           hasInfoGraphic: false,
           error: "NO_API_KEYS"
         });
