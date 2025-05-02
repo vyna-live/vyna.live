@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Vyna.live Assistant",
+  "version": "1.0.0",
+  "description": "AI-powered chat and notepad for streamers and content creators",
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    },
+    "default_title": "Vyna.live Assistant"
+  },
+  "permissions": [
+    "storage",
+    "identity"
+  ],
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+  "host_permissions": [
+    "*://vyna.live/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
