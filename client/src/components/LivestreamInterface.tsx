@@ -143,6 +143,12 @@ export default function LivestreamInterface({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
+  
+  // File upload states
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
   const { toast } = useToast();
 
@@ -585,8 +591,243 @@ export default function LivestreamInterface({
 
   // No more chat simulation - chat is now handled by the AgoraVideo component with RTM
 
+  // File upload handlers
+  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    if (!user || !isAuthenticated) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to upload files",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      const file = event.target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('hostId', user.id.toString());
+      
+      const response = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload file');
+      }
+      
+      const data = await response.json();
+      
+      // Add file info to the chat input
+      setInputValue(prev => `${prev} [Uploaded file: ${file.name}] ${data.url ? data.url : ''}`);
+      
+      toast({
+        title: "File Uploaded",
+        description: `${file.name} has been uploaded successfully`,
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload file",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [user, isAuthenticated, toast]);
+  
+  const handleImageChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0) return;
+    if (!user || !isAuthenticated) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to upload images",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      const file = event.target.files[0];
+      
+      // Check if file is an image
+      if (!file.type.includes('image/')) {
+        throw new Error('File must be an image');
+      }
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('hostId', user.id.toString());
+      formData.append('fileType', 'image');
+      
+      const response = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      
+      const data = await response.json();
+      
+      // Add image info to the chat input
+      setInputValue(prev => `${prev} [Uploaded image: ${file.name}] ${data.url ? data.url : ''}`);
+      
+      toast({
+        title: "Image Uploaded",
+        description: `${file.name} has been uploaded successfully`,
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset the file input
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
+  }, [user, isAuthenticated, toast]);
+  
+  const startRecording = useCallback(async () => {
+    if (!user || !isAuthenticated) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to record audio",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+      
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+        
+        // Upload the audio file
+        setIsUploading(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'recording.wav');
+          formData.append('hostId', user.id.toString());
+          formData.append('fileType', 'audio');
+          
+          const response = await fetch('/api/files/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to upload audio recording');
+          }
+          
+          const data = await response.json();
+          
+          // Add audio info to the chat input
+          setInputValue(prev => `${prev} [Recorded audio] ${data.url ? data.url : ''}`);
+          
+          toast({
+            title: "Audio Recorded",
+            description: "Your audio has been recorded and uploaded successfully",
+          });
+        } catch (error) {
+          console.error('Error uploading audio:', error);
+          toast({
+            title: "Upload Error",
+            description: "Failed to upload audio recording",
+            variant: "destructive",
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      
+      recorder.start();
+      setIsRecording(true);
+      
+      toast({
+        title: "Recording started",
+        description: "Recording audio... Click again to stop.",
+      });
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      toast({
+        title: "Recording Error",
+        description: "Failed to start audio recording. Please check microphone permissions.",
+        variant: "destructive",
+      });
+    }
+  }, [user, isAuthenticated, toast]);
+  
+  const stopRecording = useCallback(() => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      // Stop all audio tracks
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+    }
+  }, [mediaRecorder]);
+  
+  const handleAudioClick = useCallback(() => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
+
   return (
     <div className="w-full h-screen relative overflow-hidden bg-black p-4">
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        accept=".pdf,.doc,.docx,.txt"
+        onChange={handleFileChange}
+      />
+      
+      <input
+        ref={imageInputRef}
+        type="file"
+        className="hidden"
+        accept="image/*"
+        onChange={handleImageChange}
+      />
+      
+      <input
+        ref={audioInputRef}
+        type="file"
+        className="hidden"
+        accept="audio/*"
+        capture
+      />
       {/* Top Navbar */}
       <div className="absolute top-4 left-4 right-4 h-12 z-30 bg-black/70 backdrop-blur-sm flex items-center justify-between px-4 rounded-lg">
         <div className="flex items-center">
@@ -1138,8 +1379,9 @@ export default function LivestreamInterface({
                           </svg>
                         </button>
                         <span className="text-white text-sm font-medium truncate pr-6">
-                          Who is the best CODM gamer in Nigeria as of March
-                          2025?
+                          {currentSessionId && chatSessions.find(session => session.id === currentSessionId)?.title 
+                            ? chatSessions.find(session => session.id === currentSessionId)?.title 
+                            : "New Chat"}
                         </span>
                         <button className="ml-auto text-zinc-400 hover:text-white">
                           <svg
