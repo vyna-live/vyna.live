@@ -136,7 +136,7 @@ function detectCommentaryStyle(message: string): 'play-by-play' | 'color' {
   return 'color'; // Default to color commentary if no explicit indicator
 }
 
-export async function getAIResponse(message: string, commentaryStyle?: 'play-by-play' | 'color') {
+export async function getAIResponse(message: string, commentaryStyle?: 'play-by-play' | 'color', previousMessages: { role: 'user' | 'assistant', content: string }[] = []) {
   try {
     // Check for API key
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -206,13 +206,21 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
       💡 You are Vyna. The assistant to the streamer. Be vivid. Be responsive. Be alive.
     `;
 
+    // Construct messages array with conversation history
+    const messages = [...previousMessages];
+    
+    // Add the current message
+    messages.push({ role: "user", content: message });
+    
+    // Log conversation for debugging
+    console.log(`Sending ${messages.length} messages to Claude:`, 
+      messages.length <= 3 ? JSON.stringify(messages) : `${messages.length} messages (too many to log)`);
+    
     const response = await anthropic.messages.create({
       model: "claude-3-7-sonnet-20250219",
       max_tokens: 1000,
       system: systemPrompt,
-      messages: [
-        { role: "user", content: message }
-      ],
+      messages: messages,
       temperature: 0.7,
     });
 

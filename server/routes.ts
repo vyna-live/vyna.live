@@ -116,6 +116,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Host ID and message are required" });
       }
       
+      // Determine which session ID to use (from request or lookup most recent active session)
+      let activeSessionId = sessionId;
+      
+      // If explicitly creating a new session or if no sessionId provided, look up the most recent active session
+      if (!activeSessionId || activeSessionId === 'new') {
+        const [mostRecentSession] = await db.select()
+          .from(aiChatSessions)
+          .where(and(
+            eq(aiChatSessions.hostId, hostId),
+            eq(aiChatSessions.isDeleted, false)
+          ))
+          .orderBy(desc(aiChatSessions.updatedAt))
+          .limit(1);
+          
+        // Only use the existing session if one exists and we're not explicitly creating a new session
+        if (mostRecentSession && activeSessionId !== 'new') {
+          activeSessionId = mostRecentSession.id;
+        }
+      }
+      
+      // Get conversation history for this session if it exists
+      let conversationHistory: { role: 'user' | 'assistant', content: string }[] = [];
+      
+      if (activeSessionId && activeSessionId !== 'new') {
+        const previousMessages = await db.select()
+          .from(aiChatMessages)
+          .where(and(
+            eq(aiChatMessages.sessionId, activeSessionId),
+            eq(aiChatMessages.isDeleted, false)
+          ))
+          .orderBy(aiChatMessages.createdAt);
+          
+        // Convert to the format expected by Claude API
+        conversationHistory = previousMessages.map(msg => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content
+        }));
+        
+        console.log(`Retrieved ${conversationHistory.length} previous messages for session ${activeSessionId}`);
+      }
+      
       // Get AI response
       let aiResponse = "";
       let aiResponseObj = null;
@@ -132,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
             
             console.log(`Using commentary style: ${detectedStyle}`);
-            aiResponseObj = await getClaudeResponse(message, detectedStyle);
+            aiResponseObj = await getClaudeResponse(message, detectedStyle, conversationHistory);
             aiResponse = aiResponseObj.text || "Response unavailable";
           } catch (claudeError) {
             console.error("Error using Claude API:", claudeError);
@@ -161,11 +202,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         aiResponse = "Sorry, I couldn't process your request at the moment. Please try again later.";
       }
       
-      let activeSessionId = sessionId;
       let isNewSession = false;
       
-      // Create a new session if one doesn't exist
-      if (!activeSessionId) {
+      // Create a new session if needed (if sessionId is 'new' or still undefined after looking up)
+      if (!activeSessionId || activeSessionId === 'new') {
         isNewSession = true;
         // Generate a title from the first message
         const title = message.length > 50 ? message.substring(0, 47) + '...' : message;
@@ -317,7 +357,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const commentaryStyle = isPlayByPlay ? 'play-by-play' : 'color';
           console.log(`Using commentary style: ${commentaryStyle}`);
           
-          aiResponse = await getClaudeResponse(message, commentaryStyle);
+          // If we have a sessionId, retrieve message history for context
+          let conversationHistory: { role: 'user' | 'assistant', content: string }[] = [];
+          if (sessionId) {
+            try {
+              // Get previous messages from this session
+              const previousMessages = await db.select()
+                .from(messages)
+                .where(eq(messages.sessionId, sessionId))
+                .orderBy(messages.timestamp);
+                
+              // Convert to the format expected by Claude API
+              conversationHistory = previousMessages.map(msg => ({
+                role: msg.role as 'user' | 'assistant',
+                content: msg.content
+              }));
+              
+              console.log(`Retrieved ${conversationHistory.length} previous messages for session ${sessionId}`);
+            } catch (historyError) {
+              console.error("Error retrieving message history:", historyError);
+              // Continue without history if there's an error
+            }
+          }
+          
+          aiResponse = await getClaudeResponse(message, commentaryStyle, conversationHistory);
         } catch (error) {
           console.error("Error using Claude API:", error);
           // If Claude fails, try Gemini as fallback
