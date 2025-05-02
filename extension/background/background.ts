@@ -1,323 +1,272 @@
-// Background script for Vyna.live Extension
+type ApiRequestOptions = {
+  method: string;
+  endpoint: string;
+  data?: any;
+  token?: string;
+};
 
-// Add missing type definitions for Chrome Extension API
-declare namespace chrome {
-  namespace cookies {
-    interface Cookie {
-      name: string;
-      value: string;
-      domain: string;
-      hostOnly: boolean;
-      path: string;
-      secure: boolean;
-      httpOnly: boolean;
-      sameSite: string;
-      session: boolean;
-      expirationDate?: number;
-      storeId: string;
-    }
-
-    function getAll(details: { url: string; name: string }): Promise<Cookie[]>;
-  }
-
-  namespace runtime {
-    interface LastError {
-      message?: string;
-    }
-    const lastError: LastError | undefined;
-  }
-}
-
-// Constants
 const API_BASE_URL = 'https://vyna.live/api';
-const LOCAL_API_BASE_URL = 'http://localhost:5000/api';
 
-// State
-let authToken: string | null = null;
-let isAuthenticated = false;
-let currentUser: any = null;
+// Global state for background process
+let token: string | null = null;
 
-// Initialize extension
-function init() {
-  chrome.storage.local.get(['authToken', 'user'], (result) => {
-    if (result.authToken) {
-      authToken = result.authToken;
-      currentUser = result.user || null;
-      isAuthenticated = true;
-      
-      // Verify token is still valid
-      verifyToken();
-    }
+// Get the session token from storage
+const getToken = async (): Promise<string | null> => {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['token'], (result) => {
+      resolve(result.token || null);
+    });
   });
-  
-  // Listen for installation or update
-  chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === 'install') {
-      // First installation
-      chrome.tabs.create({ url: chrome.runtime.getURL('popup/welcome.html') });
-    }
-  });
-}
+};
 
-// Verify if the token is still valid
-async function verifyToken() {
-  try {
-    // Use development server when working locally
-    const baseUrl = chrome.runtime.getURL('').startsWith('chrome-extension://') ? 
-      API_BASE_URL : LOCAL_API_BASE_URL;
-    
-    const response = await fetch(`${baseUrl}/extension/verify`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': `connect.sid=${authToken}`
-      },
-      credentials: 'include'
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      currentUser = data.user;
-      isAuthenticated = true;
-      
-      // Store updated user data
-      chrome.storage.local.set({ user: data.user });
-      
-      // Send auth status to any open popup or tabs
-      broadcastAuthStatus(true, data.user);
-      
-      return true;
-    } else {
-      // Token is invalid, clear it
-      logout();
-      return false;
-    }
-  } catch (error) {
-    console.error('Error verifying token:', error);
-    return false;
-  }
-}
+// Set token in local state and storage
+const setToken = async (newToken: string): Promise<void> => {
+  token = newToken;
+  await chrome.storage.local.set({ token: newToken });
+};
 
-// Handle login
-async function login(credentials: { username: string, password: string }) {
-  try {
-    // Use development server when working locally
-    const baseUrl = chrome.runtime.getURL('').startsWith('chrome-extension://') ? 
-      API_BASE_URL : LOCAL_API_BASE_URL;
-    
-    const response = await fetch(`${baseUrl}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include',
-      body: JSON.stringify(credentials)
-    });
-    
-    if (response.ok) {
-      const user = await response.json();
-      
-      // Get cookie from the response
-      const cookieString = response.headers.get('set-cookie');
-      let sessionCookie = null;
-      
-      if (cookieString) {
-        const cookies = cookieString.split(';');
-        const sessionCookiePair = cookies.find(cookie => cookie.trim().startsWith('connect.sid='));
-        if (sessionCookiePair) {
-          sessionCookie = sessionCookiePair.split('=')[1];
-        }
-      }
-      
-      // If we couldn't extract it from headers, try to use the browser cookies API
-      if (!sessionCookie) {
-        const cookies = await chrome.cookies.getAll({
-          url: baseUrl,
-          name: 'connect.sid'
-        });
-        
-        if (cookies.length > 0) {
-          sessionCookie = cookies[0].value;
-        }
-      }
-      
-      if (sessionCookie) {
-        // Store authentication information
-        authToken = sessionCookie;
-        currentUser = user;
-        isAuthenticated = true;
-        
-        chrome.storage.local.set({ 
-          authToken: sessionCookie,
-          user: user
-        });
-        
-        broadcastAuthStatus(true, user);
-        return { success: true, user };
-      } else {
-        return { success: false, error: 'Could not retrieve session cookie' };
-      }
-    } else {
-      const errorData = await response.json();
-      return { success: false, error: errorData.error || 'Login failed' };
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    return { success: false, error: 'Connection error' };
-  }
-}
+// Clear token from local state and storage
+const clearToken = async (): Promise<void> => {
+  token = null;
+  await chrome.storage.local.remove(['token']);
+};
 
-// Handle logout
-function logout() {
-  authToken = null;
-  currentUser = null;
-  isAuthenticated = false;
-  
-  // Clear stored authentication information
-  chrome.storage.local.remove(['authToken', 'user']);
-  
-  // Notify components about logout
-  broadcastAuthStatus(false, null);
-}
+// Handle API requests from popup or content scripts
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle API requests
+  if (request.type === 'apiRequest') {
+    handleApiRequest(request, sendResponse);
+    return true; // Keep the message channel open for async response
+  }
 
-// Broadcast authentication status to all components
-function broadcastAuthStatus(status: boolean, user: any) {
-  try {
-    chrome.runtime.sendMessage({
-      type: 'authStatusChanged',
-      isAuthenticated: status,
-      user: user
-    });
-  } catch (error) {
-    // Ignore errors when no listeners are available
-    console.debug('No listeners for auth status update', error);
+  // Extract content from active page
+  if (request.type === 'extractCurrentPageContent') {
+    extractPageContent(sendResponse);
+    return true; // Keep the message channel open for async response
   }
-}
 
-// Listen for messages from content scripts or popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Authentication related messages
-  if (message.type === 'login') {
-    login(message.credentials).then(sendResponse);
-    return true; // Will respond asynchronously
-  }
-  
-  if (message.type === 'logout') {
-    logout();
-    sendResponse({ success: true });
-    return false;
-  }
-  
-  if (message.type === 'getAuthStatus') {
-    sendResponse({
-      isAuthenticated,
-      user: currentUser
-    });
-    return false;
-  }
-  
-  if (message.type === 'verifyToken') {
-    verifyToken().then((isValid) => {
-      sendResponse({
-        isAuthenticated: isValid,
-        user: isValid ? currentUser : null
-      });
-    });
-    return true; // Will respond asynchronously
-  }
-  
-  // Content extraction related messages
-  if (message.type === 'extractCurrentPageContent') {
-    // Send message to content script of the active tab
+  // Handle message to content script
+  if (request.type === 'messageToContent') {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0) {
-        chrome.tabs.sendMessage(tabs[0].id!, { type: 'extractPageContent' }, (response) => {
-          if (chrome.runtime.lastError) {
-            sendResponse({ success: false, error: 'Content script not available' });
-          } else {
-            sendResponse(response);
-          }
-        });
-      } else {
-        sendResponse({ success: false, error: 'No active tab' });
+        chrome.tabs.sendMessage(tabs[0].id!, { ...request.data });
       }
     });
-    return true; // Will respond asynchronously
+    return false;
   }
-  
-  // Highlight text in the current page
-  if (message.type === 'highlightText') {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        chrome.tabs.sendMessage(
-          tabs[0].id!,
-          { type: 'highlightText', text: message.text },
-          (response) => {
-            sendResponse(response);
-          }
-        );
-      } else {
-        sendResponse({ success: false, error: 'No active tab' });
-      }
-    });
-    return true; // Will respond asynchronously
-  }
-  
-  // Send API request on behalf of the extension
-  if (message.type === 'apiRequest') {
-    const { method, endpoint, data } = message;
-    
-    // Use development server when working locally
-    const baseUrl = chrome.runtime.getURL('').startsWith('chrome-extension://') ? 
-      API_BASE_URL : LOCAL_API_BASE_URL;
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    
-    if (authToken) {
-      headers['Cookie'] = `connect.sid=${authToken}`;
-    }
-    
-    const requestOptions: RequestInit = {
-      method: method || 'GET',
-      headers,
-      credentials: 'include'
-    };
-    
-    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-      requestOptions.body = JSON.stringify(data);
-    }
-    
-    fetch(`${baseUrl}${endpoint}`, requestOptions)
-      .then(async (response) => {
-        let responseData;
-        const contentType = response.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          responseData = await response.text();
-        }
-        
-        sendResponse({
-          success: response.ok,
-          status: response.status,
-          data: responseData
-        });
-      })
-      .catch((error) => {
-        sendResponse({
-          success: false,
-          error: error.message
-        });
-      });
-    
-    return true; // Will respond asynchronously
-  }
-  
-  return false; // For other messages, don't wait for a response
 });
 
-// Initialize on load
-init();
+// Function to handle API requests
+async function handleApiRequest(request: any, sendResponse: (response: any) => void): Promise<void> {
+  try {
+    // Get current token if available
+    if (!token) {
+      token = await getToken();
+    }
+
+    // Build request URL
+    const url = `${API_BASE_URL}${request.endpoint}`;
+
+    // Build request options
+    const fetchOptions: RequestInit = {
+      method: request.method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    // Add auth token if available
+    if (token) {
+      fetchOptions.headers = {
+        ...fetchOptions.headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+
+    // Add body for POST/PUT/PATCH requests
+    if (['POST', 'PUT', 'PATCH'].includes(request.method) && request.data) {
+      fetchOptions.body = JSON.stringify(request.data);
+    }
+
+    // Make the request
+    const response = await fetch(url, fetchOptions);
+
+    // Handle non-OK responses
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Clear token on authentication error
+        await clearToken();
+        sendResponse({
+          success: false,
+          error: 'Authentication error. Please log in again.',
+        });
+        return;
+      }
+
+      // Try to parse error message from response
+      try {
+        const errorData = await response.json();
+        sendResponse({
+          success: false,
+          error: errorData.error || `Request failed with status ${response.status}`,
+        });
+      } catch {
+        sendResponse({
+          success: false,
+          error: `Request failed with status ${response.status}`,
+        });
+      }
+      return;
+    }
+
+    // Special handling for login/register endpoints
+    if (['/login', '/register'].includes(request.endpoint)) {
+      const data = await response.json();
+      if (data.token) {
+        await setToken(data.token);
+      }
+      sendResponse({ success: true, data });
+      return;
+    }
+
+    // Handle successful response
+    try {
+      const data = await response.json();
+      sendResponse({ success: true, data });
+    } catch (e) {
+      // If response cannot be parsed as JSON, send empty data
+      sendResponse({ success: true, data: null });
+    }
+  } catch (error) {
+    console.error('API request error:', error);
+    sendResponse({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    });
+  }
+}
+
+// Function to extract content from active page
+async function extractPageContent(sendResponse: (response: any) => void): Promise<void> {
+  try {
+    // Promise-based wrapper for chrome.tabs.query
+    const getTabs = (): Promise<chrome.tabs.Tab[]> => {
+      return new Promise((resolve) => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          resolve(tabs);
+        });
+      });
+    };
+
+    const tabs = await getTabs();
+    
+    if (tabs.length > 0 && tabs[0].id) {
+      // Get page title and URL
+      const title = tabs[0].title || 'Unknown Page';
+      const url = tabs[0].url || '';
+      
+      // Wrap sendMessage in a promise with error handling
+      const sendMessageToTab = (tabId: number, message: any): Promise<any> => {
+        return new Promise((resolve) => {
+          chrome.tabs.sendMessage(
+            tabId,
+            message,
+            (response) => {
+              // Check for chrome.runtime.lastError
+              const lastError = chrome.runtime.lastError;
+              if (lastError) {
+                resolve(null); // Return null on error
+              } else {
+                resolve(response);
+              }
+            }
+          );
+        });
+      };
+      
+      // Try to get content from content script
+      let contentResponse = await sendMessageToTab(tabs[0].id, { action: 'extractContent' });
+      
+      // If no response, try injecting the content script
+      if (!contentResponse) {
+        // Wrap executeScript in a promise
+        const injectContentScript = (tabId: number): Promise<void> => {
+          return new Promise((resolve) => {
+            try {
+              // Using chrome.scripting is only available in MV3
+              // In older browser versions, we might need to fall back to other methods
+              if (chrome.scripting) {
+                chrome.scripting.executeScript(
+                  {
+                    target: { tabId },
+                    files: ['content.js'],
+                  },
+                  () => resolve()
+                );
+              } else {
+                // Fallback for older extensions
+                chrome.tabs.executeScript(tabId, { file: 'content.js' }, () => resolve());
+              }
+            } catch (e) {
+              // If scripting fails, resolve anyway so we can try other methods
+              console.error('Failed to inject content script:', e);
+              resolve();
+            }
+          });
+        };
+        
+        // Inject the content script
+        await injectContentScript(tabs[0].id);
+        
+        // Wait a bit for the script to initialize
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Try again
+        contentResponse = await sendMessageToTab(tabs[0].id, { action: 'extractContent' });
+      }
+      
+      // Handle the final response
+      if (!contentResponse) {
+        sendResponse({
+          success: true,
+          title,
+          url,
+          content: `Could not extract content from this page. (URL: ${url})`,
+        });
+      } else {
+        sendResponse({
+          success: true,
+          title,
+          url,
+          content: contentResponse.content,
+        });
+      }
+    } else {
+      sendResponse({
+        success: false,
+        error: 'No active tab found',
+      });
+    }
+  } catch (error) {
+    console.error('Content extraction error:', error);
+    sendResponse({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    });
+  }
+}
+
+// Initialize extension when installed
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('Vyna Extension installed');
+  
+  // Set default settings
+  chrome.storage.local.set({
+    firstInstall: true,
+    settings: {
+      extractPageContent: true,
+      commentaryStyle: 'color',
+      theme: 'light',
+    },
+  });
+});

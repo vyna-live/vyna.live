@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { sendChatMessage } from '../utils/api';
+import '../../../popup/styles/popup.css';
 
 interface AiChatViewProps {
   currentPageTitle: string;
@@ -28,36 +30,8 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Define the expected response type
-  interface PageContentResponse {
-    success: boolean;
-    content: string;
-    error?: string;
-  }
-
-  // Function to extract content from current page
-  const extractPageContent = async (): Promise<PageContentResponse | null> => {
-    try {
-      return await new Promise<PageContentResponse>((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          { type: 'extractCurrentPageContent' },
-          (response: PageContentResponse) => {
-            if (response && response.success) {
-              resolve(response);
-            } else {
-              reject(response?.error || 'Failed to extract page content');
-            }
-          }
-        );
-      });
-    } catch (error) {
-      console.error('Error extracting page content:', error);
-      return null;
-    }
-  };
-
   // Function to send message to API
-  const sendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string) => {
     if (!text.trim()) return;
     
     // Create new user message
@@ -74,46 +48,37 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
     setIsLoading(true);
     
     try {
-      // Extract page content if needed
-      let contextInfo = '';
-      if (text.toLowerCase().includes('this page') || text.toLowerCase().includes('current page')) {
-        const pageContent = await extractPageContent();
-        if (pageContent) {
-          contextInfo = `\n\nContext from current page (${currentPageTitle}):\n${pageContent.content}`;
+      // Send message to API
+      const response = await sendChatMessage(
+        text, 
+        selectedCommentaryStyle, 
+        {
+          title: currentPageTitle,
+          url: currentPageUrl
         }
+      );
+      
+      if (response.success && response.data) {
+        // Add AI response to chat
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: response.data.text || response.data.message || 'Sorry, I couldn\'t process that request.',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        // Handle error
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: response.error || 'Sorry, there was an error processing your request. Please try again later.',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
       }
-      
-      // Send request to backend API
-      const response = await new Promise<any>((resolve, reject) => {
-        chrome.runtime.sendMessage({
-          type: 'apiRequest',
-          method: 'POST',
-          endpoint: '/ai/chat',
-          data: {
-            message: text + contextInfo,
-            commentaryStyle: selectedCommentaryStyle,
-            source: 'extension',
-            pageTitle: currentPageTitle,
-            pageUrl: currentPageUrl
-          }
-        }, (response) => {
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            reject(response?.error || 'Failed to get AI response');
-          }
-        });
-      });
-      
-      // Add AI response to chat
-      const assistantMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: response.text || response.message || 'Sorry, I couldn\'t process that request.',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -134,7 +99,7 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    sendMessage(input);
+    handleSendMessage(input);
   };
   
   // Create a new chat
@@ -173,37 +138,45 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
   };
 
   return (
-    <div className="vyna-chat-view">
-      <div className="vyna-chat-actions">
-        <button className="vyna-new-chat-btn" onClick={handleNewChat}>
+    <div className="flex flex-col h-full">
+      {/* Chat actions */}
+      <div className="p-sm border-b">
+        <button 
+          className="btn btn-sm btn-primary"
+          onClick={handleNewChat}
+        >
           New Chat
         </button>
       </div>
 
-      <div className="vyna-message-list">
+      {/* Message list */}
+      <div className="flex-1 overflow-y-auto p-md flex flex-col gap-md">
         {messages.length === 0 ? (
-          <div className="vyna-empty-chat">
-            <p>Start a new conversation with Vyna AI</p>
+          <div className="flex items-center justify-center h-full text-secondary text-center">
+            <div>
+              <p>Start a new conversation with Vyna AI</p>
+              <p className="text-sm mt-sm">Try asking something about the current page</p>
+            </div>
           </div>
         ) : (
           messages.map((message) => (
             <div 
               key={message.id} 
-              className={`vyna-message ${message.role === 'user' ? 'vyna-user-message' : 'vyna-assistant-message'}`}
+              className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
             >
-              <div className="vyna-message-header">
-                <span className="vyna-message-sender">
+              <div className="message-header">
+                <span className="message-sender">
                   {message.role === 'user' ? 'You' : 'Vyna AI'}
                 </span>
-                <span className="vyna-message-time">
+                <span className="message-time">
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </span>
               </div>
-              <div className="vyna-message-content">{message.content}</div>
+              <div className="message-content">{message.content}</div>
               {message.role === 'assistant' && (
-                <div className="vyna-message-actions">
+                <div className="message-actions">
                   <button 
-                    className="vyna-action-btn"
+                    className="btn btn-sm btn-text"
                     onClick={() => saveToNotes(message.content)}
                     title="Save to notes"
                   >
@@ -215,8 +188,8 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
           ))
         )}
         {isLoading && (
-          <div className="vyna-loading-message">
-            <div className="vyna-typing-indicator">
+          <div className="loading-message">
+            <div className="typing-indicator">
               <span></span>
               <span></span>
               <span></span>
@@ -227,12 +200,13 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
         <div ref={messagesEndRef} />
       </div>
 
-      <form className="vyna-chat-input" onSubmit={handleSubmit}>
-        <div className="vyna-input-container">
-          <div className="vyna-commentary-style-selector">
+      {/* Input form */}
+      <form className="p-sm border-t bg-white" onSubmit={handleSubmit}>
+        <div className="relative">
+          <div className="absolute left-sm top-1/2 transform -translate-y-1/2 flex flex-col gap-xs z-10">
             <button
               type="button"
-              className={`vyna-style-btn ${selectedCommentaryStyle === 'play-by-play' ? 'active' : ''}`}
+              className={`commentary-style-btn ${selectedCommentaryStyle === 'play-by-play' ? 'active' : ''}`}
               onClick={() => setSelectedCommentaryStyle('play-by-play')}
               title="Play-by-Play Commentary (Short, action-oriented responses)"
             >
@@ -240,23 +214,26 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
             </button>
             <button
               type="button"
-              className={`vyna-style-btn ${selectedCommentaryStyle === 'color' ? 'active' : ''}`}
+              className={`commentary-style-btn ${selectedCommentaryStyle === 'color' ? 'active' : ''}`}
               onClick={() => setSelectedCommentaryStyle('color')}
               title="Color Commentary (Detailed, insightful responses)"
             >
               CC
             </button>
           </div>
+          
           <textarea 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask Vyna AI..."
+            className="form-input pl-xl"
             rows={2}
             disabled={isLoading}
           />
+          
           <button 
             type="submit" 
-            className="vyna-send-btn"
+            className="btn btn-primary absolute right-sm top-1/2 transform -translate-y-1/2"
             disabled={!input.trim() || isLoading}
           >
             Send
@@ -265,139 +242,87 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
       </form>
 
       <style>{`
-        .vyna-chat-view {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-          overflow: hidden;
-        }
-
-        .vyna-chat-actions {
-          padding: 8px 16px;
-          border-bottom: 1px solid var(--vyna-border);
-          background-color: white;
-        }
-
-        .vyna-new-chat-btn {
-          font-size: 12px;
-          padding: 6px 10px;
-          background-color: var(--vyna-primary);
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .vyna-message-list {
-          flex: 1;
-          overflow-y: auto;
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .vyna-empty-chat {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          height: 100%;
-          color: #666;
-          text-align: center;
-          font-size: 14px;
-        }
-
-        .vyna-message {
+        .message {
           display: flex;
           flex-direction: column;
           max-width: 100%;
-          padding: 12px;
-          border-radius: 8px;
-          font-size: 14px;
+          padding: var(--vyna-spacing-sm);
+          border-radius: var(--vyna-border-radius);
+          font-size: var(--vyna-font-sm);
         }
 
-        .vyna-user-message {
+        .user-message {
           align-self: flex-end;
-          background-color: #e6f2ff;
-          border: 1px solid #cce5ff;
+          background-color: var(--vyna-primary-light);
+          border: 1px solid var(--vyna-primary-lighter);
           margin-left: 32px;
         }
 
-        .vyna-assistant-message {
+        .assistant-message {
           align-self: flex-start;
           background-color: white;
           border: 1px solid var(--vyna-border);
           margin-right: 32px;
         }
 
-        .vyna-message-header {
+        .message-header {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 8px;
-          font-size: 12px;
+          margin-bottom: var(--vyna-spacing-xs);
+          font-size: var(--vyna-font-xs);
         }
 
-        .vyna-message-sender {
+        .message-sender {
           font-weight: 600;
         }
 
-        .vyna-message-time {
-          color: #666;
+        .message-time {
+          color: var(--vyna-text-secondary);
         }
 
-        .vyna-message-content {
+        .message-content {
           white-space: pre-wrap;
           line-height: 1.5;
         }
 
-        .vyna-message-actions {
+        .message-actions {
           display: flex;
           justify-content: flex-end;
-          margin-top: 8px;
+          margin-top: var(--vyna-spacing-xs);
         }
 
-        .vyna-action-btn {
-          font-size: 12px;
-          padding: 4px 8px;
-          background: none;
-          border: 1px solid var(--vyna-secondary);
-          color: var(--vyna-secondary);
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .vyna-loading-message {
+        .loading-message {
           align-self: flex-start;
-          padding: 12px;
+          padding: var(--vyna-spacing-sm);
           display: flex;
           align-items: center;
-          gap: 12px;
-          color: #666;
+          gap: var(--vyna-spacing-sm);
+          color: var(--vyna-text-secondary);
         }
 
-        .vyna-typing-indicator {
+        .typing-indicator {
           display: flex;
           align-items: center;
           gap: 4px;
         }
 
-        .vyna-typing-indicator span {
+        .typing-indicator span {
           width: 6px;
           height: 6px;
-          background-color: #999;
+          background-color: var(--vyna-text-secondary);
           border-radius: 50%;
           animation: typing 1.4s infinite ease-in-out both;
         }
 
-        .vyna-typing-indicator span:nth-child(1) {
+        .typing-indicator span:nth-child(1) {
           animation-delay: 0s;
         }
 
-        .vyna-typing-indicator span:nth-child(2) {
+        .typing-indicator span:nth-child(2) {
           animation-delay: 0.2s;
         }
 
-        .vyna-typing-indicator span:nth-child(3) {
+        .typing-indicator span:nth-child(3) {
           animation-delay: 0.4s;
         }
 
@@ -406,75 +331,26 @@ const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUr
           40% { transform: scale(1); opacity: 1; }
         }
 
-        .vyna-chat-input {
-          padding: 12px 16px;
-          border-top: 1px solid var(--vyna-border);
-          background-color: white;
-        }
-
-        .vyna-input-container {
-          display: flex;
-          position: relative;
-        }
-
-        .vyna-commentary-style-selector {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          position: absolute;
-          left: 8px;
-          top: 50%;
-          transform: translateY(-50%);
-        }
-
-        .vyna-style-btn {
-          width: 30px;
-          height: 30px;
+        .commentary-style-btn {
+          width: 28px;
+          height: 28px;
           display: flex;
           align-items: center;
           justify-content: center;
           border-radius: 50%;
           border: 1px solid var(--vyna-border);
           background-color: white;
-          font-size: 12px;
+          font-size: var(--vyna-font-xs);
           font-weight: 600;
           cursor: pointer;
-          color: #666;
+          color: var(--vyna-text-secondary);
+          transition: all 0.2s;
         }
 
-        .vyna-style-btn.active {
+        .commentary-style-btn.active {
           background-color: var(--vyna-secondary);
           color: white;
           border-color: var(--vyna-secondary);
-        }
-
-        .vyna-chat-input textarea {
-          flex: 1;
-          resize: none;
-          padding: 12px 60px 12px 48px;
-          border: 1px solid var(--vyna-border);
-          border-radius: 8px;
-          font-family: inherit;
-          font-size: 14px;
-        }
-
-        .vyna-send-btn {
-          position: absolute;
-          right: 8px;
-          top: 50%;
-          transform: translateY(-50%);
-          background-color: var(--vyna-secondary);
-          color: white;
-          border: none;
-          border-radius: 4px;
-          padding: 6px 12px;
-          font-size: 14px;
-          cursor: pointer;
-        }
-
-        .vyna-send-btn:disabled {
-          background-color: #ccc;
-          cursor: not-allowed;
         }
       `}</style>
     </div>

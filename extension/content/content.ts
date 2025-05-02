@@ -1,120 +1,128 @@
-// Content script for Vyna.live Extension
-// This script runs in the context of web pages and can interact with the page's DOM
+// Content script for Vyna.live browser extension
 
-// Listen for messages from the background script
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'extractPageContent') {
-    // Extract page title and text content
-    const pageTitle = document.title;
-    const pageContent = document.body.innerText.substring(0, 1000); // First 1000 chars
-    
-    // Send the extracted content back to the sender
-    sendResponse({
-      success: true,
-      title: pageTitle,
-      content: pageContent,
-      url: window.location.href
-    });
+// Listen for messages from background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle content extraction request
+  if (request.action === 'extractContent') {
+    const content = extractPageContent();
+    sendResponse({ content });
+    return true;
   }
   
-  if (message.type === 'highlightText') {
-    // Find and highlight the specified text
-    if (message.text) {
-      highlightText(message.text);
-      sendResponse({ success: true });
-    } else {
-      sendResponse({ success: false, error: 'No text specified for highlighting' });
-    }
-  }
-  
-  // Return true to indicate that the response will be sent asynchronously
-  return true;
+  // Handle other actions here
 });
 
-// Function to highlight text on the page
-function highlightText(text: string): void {
-  // Convert the text to lowercase for case-insensitive matching
-  const textLowerCase = text.toLowerCase();
-  
-  // Recursive function to search for text in DOM nodes
-  function searchAndHighlight(node: Node): boolean {
-    // Skip script, style, and already highlighted nodes
-    if (node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE' || 
-        (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).classList.contains('vyna-highlight'))) {
-      return false;
-    }
+// Extract content from current page
+function extractPageContent(): string {
+  try {
+    // Get the main content (prioritize article or main content)
+    const mainContent = document.querySelector('article, [role="main"], main') || document.body;
     
-    // Check text nodes
-    if (node.nodeType === Node.TEXT_NODE) {
-      const content = node.textContent || '';
-      if (content.toLowerCase().includes(textLowerCase)) {
-        // Create a wrapper for highlighted text
-        const highlightedNode = document.createElement('span');
-        highlightedNode.classList.add('vyna-highlight');
-        highlightedNode.style.backgroundColor = 'rgba(64, 196, 208, 0.3)';
-        highlightedNode.style.color = 'inherit';
-        
-        // Replace the text with highlighted version
-        const parent = node.parentNode;
-        if (parent) {
-          const parts = content.split(new RegExp(`(${text})`, 'i'));
-          parent.removeChild(node);
-          
-          parts.forEach(part => {
-            if (part.toLowerCase() === textLowerCase) {
-              const highlight = document.createElement('span');
-              highlight.classList.add('vyna-highlight');
-              highlight.style.backgroundColor = 'rgba(64, 196, 208, 0.3)';
-              highlight.style.color = 'inherit';
-              highlight.textContent = part;
-              parent.appendChild(highlight);
-            } else if (part) {
-              parent.appendChild(document.createTextNode(part));
-            }
-          });
-          
-          return true;
+    // Extract visible text, ignoring scripts, styles, etc.
+    let visibleText = '';
+    
+    // Function to extract text from an element
+    function extractTextFromElement(element: Element): void {
+      // Skip hidden elements
+      const style = window.getComputedStyle(element);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+        return;
+      }
+      
+      // Skip script, style, and other non-content elements
+      const tagName = element.tagName.toLowerCase();
+      if (['script', 'style', 'noscript', 'iframe', 'svg', 'path', 'symbol', 'meta', 'link'].includes(tagName)) {
+        return;
+      }
+      
+      // Process headers with special formatting
+      if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+        const headerLevel = parseInt(tagName.substring(1), 10);
+        const prefix = '#'.repeat(headerLevel) + ' ';
+        const headerText = element.textContent?.trim();
+        if (headerText) {
+          visibleText += prefix + headerText + '\n\n';
         }
+        return;
       }
-      return false;
+      
+      // Process paragraphs
+      if (tagName === 'p') {
+        const paragraphText = element.textContent?.trim();
+        if (paragraphText) {
+          visibleText += paragraphText + '\n\n';
+        }
+        return;
+      }
+      
+      // Process list items
+      if (tagName === 'li') {
+        const listItemText = element.textContent?.trim();
+        if (listItemText) {
+          visibleText += '• ' + listItemText + '\n';
+        }
+        return;
+      }
+      
+      // Process other elements with text content
+      if (element.childNodes.length === 0) {
+        const text = element.textContent?.trim();
+        if (text) {
+          visibleText += text + ' ';
+        }
+        return;
+      }
+      
+      // Recursively process child elements
+      element.childNodes.forEach(child => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          extractTextFromElement(child as Element);
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          const text = child.textContent?.trim();
+          if (text) {
+            visibleText += text + ' ';
+          }
+        }
+      });
+      
+      // Add line break after block elements
+      if (['div', 'section', 'article', 'aside', 'header', 'footer', 'nav', 'blockquote'].includes(tagName)) {
+        visibleText += '\n';
+      }
     }
     
-    // Recursively check child nodes
-    let found = false;
-    for (const childNode of Array.from(node.childNodes)) {
-      if (searchAndHighlight(childNode)) {
-        found = true;
-      }
-    }
+    // Start extraction
+    extractTextFromElement(mainContent);
     
-    return found;
-  }
-  
-  searchAndHighlight(document.body);
-  
-  // Scroll to the first highlighted element
-  const firstHighlight = document.querySelector('.vyna-highlight');
-  if (firstHighlight) {
-    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Clean up the text (remove excessive whitespace)
+    const cleanedText = visibleText
+      .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+      .replace(/\n\s+/g, '\n') // Remove spaces at the beginning of lines
+      .replace(/\n{3,}/g, '\n\n') // Replace 3+ consecutive line breaks with just 2
+      .trim(); // Remove leading/trailing whitespace
+    
+    // Limit the content length (max 2000 characters)
+    const maxLength = 2000;
+    const truncatedText = cleanedText.length > maxLength
+      ? cleanedText.substring(0, maxLength) + '\n\n[Content truncated due to length...]'
+      : cleanedText;
+    
+    return truncatedText;
+  } catch (error) {
+    console.error('Error extracting page content:', error);
+    return 'Could not extract content from this page.';
   }
 }
 
-// Add the extension's stylesheet to the page
-function addStylesheet() {
-  const style = document.createElement('style');
-  style.textContent = `
-    .vyna-highlight {
-      background-color: rgba(64, 196, 208, 0.3);
-      color: inherit;
-      border-radius: 2px;
-      padding: 0 2px;
-    }
-  `;
-  document.head.appendChild(style);
+// Function to check if element is visible
+function isElementVisible(element: Element): boolean {
+  if (!element) return false;
+  
+  const style = window.getComputedStyle(element);
+  return !(
+    style.display === 'none' ||
+    style.visibility === 'hidden' ||
+    style.opacity === '0' ||
+    element.getAttribute('aria-hidden') === 'true'
+  );
 }
-
-// Initialize the content script
-addStylesheet();
-
-// Notify that the content script is loaded
-chrome.runtime.sendMessage({ type: 'contentScriptLoaded', url: window.location.href });

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { login, register } from '../utils/api';
 import '../../../popup/styles/popup.css';
 
 export interface AuthPageProps {
@@ -10,185 +9,133 @@ export interface AuthPageProps {
 const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLocalError(null);
-
-    // Basic validation
-    if (!username.trim()) {
-      setLocalError('Username is required');
-      return;
-    }
-
-    if (!password.trim()) {
-      setLocalError('Password is required');
-      return;
-    }
-
-    if (mode === 'register' && !email.trim()) {
-      setLocalError('Email is required');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      
-      if (mode === 'login') {
-        // Call login API
-        onLogin({ username, password });
-      } else {
-        // Call register API with additional fields
-        const response = await register({
-          username,
-          password,
-          email,
-          displayName: displayName.trim() || username
-        });
-        
-        if (response.success && response.data) {
-          // Auto-login after successful registration
-          onLogin({ username, password });
-        } else {
-          setLocalError(response.error || 'Registration failed');
-        }
-      }
-    } catch (error) {
-      setLocalError(error instanceof Error ? error.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
+    onLogin({ username, password });
   };
 
   return (
     <div className="container">
       <div className="header">
-        <h2>Vyna.live Assistant</h2>
+        <h3>Vyna Assistant</h3>
       </div>
 
       <div className="content p-md">
-        <div className="card">
-          <h3 className="text-center">
-            {mode === 'login' ? 'Sign in to your account' : 'Create a new account'}
-          </h3>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="username">Username</label>
-              <input
-                className="form-input"
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                disabled={isLoading}
-              />
-            </div>
+        <div className="text-center mb-md">
+          <h2 className="text-xl mb-xs">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
+          <p className="text-secondary">
+            {isSignUp 
+              ? 'Sign up to access Vyna AI Assistant features' 
+              : 'Log in to your Vyna account to continue'}
+          </p>
+        </div>
 
-            {mode === 'register' && (
-              <>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="email">Email</label>
-                  <input
-                    className="form-input"
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    disabled={isLoading}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="displayName">Display Name (optional)</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Enter your display name"
-                    disabled={isLoading}
-                  />
-                </div>
-              </>
-            )}
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">Password</label>
-              <input
-                className="form-input"
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                disabled={isLoading}
-              />
-            </div>
-
-            {(error || localError) && (
-              <div className="form-error">
-                {error || localError}
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              className="btn btn-secondary w-full mt-md"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-sm">
-                  <span className="animate-spin">⟳</span> 
-                  {mode === 'login' ? 'Signing in...' : 'Creating account...'}
-                </span>
-              ) : (
-                mode === 'login' ? 'Sign In' : 'Create Account'
-              )}
-            </button>
-          </form>
-
-          <div className="text-center m-md">
-            {mode === 'login' ? (
-              <p>
-                Don't have an account?{' '}
-                <button 
-                  className="btn-text"
-                  onClick={() => setMode('register')}
-                  disabled={isLoading}
-                >
-                  Sign up
-                </button>
-              </p>
-            ) : (
-              <p>
-                Already have an account?{' '}
-                <button 
-                  className="btn-text"
-                  onClick={() => setMode('login')}
-                  disabled={isLoading}
-                >
-                  Sign in
-                </button>
-              </p>
-            )}
+        {error && (
+          <div className="card bg-error p-sm mb-md">
+            <p className="text-white">{error}</p>
           </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-md">
+          {isSignUp && (
+            <>
+              <div className="form-group">
+                <label htmlFor="email" className="form-label">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="displayName" className="form-label">Display Name</label>
+                <input
+                  type="text"
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+            </>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="username" className="form-label">Username</label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="form-input"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="form-input"
+              required
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            className="btn btn-primary w-full"
+            disabled={!username || !password || (isSignUp && !email)}
+          >
+            {isSignUp ? 'Sign Up' : 'Log In'}
+          </button>
+        </form>
+
+        <div className="text-center mt-md">
+          <p className="text-secondary text-sm">
+            {isSignUp ? 'Already have an account?' : 'Don\'t have an account?'}
+            <button 
+              type="button" 
+              className="btn-text text-primary ml-xs"
+              onClick={() => setIsSignUp(!isSignUp)}
+            >
+              {isSignUp ? 'Log In' : 'Sign Up'}
+            </button>
+          </p>
         </div>
       </div>
 
       <div className="footer text-center">
-        <p className="text-sm text-secondary">
-          © {new Date().getFullYear()} Vyna.live - All rights reserved
-        </p>
+        <p className="text-xs text-secondary">© 2025 Vyna.live</p>
       </div>
+
+      <style>{`
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: var(--vyna-spacing-xs);
+        }
+
+        .form-label {
+          font-size: var(--vyna-font-sm);
+          font-weight: 500;
+          color: var(--vyna-text);
+        }
+        
+        .ml-xs {
+          margin-left: var(--vyna-spacing-xs);
+        }
+      `}</style>
     </div>
   );
 };
