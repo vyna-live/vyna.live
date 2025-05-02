@@ -1,5 +1,33 @@
 // Background script for Vyna.live Extension
 
+// Add missing type definitions for Chrome Extension API
+declare namespace chrome {
+  namespace cookies {
+    interface Cookie {
+      name: string;
+      value: string;
+      domain: string;
+      hostOnly: boolean;
+      path: string;
+      secure: boolean;
+      httpOnly: boolean;
+      sameSite: string;
+      session: boolean;
+      expirationDate?: number;
+      storeId: string;
+    }
+
+    function getAll(details: { url: string; name: string }): Promise<Cookie[]>;
+  }
+
+  namespace runtime {
+    interface LastError {
+      message?: string;
+    }
+    const lastError: LastError | undefined;
+  }
+}
+
 // Constants
 const API_BASE_URL = 'https://vyna.live/api';
 const LOCAL_API_BASE_URL = 'http://localhost:5000/api';
@@ -154,13 +182,16 @@ function logout() {
 
 // Broadcast authentication status to all components
 function broadcastAuthStatus(status: boolean, user: any) {
-  chrome.runtime.sendMessage({
-    type: 'authStatusChanged',
-    isAuthenticated: status,
-    user: user
-  }).catch(() => {
+  try {
+    chrome.runtime.sendMessage({
+      type: 'authStatusChanged',
+      isAuthenticated: status,
+      user: user
+    });
+  } catch (error) {
     // Ignore errors when no listeners are available
-  });
+    console.debug('No listeners for auth status update', error);
+  }
 }
 
 // Listen for messages from content scripts or popup
