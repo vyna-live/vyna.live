@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-firefox/
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.zip
+*.xpi
