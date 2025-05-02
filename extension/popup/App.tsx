@@ -1,97 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import AuthPage from '@libs/components/AuthPage';
-import Dashboard from '@libs/components/Dashboard';
-import NotepadView from '@libs/components/NotepadView';
-import AiChatView from '@libs/components/AiChatView';
-import SettingsView from '@libs/components/SettingsView';
-import { getStoredUser } from '@libs/utils/storage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AuthPage from '../libs/components/AuthPage';
+import Dashboard from '../libs/components/Dashboard';
+import NotepadView from '../libs/components/NotepadView';
+import AiChatView from '../libs/components/AiChatView';
+import SettingsView from '../libs/components/SettingsView';
+import { getUserAuth, initStorage } from '../libs/utils/storage';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [loading, setLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<any>(null);
+  
   useEffect(() => {
-    // Check if user is authenticated
-    const checkAuth = async () => {
+    // Initialize the extension
+    const init = async () => {
       try {
-        const user = await getStoredUser();
-        setIsAuthenticated(!!user);
+        await initStorage();
+        const userAuth = await getUserAuth();
+        setUser(userAuth?.user || null);
       } catch (error) {
-        console.error('Auth check error:', error);
-        setIsAuthenticated(false);
+        console.error('Error initializing app:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
-    checkAuth();
+    
+    init();
   }, []);
-
-  if (isLoading) {
+  
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] min-w-[350px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-full p-4">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
     );
   }
-
+  
   return (
-    <div className="popup-container min-h-[400px] min-w-[350px] max-w-[400px]">
+    <Router>
       <Routes>
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route path="/login" element={<AuthPage onAuthenticated={() => setIsAuthenticated(true)} />} />
-        <Route
-          path="/dashboard"
-          element={
-            isAuthenticated ? (
-              <Dashboard setIsAuthenticated={setIsAuthenticated} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/notepad/:id?"
-          element={
-            isAuthenticated ? (
-              <NotepadView />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/ai-chat/:id?"
-          element={
-            isAuthenticated ? (
-              <AiChatView />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            isAuthenticated ? (
-              <SettingsView />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+        {!user ? (
+          <Route path="*" element={<AuthPage onAuthSuccess={(userData) => setUser(userData)} />} />
+        ) : (
+          <>
+            <Route path="/" element={<Dashboard user={user} onLogout={() => setUser(null)} />} />
+            <Route path="/ai-chat" element={<AiChatView user={user} />} />
+            <Route path="/notepad" element={<NotepadView user={user} />} />
+            <Route path="/settings" element={<SettingsView user={user} />} />
+          </>
+        )}
       </Routes>
-    </div>
+    </Router>
   );
 };
 

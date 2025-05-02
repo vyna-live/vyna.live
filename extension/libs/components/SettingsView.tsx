@@ -1,207 +1,191 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getStoredSettings, storeSettings, DEFAULT_SETTINGS } from '@libs/utils/storage';
-import { ExtensionSettings } from '@libs/utils/storage';
-import Logo from '@libs/components/ui/Logo';
+import { getSettings, updateSettings } from '../utils/storage';
+import { clearUserAuth } from '../utils/storage';
+import Logo from './ui/Logo';
 
-const SettingsView: React.FC = () => {
+interface SettingsViewProps {
+  user: any;
+}
+
+const SettingsView: React.FC<SettingsViewProps> = ({ user }) => {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<string | null>(null);
   
-  // Load settings on component mount
+  const [loading, setLoading] = useState<boolean>(false);
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  
+  // Settings state
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+  const [defaultCommentaryStyle, setDefaultCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
+  const [autoSaveNotes, setAutoSaveNotes] = useState<boolean>(true);
+  
+  // Load settings on mount
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        setIsLoading(true);
-        const storedSettings = await getStoredSettings();
-        setSettings(storedSettings);
+        const settings = await getSettings();
+        setTheme(settings.theme);
+        setDefaultCommentaryStyle(settings.defaultCommentaryStyle);
+        setAutoSaveNotes(settings.autoSaveNotes);
       } catch (error) {
         console.error('Error loading settings:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
     
     loadSettings();
   }, []);
   
-  // Handle setting changes
-  const handleSettingChange = (key: keyof ExtensionSettings, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-  
-  // Save settings
-  const handleSave = async () => {
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    setSaveSuccess(false);
+    
     try {
-      setIsSaving(true);
-      await storeSettings(settings);
-      setSaveStatus('Settings saved successfully!');
+      await updateSettings({
+        theme,
+        defaultCommentaryStyle,
+        autoSaveNotes
+      });
       
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSaveStatus(null);
-      }, 3000);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
-      setSaveStatus('Failed to save settings. Please try again.');
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
   };
-  
-  // Reset settings to default
-  const handleReset = () => {
-    if (window.confirm('Are you sure you want to reset all settings to default?')) {
-      setSettings(DEFAULT_SETTINGS);
-    }
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
   
   return (
-    <div className="settings-view-container p-4">
-      <header className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="mr-3 text-gray-600 hover:text-primary"
-          >
-            ←
-          </button>
-          <h1 className="font-medium text-lg">Settings</h1>
-        </div>
-        
-        <Logo size={32} />
+    <div className="flex flex-col h-full">
+      <header className="flex justify-between items-center p-4 border-b">
+        <button 
+          onClick={() => navigate('/')}
+          className="flex items-center text-primary"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="ml-2">Back</span>
+        </button>
+        <Logo size="small" variant="icon" />
       </header>
       
-      {saveStatus && (
-        <div
-          className={`mb-4 p-3 rounded-md text-sm ${saveStatus.includes('Failed') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}
-        >
-          {saveStatus}
-        </div>
-      )}
-      
-      <div className="settings-group mb-6">
-        <h2 className="text-sm font-medium mb-3 text-gray-700">General Settings</h2>
+      <div className="flex-grow p-4 overflow-y-auto">
+        <h1 className="text-xl font-medium mb-6">Settings</h1>
         
-        <div className="settings-option mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <label htmlFor="theme" className="block text-sm font-medium mb-1">
-                Theme
-              </label>
-              <p className="text-xs text-gray-500">Choose your preferred theme</p>
-            </div>
-            <select
-              id="theme"
-              value={settings.theme}
-              onChange={(e) => handleSettingChange('theme', e.target.value)}
-              className="text-sm rounded-md border-gray-300 focus:ring-primary focus:border-primary"
-            >
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
+        {saveSuccess && (
+          <div className="bg-green-50 p-3 rounded-md text-green-600 text-sm mb-6">
+            Settings saved successfully
           </div>
-        </div>
+        )}
         
-        <div className="settings-option mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <label htmlFor="extractPageContent" className="block text-sm font-medium mb-1">
-                Extract Page Content
-              </label>
-              <p className="text-xs text-gray-500">Automatically extract content from web pages</p>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="extractPageContent"
-                checked={settings.extractPageContent}
-                onChange={(e) => handleSettingChange('extractPageContent', e.target.checked)}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="settings-group mb-6">
-        <h2 className="text-sm font-medium mb-3 text-gray-700">AI Assistant Settings</h2>
-        
-        <div className="settings-option mb-4">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Default Commentary Style
-            </label>
-            <p className="text-xs text-gray-500 mb-3">Choose how the AI responds to your messages</p>
+            <h2 className="font-medium mb-3">Appearance</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Theme</label>
+                <select
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
+                  className="w-full"
+                >
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="system">System Default</option>
+                </select>
+              </div>
+            </div>
           </div>
           
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="commentaryStyle-color"
-                name="commentaryStyle"
-                value="color"
-                checked={settings.commentaryStyle === 'color'}
-                onChange={() => handleSettingChange('commentaryStyle', 'color')}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
-              />
-              <label htmlFor="commentaryStyle-color" className="ml-2 block text-sm">
-                <span className="font-medium">Color Commentary</span>
-                <p className="text-xs text-gray-500">Detailed, insightful responses with context and explanations</p>
-              </label>
+          <div>
+            <h2 className="font-medium mb-3">AI Assistant</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Default Commentary Style</label>
+                <select
+                  value={defaultCommentaryStyle}
+                  onChange={(e) => setDefaultCommentaryStyle(e.target.value as 'play-by-play' | 'color')}
+                  className="w-full"
+                >
+                  <option value="color">Color Commentary (detailed, insightful)</option>
+                  <option value="play-by-play">Play-by-Play (quick, action-oriented)</option>
+                </select>
+              </div>
             </div>
-            
-            <div className="flex items-center">
-              <input
-                type="radio"
-                id="commentaryStyle-play-by-play"
-                name="commentaryStyle"
-                value="play-by-play"
-                checked={settings.commentaryStyle === 'play-by-play'}
-                onChange={() => handleSettingChange('commentaryStyle', 'play-by-play')}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
-              />
-              <label htmlFor="commentaryStyle-play-by-play" className="ml-2 block text-sm">
-                <span className="font-medium">Play-by-Play</span>
-                <p className="text-xs text-gray-500">Quick, action-oriented responses focused on key points</p>
-              </label>
+          </div>
+          
+          <div>
+            <h2 className="font-medium mb-3">Notepad</h2>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="auto-save"
+                  checked={autoSaveNotes}
+                  onChange={(e) => setAutoSaveNotes(e.target.checked)}
+                  className="mr-2"
+                />
+                <label htmlFor="auto-save" className="text-sm font-medium">Auto-save notes</label>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="font-medium mb-3">Account</h2>
+            <div className="mb-2">
+              <span className="text-sm">Signed in as: </span>
+              <span className="text-sm font-medium">{user.username}</span>
+            </div>
+            <button
+              onClick={() => {
+                clearUserAuth();
+                window.location.reload();
+              }}
+              className="text-red-600 text-sm font-medium"
+            >
+              Sign out
+            </button>
+          </div>
+          
+          <div>
+            <h2 className="font-medium mb-3">About</h2>
+            <div className="text-sm space-y-1">
+              <p>Vyna Extension v1.0.0</p>
+              <p>© 2025 Vyna.live</p>
+              <p className="mt-2">
+                <a 
+                  href="https://vyna.live/privacy" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary"
+                >
+                  Privacy Policy
+                </a>
+                {' '}&middot;{' '}
+                <a 
+                  href="https://vyna.live/terms" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary"
+                >
+                  Terms of Service
+                </a>
+              </p>
             </div>
           </div>
         </div>
       </div>
       
-      <div className="flex items-center justify-between mt-8">
+      <footer className="border-t p-4">
         <button
-          onClick={handleReset}
-          className="text-sm text-gray-600 hover:text-red-600"
-          disabled={isSaving}
+          onClick={handleSaveSettings}
+          className="btn btn-primary w-full"
+          disabled={loading}
         >
-          Reset to Default
+          {loading ? 'Saving...' : 'Save Settings'}
         </button>
-        
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-        >
-          {isSaving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+      </footer>
     </div>
   );
 };

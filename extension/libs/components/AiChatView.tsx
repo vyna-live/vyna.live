@@ -1,307 +1,204 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import {
-  getAiChatById,
-  createAiChat,
-  sendChatMessage,
-  renameAiChat,
-  deleteAiChat,
-  extractCurrentPageContent,
-} from '@libs/utils/api';
-import { getStoredSettings } from '@libs/utils/storage';
-import Logo from '@libs/components/ui/Logo';
+import { useNavigate } from 'react-router-dom';
 
-export interface AiChatViewProps {
-  currentPageTitle?: string;
-  currentPageUrl?: string;
+interface AiChatViewProps {
+  user: any;
 }
 
-interface ChatMessage {
-  id: number;
-  role: 'user' | 'assistant';
-  content: string;
-  createdAt: string;
-  commentaryStyle?: 'play-by-play' | 'color';
-}
-
-const AiChatView: React.FC<AiChatViewProps> = ({ currentPageTitle, currentPageUrl }) => {
-  const { id } = useParams<{ id: string }>();
-  const location = useLocation();
+const AiChatView: React.FC<AiChatViewProps> = ({ user }) => {
   const navigate = useNavigate();
-  const messageListRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { getAiResponse, createChatSession } = require('../utils/api');
+  const { getUserAuth } = require('../utils/storage');
+  const Logo = require('./ui/Logo').default;
   
-  const [chatId, setChatId] = useState<number | null>(id ? parseInt(id) : null);
-  const [chatTitle, setChatTitle] = useState<string>('New Chat');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSending, setIsSending] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string>('');
+  const [messages, setMessages] = useState<Array<{content: string, role: 'user' | 'assistant', timestamp: number}>>([]);
   const [commentaryStyle, setCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
-  const [pageContent, setPageContent] = useState<string>('');
+  const [pageContent, setPageContent] = useState<any>(null);
+  const [token, setToken] = useState<string>('');
   
-  // Get chat data on component mount
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  // Get page content and token on mount
   useEffect(() => {
-    const initChat = async () => {
+    const init = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-        
-        // If chatId exists, fetch chat data
-        if (chatId) {
-          const chatData = await getAiChatById(chatId);
-          setChatTitle(chatData.title || 'Untitled Chat');
-          setMessages(chatData.messages || []);
-        } else {
-          // Create a new chat
-          const settings = await getStoredSettings();
-          setCommentaryStyle(settings.commentaryStyle);
-          
-          // Try to extract current page content
-          try {
-            if (settings.extractPageContent) {
-              const extractedContent = await extractCurrentPageContent();
-              setPageContent(extractedContent.content);
-            }
-          } catch (pageError) {
-            console.error('Failed to extract page content:', pageError);
-            // Don't set error state here, it's not critical
-          }
+        // Get user token
+        const auth = await getUserAuth();
+        if (auth?.token) {
+          setToken(auth.token);
         }
-      } catch (err) {
-        console.error('Error initializing chat:', err);
-        setError('Failed to load chat data. Please try again.');
-      } finally {
-        setIsLoading(false);
+        
+        // Get content from current page
+        chrome.runtime.sendMessage({ action: 'getPageContent' }, (response) => {
+          if (response?.success && response?.content) {
+            setPageContent(response.content);
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing AI chat:', error);
       }
     };
     
-    initChat();
-  }, [chatId]);
+    init();
+  }, []);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
-    if (messageListRef.current) {
-      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-    }
+    scrollToBottom();
   }, [messages]);
   
-  // Handle input changes and auto-resize textarea
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputMessage(e.target.value);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Auto-resize textarea
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(100, textareaRef.current.scrollHeight)}px`;
-    }
-  };
-  
-  // Handle send message
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isSending) return;
+    if (!message.trim()) return;
+    
+    const userMsg = message.trim();
+    setMessage('');
+    
+    // Add user message to chat
+    setMessages(prev => [...prev, {
+      content: userMsg,
+      role: 'user',
+      timestamp: Date.now()
+    }]);
+    
+    setLoading(true);
+    setError(null);
     
     try {
-      setIsSending(true);
-      setError(null);
-      
-      // Create a new chat if it doesn't exist
-      if (!chatId) {
-        const newChat = await createAiChat('New Chat', inputMessage);
-        setChatId(newChat.id);
-        navigate(`/ai-chat/${newChat.id}`, { replace: true });
-        
-        // Update with messages from the response
-        if (newChat.messages && newChat.messages.length > 0) {
-          setMessages(newChat.messages);
-          setInputMessage('');
-          return;
+      // Add page context if available
+      let contextMessage = userMsg;
+      if (pageContent) {
+        // If user has highlighted text, use that as context
+        if (pageContent.selection) {
+          contextMessage = `[Context from current page: "${pageContent.selection}"] ${userMsg}`;
+        } 
+        // Otherwise use the page title and URL as minimal context
+        else {
+          contextMessage = `[Currently on: ${pageContent.title} (${pageContent.url})] ${userMsg}`;
         }
       }
       
-      // Optimistically add user message to UI
-      const userMessage: ChatMessage = {
-        id: Date.now(), // Temporary ID
-        role: 'user',
-        content: inputMessage,
-        createdAt: new Date().toISOString(),
-      };
+      const response = await getAiResponse(contextMessage, commentaryStyle, token);
       
-      setMessages((prev) => [...prev, userMessage]);
-      setInputMessage('');
-      
-      // Reset textarea height
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-      }
-      
-      // Send message to API
-      const response = await sendChatMessage(
-        chatId!,
-        inputMessage,
-        commentaryStyle,
-        pageContent || undefined
-      );
-      
-      // Update messages with API response
-      setMessages(response.messages || []);
-      
-      // Update chat title if this is the first message
-      if (messages.length === 0 && response.title && response.title !== 'New Chat') {
-        setChatTitle(response.title);
+      if (response.success && response.data) {
+        setMessages(prev => [...prev, {
+          content: response.data.text || 'Sorry, I couldn\'t generate a response.',
+          role: 'assistant',
+          timestamp: Date.now()
+        }]);
+      } else {
+        setError(response.error || 'Failed to get AI response');
       }
     } catch (err) {
       console.error('Error sending message:', err);
-      setError('Failed to send message. Please try again.');
+      setError('An error occurred while communicating with the AI');
     } finally {
-      setIsSending(false);
+      setLoading(false);
     }
   };
   
-  // Handle commentary style change
-  const handleStyleChange = (style: 'play-by-play' | 'color') => {
-    setCommentaryStyle(style);
-  };
-  
-  // Handle enter key press to send message
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-  
-  // Format timestamp for display
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const toggleCommentaryStyle = () => {
+    setCommentaryStyle(prev => prev === 'color' ? 'play-by-play' : 'color');
   };
   
   return (
-    <div className="chat-view-container flex flex-col h-full max-h-[600px]">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="mr-3 text-gray-600 hover:text-primary"
-          >
-            ←
-          </button>
-          <div>
-            <h1 className="font-medium text-sm truncate max-w-[180px]">{chatTitle}</h1>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-1">
-          <button
-            className={`px-2 py-1 text-xs rounded-full ${commentaryStyle === 'play-by-play' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'}`}
-            onClick={() => handleStyleChange('play-by-play')}
-            title="Play-by-play: Quick, action-oriented responses"
-          >
-            PP
-          </button>
-          <button
-            className={`px-2 py-1 text-xs rounded-full ${commentaryStyle === 'color' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700'}`}
-            onClick={() => handleStyleChange('color')}
-            title="Color commentary: Detailed, insightful responses"
-          >
-            CC
-          </button>
-        </div>
+    <div className="flex flex-col h-full">
+      <header className="flex justify-between items-center p-4 border-b">
+        <button 
+          onClick={() => navigate('/')}
+          className="flex items-center text-primary"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="ml-2">Back</span>
+        </button>
+        <Logo size="small" variant="icon" />
       </header>
       
-      {/* Error message */}
-      {error && (
-        <div className="bg-red-50 text-red-600 p-3 text-sm">
-          {error}
-        </div>
-      )}
-      
-      {/* Message list */}
-      <div
-        ref={messageListRef}
-        className="message-list flex-1 overflow-y-auto p-4 space-y-4"
-      >
-        {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
-            <Logo size={40} />
-            <p className="mt-4 text-sm">Start a conversation with Vyna's AI Assistant</p>
-            <p className="text-xs mt-2">
-              {commentaryStyle === 'play-by-play'
-                ? 'Using Play-by-Play style: Quick, action-oriented responses'
-                : 'Using Color Commentary style: Detailed, insightful responses'}
+      <div className="flex-grow overflow-y-auto p-4" style={{ maxHeight: 'calc(100% - 134px)' }}>
+        {messages.length === 0 ? (
+          <div className="text-center text-gray-500 py-6">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium">No messages yet</h3>
+            <p className="mt-1 text-sm">
+              Start a conversation with Vyna AI Assistant
+            </p>
+            <p className="mt-3 text-xs">
+              Current mode: <span className="font-medium">{commentaryStyle === 'color' ? 'Color Commentary' : 'Play-by-Play'}</span>
             </p>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`message flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[85%] rounded-lg px-4 py-2 ${message.role === 'user' ? 'bg-primary/10 text-gray-900' : 'bg-gray-100 text-gray-800'}`}
-              >
-                <div className="message-content text-sm whitespace-pre-wrap">{message.content}</div>
-                <div className="message-meta text-xs text-gray-500 mt-1 text-right">
-                  {formatTime(message.createdAt)}
-                  {message.commentaryStyle && (
-                    <span className="ml-1 px-1 bg-gray-200 rounded text-[10px]">
-                      {message.commentaryStyle === 'play-by-play' ? 'PP' : 'CC'}
-                    </span>
-                  )}
-                </div>
+          <div className="space-y-4">
+            {messages.map((msg, index) => (
+              <div key={index} className={`message-bubble ${msg.role}`}>
+                {msg.content}
               </div>
-            </div>
-          ))
-        )}
-        
-        {isSending && (
-          <div className="message flex justify-start">
-            <div className="inline-flex items-center bg-gray-100 rounded-lg px-4 py-2">
-              <div className="animate-pulse flex space-x-1">
-                <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
-                <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
-                <div className="h-2 w-2 bg-gray-400 rounded-full"></div>
+            ))}
+            {loading && (
+              <div className="flex items-center justify-center py-2">
+                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                <span className="ml-2 text-sm text-gray-500">Vyna is thinking...</span>
               </div>
-            </div>
+            )}
+            {error && (
+              <div className="bg-red-50 p-3 rounded-md text-red-600 text-sm">
+                {error}
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
       
-      {/* Input area */}
-      <div className="input-area p-4 border-t">
-        <div className="relative">
-          <textarea
-            ref={textareaRef}
-            className="w-full p-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-            placeholder="Message Vyna..."
-            rows={1}
-            value={inputMessage}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            disabled={isLoading || isSending}
-          />
+      <div className="border-t p-4">
+        <div className="flex mb-2">
           <button
-            className="absolute right-3 bottom-3 bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center disabled:opacity-50"
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading || isSending}
+            type="button"
+            onClick={toggleCommentaryStyle}
+            className={`px-2 py-1 text-xs rounded mr-2 ${commentaryStyle === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
+            title="Color Commentary mode provides detailed, insightful analysis"
           >
-            ↑
+            CC
+          </button>
+          <button
+            type="button"
+            onClick={toggleCommentaryStyle}
+            className={`px-2 py-1 text-xs rounded ${commentaryStyle === 'play-by-play' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
+            title="Play-by-Play mode provides quick, action-oriented responses"
+          >
+            PP
           </button>
         </div>
-        
-        {pageContent && (
-          <div className="mt-2 text-xs text-gray-500 flex items-center">
-            <span className="inline-block mr-1 w-3 h-3 bg-green-500 rounded-full"></span>
-            Using content from current page
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="flex">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Ask Vyna AI something..."
+            className="flex-grow mr-2"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading || !message.trim()}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </form>
       </div>
     </div>
   );
