@@ -2,8 +2,8 @@ import { useRef, useState, useEffect } from "react";
 
 export default function useTeleprompter(text: string) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(24); // Default speed value
-  const [textSize, setTextSize] = useState(24); // Default text size value
+  const [speed, setSpeed] = useState(20); // Default speed value
+  const [textSize, setTextSize] = useState(18); // Default text size value
   const [showSettings, setShowSettings] = useState(false);
   
   const teleprompterTextRef = useRef<HTMLDivElement>(null);

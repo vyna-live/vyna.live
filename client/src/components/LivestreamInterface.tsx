@@ -10,6 +10,7 @@ import {
   User,
   Settings,
   LogOut,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -75,7 +76,10 @@ export default function LivestreamInterface({
   const [activeTab, setActiveTab] = useState<"vynaai" | "notepad">("vynaai");
   const [showNewChat, setShowNewChat] = useState<boolean>(false);
   const [showChatHistory, setShowChatHistory] = useState<boolean>(false);
-  const [teleprompterText, setTeleprompterText] = useState(initialText);
+  const [teleprompterText, setTeleprompterText] = useState(
+    initialText || 
+    "Welcome to my Vyna.live stream!\n\nToday we'll be discussing the latest advancements in AI technology and how it's transforming content creation.\n\nI'll cover three main topics:\n1. The evolution of AI models\n2. How AI is helping content creators\n3. Practical applications for livestreamers\n\nFeel free to ask questions in the chat as we go along!"
+  );
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [viewerCount, setViewerCount] = useState("123.5k");
   const [inputValue, setInputValue] = useState("");
@@ -344,6 +348,11 @@ export default function LivestreamInterface({
     setDrawerVisible((prev) => !prev);
   }, []);
 
+  // Toggle the teleprompter
+  const toggleTeleprompter = useCallback(() => {
+    setShowTeleprompter((prev) => !prev);
+  }, []);
+
   // Handle sending a message
   const sendMessage = useCallback(async () => {
     if (!inputValue.trim()) return;
@@ -601,7 +610,25 @@ export default function LivestreamInterface({
                 </div>
               )}
 
-              {/* No custom stream controls - using Agora's native controls */}
+              {/* Add teleprompter controls - only for host */}
+              {role === 'host' && isStreamActive && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30 flex items-center justify-center space-x-2">
+                  <button
+                    onClick={toggleTeleprompter}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-zinc-700/30 shadow-lg hover:bg-black/80 transition-colors"
+                    title="Toggle Teleprompter"
+                  >
+                    <FileText className="h-5 w-5 text-white" />
+                  </button>
+                </div>
+              )}
+              
+              {/* Teleprompter overlay - centered in view */}
+              {showTeleprompter && role === 'host' && (
+                <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40">
+                  <Teleprompter text={teleprompterText} />
+                </div>
+              )}
 
               {/* Chat is now handled by AgoraVideo component through RTM */}
 
