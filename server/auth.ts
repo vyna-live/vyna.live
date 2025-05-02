@@ -406,6 +406,20 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
   
+  // Extension verification endpoint
+  app.get('/api/extension/verify', (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Return user info and verification status
+    res.json({
+      verified: true,
+      user: req.user,
+      extensionVersion: '1.0.0'
+    });
+  });
+  
   // Check if user has a stream session
   app.get('/api/user/stream-session', ensureAuthenticated, async (req: Request, res: Response) => {
     try {
