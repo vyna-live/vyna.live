@@ -43,7 +43,49 @@ interface LivestreamInterfaceProps {
 }
 
 // Types for notes and AI chats
-import type { Note, AiChat, AiChatSession, AiChatMessage } from "@/types";
+interface Note {
+  id: number;
+  hostId: number;
+  title: string;
+  content: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AiChat {
+  id: number;
+  hostId: number;
+  message: string;
+  response: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+interface AiChatSession {
+  id: number;
+  hostId: number;
+  title: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface AiChatMessage {
+  id: number;
+  sessionId: number;
+  role: 'user' | 'assistant';
+  content: string;
+  isDeleted: boolean;
+  createdAt: string;
+}
+
+interface UIMessage {
+  id: string;
+  content: string;
+  role: 'user' | 'assistant';
+}
 
 // Empty initial arrays - we'll fetch from API
 const EMPTY_CHATS: AiChat[] = [];
@@ -265,15 +307,15 @@ export default function LivestreamInterface({
       try {
         const response = await fetch(`/api/ai-chat-messages/${currentSessionId}`);
         if (response.ok) {
-          const messages = await response.json();
+          const messages: AiChatMessage[] = await response.json();
           setCurrentChatMessages(messages);
           
           // Update the UI messages
           setMessages(
-            messages.map(msg => ({
+            messages.map((msg: AiChatMessage) => ({
               id: `${msg.id}`,
               content: msg.content,
-              role: msg.role as 'user' | 'assistant'
+              role: msg.role
             }))
           );
         }
