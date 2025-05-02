@@ -27,12 +27,12 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
       {/* Main teleprompter container - glassmorphic background */}
       <div 
         ref={containerRef}
-        className="relative w-[519px] h-[258px] bg-black/60 backdrop-blur-md border border-zinc-800/60 rounded-xl overflow-hidden"
+        className="relative w-[509px] h-[248px] bg-black/60 backdrop-blur-md border border-zinc-800/60 rounded-xl overflow-hidden"
       >
         {/* Text container with scrolling content */}
         <div
           ref={teleprompterTextRef}
-          className="h-full p-6 overflow-hidden"
+          className="h-full p-6 pb-14 overflow-hidden"
           style={{ fontSize: `${textSize}px` }}
         >
           {text.split('\n').map((line, i) => (

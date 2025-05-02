@@ -119,6 +119,7 @@ interface AgoraVideoProps {
   role?: 'host' | 'audience';
   userName: string;
   onToggleDrawer?: () => void;
+  onToggleTeleprompter?: () => void;
 }
 
 export function AgoraVideo({ 
@@ -128,7 +129,8 @@ export function AgoraVideo({
   uid = Math.floor(Math.random() * 1000000),
   role = 'host',
   userName,
-  onToggleDrawer
+  onToggleDrawer,
+  onToggleTeleprompter
 }: AgoraVideoProps) {
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
