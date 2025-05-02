@@ -469,7 +469,27 @@ export const streamSessionsRelations = relations(streamSessions, ({ one, many })
   participants: many(livestreamParticipants),
 }));
 
-// AI Chats table for storing host's AI chat history
+// AI Chat Sessions table for storing host's chat sessions
+export const aiChatSessions = pgTable("ai_chat_sessions", {
+  id: serial("id").primaryKey(),
+  hostId: integer("host_id").notNull().references(() => users.id),
+  title: varchar("title", { length: 255 }).default(""),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AI Chat Messages table for storing messages within a chat session
+export const aiChatMessages = pgTable("ai_chat_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => aiChatSessions.id),
+  role: varchar("role", { length: 50 }).notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Legacy AI Chats table for backward compatibility
 export const aiChats = pgTable("ai_chats", {
   id: serial("id").primaryKey(),
   hostId: integer("host_id").notNull().references(() => users.id),
@@ -492,6 +512,19 @@ export const notepads = pgTable("notepads", {
 });
 
 // Create insert schemas for new tables
+export const insertAiChatSessionSchema = createInsertSchema(aiChatSessions).pick({
+  hostId: true,
+  title: true,
+  isDeleted: true,
+});
+
+export const insertAiChatMessageSchema = createInsertSchema(aiChatMessages).pick({
+  sessionId: true,
+  role: true,
+  content: true,
+  isDeleted: true,
+});
+
 export const insertAiChatSchema = createInsertSchema(aiChats).pick({
   hostId: true,
   message: true,
@@ -507,13 +540,35 @@ export const insertNotepadSchema = createInsertSchema(notepads).pick({
 });
 
 // Create types for new tables
+export type InsertAiChatSession = z.infer<typeof insertAiChatSessionSchema>;
+export type AiChatSession = typeof aiChatSessions.$inferSelect;
+
+export type InsertAiChatMessage = z.infer<typeof insertAiChatMessageSchema>;
+export type AiChatMessage = typeof aiChatMessages.$inferSelect;
+
 export type InsertAiChat = z.infer<typeof insertAiChatSchema>;
 export type AiChat = typeof aiChats.$inferSelect;
 
 export type InsertNotepad = z.infer<typeof insertNotepadSchema>;
 export type Notepad = typeof notepads.$inferSelect;
 
-// Set up relations for AI chats and notepads
+// Set up relations for AI chat sessions and messages
+export const aiChatSessionsRelations = relations(aiChatSessions, ({ one, many }) => ({
+  host: one(users, {
+    fields: [aiChatSessions.hostId],
+    references: [users.id],
+  }),
+  messages: many(aiChatMessages),
+}));
+
+export const aiChatMessagesRelations = relations(aiChatMessages, ({ one }) => ({
+  session: one(aiChatSessions, {
+    fields: [aiChatMessages.sessionId],
+    references: [aiChatSessions.id],
+  }),
+}));
+
+// Legacy relations
 export const aiChatsRelations = relations(aiChats, ({ one }) => ({
   host: one(users, {
     fields: [aiChats.hostId],
