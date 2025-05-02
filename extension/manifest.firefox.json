@@ -2,27 +2,15 @@
   "manifest_version": 2,
   "name": "Vyna AI Assistant",
   "version": "1.0.0",
-  "description": "Vyna AI Assistant for streamers and content creators",
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
+  "description": "Access your Vyna AI Assistant directly from your browser",
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
-    },
-    "default_title": "Vyna AI Assistant"
+    }
   },
-  "permissions": [
-    "storage",
-    "activeTab",
-    "tabs",
-    "https://vyna.live/*"
-  ],
   "background": {
     "scripts": ["background/background.js"],
     "persistent": false
@@ -33,9 +21,17 @@
       "js": ["content/content.js"]
     }
   ],
-  "web_accessible_resources": [
-    "icons/*"
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "https://*.vyna.live/*"
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "browser_specific_settings": {
     "gecko": {
       "id": "extension@vyna.live",

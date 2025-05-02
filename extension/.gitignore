@@ -1,31 +1,30 @@
 # Dependencies
 node_modules/
 
-# Build directories
+# Build output
 dist/
-dist-firefox/
 packages/
-
-# Environment files
-.env
-.env.local
 
 # IDE and editor files
 .vscode/
 .idea/
-*.sublime-*
+*.swp
+*.swo
+*~
 
 # OS files
 .DS_Store
 Thumbs.db
 
+# Environment variables
+.env
+.env.local
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-*.log
 
 # Temporary files
-.tmp/
-.temp/
-temp/
+*.log
+*.tmp

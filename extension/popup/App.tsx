@@ -1,53 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import AuthPage from '../libs/components/AuthPage';
-import Dashboard from '../libs/components/Dashboard';
-import NotepadView from '../libs/components/NotepadView';
-import AiChatView from '../libs/components/AiChatView';
-import SettingsView from '../libs/components/SettingsView';
-import { getUserAuth, initStorage } from '../libs/utils/storage';
+import { getAuthStatus } from '@libs/utils/api';
+import AuthPage from '@libs/components/AuthPage';
+import Dashboard from '@libs/components/Dashboard';
 
 const App: React.FC = () => {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null);
-  
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    // Initialize the extension
-    const init = async () => {
+    const checkAuth = async () => {
       try {
-        await initStorage();
-        const userAuth = await getUserAuth();
-        setUser(userAuth?.user || null);
-      } catch (error) {
-        console.error('Error initializing app:', error);
+        setIsLoading(true);
+        const authStatus = await getAuthStatus();
+        setIsAuthenticated(authStatus.isAuthenticated);
+      } catch (err) {
+        console.error('Authentication check failed:', err);
+        setError('Failed to check authentication status');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-    
-    init();
+
+    checkAuth();
   }, []);
-  
-  if (loading) {
+
+  const handleLogin = async (credentials: { username: string; password: string }) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Call login API
+      const response = await fetch('https://vyna.live/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(credentials),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+
+      setIsAuthenticated(true);
+    } catch (err: any) {
+      console.error('Login failed:', err);
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading...</p>
       </div>
     );
   }
-  
+
   return (
     <Router>
       <Routes>
-        {!user ? (
-          <Route path="*" element={<AuthPage onAuthSuccess={(userData) => setUser(userData)} />} />
+        {isAuthenticated ? (
+          <Route path="*" element={<Dashboard />} />
         ) : (
-          <>
-            <Route path="/" element={<Dashboard user={user} onLogout={() => setUser(null)} />} />
-            <Route path="/ai-chat" element={<AiChatView user={user} />} />
-            <Route path="/notepad" element={<NotepadView user={user} />} />
-            <Route path="/settings" element={<SettingsView user={user} />} />
-          </>
+          <Route path="*" element={<AuthPage onLogin={handleLogin} error={error} />} />
         )}
       </Routes>
     </Router>

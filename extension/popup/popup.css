@@ -1,146 +1,39 @@
-/* Popup styles for Vyna.live Extension */
-
-:root {
-  --vyna-primary: #5D1C34;
-  --vyna-secondary: #A67D44;
-  --vyna-tertiary: #899481;
-  --vyna-background: #EFE9E1;
-  --vyna-text: #333333;
-  --vyna-border: #CDBCAB;
-  --vyna-error: #D32F2F;
-  --vyna-success: #2E7D32;
-  --vyna-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
-
-* {
+body {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #EFE9E1;
+  color: #333;
 }
 
-html, body {
-  width: 350px;
-  height: 500px;
-  background-color: var(--vyna-background);
-  color: var(--vyna-text);
-  font-family: var(--vyna-font-family);
-  font-size: 14px;
+#root {
+  width: 360px;
+  height: 520px;
   overflow: hidden;
 }
 
-/* Popup container */
-.vyna-popup {
+.loading-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
-}
-
-/* Popup header */
-.vyna-popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background-color: var(--vyna-primary);
-  color: white;
-  border-bottom: 1px solid var(--vyna-border);
-}
-
-.vyna-popup-header h1 {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.vyna-user-info {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-/* Popup content */
-.vyna-popup-content {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-}
-
-/* Actions */
-.vyna-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.vyna-action-button {
-  display: block;
-  width: 100%;
-  padding: 12px 16px;
-  background-color: var(--vyna-secondary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.vyna-action-button:hover {
-  background-color: #906c38;
-}
-
-/* Popup footer */
-.vyna-popup-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--vyna-border);
-  background-color: #f5f5f5;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.vyna-logout-button {
-  padding: 8px 12px;
-  background-color: transparent;
-  color: var(--vyna-primary);
-  border: 1px solid var(--vyna-primary);
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.vyna-logout-button:hover {
-  background-color: var(--vyna-primary);
-  color: white;
-}
-
-/* Loading state */
-.vyna-popup-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   height: 100%;
   width: 100%;
-  gap: 16px;
 }
 
-.vyna-spinner {
+.spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
+  border: 3px solid rgba(93, 28, 52, 0.1);
   border-radius: 50%;
-  border-top-color: var(--vyna-primary);
+  border-top-color: #5D1C34;
   animation: spin 1s ease-in-out infinite;
+  margin-bottom: 16px;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-/* Error message */
-.vyna-error-message {
-  color: var(--vyna-error);
-  margin-top: 8px;
-  font-size: 12px;
 }

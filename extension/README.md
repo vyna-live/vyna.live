@@ -1,77 +1,94 @@
-# Vyna.live Browser Extension
+# Vyna AI Assistant Browser Extension
 
-This is the browser extension for Vyna.live, providing AI chat, note-taking, and website content extraction capabilities directly in your browser.
+This browser extension brings the power of Vyna AI Assistant directly to your browser, allowing streamers and content creators to access AI-powered assistance while browsing the web.
 
 ## Features
 
-- AI chat with Vyna assistant
-- Note-taking with markdown support
-- Web page content extraction
-- Synchronized with Vyna.live account
+- **AI Chat Assistant**: Get instant AI assistance with play-by-play or color commentary modes
+- **Notepad**: Save and organize AI responses and notes directly in the extension
+- **Page Context Awareness**: The AI assistant can understand the content of the page you're browsing
+- **Cross-Browser Compatibility**: Works on Chrome, Firefox, and Microsoft Edge
+- **Synchronized Account**: Seamlessly connects to your Vyna.live account
 
-## Building the Extension
+## Development
 
-### Prerequisites
+### Technology Stack
 
-- Node.js and npm
+- **Frontend**: React with TypeScript
+- **State Management**: React Context API and Chrome Storage API
+- **Styling**: Custom CSS with Vyna design system
+- **Build System**: Webpack with separate configs for Chrome/Edge and Firefox
+- **Packaging**: Custom scripts for building distributable extensions
 
-### Installation
+### Directory Structure
 
-```bash
-cd extension
-npm install
+```
+/extension
+├── background/       # Background script for extension
+├── content/          # Content scripts that run on web pages
+├── icons/            # Extension icons
+├── libs/             # Shared libraries and utilities
+│   ├── components/   # React components
+│   │   └── ui/       # UI components like Logo
+│   └── utils/        # Utility functions for API and storage
+├── popup/            # Extension popup UI
+├── scripts/          # Build and packaging scripts
+└── types/            # TypeScript type definitions
 ```
 
-### Development
+### Build Instructions
 
-```bash
-# For Chrome/Edge
-npm run dev
+1. Install dependencies:
+   ```
+   npm install
+   ```
 
-# For Firefox
-npm run dev:firefox
+2. Build for Chrome and Edge:
+   ```
+   npm run build
+   ```
+
+3. Build for Firefox:
+   ```
+   npm run build:firefox
+   ```
+
+4. Build for all browsers and package:
+   ```
+   npm run package
+   ```
+
+### Development Mode
+
+Run the extension in watch mode for development:
+```
+npm run watch
 ```
 
-### Building for Production
+## Installation
 
-```bash
-# For Chrome/Edge
-npm run build
+### Chrome/Edge
 
-# For Firefox
-npm run build:firefox
-```
+1. Go to `chrome://extensions/` or `edge://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select the `dist/chrome` directory
 
-### Packaging
+### Firefox
 
-To create distributable zip files for both Chrome/Edge and Firefox:
+1. Go to `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on"
+3. Select the `manifest.json` file in the `dist/firefox` directory
 
-```bash
-./build.sh
-```
+## Integration with Vyna.live
 
-This will create zip files in the `packages` directory.
+This extension works with your Vyna.live account, synchronizing your AI chat history, notes, and preferences across devices. The extension communicates with the Vyna.live API for AI processing and data storage.
 
-## Browser Support
+## Privacy
 
-- Google Chrome
-- Microsoft Edge
-- Mozilla Firefox
+The extension requests minimal permissions:
+- `storage`: To save your preferences and authentication details
+- `activeTab`: To read the content of the current tab when you use the AI assistant
+- `tabs`: To detect when you navigate to new pages
 
-## Structure
-
-- `manifest.json` - Chrome/Edge manifest file
-- `manifest.firefox.json` - Firefox manifest file
-- `popup/` - Popup UI code
-- `dashboard/` - Dashboard UI code
-- `background/` - Background scripts
-- `content/` - Content scripts
-- `libs/components/` - Shared React components
-- `assets/` - Icons and other assets
-
-## Development Guidelines
-
-1. All components should follow the Vyna.live design system
-2. Use TypeScript for all code
-3. Maintain consistent error handling and user feedback
-4. Always check authentication status before making API requests
+Data is sent only to the Vyna.live servers and is subject to the Vyna.live Privacy Policy.
