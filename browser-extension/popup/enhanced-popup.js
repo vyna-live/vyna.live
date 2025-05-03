@@ -21,13 +21,28 @@ async function initializeApp() {
     
     // Clear the app container completely
     const appContainer = document.getElementById('app');
+    console.log('InitializeApp: Clearing app container');
     appContainer.innerHTML = '';
     
     if (authStatus.isAuthenticated) {
       // User is authenticated, show main interface from template
       const mainInterface = document.querySelector('template#main-interface-template');
-      const mainInterfaceContent = document.importNode(mainInterface.content, true);
-      appContainer.appendChild(mainInterfaceContent);
+      console.log('InitializeApp: Main interface template found:', !!mainInterface);
+      
+      // List all templates in the DOM for debugging
+      const allTemplates = document.querySelectorAll('template');
+      console.log('InitializeApp: All templates in DOM:', Array.from(allTemplates).map(t => t.id));
+      
+      if (mainInterface) {
+        const mainInterfaceContent = document.importNode(mainInterface.content, true);
+        appContainer.appendChild(mainInterfaceContent);
+        console.log('InitializeApp: Main interface content appended to container');
+      } else {
+        console.error('InitializeApp: Main interface template not found!');
+        // Try to create main interface without template as fallback
+        appContainer.innerHTML = '<div class="main-interface"><div class="header"><div class="logo"><img src="../assets/logo.png" alt="Vyna.live" height="28"></div></div><div class="content"><div>Error loading interface. Please reload extension.</div></div></div>';
+        return;
+      }
       
       // Update the user info display
       document.querySelector('#username').textContent = authStatus.user.displayName || authStatus.user.username;
@@ -63,14 +78,24 @@ async function initializeApp() {
 // Authentication functions
 async function checkAuthentication() {
   try {
+    console.log('Checking authentication status...');
     const response = await fetch(`${API_BASE_URL}/api/user`, {
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
+    
+    console.log('Auth response status:', response.status);
     
     if (response.ok) {
       const userData = await response.json();
+      console.log('User authenticated:', userData);
       return { isAuthenticated: true, user: userData };
     } else {
+      console.log('Authentication failed, status:', response.status);
       return { isAuthenticated: false, user: null };
     }
   } catch (error) {
@@ -147,6 +172,7 @@ async function handleLogin() {
     document.getElementById('authError').style.display = 'none';
     
     // Send login request
+    console.log('Sending login request to:', `${API_BASE_URL}/api/login`);
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       credentials: 'include',
@@ -158,9 +184,12 @@ async function handleLogin() {
         password
       })
     });
+    console.log('Login response status:', response.status);
     
     if (response.ok) {
       const userData = await response.json();
+      console.log('Login successful, user data:', userData);
+      
       // Store user data
       currentUser = userData;
       isAuthenticated = true;
@@ -170,13 +199,20 @@ async function handleLogin() {
       
       // Clear the app container completely
       const appContainer = document.getElementById('app');
+      console.log('Clearing app container before UI rebuild');
       appContainer.innerHTML = '';
       
+      // List all templates in the DOM for debugging
+      const allLoginTemplates = document.querySelectorAll('template');
+      console.log('Login: All templates in DOM:', Array.from(allLoginTemplates).map(t => t.id));
+
       // Re-add the main interface
       const mainInterface = document.querySelector('template#main-interface-template');
+      console.log('Main interface template found:', !!mainInterface);
       if (mainInterface) {
         const mainInterfaceContent = document.importNode(mainInterface.content, true);
         appContainer.appendChild(mainInterfaceContent);
+        console.log('Main interface content appended to container');
         
         // Update the user info display
         document.querySelector('#username').textContent = userData.displayName || userData.username;
@@ -281,13 +317,16 @@ async function handleRegister() {
       
       // Clear the app container completely
       const appContainer = document.getElementById('app');
+      console.log('Register: Clearing app container before UI rebuild');
       appContainer.innerHTML = '';
       
       // Re-add the main interface
       const mainInterface = document.querySelector('template#main-interface-template');
+      console.log('Register: Main interface template found:', !!mainInterface);
       if (mainInterface) {
         const mainInterfaceContent = document.importNode(mainInterface.content, true);
         appContainer.appendChild(mainInterfaceContent);
+        console.log('Register: Main interface content appended to container');
         
         // Update the user info display
         document.querySelector('#username').textContent = userData.displayName || userData.username;
