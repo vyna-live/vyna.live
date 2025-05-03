@@ -1,6 +1,26 @@
 // API Base URL
 const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://vyna-live.replit.app';
 
+// Helper function to get templates, even if they're removed from the DOM
+const templates = {};
+function getTemplate(templateId) {
+  // If we've already cached the template, return it
+  if (templates[templateId]) {
+    return templates[templateId];
+  }
+  
+  // Try to find the template in the DOM
+  const template = document.querySelector(`template#${templateId}`);
+  if (template) {
+    // Cache the template for future use
+    templates[templateId] = template;
+    return template;
+  }
+  
+  console.error(`Template with ID ${templateId} not found`);
+  return null;
+}
+
 // User state
 let currentUser = null;
 let isAuthenticated = false;
@@ -25,13 +45,19 @@ async function initializeApp() {
     appContainer.innerHTML = '';
     
     if (authStatus.isAuthenticated) {
-      // User is authenticated, show main interface from template
-      const mainInterface = document.querySelector('template#main-interface-template');
-      console.log('InitializeApp: Main interface template found:', !!mainInterface);
-      
-      // List all templates in the DOM for debugging
+      // Cache all available templates first
       const allTemplates = document.querySelectorAll('template');
       console.log('InitializeApp: All templates in DOM:', Array.from(allTemplates).map(t => t.id));
+      allTemplates.forEach(template => {
+        if (template.id) {
+          templates[template.id] = template;
+          console.log('InitializeApp: Cached template:', template.id);
+        }
+      });
+      
+      // User is authenticated, show main interface from template
+      const mainInterface = getTemplate('main-interface-template');
+      console.log('InitializeApp: Main interface template found from cache:', !!mainInterface);
       
       if (mainInterface) {
         const mainInterfaceContent = document.importNode(mainInterface.content, true);
@@ -109,8 +135,17 @@ function showLoginScreen() {
   const appContainer = document.getElementById('app');
   appContainer.innerHTML = '';
   
+  // Cache all available templates first
+  const allTemplates = document.querySelectorAll('template');
+  console.log('showLoginScreen: Caching all templates:', Array.from(allTemplates).map(t => t.id));
+  allTemplates.forEach(template => {
+    if (template.id) {
+      templates[template.id] = template;
+    }
+  });
+  
   // Get the auth template and clone it
-  const authTemplate = document.getElementById('auth-template');
+  const authTemplate = getTemplate('auth-template');
   if (authTemplate) {
     const authContent = document.importNode(authTemplate.content, true);
     
@@ -202,13 +237,19 @@ async function handleLogin() {
       console.log('Clearing app container before UI rebuild');
       appContainer.innerHTML = '';
       
-      // List all templates in the DOM for debugging
+      // Cache all available templates before clearing the DOM
       const allLoginTemplates = document.querySelectorAll('template');
       console.log('Login: All templates in DOM:', Array.from(allLoginTemplates).map(t => t.id));
+      allLoginTemplates.forEach(template => {
+        if (template.id) {
+          templates[template.id] = template;
+          console.log('Login: Cached template:', template.id);
+        }
+      });
 
-      // Re-add the main interface
-      const mainInterface = document.querySelector('template#main-interface-template');
-      console.log('Main interface template found:', !!mainInterface);
+      // Re-add the main interface using our cached template
+      const mainInterface = getTemplate('main-interface-template');
+      console.log('Main interface template found from cache:', !!mainInterface);
       if (mainInterface) {
         const mainInterfaceContent = document.importNode(mainInterface.content, true);
         appContainer.appendChild(mainInterfaceContent);
@@ -320,9 +361,19 @@ async function handleRegister() {
       console.log('Register: Clearing app container before UI rebuild');
       appContainer.innerHTML = '';
       
-      // Re-add the main interface
-      const mainInterface = document.querySelector('template#main-interface-template');
-      console.log('Register: Main interface template found:', !!mainInterface);
+      // Cache all available templates before clearing the DOM
+      const allRegisterTemplates = document.querySelectorAll('template');
+      console.log('Register: All templates in DOM:', Array.from(allRegisterTemplates).map(t => t.id));
+      allRegisterTemplates.forEach(template => {
+        if (template.id) {
+          templates[template.id] = template;
+          console.log('Register: Cached template:', template.id);
+        }
+      });
+      
+      // Re-add the main interface using our cached template
+      const mainInterface = getTemplate('main-interface-template');
+      console.log('Register: Main interface template found from cache:', !!mainInterface);
       if (mainInterface) {
         const mainInterfaceContent = document.importNode(mainInterface.content, true);
         appContainer.appendChild(mainInterfaceContent);
