@@ -1022,9 +1022,15 @@ async function loadNotes() {
     const notepadContent = document.getElementById('notepad-content');
     notepadContent.innerHTML = '<div class="flex justify-center items-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
     
+    console.log(`Fetching from: ${API_BASE_URL}/api/notepads/${currentUser.id}`);
     const response = await fetch(`${API_BASE_URL}/api/notepads/${currentUser.id}`, {
-      credentials: 'include'
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
     });
+    console.log('Response status:', response.status, response.statusText);
     
     if (response.ok) {
       const notes = await response.json();
@@ -1095,7 +1101,39 @@ async function loadNotes() {
     }
   } catch (error) {
     console.error('Error loading notes:', error);
-    document.getElementById('notepad-content').innerHTML = '<div class="p-4 text-center text-red-400">Error loading notes</div>';
+    
+    // More detailed error message
+    let errorMessage = 'Error loading notes';
+    if (error.message) {
+      errorMessage += `: ${error.message}`;
+    }
+    
+    // Provide more helpful suggestions based on common issues
+    let helpText = '';
+    if (error.message && error.message.includes('NetworkError')) {
+      helpText = 'Check your internet connection or server availability';
+    } else if (error.message && error.message.includes('SyntaxError')) {
+      helpText = 'Server response could not be parsed as JSON';
+    }
+    
+    document.getElementById('notepad-content').innerHTML = `
+      <div class="p-4 text-center">
+        <div class="text-red-400 mb-2">${errorMessage}</div>
+        ${helpText ? `<div class="text-zinc-400 text-sm">${helpText}</div>` : ''}
+        <button id="retryNotesButton" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
+          Retry Loading Notes
+        </button>
+      </div>
+    `;
+    
+    // Add retry button functionality
+    const retryButton = document.getElementById('retryNotesButton');
+    if (retryButton) {
+      retryButton.addEventListener('click', () => {
+        console.log('Retrying to load notes...');
+        loadNotes();
+      });
+    }
   }
 }
 
