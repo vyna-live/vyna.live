@@ -576,7 +576,7 @@ async function loadChatSessions() {
       chatSessions = sessionsData;
       
       // Get the chat sessions template and clone it
-      const chatSessionsTemplate = document.getElementById('chat-sessions-template');
+      const chatSessionsTemplate = getTemplate('chat-sessions-template');
       const chatSessionsContent = document.importNode(chatSessionsTemplate.content, true);
       
       // Clear the content area and append the template
@@ -607,7 +607,7 @@ async function loadChatSessions() {
 
 function createChatSessionItem(session) {
   // Get the chat session item template and clone it
-  const chatSessionItemTemplate = document.getElementById('chat-session-item-template');
+  const chatSessionItemTemplate = getTemplate('chat-session-item-template');
   const chatSessionItem = document.importNode(chatSessionItemTemplate.content, true);
   
   // Set session title
@@ -636,7 +636,7 @@ async function showChatInterface() {
     const vynaaiContent = document.getElementById('vynaai-content');
     
     // Get the chat interface template and clone it
-    const chatInterfaceTemplate = document.getElementById('chat-interface-template');
+    const chatInterfaceTemplate = getTemplate('chat-interface-template');
     const chatInterfaceContent = document.importNode(chatInterfaceTemplate.content, true);
     
     // Clear the content area and append the template
@@ -1015,7 +1015,7 @@ async function loadNotes() {
       savedNotes = notesData;
       
       // Get the notes list template and clone it
-      const notesListTemplate = document.getElementById('notes-list-template');
+      const notesListTemplate = getTemplate('notepad-list-template'); // Using the cache to get template
       const notesListContent = document.importNode(notesListTemplate.content, true);
       
       // Clear the content area and append the template
@@ -1046,7 +1046,7 @@ async function loadNotes() {
 
 function createNoteItem(note) {
   // Get the note item template and clone it
-  const noteItemTemplate = document.getElementById('note-item-template');
+  const noteItemTemplate = getTemplate('note-item-template');
   const noteItem = document.importNode(noteItemTemplate.content, true);
   
   // Set note title and preview
@@ -1101,7 +1101,7 @@ function showNoteEditor(existingNote = null) {
   const notepadContent = document.getElementById('notepad-content');
   
   // Get the note editor template and clone it
-  const noteEditorTemplate = document.getElementById('note-editor-template');
+  const noteEditorTemplate = getTemplate('note-editor-template');
   const noteEditorContent = document.importNode(noteEditorTemplate.content, true);
   
   // Clear the content area and append the template
@@ -1134,7 +1134,7 @@ function showNoteViewer(note) {
   const notepadContent = document.getElementById('notepad-content');
   
   // Get the note viewer template and clone it
-  const noteViewerTemplate = document.getElementById('note-viewer-template');
+  const noteViewerTemplate = getTemplate('note-viewer-template');
   const noteViewerContent = document.importNode(noteViewerTemplate.content, true);
   
   // Clear the content area and append the template
