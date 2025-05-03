@@ -16,6 +16,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Import debug middleware
+import { debugAuth, debugRequest } from './debug';
+
 // Add explicit CORS headers to every response
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
