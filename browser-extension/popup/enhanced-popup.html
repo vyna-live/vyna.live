@@ -4,6 +4,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vyna.live Assistant</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            maroon: '#5D1C34',
+            golden: '#A67D44',
+            sage: '#899481',
+            taupe: '#CDBCAB',
+            cream: '#EFE9E1',
+          },
+          borderRadius: {
+            lg: '14px',
+          },
+          backdropBlur: {
+            xs: '2px',
+          },
+          backgroundColor: {
+            'zinc-800/40': 'rgba(39, 39, 42, 0.4)',
+            'zinc-800/50': 'rgba(39, 39, 42, 0.5)',
+            'zinc-900/80': 'rgba(24, 24, 27, 0.8)',
+          }
+        }
+      }
+    }
+  </script>
   <link rel="stylesheet" href="../styles/enhanced-popup.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
