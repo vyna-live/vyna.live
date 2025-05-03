@@ -1,8 +1,8 @@
 // API Base URL
-// Get the correct API base URL based on environment
+// API Base URL pointing to production
 const API_BASE_URL = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000' 
-  : 'https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev';
+  : 'https://vyna-live.replit.app';
 
 console.log('Using API base URL:', API_BASE_URL);
 
