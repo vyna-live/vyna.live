@@ -1020,14 +1020,13 @@ async function loadNotes() {
     });
     
     if (response.ok) {
+      // Parse notes data
       const notesData = await response.json();
-      state.notes = notesData;
-      savedNotes = notesData; // Keep for backward compatibility
-      state.user = currentUser; // Sync users
-      state.currentNote = null;
-      state.noteLines = [];
+      console.log('Notes loaded:', notesData);
+      savedNotes = notesData;
       
-      renderNotepadTab();
+      // Update the UI with notes list
+      renderNotesList(notepadContent, notesData);
     } else {
       notepadContent.innerHTML = '<div class="error">Failed to load notes</div>';
     }
@@ -1037,285 +1036,302 @@ async function loadNotes() {
   }
 }
 
-function renderNotepadTab() {
-  const notepadContent = document.getElementById('notepad-content');
-  
-  if (state.currentNote) {
-    // Show the note editor/viewer
-    if (state.currentNote.id) {
-      // Editing existing note
-      renderNoteEditor();
-    } else {
-      // Creating new note
-      renderNoteEditor();
-    }
-  } else {
-    // Show the notes list
-    renderNotesList();
-  }
-}
-
-function renderNotesList() {
-  const notepadContent = document.getElementById('notepad-content');
-  
+function renderNotesList(container, notes) {
   // Get the notes list template and clone it
   const notesListTemplate = getTemplate('notepad-list-template');
   const notesListContent = document.importNode(notesListTemplate.content, true);
   
   // Clear the content area and append the template
-  notepadContent.innerHTML = '';
-  notepadContent.appendChild(notesListContent);
+  container.innerHTML = '';
+  container.appendChild(notesListContent);
+  
+  // Add event listener to new note button
+  document.getElementById('newNoteButton').addEventListener('click', handleNewNote);
   
   // Populate the notes list
   const notesList = document.querySelector('.notes-list');
-  if (state.notes.length > 0) {
-    state.notes.forEach(note => {
+  if (notes.length > 0) {
+    notes.forEach(note => {
       const noteItem = createNoteItem(note);
       notesList.appendChild(noteItem);
     });
   } else {
     notesList.innerHTML = '<div class="empty-notes-message">No saved notes. Create a new note to get started.</div>';
   }
-  
-  // Add event listener to new note button
-  document.getElementById('newNoteButton').addEventListener('click', createNewNote);
 }
 
 function createNoteItem(note) {
-  // Get the note item template and clone it
-  const noteItemTemplate = getTemplate('note-item-template');
-  const noteItem = document.importNode(noteItemTemplate.content, true);
+  // Create note item container
+  const noteItem = document.createElement('div');
+  noteItem.className = 'p-2 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-lg cursor-pointer transition-colors note-item';
+  noteItem.addEventListener('click', () => handleViewNote(note));
   
-  // Set note title and preview
-  const titleElement = noteItem.querySelector('.note-title');
-  titleElement.textContent = note.title || 'Untitled Note';
+  // Create title
+  const title = document.createElement('h3');
+  title.className = 'text-sm font-medium text-white mb-1 line-clamp-1 note-title';
+  title.textContent = note.title || 'Untitled Note';
   
-  const previewElement = noteItem.querySelector('.note-preview');
-  previewElement.textContent = note.content ? note.content.slice(0, 100) + (note.content.length > 100 ? '...' : '') : 'Empty note';
+  // Create preview
+  const preview = document.createElement('p');
+  preview.className = 'text-xs text-zinc-400 line-clamp-2 note-preview';
+  preview.textContent = note.content || 'Empty note';
   
-  // Set date
-  const dateElement = noteItem.querySelector('.note-date');
-  dateElement.textContent = new Date(note.updatedAt || note.createdAt).toLocaleDateString();
+  // Create date element
+  const date = document.createElement('div');
+  date.className = 'text-xs text-zinc-500 mt-1 note-date';
+  date.textContent = new Date(note.updatedAt || note.createdAt).toLocaleDateString();
   
-  // Add event listener to note item
-  const noteElement = noteItem.querySelector('.note');
-  noteElement.addEventListener('click', () => viewNote(note.id));
+  // Add elements to container
+  noteItem.appendChild(title);
+  noteItem.appendChild(preview);
+  noteItem.appendChild(date);
   
   return noteItem;
 }
 
-function createNewNote() {
-  currentNoteId = null;
-  state.currentNote = { id: null, title: '', content: '' };
-  state.noteLines = [];
-  renderNotepadTab();
-}
-
-async function viewNote(noteId) {
-  try {
-    const notepadContent = document.getElementById('notepad-content');
-    
-    // Start with a loading state
-    notepadContent.innerHTML = '<div class="loading">Loading note...</div>';
-    
-    // Fetch the note
-    const response = await fetch(`${API_BASE_URL}/api/notepads/note/${noteId}`, {
-      credentials: 'include'
-    });
-    
-    if (response.ok) {
-      const noteData = await response.json();
-      currentNoteId = noteData.id;
-      
-      // Update state with selected note
-      state.currentNote = noteData;
-      state.noteLines = noteData.content ? noteData.content.split('\n') : [];
-      
-      // Render note editor
-      renderNotepadTab();
-    } else {
-      notepadContent.innerHTML = '<div class="error">Failed to load note</div>';
-    }
-  } catch (error) {
-    console.error('Error loading note:', error);
-    document.getElementById('notepad-content').innerHTML = '<div class="error">Error loading note</div>';
-  }
-}
-
-function renderNoteEditor() {
+// Handle opening a new note (Equivalent to handleNewNote in React)
+function handleNewNote() {
   const notepadContent = document.getElementById('notepad-content');
   
-  // Get the note editor template and clone it
-  const noteEditorTemplate = getTemplate('note-editor-template');
-  const noteEditorContent = document.importNode(noteEditorTemplate.content, true);
+  // Reset state for new note
+  currentNoteId = null;
+  noteLines = [];
   
-  // Clear the content area and append the template
-  notepadContent.innerHTML = '';
-  notepadContent.appendChild(noteEditorContent);
+  // Show note editor interface
+  renderNoteEditor(notepadContent);
+}
+
+// Handle viewing a note (Equivalent to handleViewNote in React)
+function handleViewNote(note) {
+  const notepadContent = document.getElementById('notepad-content');
   
-  // Initialize the note paragraphs container
-  const paragraphsContainer = document.createElement('div');
-  paragraphsContainer.id = 'noteParagraphs';
-  paragraphsContainer.className = 'note-paragraphs';
-  notepadContent.querySelector('.note-editor-content').prepend(paragraphsContainer);
+  // Show note view interface
+  renderNoteViewer(notepadContent, note);
+}
+
+// Handle editing an existing note (Equivalent to handleEditNote in React)
+function handleEditNote(note) {
+  const notepadContent = document.getElementById('notepad-content');
   
-  // Render the note paragraphs
-  renderNoteParagraphs(paragraphsContainer);
+  // Set up the note for editing
+  currentNoteId = note.id;
+  noteLines = note.content.split('\n');
+  
+  // Show note editor interface
+  renderNoteEditor(notepadContent);
+}
+
+function renderNoteViewer(container, note) {
+  // Clear container
+  container.innerHTML = '';
+  
+  // Create header with back and edit buttons
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between p-3 border-b border-zinc-800';
+  header.innerHTML = `
+    <button class="text-zinc-400 hover:text-white transition-colors p-1 back-button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+    <div class="flex space-x-2">
+      <button class="text-zinc-400 hover:text-white transition-colors edit-button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  `;
+  
+  // Create content area
+  const content = document.createElement('div');
+  content.className = 'p-3';
+  content.innerHTML = `
+    <h3 class="text-md font-medium text-white mb-2">${note.title || 'Untitled Note'}</h3>
+    <div class="text-sm text-zinc-300 whitespace-pre-wrap note-content"></div>
+  `;
+  
+  // Add note content (line by line)
+  const noteContent = content.querySelector('.note-content');
+  note.content.split('\n').forEach((line, index) => {
+    const p = document.createElement('p');
+    p.className = 'mb-2';
+    p.textContent = line;
+    noteContent.appendChild(p);
+  });
+  
+  // Add elements to container
+  container.appendChild(header);
+  container.appendChild(content);
   
   // Add event listeners
-  document.getElementById('backToNotes').addEventListener('click', () => backToNotesList());
-  document.getElementById('saveNoteButton').addEventListener('click', saveNote);
-  document.getElementById('addLineButton').addEventListener('click', addNoteLine);
+  header.querySelector('.back-button').addEventListener('click', () => loadNotes());
+  header.querySelector('.edit-button').addEventListener('click', () => handleEditNote(note));
+}
+
+function renderNoteEditor(container) {
+  // Clear container
+  container.innerHTML = '';
   
-  // Configure the input field
-  const noteInput = document.getElementById('noteInput');
-  const saveNoteButton = document.getElementById('saveNoteButton');
+  // Create header with back and save buttons
+  const header = document.createElement('div');
+  header.className = 'flex items-center justify-between p-3 border-b border-zinc-800';
+  header.innerHTML = `
+    <button class="text-zinc-400 hover:text-white transition-colors p-1 back-button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+    <button class="px-2 py-1 text-xs font-medium bg-[#5D1C34] text-white rounded-full hover:bg-[#4c1629] transition-colors save-button">
+      Save
+    </button>
+  `;
   
-  // Add keydown handler
+  // Create content area for note editor
+  const content = document.createElement('div');
+  content.className = 'p-3';
+  
+  // Create area for existing lines
+  const linesContainer = document.createElement('div');
+  linesContainer.className = 'space-y-2 note-lines';
+  content.appendChild(linesContainer);
+  
+  // Create input area
+  const inputContainer = document.createElement('div');
+  inputContainer.className = 'relative mt-2';
+  inputContainer.innerHTML = `
+    <input type="text" placeholder="Add a new line" class="w-full bg-zinc-800/20 border border-zinc-700 rounded-lg p-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-600 note-input" />
+    <button class="absolute right-2 top-[50%] transform -translate-y-1/2 text-zinc-400 hover:text-white transition-colors disabled:opacity-50 disabled:pointer-events-none add-line-button" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  `;
+  content.appendChild(inputContainer);
+  
+  // Add elements to container
+  container.appendChild(header);
+  container.appendChild(content);
+  
+  // Add event listeners
+  header.querySelector('.back-button').addEventListener('click', () => loadNotes());
+  header.querySelector('.save-button').addEventListener('click', handleSaveNote);
+  
+  const noteInput = inputContainer.querySelector('.note-input');
+  const addLineButton = inputContainer.querySelector('.add-line-button');
+  
+  // Enable/disable add line button based on input
+  noteInput.addEventListener('input', () => {
+    addLineButton.disabled = !noteInput.value.trim();
+  });
+  
+  // Add line on button click
+  addLineButton.addEventListener('click', handleAddNoteLine);
+  
+  // Add line on Enter key
   noteInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      addNoteLine();
+      handleAddNoteLine();
     }
   });
   
-  // Enable/disable save button based on lines
-  saveNoteButton.disabled = state.noteLines.length === 0;
+  // Initialize existing lines if any
+  refreshNoteLines(linesContainer);
   
-  // Focus on the input field
+  // Focus on the input
   noteInput.focus();
 }
 
-function renderNoteParagraphs(container) {
-  // Clear the container
+// Refresh the display of note lines
+function refreshNoteLines(container) {
+  // Clear container
   container.innerHTML = '';
   
-  if (state.noteLines.length === 0) {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'empty-lines-message';
-    emptyMessage.textContent = 'Add lines to your note...';
-    container.appendChild(emptyMessage);
-    return;
+  // Add each line as a separate div
+  if (noteLines && noteLines.length > 0) {
+    noteLines.forEach((line) => {
+      const lineElement = document.createElement('div');
+      lineElement.className = 'bg-zinc-800/40 p-2 rounded-lg text-sm text-white';
+      lineElement.textContent = line;
+      container.appendChild(lineElement);
+    });
   }
   
-  // Create a paragraph element for each line
-  state.noteLines.forEach((line, index) => {
-    const paragraph = document.createElement('p');
-    paragraph.className = 'note-paragraph';
-    paragraph.textContent = line;
-    container.appendChild(paragraph);
-  });
-}
-
-function backToNotesList() {
-  state.currentNote = null;
-  state.noteLines = [];
-  renderNotepadTab();
-}
-
-function showNoteEditor(existingNote = null) {
-  if (existingNote) {
-    state.currentNote = existingNote;
-    state.noteLines = existingNote.content ? existingNote.content.split('\n') : [];
-  }
-  renderNotepadTab();
-}
-
-function showNoteViewer(note) {
-  const notepadContent = document.getElementById('notepad-content');
-  
-  // Get the note viewer template and clone it
-  const noteViewerTemplate = getTemplate('note-viewer-template');
-  const noteViewerContent = document.importNode(noteViewerTemplate.content, true);
-  
-  // Clear the content area and append the template
-  notepadContent.innerHTML = '';
-  notepadContent.appendChild(noteViewerContent);
-  
-  // Add event listeners
-  document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
-  document.getElementById('editNoteButton').addEventListener('click', () => showNoteEditor(note));
-  
-  // Populate note details
-  document.getElementById('noteViewTitle').textContent = note.title || 'Untitled Note';
-  document.getElementById('noteViewContent').textContent = note.content || 'No content';
-  document.getElementById('noteViewDate').textContent = `Last updated: ${new Date(note.updatedAt || note.createdAt).toLocaleString()}`;
-}
-
-function addNoteLine() {
-  try {
-    const noteInput = document.getElementById('noteInput');
-    if (!noteInput) {
-      console.error('addNoteLine: noteInput element not found');
-      return;
-    }
-    
-    const line = noteInput.value.trim();
-    console.log('addNoteLine: Adding new line to note');
-    
-    if (!line) return; // Don't add empty lines
-    
-    // Add line to state
-    state.noteLines.push(line);
-    
-    // Clear input
-    noteInput.value = '';
-    
-    // Update UI
-    const paragraphsContainer = document.getElementById('noteParagraphs');
-    renderNoteParagraphs(paragraphsContainer);
-    
-    // Enable save button since we now have at least one line
-    document.getElementById('saveNoteButton').disabled = false;
-    
-    console.log('addNoteLine: Line added successfully, noteLines count:', state.noteLines.length);
-  } catch (error) {
-    console.error('Error in addNoteLine:', error);
-    showToast('Error adding new line', true);
+  // Update save button state
+  const saveButton = document.querySelector('.save-button');
+  if (saveButton) {
+    saveButton.disabled = !noteLines || noteLines.length === 0;
   }
 }
 
-async function saveNote() {
-  if (state.noteLines.length === 0) {
+// Global variable for holding note lines
+let noteLines = [];
+
+// Handle adding a line to the current note
+function handleAddNoteLine() {
+  const noteInput = document.querySelector('.note-input');
+  if (!noteInput) return;
+  
+  const inputValue = noteInput.value.trim();
+  if (!inputValue) return;
+  
+  // Add the line to noteLines
+  noteLines.push(inputValue);
+  
+  // Clear the input
+  noteInput.value = '';
+  noteInput.focus();
+  
+  // Update the add button state
+  document.querySelector('.add-line-button').disabled = true;
+  
+  // Update the note lines display
+  refreshNoteLines(document.querySelector('.note-lines'));
+}
+
+// Handle saving the note
+async function handleSaveNote() {
+  if (!noteLines || noteLines.length === 0) {
     showToast('Please add at least one line to your note', true);
     return;
   }
   
-  // Get the title from the first line or use placeholder
-  const content = state.noteLines.join('\n');
-  const title = state.noteLines[0].substring(0, 50) + (state.noteLines[0].length > 50 ? '...' : '');
-  
-  console.log('Attempting to save note:', { title, content, isAuthenticated, userId: currentUser?.id });
-  
-  // Verify we have user credentials
-  if (!isAuthenticated || !currentUser || !currentUser.id) {
-    console.error('Cannot save note: User not authenticated');
+  if (!isAuthenticated || !currentUser) {
     showToast('You must be logged in to save notes', true);
     return;
   }
   
+  // Get the save button and disable it
+  const saveButton = document.querySelector('.save-button');
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+  }
+  
   try {
-    // Disable the save button to prevent double submissions
-    const saveButton = document.getElementById('saveNoteButton');
-    if (saveButton) {
-      saveButton.disabled = true;
-      saveButton.textContent = 'Saving...';
-    }
+    // Convert note lines to content
+    const content = noteLines.join('\n');
+    // Use the first line as the title (truncated if needed)
+    const title = noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? '...' : '');
     
+    console.log('Saving note:', { title, lines: noteLines.length, editing: !!currentNoteId });
+    
+    // Determine if this is a new note or an update
     let response;
-    
-    if (state.currentNote && state.currentNote.id) {
+    if (currentNoteId) {
       // Update existing note
-      response = await fetch(`${API_BASE_URL}/api/notepads/note/${state.currentNote.id}`, {
+      response = await fetch(`${API_BASE_URL}/api/notepads/note/${currentNoteId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          hostId: currentUser.id,
           title,
-          content,
-          hostId: currentUser.id  // Include hostId in updates as well
+          content
         })
       });
     } else {
@@ -1335,31 +1351,26 @@ async function saveNote() {
     }
     
     if (response.ok) {
-      const noteData = await response.json();
-      currentNoteId = noteData.id; // Keep for backward compatibility
+      // Parse the response
+      const note = await response.json();
+      console.log('Note saved successfully:', note);
       
-      console.log('Note saved successfully:', noteData);
+      // Show success message
       showToast('Note saved successfully');
       
-      // Refresh the notes list
+      // Reset state and reload notes
+      noteLines = [];
+      currentNoteId = null;
       loadNotes();
     } else {
-      // Try to get more detailed error information
-      try {
-        const errorData = await response.json();
-        console.error('Failed to save note:', { status: response.status, error: errorData });
-        showToast(`Failed to save note: ${errorData.error || 'Unknown error'}`, true);
-      } catch (parseError) {
-        console.error('Failed to save note (could not parse error):', { status: response.status });
-        showToast(`Failed to save note: Server returned ${response.status}`, true);
-      }
+      console.error('Failed to save note:', response.status);
+      showToast('Failed to save note', true);
     }
   } catch (error) {
     console.error('Error saving note:', error);
     showToast('Error saving note', true);
   } finally {
     // Re-enable the save button
-    const saveButton = document.getElementById('saveNoteButton');
     if (saveButton) {
       saveButton.disabled = false;
       saveButton.textContent = 'Save';
