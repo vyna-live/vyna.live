@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { login, register } from '@libs/utils/api';
-import { setAuthData } from '@libs/utils/storage';
+import { setAuthData, StoredAuthData } from '@libs/utils/storage';
 import Logo from './ui/Logo';
 
 interface AuthPageProps {
-  onLogin: (credentials: { username: string; password: string }) => Promise<void>;
-  error: string | null;
+  onLoginSuccess: (data: StoredAuthData) => void;
+  error?: string | null;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
+const AuthPage: React.FC<AuthPageProps> = ({ onLoginSuccess, error = null }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +24,17 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
 
     try {
       if (isLogin) {
-        await onLogin({ username, password });
+        // Login
+        const userData = await login({ username, password });
+        const authData: StoredAuthData = {
+          token: userData.token,
+          userId: userData.id,
+          username: userData.username,
+          displayName: userData.displayName,
+          lastLogin: new Date().toISOString()
+        };
+        await setAuthData(authData);
+        onLoginSuccess(authData);
       } else {
         // Registration
         if (!email) {
@@ -32,15 +42,18 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
         }
         
         const userData = await register({ username, password, email, displayName });
-        await setAuthData({
-          userId: userData.id,
-          username: userData.username,
-          displayName: userData.displayName,
-          lastLogin: new Date().toISOString()
-        });
         
         // Automatically log in after registration
-        await onLogin({ username, password });
+        const loginData = await login({ username, password });
+        const authData: StoredAuthData = {
+          token: loginData.token,
+          userId: loginData.id,
+          username: loginData.username,
+          displayName: loginData.displayName,
+          lastLogin: new Date().toISOString()
+        };
+        await setAuthData(authData);
+        onLoginSuccess(authData);
       }
     } catch (err: any) {
       setLocalError(err.message || 'Authentication failed');
@@ -60,7 +73,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, error }) => {
     <div className="auth-container">
       <div className="auth-form-wrapper">
         <div className="logo-container">
-          <Logo size="medium" />
+          <Logo size="medium" variant="default" />
         </div>
         
         <h2>{isLogin ? 'Sign In' : 'Create Account'}</h2>

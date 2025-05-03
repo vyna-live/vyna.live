@@ -45,8 +45,8 @@ export async function getAuthStatus(): Promise<{ isAuthenticated: boolean, user?
   }
 }
 
-export async function login(username: string, password: string): Promise<any> {
-  return apiRequest<any>('POST', '/login', { username, password });
+export async function login(credentials: { username: string; password: string }): Promise<any> {
+  return apiRequest<any>('POST', '/login', credentials);
 }
 
 export async function logout(): Promise<void> {
