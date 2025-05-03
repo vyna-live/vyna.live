@@ -319,8 +319,9 @@ body {
 .chat-header {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
+  padding: 14px 16px;
+  background-color: #1a1a1a; /* Dark background to match mobile */
+  border-bottom: 1px solid #2a2a2a; /* Subtle border */
 }
 
 .back-button {
@@ -350,6 +351,7 @@ body {
   padding: 12px;
   display: flex;
   flex-direction: column;
+  background-color: #1a1a1a; /* Dark background to match mobile */
 }
 
 .empty-state {
@@ -360,12 +362,13 @@ body {
   justify-content: center;
   padding: 24px;
   text-align: center;
+  background-color: #1a1a1a; /* Very dark background to match mobile */
 }
 
 .empty-state-icon {
-  background-color: var(--bg-secondary);
-  width: 64px;
-  height: 64px;
+  background-color: #292929; /* Darker icon background */
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -377,17 +380,19 @@ body {
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 8px;
+  color: #ffffff;
 }
 
 .empty-state p {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: #a0a0a0; /* Light gray text */
   max-width: 250px;
 }
 
 .message {
   display: flex;
   margin-bottom: 12px;
+  position: relative;
   animation: fade-in 0.3s ease-in-out;
 }
 
@@ -396,30 +401,45 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.message-user {
+/* User message styling - right aligned with darker background */
+.user-message {
   justify-content: flex-end;
 }
 
-.message-assistant {
+.user-message .message-content {
+  background-color: #363636; /* Dark gray background for user messages */
+  color: #ffffff;
+  border-radius: 16px 4px 16px 16px; /* Rounded on left, slight point on right */
+}
+
+/* AI message styling - left aligned with avatar and lighter background */
+.ai-message {
   justify-content: flex-start;
 }
 
+.ai-message .avatar {
+  background-color: #292929;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.ai-message .message-content {
+  background-color: #434343; /* Lighter gray for AI responses */
+  color: #ffffff;
+  border-radius: 4px 16px 16px 16px; /* Rounded on right, slight point on left */
+}
+
 .message-content {
-  padding: 10px 12px;
-  border-radius: var(--chat-border-radius);
+  padding: 12px 16px;
   font-size: 13px;
   line-height: 1.5;
   max-width: 85%;
-}
-
-.message-user .message-content {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-}
-
-.message-assistant .message-content {
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
 }
 
 .message-content p {
@@ -508,7 +528,7 @@ body {
 
 .chat-input-container {
   padding: 12px;
-  border-top: 1px solid var(--border-color);
+  background-color: #1a1a1a; /* Dark background to match mobile design */
   position: relative;
 }
 
@@ -518,54 +538,54 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
-  background-color: var(--bg-primary);
+  background-color: #1a1a1a; /* Match the dark background */
   border-radius: 12px;
   padding: 2px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .commentary-option {
-  padding: 2px 8px;
+  padding: 4px 10px;
   font-size: 10px;
   border-radius: 10px;
   cursor: pointer;
-  background-color: var(--bg-tertiary);
-  color: var(--text-secondary);
+  background-color: #333333;
+  color: #9e9e9e;
   margin: 0 2px;
   transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: 500;
 }
 
 .commentary-option.active {
-  background-color: var(--accent-color);
-  color: var(--text-primary);
+  background-color: #e6c181; /* Gold accent from mobile design */
+  color: #1a1a1a; /* Dark text for contrast */
 }
 
 .chat-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  background-color: var(--glassmorphism-bg);
-  border: 1px solid var(--glassmorphism-border);
-  border-radius: var(--input-radius);
+  background-color: #2a2a2a; /* Darker input background */
+  border: 1px solid #3a3a3a; /* Subtle border */
+  border-radius: 14px; /* Rounded corners to match mobile */
   overflow: hidden;
-  backdrop-filter: blur(10px);
 }
 
 .chat-input {
   flex: 1;
-  height: 54px;
+  height: 48px; /* Slightly shorter than previous */
   padding: 14px 16px;
   background-color: transparent;
   border: none;
   outline: none;
-  color: var(--text-primary);
+  color: #ffffff;
   font-size: 14px;
   resize: none;
   font-family: inherit;
 }
 
 .chat-input::placeholder {
-  color: var(--text-secondary);
+  color: #9e9e9e; /* Lighter placeholder text */
 }
 
 .input-buttons {
@@ -596,29 +616,31 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 14px;
-  background-color: var(--accent-color);
-  color: white;
+  padding: 10px;
+  background-color: #e6c181; /* Gold accent color from mobile */
+  color: #1a1a1a; /* Dark text color */
   border: none;
-  border-radius: 14px;
+  border-radius: 50%; /* Make it a circle */
   margin: 0 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  font-size: 14px;
-  font-weight: 500;
+  width: 36px;
+  height: 36px;
 }
 
 .send-button svg {
-  margin-left: 6px;
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5px; /* Slightly thicker icon */
 }
 
 .send-button:hover {
-  background-color: var(--accent-hover);
+  background-color: #f0cc8d; /* Lighter gold on hover */
 }
 
 .send-button:disabled {
-  background-color: var(--bg-secondary);
-  color: var(--text-secondary);
+  background-color: #3a3a3a; /* Darker gray when disabled */
+  color: #666666;
   cursor: not-allowed;
 }
 
