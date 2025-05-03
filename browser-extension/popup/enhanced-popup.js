@@ -21,7 +21,8 @@ async function initializeApp() {
     
     if (authStatus.isAuthenticated) {
       // User is authenticated, show main interface
-      document.querySelector('.main-interface').style.display = 'flex';
+      const mainInterface = document.querySelector('.main-interface');
+      mainInterface.style.display = 'flex';
       document.querySelector('#username').textContent = authStatus.user.displayName || authStatus.user.username;
       
       if (authStatus.user.avatarUrl) {
@@ -38,6 +39,15 @@ async function initializeApp() {
       // Initialize the interface
       initializeTabs();
       loadActiveTab();
+      
+      // Make sure we clear any previous content in the app container
+      // This is needed when we come from login/register
+      const appContainer = document.getElementById('app');
+      Array.from(appContainer.children).forEach(child => {
+        if (!child.classList.contains('main-interface')) {
+          appContainer.removeChild(child);
+        }
+      });
     } else {
       // User is not authenticated, show login screen
       showLoginScreen();
@@ -151,8 +161,26 @@ async function handleLogin() {
       // Show success toast
       showToast('Successfully signed in');
       
-      // Reload the app
-      initializeApp();
+      // Clear the app container first to remove the auth form
+      const appContainer = document.getElementById('app');
+      // Keep only the main interface
+      Array.from(appContainer.children).forEach(child => {
+        if (!child.classList.contains('main-interface')) {
+          appContainer.removeChild(child);
+        }
+      });
+      
+      // Show the main interface
+      const mainInterface = document.querySelector('.main-interface');
+      mainInterface.style.display = 'flex';
+      
+      // Update the user info display
+      document.querySelector('#username').textContent = userData.displayName || userData.username;
+      
+      // Initialize the interface
+      initializeUserDropdown();
+      initializeTabs();
+      loadActiveTab();
     } else {
       // Re-enable the login button
       loginButton.disabled = false;
@@ -231,8 +259,26 @@ async function handleRegister() {
       // Show success toast
       showToast('Account created successfully');
       
-      // Reload the app
-      initializeApp();
+      // Clear the app container first to remove the auth form
+      const appContainer = document.getElementById('app');
+      // Keep only the main interface
+      Array.from(appContainer.children).forEach(child => {
+        if (!child.classList.contains('main-interface')) {
+          appContainer.removeChild(child);
+        }
+      });
+      
+      // Show the main interface
+      const mainInterface = document.querySelector('.main-interface');
+      mainInterface.style.display = 'flex';
+      
+      // Update the user info display
+      document.querySelector('#username').textContent = userData.displayName || userData.username;
+      
+      // Initialize the interface
+      initializeUserDropdown();
+      initializeTabs();
+      loadActiveTab();
     } else {
       // Re-enable the register button
       registerButton.disabled = false;
