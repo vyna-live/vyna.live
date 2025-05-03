@@ -1,97 +1,104 @@
 /**
- * Background script for the Vyna AI Assistant browser extension
- * Manages user authentication, page context, and communication between components
+ * Background script for Vyna AI Assistant extension
+ * Handles communication between popup and content scripts, manages storage, etc.
  */
 
-import { savePageContext } from '@libs/utils/storage';
+import { getSettings, savePageContext } from '@libs/utils/storage';
 
-// Handle installation
-chrome.runtime.onInstalled.addListener(({ reason }) => {
-  if (reason === 'install') {
-    // Open onboarding page on first install
-    chrome.tabs.create({
-      url: 'https://vyna.live/welcome-extension'
-    });
-  }
-});
+// Store the current page context
+let currentPageContext: {
+  url: string;
+  title: string;
+  content: string;
+} | null = null;
 
-// Listen for messages from content scripts and popup
+// Listen for messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Handle different message types
-  switch (message.action) {
-    case 'pageContentExtracted':
-      handlePageContentExtracted(message.data);
-      break;
+  if (message.action === 'pageContentExtracted') {
+    // Save the extracted content
+    currentPageContext = message.data;
+    savePageContext(message.data)
+      .then(() => console.log('Page context saved'))
+      .catch(err => console.error('Error saving page context:', err));
     
-    case 'requestPageContext':
-      requestPageContext(sender.tab?.id).then(sendResponse);
-      return true; // Required for async response
+    // Forward the data to any open popups
+    chrome.runtime.sendMessage({
+      action: 'pageContextUpdated',
+      data: message.data
+    }).catch(() => {
+      // Ignore errors when popup is not open
+    });
     
-    case 'checkAuth':
-      // The popup is checking auth status - no action needed here
-      // Auth is handled via storage APIs
-      break;
+    return true;
+  }
+  
+  if (message.action === 'getPageContext') {
+    // Return the current page context
+    sendResponse({
+      data: currentPageContext
+    });
+    return true;
+  }
+  
+  return false;
+});
+
+// Handle initial installation or update
+chrome.runtime.onInstalled.addListener(details => {
+  if (details.reason === 'install') {
+    // Set default settings
+    getSettings().then(settings => {
+      console.log('Default settings initialized:', settings);
+    });
     
-    case 'setAuthData':
-      // Auth data is already stored via storage APIs by popup
-      // Just update badge if needed
-      updateExtensionBadge(true);
-      break;
-    
-    case 'clearAuthData':
-      // Auth data is already cleared via storage APIs by popup
-      // Just update badge if needed
-      updateExtensionBadge(false);
-      break;
+    // Open onboarding page
+    chrome.tabs.create({
+      url: 'https://vyna.live/extension-welcome'
+    });
   }
 });
 
-/**
- * Handle extracted page content from content script
- */
-function handlePageContentExtracted(data: { url: string; title: string; content: string }) {
-  // Store the content for use by the popup
-  savePageContext(data);
-}
-
-/**
- * Request page content from the active tab
- */
-async function requestPageContext(tabId?: number): Promise<{ url: string; title: string; content: string } | null> {
-  if (!tabId) {
-    // Get active tab if no tabId provided
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tabs.length === 0) return null;
-    tabId = tabs[0].id;
-  }
+// Create context menu items
+chrome.runtime.onInstalled.addListener(() => {
+  // Context menu for selected text
+  chrome.contextMenus.create({
+    id: 'vynaAIChat',
+    title: 'Ask Vyna AI about this',
+    contexts: ['selection']
+  });
   
-  if (!tabId) return null;
-  
-  try {
-    // Send message to content script to get page content
-    const response = await chrome.tabs.sendMessage(tabId, { action: 'getPageContent' });
-    return response || null;
-  } catch (error) {
-    console.error('Error requesting page context:', error);
-    return null;
-  }
-}
+  // Context menu for creating notes
+  chrome.contextMenus.create({
+    id: 'vynaCreateNote',
+    title: 'Save to Vyna notes',
+    contexts: ['selection']
+  });
+});
 
-/**
- * Update extension badge based on auth status
- */
-function updateExtensionBadge(isAuthenticated: boolean) {
-  if (isAuthenticated) {
-    chrome.action.setBadgeText({ text: '' }); // Remove badge
-    chrome.action.setIcon({ 
-      path: {
-        16: '/icons/icon16.png',
-        48: '/icons/icon48.png',
-        128: '/icons/icon128.png'
-      }
+// Handle context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  const selectedText = info.selectionText || '';
+  
+  if (info.menuItemId === 'vynaAIChat' && selectedText) {
+    // Open popup with the selected text
+    chrome.storage.local.set({ 'pendingQuery': selectedText }, () => {
+      chrome.action.openPopup();
     });
-  } else {
-    chrome.action.setBadgeText({ text: '!' });
-    chrome.action.setBadgeBackgroundColor({ color: '#5D1C34' });
   }
-}
+  
+  if (info.menuItemId === 'vynaCreateNote' && selectedText) {
+    // Save selected text as a note
+    chrome.storage.local.set({ 'pendingNote': {
+      title: tab?.title || 'Note from webpage',
+      content: `${selectedText}\n\nSource: ${tab?.url || 'Unknown source'}`
+    }}, () => {
+      // Show a notification
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon48.png',
+        title: 'Note saved',
+        message: 'Text has been saved to your Vyna notes'
+      });
+    });
+  }
+});

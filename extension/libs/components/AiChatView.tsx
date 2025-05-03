@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getChatSessions, createChatSession, getChatMessages, sendChatMessage } from '@libs/utils/api';
-import { getPageContext, getCurrentSessionId, setCurrentSessionId } from '@libs/utils/storage';
+
+interface AiChatViewProps {
+  userId: number;
+  pageContext: {
+    url: string;
+    title: string;
+    content: string;
+  } | null;
+}
 
 interface ChatSession {
   id: number;
@@ -8,259 +16,229 @@ interface ChatSession {
   createdAt: string;
 }
 
-interface ChatMessage {
+interface Message {
   id: number;
-  content: string;
   role: 'user' | 'assistant';
-  commentaryStyle?: 'play-by-play' | 'color';
-  createdAt: string;
+  content: string;
+  timestamp: string;
 }
 
-const AiChatView: React.FC = () => {
+const AiChatView: React.FC<AiChatViewProps> = ({ userId, pageContext }) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [currentSessionId, setCurrentSessionIdState] = useState<number | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [pageContext, setPageContext] = useState<any>(null);
+  const [isSending, setIsSending] = useState(false);
   const [commentaryStyle, setCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
-  
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  
+  // Fetch chat sessions on component mount
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Load page context
-        const context = await getPageContext();
-        setPageContext(context);
-        
-        // Load chat sessions
-        const allSessions = await getChatSessions();
-        setSessions(allSessions);
-        
-        // Get stored current session ID
-        const storedSessionId = await getCurrentSessionId();
-        
-        if (storedSessionId && allSessions.some(s => s.id === storedSessionId)) {
-          // If stored session exists, use it
-          setCurrentSessionIdState(storedSessionId);
-          const sessionMessages = await getChatMessages(storedSessionId);
-          setMessages(sessionMessages);
-        } else if (allSessions.length > 0) {
-          // Otherwise use the most recent session
-          const latestSession = allSessions[0];
-          setCurrentSessionIdState(latestSession.id);
-          await setCurrentSessionId(latestSession.id);
-          const sessionMessages = await getChatMessages(latestSession.id);
-          setMessages(sessionMessages);
-        }
-      } catch (error) {
-        console.error('Failed to load initial data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadInitialData();
+    fetchChatSessions();
   }, []);
   
+  // Fetch messages when active session changes
   useEffect(() => {
-    // Scroll to bottom of messages
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (activeSessionId) {
+      fetchMessages(activeSessionId);
+    }
+  }, [activeSessionId]);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
   
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || !currentSessionId || isLoading) return;
-    
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const fetchChatSessions = async () => {
     try {
       setIsLoading(true);
+      const data = await getChatSessions();
+      setSessions(data);
       
-      // Add user message to UI immediately
-      const userMessage: ChatMessage = {
-        id: Date.now(), // Temporary ID
-        content: inputMessage,
-        role: 'user',
-        createdAt: new Date().toISOString()
-      };
-      
-      setMessages([...messages, userMessage]);
-      setInputMessage('');
-      
-      // Send message to API
-      const response = await sendChatMessage(
-        currentSessionId,
-        inputMessage,
-        commentaryStyle
-      );
-      
-      // Add assistant response to messages
-      setMessages(prev => [...prev, response]);
+      // Set the most recent session as active if there are any sessions
+      if (data.length > 0) {
+        setActiveSessionId(data[0].id);
+      }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('Error fetching chat sessions:', error);
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleNewChat = async () => {
+  const fetchMessages = async (sessionId: number) => {
     try {
       setIsLoading(true);
-      
-      // Create a default title based on current page
-      const title = pageContext?.title
-        ? `Chat about ${pageContext.title.substring(0, 30)}${pageContext.title.length > 30 ? '...' : ''}`
-        : `New chat ${new Date().toLocaleString()}`;
-      
-      // Create new session
+      const data = await getChatMessages(sessionId);
+      setMessages(data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const createNewSession = async () => {
+    try {
+      setIsLoading(true);
+      const title = pageContext ? `Chat about: ${pageContext.title.slice(0, 30)}...` : `New Chat ${new Date().toLocaleDateString()}`;
       const newSession = await createChatSession(title);
-      
-      // Update state
       setSessions([newSession, ...sessions]);
-      setCurrentSessionIdState(newSession.id);
-      await setCurrentSessionId(newSession.id);
+      setActiveSessionId(newSession.id);
       setMessages([]);
     } catch (error) {
-      console.error('Failed to create new chat:', error);
+      console.error('Error creating new session:', error);
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleSessionClick = async (sessionId: number) => {
-    if (sessionId === currentSessionId || isLoading) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !activeSessionId) return;
     
     try {
-      setIsLoading(true);
-      setCurrentSessionIdState(sessionId);
-      await setCurrentSessionId(sessionId);
+      setIsSending(true);
       
-      const sessionMessages = await getChatMessages(sessionId);
-      setMessages(sessionMessages);
+      // Optimistically add user message to UI
+      const userMessage: Message = {
+        id: Date.now(), // Temporary ID
+        role: 'user',
+        content: inputMessage,
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      setInputMessage('');
+      
+      // Add page context to the first message if available
+      let messageWithContext = inputMessage;
+      if (pageContext && messages.length === 0) {
+        messageWithContext = `I'm currently on this page: ${pageContext.url}\n\nTitle: ${pageContext.title}\n\nThe content is about:\n${pageContext.content.slice(0, 500)}...\n\nMy question/request is:\n${inputMessage}`;
+      }
+      
+      // Send message to API
+      const response = await sendChatMessage(activeSessionId, messageWithContext, commentaryStyle);
+      
+      // Add assistant response
+      const assistantMessage: Message = {
+        id: response.id,
+        role: 'assistant',
+        content: response.content,
+        timestamp: response.createdAt
+      };
+      
+      setMessages(prev => [...prev.filter(msg => msg.id !== userMessage.id), {
+        ...userMessage,
+        id: response.userMessageId
+      }, assistantMessage]);
+      
     } catch (error) {
-      console.error('Failed to switch sessions:', error);
+      console.error('Error sending message:', error);
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
     }
   };
   
-  const toggleCommentaryStyle = () => {
-    setCommentaryStyle(prev => prev === 'color' ? 'play-by-play' : 'color');
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
-  return (
-    <div className="ai-chat-view">
-      <div className="chat-sidebar">
-        <button 
-          className="new-chat-button"
-          onClick={handleNewChat}
-          disabled={isLoading}
-        >
-          New Chat
+  // Render empty state if no sessions exist
+  if (sessions.length === 0 && !isLoading) {
+    return (
+      <div className="empty-state">
+        <h3>No Chat Sessions Yet</h3>
+        <p>Start a new chat to interact with the Vyna AI Assistant</p>
+        <button className="btn-primary" onClick={createNewSession}>
+          Start New Chat
         </button>
-        
-        <div className="session-list">
-          {sessions.map(session => (
-            <div 
-              key={session.id}
-              className={`session-item ${session.id === currentSessionId ? 'active' : ''}`}
-              onClick={() => handleSessionClick(session.id)}
-            >
-              <div className="session-title">{session.title}</div>
-              <div className="session-date">
-                {new Date(session.createdAt).toLocaleDateString()}
+      </div>
+    );
+  }
+  
+  return (
+    <div className="chat-container">
+      <div className="chat-messages">
+        {isLoading && messages.length === 0 ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading messages...</p>
+          </div>
+        ) : (
+          <>
+            {messages.map((message) => (
+              <div key={message.id} className={`message ${message.role}`}>
+                <div className="message-content">{message.content}</div>
+                <div className="message-time">{formatTime(message.timestamp)}</div>
               </div>
-            </div>
-          ))}
+            ))}
+            {isSending && (
+              <div className="message assistant loading">
+                <div className="loading-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </>
+        )}
+      </div>
+      
+      <div className="commentary-styles">
+        <div 
+          className={`commentary-chip ${commentaryStyle === 'play-by-play' ? 'active' : ''}`}
+          onClick={() => setCommentaryStyle('play-by-play')}
+          title="Play-by-play commentary provides detailed, step-by-step explanation of actions"
+        >
+          PP
+        </div>
+        <div 
+          className={`commentary-chip ${commentaryStyle === 'color' ? 'active' : ''}`}
+          onClick={() => setCommentaryStyle('color')}
+          title="Color commentary provides insightful context and background information"
+        >
+          CC
         </div>
       </div>
       
-      <div className="chat-main">
-        <div className="chat-messages">
-          {messages.map(message => (
-            <div 
-              key={message.id} 
-              className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
-            >
-              <div className="message-header">
-                <span className="message-sender">
-                  {message.role === 'user' ? 'You' : 'Vyna AI'}
-                </span>
-                {message.role === 'assistant' && message.commentaryStyle && (
-                  <span className="commentary-style-badge">
-                    {message.commentaryStyle === 'play-by-play' ? 'Play-by-play' : 'Color'}
-                  </span>
-                )}
-              </div>
-              <div className="message-content">{message.content}</div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="loading-indicator">
-              <div className="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-              <div>Vyna AI is thinking...</div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-        
-        <div className="chat-input-container">
-          {pageContext && (
-            <div className="page-context-indicator">
-              <span className="context-icon">📄</span>
-              <span className="context-text">
-                Context: {pageContext.title}
-              </span>
-            </div>
-          )}
-          
-          <div className="input-controls">
-            <div className="commentary-style-toggle">
-              <button 
-                className={`style-toggle-button ${commentaryStyle === 'play-by-play' ? 'active' : ''}`}
-                onClick={() => setCommentaryStyle('play-by-play')}
-                title="Play-by-play Commentary"
-              >
-                PP
-              </button>
-              <button 
-                className={`style-toggle-button ${commentaryStyle === 'color' ? 'active' : ''}`}
-                onClick={() => setCommentaryStyle('color')}
-                title="Color Commentary"
-              >
-                CC
-              </button>
-            </div>
-            
-            <textarea
-              className="chat-input"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask me anything..."
-              disabled={isLoading || !currentSessionId}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            
-            <button 
-              className="send-button"
-              onClick={handleSendMessage}
-              disabled={isLoading || !inputMessage.trim() || !currentSessionId}
-            >
-              Send
-            </button>
-          </div>
+      <div className="chat-input-container">
+        <textarea
+          className="chat-input"
+          placeholder="Type a message..."
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+          disabled={isSending || !activeSessionId}
+        />
+        <div className="chat-actions">
+          <button 
+            className="chat-action-btn"
+            onClick={createNewSession}
+            title="Start new chat"
+          >
+            +
+          </button>
+          <button 
+            className="chat-action-btn send"
+            onClick={handleSendMessage}
+            disabled={isSending || !inputMessage.trim() || !activeSessionId}
+            title="Send message"
+          >
+            →
+          </button>
         </div>
       </div>
     </div>

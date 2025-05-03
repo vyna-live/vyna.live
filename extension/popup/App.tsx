@@ -35,7 +35,7 @@ const App: React.FC = () => {
     setError(null);
   };
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setAuthData(null);
     setIsAuthenticated(false);
   };

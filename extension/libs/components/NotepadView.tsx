@@ -1,266 +1,250 @@
 import React, { useState, useEffect } from 'react';
 import { getNotes, createNote, updateNote, deleteNote } from '@libs/utils/api';
 
+interface NotepadViewProps {
+  userId: number;
+}
+
 interface Note {
   id: number;
   title: string;
   content: string;
-  createdAt: string;
   updatedAt: string;
+  createdAt: string;
 }
 
-const NotepadView: React.FC = () => {
+const NotepadView: React.FC<NotepadViewProps> = ({ userId }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedContent, setEditedContent] = useState('');
+  const [isEdited, setIsEdited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load notes from API
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Fetch notes on component mount
   useEffect(() => {
-    const loadNotes = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const loadedNotes = await getNotes();
-        setNotes(loadedNotes);
-        
-        // Select the first note if available
-        if (loadedNotes.length > 0 && !selectedNoteId) {
-          setSelectedNoteId(loadedNotes[0].id);
-        }
-      } catch (err: any) {
-        console.error('Failed to load notes:', err);
-        setError('Failed to load notes. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadNotes();
+    fetchNotes();
   }, []);
-
-  // Get the selected note
-  const selectedNote = notes.find(note => note.id === selectedNoteId) || null;
-
-  // Handle note selection
-  const handleSelectNote = (noteId: number) => {
-    if (isEditing) {
-      if (!window.confirm('You have unsaved changes. Discard changes?')) {
-        return;
+  
+  // Setup editors when a note is selected
+  useEffect(() => {
+    if (selectedNoteId) {
+      const selectedNote = notes.find(note => note.id === selectedNoteId);
+      if (selectedNote) {
+        setEditedTitle(selectedNote.title);
+        setEditedContent(selectedNote.content);
+        setIsEdited(false);
       }
+    } else {
+      setEditedTitle('');
+      setEditedContent('');
+      setIsEdited(false);
     }
-    
-    setSelectedNoteId(noteId);
-    setIsEditing(false);
-  };
-
-  // Start editing a note
-  const handleStartEditing = () => {
-    if (selectedNote) {
-      setEditTitle(selectedNote.title);
-      setEditContent(selectedNote.content);
-      setIsEditing(true);
-    }
-  };
-
-  // Save edited note
-  const handleSaveNote = async () => {
-    if (!selectedNoteId || !editTitle.trim()) return;
-    
+  }, [selectedNoteId, notes]);
+  
+  const fetchNotes = async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      const data = await getNotes();
+      setNotes(data);
       
+      // Set the most recent note as selected if there are any notes
+      if (data.length > 0 && !selectedNoteId) {
+        setSelectedNoteId(data[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const createNewNote = async () => {
+    try {
+      setIsSaving(true);
+      const newTitle = `New Note ${new Date().toLocaleDateString()}`;
+      const newNote = await createNote(newTitle, '');
+      setNotes([newNote, ...notes]);
+      setSelectedNoteId(newNote.id);
+    } catch (error) {
+      console.error('Error creating new note:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const saveNote = async () => {
+    if (!selectedNoteId || !isEdited) return;
+    
+    try {
+      setIsSaving(true);
       const updatedNote = await updateNote(selectedNoteId, {
-        title: editTitle,
-        content: editContent
+        title: editedTitle,
+        content: editedContent
       });
       
-      // Update notes array
       setNotes(notes.map(note => 
         note.id === selectedNoteId ? updatedNote : note
       ));
-      
-      setIsEditing(false);
-    } catch (err: any) {
-      console.error('Failed to save note:', err);
-      setError('Failed to save note. Please try again.');
+      setIsEdited(false);
+    } catch (error) {
+      console.error('Error saving note:', error);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
-
-  // Create a new note
-  const handleCreateNote = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const newNote = await createNote('New Note', '');
-      setNotes([newNote, ...notes]);
-      setSelectedNoteId(newNote.id);
-      
-      // Start editing the new note
-      setEditTitle(newNote.title);
-      setEditContent(newNote.content);
-      setIsEditing(true);
-    } catch (err: any) {
-      console.error('Failed to create note:', err);
-      setError('Failed to create note. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Delete a note
-  const handleDeleteNote = async () => {
+  
+  const deleteSelectedNote = async () => {
     if (!selectedNoteId) return;
-    
-    if (!window.confirm('Are you sure you want to delete this note?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this note?')) return;
     
     try {
-      setIsLoading(true);
-      setError(null);
-      
+      setIsSaving(true);
       await deleteNote(selectedNoteId);
       
-      // Remove note from array
       const updatedNotes = notes.filter(note => note.id !== selectedNoteId);
       setNotes(updatedNotes);
-      
-      // Select the first note if available
-      if (updatedNotes.length > 0) {
-        setSelectedNoteId(updatedNotes[0].id);
-      } else {
-        setSelectedNoteId(null);
-      }
-      
-      setIsEditing(false);
-    } catch (err: any) {
-      console.error('Failed to delete note:', err);
-      setError('Failed to delete note. Please try again.');
+      setSelectedNoteId(updatedNotes.length > 0 ? updatedNotes[0].id : null);
+    } catch (error) {
+      console.error('Error deleting note:', error);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
-
-  // Cancel editing
-  const handleCancelEditing = () => {
-    setIsEditing(false);
+  
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedTitle(e.target.value);
+    setIsEdited(true);
   };
-
-  return (
-    <div className="notepad-view">
-      <div className="notepad-sidebar">
-        <button 
-          className="new-note-button"
-          onClick={handleCreateNote}
-          disabled={isLoading}
-        >
-          New Note
+  
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedContent(e.target.value);
+    setIsEdited(true);
+  };
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+  
+  const getExcerpt = (content: string, maxLength = 100) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
+  };
+  
+  // Render empty state if no notes exist
+  if (notes.length === 0 && !isLoading) {
+    return (
+      <div className="empty-state">
+        <h3>No Notes Yet</h3>
+        <p>Create a new note to store your ideas and information</p>
+        <button className="btn-primary" onClick={createNewNote} disabled={isSaving}>
+          {isSaving ? 'Creating...' : 'Create New Note'}
         </button>
-        
-        <div className="note-list">
-          {notes.map(note => (
-            <div 
-              key={note.id}
-              className={`note-item ${note.id === selectedNoteId ? 'active' : ''}`}
-              onClick={() => handleSelectNote(note.id)}
-            >
-              <div className="note-title">{note.title}</div>
-              <div className="note-date">
-                {new Date(note.updatedAt || note.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-          ))}
-          
-          {notes.length === 0 && !isLoading && (
-            <div className="no-notes-message">
-              No notes yet. Create a new note to get started.
-            </div>
-          )}
-        </div>
       </div>
-      
-      <div className="notepad-main">
-        {error && <div className="error-message">{error}</div>}
-        
+    );
+  }
+  
+  return (
+    <div className="notepad-container">
+      <div className="notepad-list">
         {isLoading ? (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <div>Loading...</div>
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Loading notes...</p>
           </div>
-        ) : selectedNote ? (
-          isEditing ? (
-            <div className="note-editor">
-              <input
-                type="text"
-                className="note-title-input"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Note Title"
-              />
-              <textarea
-                className="note-content-input"
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                placeholder="Write your note here..."
-              />
-              <div className="editor-actions">
-                <button 
-                  className="save-button"
-                  onClick={handleSaveNote}
-                  disabled={!editTitle.trim()}
-                >
-                  Save
-                </button>
-                <button 
-                  className="cancel-button"
-                  onClick={handleCancelEditing}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="note-viewer">
-              <div className="note-header">
-                <h2 className="note-title">{selectedNote.title}</h2>
-                <div className="note-actions">
-                  <button 
-                    className="edit-button"
-                    onClick={handleStartEditing}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    className="delete-button"
-                    onClick={handleDeleteNote}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-              <div className="note-content">
-                {selectedNote.content ? (
-                  <div className="content-text">{selectedNote.content}</div>
-                ) : (
-                  <div className="empty-content">This note is empty. Click Edit to add content.</div>
-                )}
-              </div>
-            </div>
-          )
         ) : (
-          <div className="no-note-selected">
-            <p>Select a note or create a new one.</p>
-          </div>
+          <>
+            <div className="note-list-header">
+              <button 
+                className="btn-outline new-note-btn" 
+                onClick={createNewNote}
+                disabled={isSaving}
+              >
+                + New Note
+              </button>
+            </div>
+            
+            {notes.map(note => (
+              <div 
+                key={note.id} 
+                className={`note-item ${selectedNoteId === note.id ? 'active' : ''}`}
+                onClick={() => setSelectedNoteId(note.id)}
+              >
+                <div className="note-title">{note.title}</div>
+                <div className="note-excerpt">{getExcerpt(note.content)}</div>
+                <div className="note-date">{formatDate(note.updatedAt)}</div>
+              </div>
+            ))}
+          </>
         )}
       </div>
+      
+      {selectedNoteId && (
+        <div className="note-editor">
+          <div className="editor-header">
+            <input
+              type="text"
+              className="editor-title-input"
+              value={editedTitle}
+              onChange={handleTitleChange}
+              placeholder="Note title"
+              disabled={isSaving}
+            />
+            
+            <div className="editor-actions">
+              {isEdited && (
+                <button 
+                  className="btn-outline save-btn" 
+                  onClick={saveNote}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              )}
+            </div>
+          </div>
+          
+          <div className="editor-content">
+            <textarea
+              className="editor-textarea"
+              value={editedContent}
+              onChange={handleContentChange}
+              placeholder="Start typing your note here..."
+              disabled={isSaving}
+            />
+          </div>
+          
+          <div className="editor-actions">
+            <div className="editor-action-group">
+              <button 
+                className="btn-outline delete-btn" 
+                onClick={deleteSelectedNote}
+                disabled={isSaving}
+              >
+                Delete
+              </button>
+            </div>
+            
+            <div className="editor-action-group">
+              {isEdited && (
+                <button 
+                  className="btn-primary" 
+                  onClick={saveNote}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

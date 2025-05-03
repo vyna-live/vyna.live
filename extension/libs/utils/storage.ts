@@ -136,3 +136,35 @@ export async function getPageContext(): Promise<{
 } | null> {
   return getStorageData('pageContext', null);
 }
+
+/**
+ * Settings interface for app settings
+ */
+interface AppSettings {
+  autoFetchPageContent: boolean;
+  enableNotifications: boolean;
+  defaultCommentaryStyle: 'play-by-play' | 'color';
+  theme: 'light' | 'dark' | 'system';
+}
+
+// Default settings
+const DEFAULT_SETTINGS: AppSettings = {
+  autoFetchPageContent: true,
+  enableNotifications: true,
+  defaultCommentaryStyle: 'color',
+  theme: 'system'
+};
+
+/**
+ * Get app settings
+ */
+export async function getSettings(): Promise<AppSettings> {
+  return getStorageData<AppSettings>('settings', DEFAULT_SETTINGS);
+}
+
+/**
+ * Update app settings
+ */
+export async function updateSettings(settings: AppSettings): Promise<void> {
+  return setStorageData('settings', settings);
+}
