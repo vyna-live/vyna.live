@@ -1063,7 +1063,30 @@ async function loadNotes() {
       document.getElementById('newNoteButton').addEventListener('click', handleNewNote);
       const emptyNewButton = document.getElementById('empty-new-note-button');
       if (emptyNewButton) {
-        emptyNewButton.addEventListener('click', handleNewNote);
+        emptyNewButton.addEventListener('click', () => {
+          // Get the input value from the empty state input
+          const emptyNoteInput = document.querySelector('#empty-notes input');
+          if (emptyNoteInput && emptyNoteInput.value.trim()) {
+            // Create a new note with the input value
+            noteLines = [emptyNoteInput.value.trim()];
+            handleNewNote();
+          } else {
+            // Just create an empty note if no input
+            handleNewNote();
+          }
+        });
+      }
+      
+      // Add event listener to the input field for Enter key
+      const emptyNoteInput = document.querySelector('#empty-notes input');
+      if (emptyNoteInput) {
+        emptyNoteInput.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && emptyNoteInput.value.trim()) {
+            event.preventDefault();
+            noteLines = [emptyNoteInput.value.trim()];
+            handleNewNote();
+          }
+        });
       }
       
     } else {
@@ -1084,31 +1107,48 @@ function createNoteItem(note) {
     return document.createElement('div'); // Return empty div to prevent errors
   }
   
-  const noteItem = document.createElement('div');
-  noteItem.className = 'p-2 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-lg cursor-pointer transition-colors';
+  // Use the template for consistent UI
+  const template = getTemplate('note-item-template');
+  if (!template) {
+    console.error('Note item template not found');
+    return document.createElement('div');
+  }
+  
+  const content = document.importNode(template.content, true);
+  const noteItem = content.querySelector('.note-item');
+  
+  // Set note ID
   noteItem.setAttribute('data-note-id', note.id);
+  
+  // Add click event listener
   noteItem.addEventListener('click', () => {
     console.log('Note item clicked, triggering handleViewNote for note ID:', note.id);
     handleViewNote(note);
   });
   
-  const title = document.createElement('h3');
-  title.className = 'text-sm font-medium text-white mb-1 line-clamp-1';
-  title.textContent = note.title || 'Untitled Note';
+  // Set title
+  const titleElement = noteItem.querySelector('.note-title');
+  if (titleElement) {
+    titleElement.textContent = note.title || 'Untitled Note';
+  }
   
-  const preview = document.createElement('p');
-  preview.className = 'text-xs text-zinc-400 line-clamp-2';
-  preview.textContent = note.content || 'Empty note';
+  // Set preview text
+  const previewElement = noteItem.querySelector('.note-preview');
+  if (previewElement) {
+    previewElement.textContent = note.content || 'Empty note';
+  }
   
-  noteItem.appendChild(title);
-  noteItem.appendChild(preview);
-  
-  // Add date if available
-  if (note.updatedAt || note.createdAt) {
-    const date = document.createElement('div');
-    date.className = 'text-xs text-zinc-500 mt-1';
-    date.textContent = new Date(note.updatedAt || note.createdAt).toLocaleDateString();
-    noteItem.appendChild(date);
+  // Set date
+  const dateElement = noteItem.querySelector('.note-date');
+  if (dateElement && (note.updatedAt || note.createdAt)) {
+    const date = new Date(note.updatedAt || note.createdAt);
+    const formattedDate = date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    dateElement.textContent = formattedDate;
   }
   
   return noteItem;
@@ -1302,21 +1342,84 @@ function refreshNoteLines() {
   linesContainer.innerHTML = '';
   console.log('Cleared lines container');
   
-  // Add each line as a div
+  // Add each line as a div with the new styling
   noteLines.forEach((line, index) => {
     const lineElement = document.createElement('div');
-    lineElement.className = 'bg-zinc-800/40 p-2 rounded-lg text-sm text-white';
-    lineElement.textContent = line;
+    lineElement.className = 'flex items-start group mb-4';
     lineElement.setAttribute('data-line-index', index);
+    
+    const textContainer = document.createElement('div');
+    textContainer.className = 'flex-1 bg-zinc-800/50 text-white rounded-lg p-3 break-words';
+    textContainer.textContent = line;
+    
+    const actionsContainer = document.createElement('div');
+    actionsContainer.className = 'ml-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col space-y-2';
+    
+    // Edit button
+    const editButton = document.createElement('button');
+    editButton.className = 'text-zinc-400 hover:text-white';
+    editButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+    `;
+    editButton.addEventListener('click', () => {
+      // Edit functionality could be added here
+      console.log('Edit button clicked for line index:', index);
+    });
+    
+    // Delete button
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'text-zinc-400 hover:text-red-400';
+    deleteButton.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+    `;
+    deleteButton.addEventListener('click', () => {
+      // Remove this line from the array
+      noteLines.splice(index, 1);
+      refreshNoteLines();
+    });
+    
+    actionsContainer.appendChild(editButton);
+    actionsContainer.appendChild(deleteButton);
+    
+    lineElement.appendChild(textContainer);
+    lineElement.appendChild(actionsContainer);
     linesContainer.appendChild(lineElement);
   });
+  
   console.log(`Added ${noteLines.length} lines to the display`);
+  
+  // Update title field with first line if available
+  const titleField = document.getElementById('noteTitle');
+  if (titleField && noteLines.length > 0) {
+    if (!titleField.value) {
+      titleField.value = noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? '...' : '');
+    }
+  }
+  
+  // Update add button state
+  const addLineButton = document.getElementById('addLineButton');
+  if (addLineButton) {
+    const noteInput = document.getElementById('noteInput');
+    addLineButton.disabled = !noteInput || !noteInput.value.trim();
+  }
   
   // Update save button state
   const saveButton = document.getElementById('saveNoteButton');
   if (saveButton) {
     const newDisabledState = noteLines.length === 0;
     saveButton.disabled = newDisabledState;
+    saveButton.classList.toggle('bg-zinc-600', newDisabledState);
+    saveButton.classList.toggle('text-zinc-300', newDisabledState);
+    saveButton.classList.toggle('bg-white', !newDisabledState);
+    saveButton.classList.toggle('text-black', !newDisabledState);
     console.log('Updated save button state:', newDisabledState ? 'disabled' : 'enabled');
   } else {
     console.error('Save button not found when updating state');
