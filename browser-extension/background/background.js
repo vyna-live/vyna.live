@@ -93,35 +93,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Handle login
 async function login(username, password) {
   try {
+    console.log('Trying to login with:', { usernameOrEmail: username, password: '***' });
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ usernameOrEmail: username, password }),
       credentials: 'include'
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
+      const errorData = await response.json().catch(e => ({ error: 'Could not parse error response' }));
+      console.error('Login response error:', response.status, errorData);
+      throw new Error(errorData.error || 'Invalid username or password');
     }
     
-    const data = await response.json();
+    // The server returns the user object directly, not wrapped in a data object
+    const user = await response.json();
+    
+    // Generate a token based on the user ID for local storage 
+    // (we're using cookie-based auth so this is just for state tracking)
+    const token = `session_${user.id}_${Date.now()}`;
     
     // Save authentication data
     authState = {
       isAuthenticated: true,
-      token: data.token,
-      user: data.user
+      token: token,
+      user: user
     };
     
     await chrome.storage.local.set({
-      authToken: data.token,
-      user: data.user
+      authToken: token,
+      user: user
     });
     
-    return { success: true, user: data.user };
+    console.log('Login successful:', { user });
+    return { success: true, user: user };
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -140,11 +148,14 @@ async function register(userData) {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Registration failed');
+      const errorData = await response.json().catch(e => ({ error: 'Could not parse error response' }));
+      console.error('Registration response error:', response.status, errorData);
+      throw new Error(errorData.error || 'Registration failed. Please try again.');
     }
     
-    const data = await response.json();
+    // The server returns the user object directly
+    const user = await response.json();
+    console.log('Registration successful:', { user });
     
     // Auto-login after successful registration
     return login(userData.username, userData.password);
