@@ -5,8 +5,16 @@ import { log } from './vite';
 
 // Debug middleware to log all auth-related information
 export function debugAuth(req: Request, res: Response, next: NextFunction) {
+  // Log request origin and headers
+  log(`REQUEST URL: ${req.url}`, 'auth-debug');
+  log(`REQUEST ORIGIN: ${req.headers.origin}`, 'auth-debug');
+  log(`REQUEST USER-AGENT: ${req.headers['user-agent']}`, 'auth-debug');
+  
   // Log all cookies
   log(`REQUEST COOKIES: ${JSON.stringify(req.cookies)}`, 'auth-debug');
+  
+  // Log raw cookie header
+  log(`RAW COOKIE HEADER: ${req.headers.cookie}`, 'auth-debug');
   
   // Log auth status - safely check if isAuthenticated exists
   if (typeof req.isAuthenticated === 'function') {

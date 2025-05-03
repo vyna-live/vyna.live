@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -15,9 +16,14 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser()); // Add cookie parser middleware
 
 // Import debug middleware
 import { debugAuth, debugRequest } from './debug';
+
+// Add debug middleware for authentication issues
+app.use(debugAuth);
+app.use(debugRequest);
 
 // Add explicit CORS headers to every response
 app.use((req, res, next) => {
