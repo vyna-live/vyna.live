@@ -1126,7 +1126,13 @@ async function viewNote(noteId) {
     if (response.ok) {
       const noteData = await response.json();
       currentNoteId = noteData.id;
-      showNoteViewer(noteData);
+      
+      // Update state with selected note
+      state.currentNote = noteData;
+      state.noteLines = noteData.content ? noteData.content.split('\n') : [];
+      
+      // Render note editor
+      renderNotepadTab();
     } else {
       notepadContent.innerHTML = '<div class="error">Failed to load note</div>';
     }
@@ -1136,7 +1142,7 @@ async function viewNote(noteId) {
   }
 }
 
-function showNoteEditor(existingNote = null) {
+function renderNoteEditor() {
   const notepadContent = document.getElementById('notepad-content');
   
   // Get the note editor template and clone it
@@ -1147,48 +1153,72 @@ function showNoteEditor(existingNote = null) {
   notepadContent.innerHTML = '';
   notepadContent.appendChild(noteEditorContent);
   
+  // Initialize the note paragraphs container
+  const paragraphsContainer = document.createElement('div');
+  paragraphsContainer.id = 'noteParagraphs';
+  paragraphsContainer.className = 'note-paragraphs';
+  notepadContent.querySelector('.note-editor-content').prepend(paragraphsContainer);
+  
+  // Render the note paragraphs
+  renderNoteParagraphs(paragraphsContainer);
+  
   // Add event listeners
-  document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
+  document.getElementById('backToNotes').addEventListener('click', () => backToNotesList());
   document.getElementById('saveNoteButton').addEventListener('click', saveNote);
-  const addLineButton = document.getElementById('addLineButton');
-  addLineButton.addEventListener('click', addNoteLine);
+  document.getElementById('addLineButton').addEventListener('click', addNoteLine);
   
-  // Make sure add line button is always enabled
-  addLineButton.disabled = false;
-  
+  // Configure the input field
   const noteInput = document.getElementById('noteInput');
   const saveNoteButton = document.getElementById('saveNoteButton');
-  const noteTitle = document.getElementById('noteTitle');
   
   // Add keydown handler
-  noteInput.addEventListener('keydown', handleNoteInputKeyDown);
+  noteInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      addNoteLine();
+    }
+  });
   
-  // Enable/disable save button based on input
-  const updateSaveButtonState = () => {
-    saveNoteButton.disabled = noteInput.value.trim() === '' && noteTitle.value.trim() === '';
-  };
+  // Enable/disable save button based on lines
+  saveNoteButton.disabled = state.noteLines.length === 0;
   
-  noteInput.addEventListener('input', updateSaveButtonState);
-  noteTitle.addEventListener('input', updateSaveButtonState);
+  // Focus on the input field
+  noteInput.focus();
+}
+
+function renderNoteParagraphs(container) {
+  // Clear the container
+  container.innerHTML = '';
   
-  // Initialize button state
-  updateSaveButtonState();
+  if (state.noteLines.length === 0) {
+    const emptyMessage = document.createElement('div');
+    emptyMessage.className = 'empty-lines-message';
+    emptyMessage.textContent = 'Add lines to your note...';
+    container.appendChild(emptyMessage);
+    return;
+  }
   
-  // If editing existing note, populate the fields
+  // Create a paragraph element for each line
+  state.noteLines.forEach((line, index) => {
+    const paragraph = document.createElement('p');
+    paragraph.className = 'note-paragraph';
+    paragraph.textContent = line;
+    container.appendChild(paragraph);
+  });
+}
+
+function backToNotesList() {
+  state.currentNote = null;
+  state.noteLines = [];
+  renderNotepadTab();
+}
+
+function showNoteEditor(existingNote = null) {
   if (existingNote) {
-    document.getElementById('noteTitle').value = existingNote.title || '';
-    document.getElementById('noteInput').value = existingNote.content || '';
-    
-    // Ensure save button is updated with the loaded content
-    updateSaveButtonState();
+    state.currentNote = existingNote;
+    state.noteLines = existingNote.content ? existingNote.content.split('\n') : [];
   }
-  
-  // Focus on title if empty, otherwise on content
-  if (!existingNote || !existingNote.title) {
-    document.getElementById('noteTitle').focus();
-  } else {
-    document.getElementById('noteInput').focus();
-  }
+  renderNotepadTab();
 }
 
 function showNoteViewer(note) {
@@ -1220,30 +1250,25 @@ function addNoteLine() {
       return;
     }
     
-    const currentValue = noteInput.value;
-    console.log('addNoteLine: Adding new line to note input');
-  
-    // Add a proper new line with bullet point
-    // If there's no content yet, don't add a leading newline
-    if (currentValue.trim() === '') {
-      noteInput.value = '- ';
-    } else {
-      // If the content doesn't end with a newline, add one
-      if (!currentValue.endsWith('\n')) {
-        noteInput.value = currentValue + '\n- ';
-      } else {
-        noteInput.value = currentValue + '- ';
-      }
-    }
+    const line = noteInput.value.trim();
+    console.log('addNoteLine: Adding new line to note');
     
-    noteInput.focus();
+    if (!line) return; // Don't add empty lines
     
-    // Move cursor to the end
-    noteInput.selectionStart = noteInput.selectionEnd = noteInput.value.length;
+    // Add line to state
+    state.noteLines.push(line);
     
-    // Manually trigger input event to update save button state
-    noteInput.dispatchEvent(new Event('input'));
-    console.log('addNoteLine: Line added successfully, button state updated');
+    // Clear input
+    noteInput.value = '';
+    
+    // Update UI
+    const paragraphsContainer = document.getElementById('noteParagraphs');
+    renderNoteParagraphs(paragraphsContainer);
+    
+    // Enable save button since we now have at least one line
+    document.getElementById('saveNoteButton').disabled = false;
+    
+    console.log('addNoteLine: Line added successfully, noteLines count:', state.noteLines.length);
   } catch (error) {
     console.error('Error in addNoteLine:', error);
     showToast('Error adding new line', true);
@@ -1251,15 +1276,16 @@ function addNoteLine() {
 }
 
 async function saveNote() {
-  const title = document.getElementById('noteTitle').value.trim();
-  const content = document.getElementById('noteInput').value.trim();
-  
-  console.log('Attempting to save note:', { title, content, isAuthenticated, userId: currentUser?.id });
-  
-  if (!title && !content) {
-    showToast('Please enter a title or some content', true);
+  if (state.noteLines.length === 0) {
+    showToast('Please add at least one line to your note', true);
     return;
   }
+  
+  // Get the title from the first line or use placeholder
+  const content = state.noteLines.join('\n');
+  const title = state.noteLines[0].substring(0, 50) + (state.noteLines[0].length > 50 ? '...' : '');
+  
+  console.log('Attempting to save note:', { title, content, isAuthenticated, userId: currentUser?.id });
   
   // Verify we have user credentials
   if (!isAuthenticated || !currentUser || !currentUser.id) {
@@ -1269,11 +1295,18 @@ async function saveNote() {
   }
   
   try {
+    // Disable the save button to prevent double submissions
+    const saveButton = document.getElementById('saveNoteButton');
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.textContent = 'Saving...';
+    }
+    
     let response;
     
-    if (currentNoteId) {
+    if (state.currentNote && state.currentNote.id) {
       // Update existing note
-      response = await fetch(`${API_BASE_URL}/api/notepads/note/${currentNoteId}`, {
+      response = await fetch(`${API_BASE_URL}/api/notepads/note/${state.currentNote.id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -1295,7 +1328,7 @@ async function saveNote() {
         },
         body: JSON.stringify({
           hostId: currentUser.id,
-          title: title || 'Untitled Note',
+          title,
           content
         })
       });
@@ -1303,11 +1336,13 @@ async function saveNote() {
     
     if (response.ok) {
       const noteData = await response.json();
-      currentNoteId = noteData.id;
+      currentNoteId = noteData.id; // Keep for backward compatibility
       
       console.log('Note saved successfully:', noteData);
       showToast('Note saved successfully');
-      showNoteViewer(noteData);
+      
+      // Refresh the notes list
+      loadNotes();
     } else {
       // Try to get more detailed error information
       try {
@@ -1322,6 +1357,13 @@ async function saveNote() {
   } catch (error) {
     console.error('Error saving note:', error);
     showToast('Error saving note', true);
+  } finally {
+    // Re-enable the save button
+    const saveButton = document.getElementById('saveNoteButton');
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save';
+    }
   }
 }
 
