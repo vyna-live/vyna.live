@@ -296,7 +296,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Notepad endpoints - Main definition moved below
+  // Notepad endpoints
+  // Get notepads for a specific host
+  app.get("/api/notepads/:hostId", async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: "Invalid host ID" });
+      }
+      
+      // Get notepads for the specified host
+      const notes = await db.select()
+        .from(notepads)
+        .where(and(
+          eq(notepads.hostId, hostId),
+          eq(notepads.isDeleted, false)
+        ))
+        .orderBy(desc(notepads.createdAt));
+      
+      return res.status(200).json(notes);
+    } catch (error) {
+      console.error("Error fetching notepads:", error);
+      return res.status(500).json({ error: "Failed to fetch notepads" });
+    }
+  });
   
   // Create new notepad
   app.post("/api/notepads", async (req, res) => {
