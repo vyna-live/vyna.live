@@ -351,40 +351,48 @@
   
   <!-- Notepad List Template -->
   <template id="notepad-list-template">
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full bg-black rounded-lg">
       <!-- Header -->
-      <div class="flex items-center justify-between p-3 border-b border-zinc-800">
-        <div class="flex items-center space-x-1">
-          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span class="font-medium text-white">Notepad</span>
-        </div>
-        <button id="newNoteButton" class="text-zinc-400 hover:text-white transition-colors">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+      <div class="text-center py-5">
+        <h2 class="text-xl font-medium text-white">Research Notes</h2>
+        <p class="text-sm text-zinc-400 mt-1">Save important information for your stream</p>
       </div>
 
-      <!-- Content area -->
-      <div class="flex-1 overflow-y-auto p-3">
-        <div id="notes-list" class="space-y-2">
+      <!-- RECENTS Label -->
+      <div class="px-4 py-2">
+        <h3 class="text-xs font-medium text-zinc-500 tracking-wide">RECENTS</h3>
+      </div>
+      
+      <!-- Notes list -->
+      <div class="flex-1 overflow-y-auto px-4">
+        <div id="notes-list" class="space-y-2 mb-4">
           <!-- Notes will be listed here -->
         </div>
 
         <!-- Empty state -->
         <div id="empty-notes" class="flex flex-col items-center justify-center py-8 text-center" style="display: none;">
-          <svg class="w-12 h-12 text-zinc-700 mb-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <h3 class="text-lg font-medium text-white mb-1">No notes yet</h3>
-          <p class="text-sm text-zinc-400 mb-4">Create a new note to get started</p>
-          <button id="empty-new-note-button" class="px-4 py-2 bg-[#5D1C34] text-white rounded-lg hover:bg-[#4c1629] transition-colors">
-            Create a note
-          </button>
+          <h3 class="text-white text-lg font-medium mb-1">No notes yet</h3>
+          <p class="text-zinc-400 text-sm mb-4">Save important information for your streams</p>
+          <div class="relative w-full mt-4">
+            <input type="text" placeholder="Type a new note" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-4 h-[54px] text-sm text-white placeholder-zinc-500 outline-none focus:border-zinc-600">
+            <div class="absolute left-3 bottom-3 flex space-x-3 text-zinc-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 11a5 5 0 0 1 10 0v4M8 15h8"></path>
+                <circle cx="12" cy="19" r="2"></circle>
+              </svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <button id="empty-new-note-button" class="absolute right-3 bottom-3 px-3 py-1 text-sm font-medium bg-white text-black rounded-full">
+              Add note
+            </button>
+          </div>
         </div>
       </div>
     </div>
