@@ -32,17 +32,10 @@ let commentaryStyle = 'color'; // Default to color commentary
 // Note: savedNotes and currentNoteId are declared in this scope
 // but will be used throughout the file
 
-// State object is deprecated, keeping for compatibility
-const state = {
-  user: null,
-  notes: [],
-  currentNote: null,
-  noteLines: []
-};
-
-// These are our working variables
+// These are our working variables for notepad functionality
 let savedNotes = [];
 let currentNoteId = null;
+let noteLines = [];
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', initializeApp);
@@ -1011,9 +1004,7 @@ async function handleImageUpload(event) {
   event.target.value = '';
 }
 
-// Initialize noteLines to use in our notepad implementation
-let noteLines = [];
-
+// Begin notepad implementation
 // Notepad functions
 async function loadNotes() {
   console.log('Loading notes...');
