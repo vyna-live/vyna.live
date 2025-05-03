@@ -215,7 +215,7 @@ async function handleLogin() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        username, // Using username field for both username and email
+        usernameOrEmail: username, // Server expects usernameOrEmail parameter name
         password
       })
     });
