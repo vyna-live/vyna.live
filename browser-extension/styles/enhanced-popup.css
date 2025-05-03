@@ -477,10 +477,11 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background-color: var(--glassmorphism-bg);
+  border: 1px solid var(--glassmorphism-border);
   border-radius: var(--input-radius);
   overflow: hidden;
+  backdrop-filter: blur(10px);
 }
 
 .chat-input {
@@ -528,11 +529,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background-color: var(--accent-color);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 14px;
   margin: 0 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -682,13 +683,14 @@ body {
 }
 
 .add-line-button:hover {
-  color: var(--text-primary);
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--accent-color);
+  color: white;
 }
 
 .add-line-button:disabled {
+  background-color: var(--bg-secondary);
   color: var(--text-secondary);
-  opacity: 0.5;
+  opacity: 0.7;
   cursor: not-allowed;
 }
 

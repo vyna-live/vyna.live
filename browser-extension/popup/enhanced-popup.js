@@ -32,6 +32,9 @@ async function initializeApp() {
       currentUser = authStatus.user;
       isAuthenticated = true;
       
+      // Initialize the user dropdown
+      initializeUserDropdown();
+      
       // Initialize the interface
       initializeTabs();
       loadActiveTab();
@@ -197,6 +200,74 @@ function showError(elementId, message) {
   const errorElement = document.getElementById(elementId);
   errorElement.textContent = message;
   errorElement.style.display = 'block';
+}
+
+// User dropdown functions
+function initializeUserDropdown() {
+  const userProfile = document.getElementById('userProfile');
+  const userDropdown = document.getElementById('userDropdown');
+  const logoutButton = document.getElementById('logoutButton');
+  
+  // Toggle dropdown when clicking on the user profile
+  userProfile.addEventListener('click', (e) => {
+    e.stopPropagation();
+    userDropdown.classList.toggle('show');
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    userDropdown.classList.remove('show');
+  });
+  
+  // Prevent dropdown from closing when clicking inside it
+  userDropdown.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
+  // Handle logout button click
+  logoutButton.addEventListener('click', handleLogout);
+}
+
+async function handleLogout() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    
+    if (response.ok) {
+      // Reset user state
+      currentUser = null;
+      isAuthenticated = false;
+      
+      // Show login screen
+      showLoginScreen();
+      
+      // Show success toast
+      showToast('Successfully logged out');
+    } else {
+      showToast('Logout failed. Please try again.', true);
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    showToast('Logout failed due to a network error', true);
+  }
+}
+
+// Helper function to show toast notifications
+function showToast(message, isError = false) {
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = isError ? 'toast toast-error' : 'toast';
+  toast.textContent = message;
+  
+  // Add to document
+  document.body.appendChild(toast);
+  
+  // Remove after animation completes
+  setTimeout(() => {
+    document.body.removeChild(toast);
+  }, 3000);
 }
 
 // Tab functions
