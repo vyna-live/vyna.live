@@ -27,6 +27,9 @@ async function initializeApp() {
       
       if (authStatus.user.avatarUrl) {
         document.querySelector('#userAvatar').src = authStatus.user.avatarUrl;
+      } else {
+        // Set default avatar
+        document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
       }
       
       // Store user info
@@ -177,6 +180,14 @@ async function handleLogin() {
       // Update the user info display
       document.querySelector('#username').textContent = userData.displayName || userData.username;
       
+      // Set user avatar if available
+      if (userData.avatarUrl) {
+        document.querySelector('#userAvatar').src = userData.avatarUrl;
+      } else {
+        // Default avatar
+        document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
+      }
+      
       // Initialize the interface
       initializeUserDropdown();
       initializeTabs();
@@ -274,6 +285,14 @@ async function handleRegister() {
       
       // Update the user info display
       document.querySelector('#username').textContent = userData.displayName || userData.username;
+      
+      // Set user avatar if available
+      if (userData.avatarUrl) {
+        document.querySelector('#userAvatar').src = userData.avatarUrl;
+      } else {
+        // Default avatar
+        document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
+      }
       
       // Initialize the interface
       initializeUserDropdown();
@@ -583,18 +602,11 @@ async function loadChatMessages(sessionId) {
     if (response.ok) {
       const messagesData = await response.json();
       
-      // Get the current session
-      const session = chatSessions.find(s => s.id === parseInt(sessionId));
-      if (session) {
-        const chatTitle = document.getElementById('chatTitle');
-        chatTitle.textContent = session.title || `Chat from ${new Date(session.createdAt).toLocaleString()}`;
-      }
-      
       // Clear the messages container
       messagesContainer.innerHTML = '';
       
       if (messagesData.length > 0) {
-        // Display the messages
+        // Add messages to the container
         messagesData.forEach(message => {
           const messageElement = createMessageElement(message);
           messagesContainer.appendChild(messageElement);
@@ -603,218 +615,197 @@ async function loadChatMessages(sessionId) {
         // Scroll to the bottom
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       } else {
-        // Show empty state if no messages
+        // Show empty state
         emptyState.style.display = 'flex';
       }
     } else {
-      messagesContainer.innerHTML = '<div class="error">Failed to load messages</div>';
+      messagesContainer.innerHTML = '<div class="error-message">Failed to load messages</div>';
     }
   } catch (error) {
     console.error('Error loading messages:', error);
-    document.getElementById('messagesContainer').innerHTML = '<div class="error">Error loading messages</div>';
+    document.getElementById('messagesContainer').innerHTML = '<div class="error-message">Error loading messages</div>';
   }
 }
 
 function createMessageElement(message) {
-  // Get the message template and clone it
-  const messageTemplate = document.getElementById('message-template');
-  const messageElement = document.importNode(messageTemplate.content, true);
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${message.role === 'user' ? 'user-message' : 'ai-message'}`;
   
-  // Set message classes based on role
-  const messageDiv = messageElement.querySelector('.message');
-  messageDiv.classList.add(`message-${message.role}`);
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
   
-  // Avatar is only visible for assistant messages
-  const avatarDiv = messageElement.querySelector('.avatar');
-  if (message.role === 'assistant') {
-    avatarDiv.style.display = 'block';
-    const avatarImg = avatarDiv.querySelector('img');
-    avatarImg.src = '../assets/ai-avatar.png';
-    avatarImg.alt = 'AI';
-  }
-  
-  // Set message content
-  const contentDiv = messageElement.querySelector('.message-content');
-  
-  // For assistant messages, format the text with paragraphs
-  if (message.role === 'assistant') {
-    message.content.split('\n').forEach(line => {
-      // Check if line is a heading (all caps or ends with colon)
-      const isHeading = line.trim() === line.trim().toUpperCase() && line.trim().length > 3 || 
-                      line.trim().endsWith(':');
-                      
-      // Check if the line starts with a bullet or number
-      const isList = line.trim().match(/^(-|\d+\.)\s.+/);
+  // Process message content
+  if (message.content.includes('{"type":"infoGraphic"')) {
+    try {
+      // This is a message with an info graphic
+      const infoGraphicData = JSON.parse(message.content);
       
-      if (line.trim().length > 0) {
-        const p = document.createElement('p');
-        p.textContent = line;
-        
-        if (isHeading) {
-          p.classList.add('message-heading');
-        } else if (isList) {
-          p.classList.add('message-list-item');
-        }
-        
-        contentDiv.appendChild(p);
-      } else {
-        // Empty line, add some space
-        contentDiv.appendChild(document.createElement('br'));
+      // Add the text content
+      const textDiv = document.createElement('div');
+      textDiv.className = 'message-text';
+      textDiv.textContent = infoGraphicData.text || 'No text content';
+      contentDiv.appendChild(textDiv);
+      
+      // Add the info graphic if present
+      if (infoGraphicData.graphic) {
+        const graphicDiv = document.createElement('div');
+        graphicDiv.className = 'info-graphic';
+        graphicDiv.innerHTML = infoGraphicData.graphic;
+        contentDiv.appendChild(graphicDiv);
       }
-    });
-    
-    // Add action buttons for assistant messages
-    const actionsDiv = document.createElement('div');
-    actionsDiv.className = 'message-actions';
-    
-    // Copy button
-    const copyButton = document.createElement('button');
-    copyButton.className = 'message-action-button';
-    copyButton.title = 'Copy to clipboard';
-    copyButton.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-      </svg>
-    `;
-    copyButton.addEventListener('click', () => {
-      navigator.clipboard.writeText(message.content);
-      // Show a tiny toast notification
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = 'Copied!';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
-    });
-    
-    actionsDiv.appendChild(copyButton);
-    contentDiv.appendChild(actionsDiv);
+    } catch (e) {
+      // Fallback to treating as regular text if JSON parsing fails
+      contentDiv.textContent = message.content;
+    }
   } else {
-    // For user messages, just set the text content
+    // Regular text message
     contentDiv.textContent = message.content;
   }
   
-  return messageElement;
+  messageDiv.appendChild(contentDiv);
+  
+  // Add message metadata
+  const metaDiv = document.createElement('div');
+  metaDiv.className = 'message-meta';
+  metaDiv.textContent = new Date(message.createdAt).toLocaleTimeString();
+  messageDiv.appendChild(metaDiv);
+  
+  return messageDiv;
 }
 
 async function sendMessage() {
-  if (!isAuthenticated || !currentUser) {
-    return;
-  }
-  
   const chatInput = document.getElementById('chatInput');
   const message = chatInput.value.trim();
   
-  if (!message) {
-    return;
-  }
+  if (!message) return;
   
   // Clear the input
   chatInput.value = '';
   
-  // Create and display a user message
-  const userMessage = { id: Date.now(), role: 'user', content: message };
-  const userMessageElement = createMessageElement(userMessage);
+  // Disable send button
+  document.getElementById('sendButton').disabled = true;
   
+  // Get the messages container
   const messagesContainer = document.getElementById('messagesContainer');
   const emptyState = document.getElementById('chatEmptyState');
   
-  // Remove empty state if showing
-  if (emptyState) {
-    emptyState.style.display = 'none';
-  }
+  // Hide empty state if visible
+  emptyState.style.display = 'none';
   
-  // Add the user message to the container
+  // Create and add user message element
+  const userMessageElement = document.createElement('div');
+  userMessageElement.className = 'message user-message';
+  
+  const userContentDiv = document.createElement('div');
+  userContentDiv.className = 'message-content';
+  userContentDiv.textContent = message;
+  userMessageElement.appendChild(userContentDiv);
+  
+  const userMetaDiv = document.createElement('div');
+  userMetaDiv.className = 'message-meta';
+  userMetaDiv.textContent = new Date().toLocaleTimeString();
+  userMessageElement.appendChild(userMetaDiv);
+  
   messagesContainer.appendChild(userMessageElement);
   
   // Scroll to the bottom
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
   
-  // Create a loading message
-  const loadingMessage = document.createElement('div');
-  loadingMessage.className = 'message message-assistant loading';
-  loadingMessage.innerHTML = `
-    <div class="avatar">
-      <img src="../assets/ai-avatar.png" alt="AI" width="24" height="24">
-    </div>
-    <div class="message-content loading-content">
+  // Add loading indicator for AI response
+  const loadingElement = document.createElement('div');
+  loadingElement.className = 'message ai-message loading';
+  loadingElement.innerHTML = `
+    <div class="message-content">
       <div class="loading-dots">
         <span></span><span></span><span></span>
       </div>
     </div>
   `;
-  messagesContainer.appendChild(loadingMessage);
+  messagesContainer.appendChild(loadingElement);
+  
+  // Scroll to the bottom again
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
   
   try {
     // Send the message to the server
-    const response = await fetch(`${API_BASE_URL}/api/ai-chat`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        hostId: currentUser.id,
-        message: message,
-        sessionId: currentChatSessionId,
-        commentaryStyle: commentaryStyle
-      })
-    });
+    let response;
+    
+    if (currentChatSessionId) {
+      // Add to existing session
+      response = await fetch(`${API_BASE_URL}/api/ai-chat-messages`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: currentChatSessionId,
+          content: message,
+          role: 'user',
+          commentaryStyle
+        })
+      });
+    } else {
+      // Create new session
+      response = await fetch(`${API_BASE_URL}/api/ai-chat-sessions`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          title: `Chat ${new Date().toLocaleString()}`,
+          initialMessage: message,
+          commentaryStyle
+        })
+      });
+    }
     
     if (response.ok) {
       const responseData = await response.json();
       
-      // Remove the loading message
-      messagesContainer.removeChild(loadingMessage);
+      // Remove loading indicator
+      messagesContainer.removeChild(loadingElement);
       
-      // Create and display the AI response
-      const aiMessage = {
-        id: responseData.aiMessage?.id || Date.now(),
-        role: 'assistant',
-        content: responseData.aiMessage?.content || responseData.response
-      };
-      
-      const aiMessageElement = createMessageElement(aiMessage);
-      messagesContainer.appendChild(aiMessageElement);
+      if (currentChatSessionId === null) {
+        // New session was created
+        currentChatSessionId = responseData.sessionId;
+        
+        // Add AI response
+        const aiMessageElement = createMessageElement(responseData.message);
+        messagesContainer.appendChild(aiMessageElement);
+      } else {
+        // Add AI response to existing session
+        const aiMessageElement = createMessageElement(responseData);
+        messagesContainer.appendChild(aiMessageElement);
+      }
       
       // Scroll to the bottom
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      
-      // Update the current session ID if this was a new session
-      if (responseData.isNewSession && responseData.sessionId) {
-        currentChatSessionId = responseData.sessionId;
-        
-        // Update the chat title if needed
-        const chatTitle = document.getElementById('chatTitle');
-        if (chatTitle) {
-          // Use the first part of the user message as the title
-          chatTitle.textContent = message.length > 30 ? message.substring(0, 27) + '...' : message;
-        }
-      }
     } else {
-      // Remove the loading message
-      messagesContainer.removeChild(loadingMessage);
+      // Handle error
+      messagesContainer.removeChild(loadingElement);
       
-      // Show an error message
-      const errorMessage = document.createElement('div');
-      errorMessage.className = 'message message-error';
-      errorMessage.textContent = 'Failed to get response. Please try again.';
-      messagesContainer.appendChild(errorMessage);
+      const errorElement = document.createElement('div');
+      errorElement.className = 'error-message';
+      errorElement.textContent = 'Failed to get AI response. Please try again.';
+      messagesContainer.appendChild(errorElement);
     }
   } catch (error) {
     console.error('Error sending message:', error);
     
-    // Remove the loading message if it still exists
-    if (loadingMessage.parentNode) {
-      messagesContainer.removeChild(loadingMessage);
-    }
+    // Remove loading indicator
+    messagesContainer.removeChild(loadingElement);
     
-    // Show an error message
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'message message-error';
-    errorMessage.textContent = 'Failed to send message due to a network error. Please try again.';
-    messagesContainer.appendChild(errorMessage);
+    const errorElement = document.createElement('div');
+    errorElement.className = 'error-message';
+    errorElement.textContent = 'Error sending message. Please check your connection and try again.';
+    messagesContainer.appendChild(errorElement);
+  } finally {
+    // Re-enable send button
+    document.getElementById('sendButton').disabled = false;
+    document.getElementById('chatInput').focus();
   }
 }
 
@@ -826,140 +817,82 @@ function handleChatInputKeyDown(event) {
 }
 
 async function handleFileUpload(event) {
-  if (!event.target.files || event.target.files.length === 0) return;
-  if (!isAuthenticated || !currentUser) return;
+  const file = event.target.files[0];
+  if (!file) return;
   
   try {
-    const file = event.target.files[0];
+    // Create a FormData object
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('hostId', currentUser.id.toString());
     
-    // Show a loading indicator
-    const chatInput = document.getElementById('chatInput');
-    const originalPlaceholder = chatInput.placeholder;
-    chatInput.placeholder = 'Uploading file...';
-    chatInput.disabled = true;
-    
-    const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
+    // Upload the file
+    const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
       credentials: 'include',
-      body: formData,
+      body: formData
     });
     
     if (response.ok) {
-      const data = await response.json();
+      const fileData = await response.json();
       
-      // Add file info to the chat input
-      chatInput.value += `[Uploaded file: ${file.name}] ${data.url ? data.url : ''}`;
-      
-      // Show a tiny toast notification
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = `${file.name} uploaded!`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      // Add a message about the uploaded file
+      const chatInput = document.getElementById('chatInput');
+      chatInput.value = `I've uploaded a document: ${file.name}. Please analyze it.`;
+      chatInput.focus();
+      document.getElementById('sendButton').disabled = false;
     } else {
-      // Show an error message
-      const toast = document.createElement('div');
-      toast.className = 'toast toast-error';
-      toast.textContent = 'Failed to upload file';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      showToast('Failed to upload file', true);
     }
   } catch (error) {
     console.error('Error uploading file:', error);
-    // Show an error message
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-error';
-    toast.textContent = 'Failed to upload file';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
-  } finally {
-    // Reset the input and placeholder
-    const chatInput = document.getElementById('chatInput');
-    chatInput.placeholder = 'Type your message here...';
-    chatInput.disabled = false;
-    chatInput.focus();
-    
-    // Reset the file input
-    event.target.value = '';
+    showToast('Error uploading file', true);
   }
+  
+  // Clear the input
+  event.target.value = '';
 }
 
 async function handleImageUpload(event) {
-  if (!event.target.files || event.target.files.length === 0) return;
-  if (!isAuthenticated || !currentUser) return;
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Check if file is an image
+  if (!file.type.startsWith('image/')) {
+    showToast('Please select an image file', true);
+    event.target.value = '';
+    return;
+  }
   
   try {
-    const file = event.target.files[0];
-    
-    // Check if file is an image
-    if (!file.type.includes('image/')) {
-      // Show an error message
-      const toast = document.createElement('div');
-      toast.className = 'toast toast-error';
-      toast.textContent = 'File must be an image';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
-      return;
-    }
-    
+    // Create a FormData object
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('hostId', currentUser.id.toString());
-    formData.append('fileType', 'image');
     
-    // Show a loading indicator
-    const chatInput = document.getElementById('chatInput');
-    const originalPlaceholder = chatInput.placeholder;
-    chatInput.placeholder = 'Uploading image...';
-    chatInput.disabled = true;
-    
-    const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
+    // Upload the image
+    const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
       credentials: 'include',
-      body: formData,
+      body: formData
     });
     
     if (response.ok) {
-      const data = await response.json();
+      const fileData = await response.json();
       
-      // Add image info to the chat input
-      chatInput.value += `[Uploaded image: ${file.name}] ${data.url ? data.url : ''}`;
-      
-      // Show a tiny toast notification
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = `${file.name} uploaded!`;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      // Add a message about the uploaded image
+      const chatInput = document.getElementById('chatInput');
+      chatInput.value = `I've uploaded an image: ${file.name}. Please analyze it.`;
+      chatInput.focus();
+      document.getElementById('sendButton').disabled = false;
     } else {
-      // Show an error message
-      const toast = document.createElement('div');
-      toast.className = 'toast toast-error';
-      toast.textContent = 'Failed to upload image';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      showToast('Failed to upload image', true);
     }
   } catch (error) {
     console.error('Error uploading image:', error);
-    // Show an error message
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-error';
-    toast.textContent = 'Failed to upload image';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
-  } finally {
-    // Reset the input and placeholder
-    const chatInput = document.getElementById('chatInput');
-    chatInput.placeholder = 'Type your message here...';
-    chatInput.disabled = false;
-    chatInput.focus();
-    
-    // Reset the file input
-    event.target.value = '';
+    showToast('Error uploading image', true);
   }
+  
+  // Clear the input
+  event.target.value = '';
 }
 
 // Notepad functions
@@ -981,13 +914,13 @@ async function loadNotes() {
       const notesData = await response.json();
       savedNotes = notesData;
       
-      // Get the notepad list template and clone it
-      const notepadListTemplate = document.getElementById('notepad-list-template');
-      const notepadListContent = document.importNode(notepadListTemplate.content, true);
+      // Get the notes list template and clone it
+      const notesListTemplate = document.getElementById('notes-list-template');
+      const notesListContent = document.importNode(notesListTemplate.content, true);
       
       // Clear the content area and append the template
       notepadContent.innerHTML = '';
-      notepadContent.appendChild(notepadListContent);
+      notepadContent.appendChild(notesListContent);
       
       // Populate the notes list
       const notesList = document.querySelector('.notes-list');
@@ -997,7 +930,7 @@ async function loadNotes() {
           notesList.appendChild(noteItem);
         });
       } else {
-        notesList.innerHTML = '<div class="empty-notes-message">No notes yet. Create a new note to get started.</div>';
+        notesList.innerHTML = '<div class="empty-notes-message">No saved notes. Create a new note to get started.</div>';
       }
       
       // Add event listener to new note button
@@ -1018,13 +951,17 @@ function createNoteItem(note) {
   
   // Set note title and preview
   const titleElement = noteItem.querySelector('.note-title');
-  titleElement.textContent = note.title;
+  titleElement.textContent = note.title || 'Untitled Note';
   
   const previewElement = noteItem.querySelector('.note-preview');
-  previewElement.textContent = note.content.substring(0, 100) + (note.content.length > 100 ? '...' : '');
+  previewElement.textContent = note.content ? note.content.slice(0, 100) + (note.content.length > 100 ? '...' : '') : 'Empty note';
+  
+  // Set date
+  const dateElement = noteItem.querySelector('.note-date');
+  dateElement.textContent = new Date(note.updatedAt || note.createdAt).toLocaleDateString();
   
   // Add event listener to note item
-  const noteElement = noteItem.querySelector('.note-item');
+  const noteElement = noteItem.querySelector('.note');
   noteElement.addEventListener('click', () => viewNote(note.id));
   
   return noteItem;
@@ -1036,154 +973,114 @@ function createNewNote() {
 }
 
 async function viewNote(noteId) {
-  currentNoteId = noteId;
-  const note = savedNotes.find(n => n.id === noteId);
-  
-  if (!note) {
-    console.error('Note not found:', noteId);
-    return;
-  }
-  
-  showNoteViewer(note);
-}
-
-function showNoteEditor(existingNote = null) {
   try {
     const notepadContent = document.getElementById('notepad-content');
     
-    // Get the note editor template and clone it
-    const noteEditorTemplate = document.getElementById('note-editor-template');
-    const noteEditorContent = document.importNode(noteEditorTemplate.content, true);
+    // Start with a loading state
+    notepadContent.innerHTML = '<div class="loading">Loading note...</div>';
     
-    // Clear the content area and append the template
-    notepadContent.innerHTML = '';
-    notepadContent.appendChild(noteEditorContent);
-    
-    // Set up the note lines if editing an existing note
-    if (existingNote) {
-      const noteLines = existingNote.content.split('\n');
-      const noteLinesContainer = document.querySelector('.note-lines');
-      
-      noteLines.forEach(line => {
-        if (line.trim()) {
-          const lineElement = document.createElement('div');
-          lineElement.className = 'note-line';
-          lineElement.textContent = line;
-          noteLinesContainer.appendChild(lineElement);
-        }
-      });
-    }
-    
-    // Add event listeners
-    document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
-    document.getElementById('saveNoteButton').addEventListener('click', saveNote);
-    document.getElementById('addLineButton').addEventListener('click', addNoteLine);
-    
-    const noteInput = document.getElementById('noteInput');
-    const addLineButton = document.getElementById('addLineButton');
-    
-    // Enable/disable add button based on input
-    noteInput.addEventListener('input', () => {
-      addLineButton.disabled = noteInput.value.trim() === '';
+    // Fetch the note
+    const response = await fetch(`${API_BASE_URL}/api/notepads/note/${noteId}`, {
+      credentials: 'include'
     });
     
-    noteInput.addEventListener('keydown', handleNoteInputKeyDown);
-    noteInput.focus();
+    if (response.ok) {
+      const noteData = await response.json();
+      currentNoteId = noteData.id;
+      showNoteViewer(noteData);
+    } else {
+      notepadContent.innerHTML = '<div class="error">Failed to load note</div>';
+    }
   } catch (error) {
-    console.error('Error showing note editor:', error);
+    console.error('Error loading note:', error);
+    document.getElementById('notepad-content').innerHTML = '<div class="error">Error loading note</div>';
+  }
+}
+
+function showNoteEditor(existingNote = null) {
+  const notepadContent = document.getElementById('notepad-content');
+  
+  // Get the note editor template and clone it
+  const noteEditorTemplate = document.getElementById('note-editor-template');
+  const noteEditorContent = document.importNode(noteEditorTemplate.content, true);
+  
+  // Clear the content area and append the template
+  notepadContent.innerHTML = '';
+  notepadContent.appendChild(noteEditorContent);
+  
+  // Add event listeners
+  document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
+  document.getElementById('saveNoteButton').addEventListener('click', saveNote);
+  document.getElementById('addLineButton').addEventListener('click', addNoteLine);
+  
+  const noteInput = document.getElementById('noteInput');
+  noteInput.addEventListener('keydown', handleNoteInputKeyDown);
+  
+  // If editing existing note, populate the fields
+  if (existingNote) {
+    document.getElementById('noteTitle').value = existingNote.title || '';
+    document.getElementById('noteInput').value = existingNote.content || '';
+  }
+  
+  // Focus on title if empty, otherwise on content
+  if (!existingNote || !existingNote.title) {
+    document.getElementById('noteTitle').focus();
+  } else {
+    document.getElementById('noteInput').focus();
   }
 }
 
 function showNoteViewer(note) {
-  try {
-    const notepadContent = document.getElementById('notepad-content');
-    
-    // Get the note viewer template and clone it
-    const noteViewerTemplate = document.getElementById('note-viewer-template');
-    const noteViewerContent = document.importNode(noteViewerTemplate.content, true);
-    
-    // Clear the content area and append the template
-    notepadContent.innerHTML = '';
-    notepadContent.appendChild(noteViewerContent);
-    
-    // Set note title and content
-    document.getElementById('noteTitle').textContent = note.title;
-    
-    const noteContentElement = document.getElementById('noteContent');
-    note.content.split('\n').forEach(line => {
-      if (line.trim()) {
-        const paragraph = document.createElement('p');
-        paragraph.textContent = line;
-        noteContentElement.appendChild(paragraph);
-      } else {
-        noteContentElement.appendChild(document.createElement('br'));
-      }
-    });
-    
-    // Add event listeners
-    document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
-    document.getElementById('editNoteButton').addEventListener('click', () => showNoteEditor(note));
-  } catch (error) {
-    console.error('Error showing note viewer:', error);
-  }
+  const notepadContent = document.getElementById('notepad-content');
+  
+  // Get the note viewer template and clone it
+  const noteViewerTemplate = document.getElementById('note-viewer-template');
+  const noteViewerContent = document.importNode(noteViewerTemplate.content, true);
+  
+  // Clear the content area and append the template
+  notepadContent.innerHTML = '';
+  notepadContent.appendChild(noteViewerContent);
+  
+  // Add event listeners
+  document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
+  document.getElementById('editNoteButton').addEventListener('click', () => showNoteEditor(note));
+  
+  // Populate note details
+  document.getElementById('noteViewTitle').textContent = note.title || 'Untitled Note';
+  document.getElementById('noteViewContent').textContent = note.content || 'No content';
+  document.getElementById('noteViewDate').textContent = `Last updated: ${new Date(note.updatedAt || note.createdAt).toLocaleString()}`;
 }
 
 function addNoteLine() {
   const noteInput = document.getElementById('noteInput');
-  const line = noteInput.value.trim();
-  
-  if (!line) {
-    return;
-  }
-  
-  // Add the line to the note lines
-  const noteLinesContainer = document.querySelector('.note-lines');
-  const lineElement = document.createElement('div');
-  lineElement.className = 'note-line';
-  lineElement.textContent = line;
-  noteLinesContainer.appendChild(lineElement);
-  
-  // Clear the input
-  noteInput.value = '';
+  noteInput.value += '\n- ';
   noteInput.focus();
   
-  // Update the save button state
-  document.getElementById('saveNoteButton').disabled = false;
+  // Move cursor to the end
+  noteInput.selectionStart = noteInput.selectionEnd = noteInput.value.length;
 }
 
 async function saveNote() {
-  if (!isAuthenticated || !currentUser) {
+  const title = document.getElementById('noteTitle').value.trim();
+  const content = document.getElementById('noteInput').value.trim();
+  
+  if (!title && !content) {
+    showToast('Please enter a title or some content', true);
     return;
   }
-  
-  const noteLines = Array.from(document.querySelectorAll('.note-line')).map(line => line.textContent);
-  
-  if (noteLines.length === 0) {
-    // Show an error message
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-error';
-    toast.textContent = 'Note content cannot be empty';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
-    return;
-  }
-  
-  const content = noteLines.join('\n');
-  const title = noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? '...' : '');
   
   try {
     let response;
     
     if (currentNoteId) {
       // Update existing note
-      response = await fetch(`${API_BASE_URL}/api/notepads/${currentNoteId}`, {
+      response = await fetch(`${API_BASE_URL}/api/notepads/note/${currentNoteId}`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          hostId: currentUser.id,
           title,
           content
         })
@@ -1197,45 +1094,32 @@ async function saveNote() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          hostId: currentUser.id,
-          title,
+          userId: currentUser.id,
+          title: title || 'Untitled Note',
           content
         })
       });
     }
     
     if (response.ok) {
-      // Show a success message
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = currentNoteId ? 'Note updated!' : 'Note saved!';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      const noteData = await response.json();
+      currentNoteId = noteData.id;
       
-      // Go back to the notes list
-      await loadNotes();
+      showToast('Note saved successfully');
+      showNoteViewer(noteData);
     } else {
-      // Show an error message
-      const toast = document.createElement('div');
-      toast.className = 'toast toast-error';
-      toast.textContent = 'Failed to save note';
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 2000);
+      showToast('Failed to save note', true);
     }
   } catch (error) {
     console.error('Error saving note:', error);
-    // Show an error message
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-error';
-    toast.textContent = 'Failed to save note due to a network error';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
+    showToast('Error saving note', true);
   }
 }
 
 function handleNoteInputKeyDown(event) {
-  if (event.key === 'Enter') {
+  // Detect Ctrl+S or Cmd+S
+  if ((event.ctrlKey || event.metaKey) && event.key === 's') {
     event.preventDefault();
-    addNoteLine();
+    saveNote();
   }
 }
