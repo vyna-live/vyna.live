@@ -8,18 +8,22 @@ export function debugAuth(req: Request, res: Response, next: NextFunction) {
   // Log all cookies
   log(`REQUEST COOKIES: ${JSON.stringify(req.cookies)}`, 'auth-debug');
   
-  // Log auth status
-  log(`AUTHENTICATED: ${req.isAuthenticated()}`, 'auth-debug');
-  
-  // Log session
-  if (req.session) {
-    log(`SESSION ID: ${req.session.id}`, 'auth-debug');
-    log(`SESSION DATA: ${JSON.stringify(req.session)}`, 'auth-debug');
-  }
-  
-  // Log user if authenticated
-  if (req.isAuthenticated() && req.user) {
-    log(`USER: ${JSON.stringify(req.user)}`, 'auth-debug');
+  // Log auth status - safely check if isAuthenticated exists
+  if (typeof req.isAuthenticated === 'function') {
+    log(`AUTHENTICATED: ${req.isAuthenticated()}`, 'auth-debug');
+    
+    // Log session
+    if (req.session) {
+      log(`SESSION ID: ${req.session.id}`, 'auth-debug');
+      log(`SESSION DATA: ${JSON.stringify(req.session)}`, 'auth-debug');
+    }
+    
+    // Log user if authenticated
+    if (req.isAuthenticated() && req.user) {
+      log(`USER: ${JSON.stringify(req.user)}`, 'auth-debug');
+    }
+  } else {
+    log('Authentication status: isAuthenticated method not available', 'auth-debug');
   }
   
   next();
