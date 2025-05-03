@@ -1,61 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import AuthPage from '@libs/components/AuthPage';
+import AuthPage, { AuthPageProps } from '@libs/components/AuthPage';
 import Dashboard from '@libs/components/Dashboard';
-import { getAuthData, clearAuthData } from '@libs/utils/storage';
-import { type StoredAuthData } from '@libs/utils/storage';
+import { getAuthData, StoredAuthData } from '@libs/utils/storage';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authData, setAuthData] = useState<StoredAuthData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Check if user is authenticated
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
   useEffect(() => {
-    const checkAuth = async () => {
+    // Check if the user is already authenticated
+    async function checkAuth() {
       try {
-        const data = await getAuthData();
-        setAuthData(data);
-      } catch (error) {
-        console.error('Auth check failed:', error);
+        const storedAuthData = await getAuthData();
+        if (storedAuthData) {
+          setAuthData(storedAuthData);
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        console.error('Error checking authentication:', err);
+        setError('Failed to retrieve authentication data');
       } finally {
         setIsLoading(false);
       }
-    };
+    }
     
     checkAuth();
   }, []);
-
-  // Handle login success
+  
   const handleLoginSuccess = (data: StoredAuthData) => {
     setAuthData(data);
+    setIsAuthenticated(true);
+    setError(null);
   };
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await clearAuthData();
-      setAuthData(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  
+  const handleLogout = () => {
+    setAuthData(null);
+    setIsAuthenticated(false);
   };
-
-  // Show loading state
+  
   if (isLoading) {
     return (
       <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading...</p>
+        <div className="loading-spinner"></div>
+        <p>Loading Vyna AI Assistant...</p>
       </div>
     );
   }
-
-  // Show auth page if not authenticated
-  if (!authData || !authData.token) {
-    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  // Show dashboard if authenticated
-  return <Dashboard user={authData} onLogout={handleLogout} />;
+  
+  return (
+    <div className="app-wrapper">
+      {isAuthenticated && authData ? (
+        <Dashboard 
+          authData={authData} 
+          onLogout={handleLogout} 
+        />
+      ) : (
+        <AuthPage 
+          onLoginSuccess={handleLoginSuccess} 
+          error={error}
+        />
+      )}
+    </div>
+  );
 };
 
 export default App;

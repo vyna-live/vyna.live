@@ -7,6 +7,7 @@
     "build": "webpack --config webpack.config.js",
     "build:firefox": "webpack --config webpack.firefox.config.js",
     "watch": "webpack --config webpack.config.js --watch",
+    "convert-icons": "node scripts/convert-icons.js",
     "package": "npm run build && npm run build:firefox && node scripts/package.js"
   },
   "keywords": [
@@ -31,6 +32,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.10.0",
     "html-webpack-plugin": "^5.6.0",
+    "sharp": "^0.33.3",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.5",
