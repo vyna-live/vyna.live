@@ -1111,15 +1111,37 @@ function showNoteEditor(existingNote = null) {
   // Add event listeners
   document.getElementById('backToNotes').addEventListener('click', () => loadNotes());
   document.getElementById('saveNoteButton').addEventListener('click', saveNote);
-  document.getElementById('addLineButton').addEventListener('click', addNoteLine);
+  const addLineButton = document.getElementById('addLineButton');
+  addLineButton.addEventListener('click', addNoteLine);
+  
+  // Make sure add line button is always enabled
+  addLineButton.disabled = false;
   
   const noteInput = document.getElementById('noteInput');
+  const saveNoteButton = document.getElementById('saveNoteButton');
+  const noteTitle = document.getElementById('noteTitle');
+  
+  // Add keydown handler
   noteInput.addEventListener('keydown', handleNoteInputKeyDown);
+  
+  // Enable/disable save button based on input
+  const updateSaveButtonState = () => {
+    saveNoteButton.disabled = noteInput.value.trim() === '' && noteTitle.value.trim() === '';
+  };
+  
+  noteInput.addEventListener('input', updateSaveButtonState);
+  noteTitle.addEventListener('input', updateSaveButtonState);
+  
+  // Initialize button state
+  updateSaveButtonState();
   
   // If editing existing note, populate the fields
   if (existingNote) {
     document.getElementById('noteTitle').value = existingNote.title || '';
     document.getElementById('noteInput').value = existingNote.content || '';
+    
+    // Ensure save button is updated with the loaded content
+    updateSaveButtonState();
   }
   
   // Focus on title if empty, otherwise on content
@@ -1158,6 +1180,9 @@ function addNoteLine() {
   
   // Move cursor to the end
   noteInput.selectionStart = noteInput.selectionEnd = noteInput.value.length;
+  
+  // Manually trigger input event to update save button state
+  noteInput.dispatchEvent(new Event('input'));
 }
 
 async function saveNote() {
