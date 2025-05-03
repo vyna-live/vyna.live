@@ -1,191 +1,171 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getSettings, updateSettings } from '../utils/storage';
-import { clearUserAuth } from '../utils/storage';
+import { getUserPreferences, updateUserPreferences, clearAuthData } from '@libs/utils/storage';
 import Logo from './ui/Logo';
 
 interface SettingsViewProps {
-  user: any;
+  onLogout: () => Promise<void>;
 }
 
-const SettingsView: React.FC<SettingsViewProps> = ({ user }) => {
-  const navigate = useNavigate();
-  
-  const [loading, setLoading] = useState<boolean>(false);
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-  
-  // Settings state
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
-  const [defaultCommentaryStyle, setDefaultCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
-  const [autoSaveNotes, setAutoSaveNotes] = useState<boolean>(true);
-  
-  // Load settings on mount
+const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
+  const [preferences, setPreferences] = useState({
+    theme: 'system',
+    fontSize: 'medium',
+    teleprompterSpeed: 5,
+    defaultCommentaryStyle: 'color'
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string>('');
+
+  // Load user preferences
   useEffect(() => {
-    const loadSettings = async () => {
+    const loadPreferences = async () => {
       try {
-        const settings = await getSettings();
-        setTheme(settings.theme);
-        setDefaultCommentaryStyle(settings.defaultCommentaryStyle);
-        setAutoSaveNotes(settings.autoSaveNotes);
+        setIsLoading(true);
+        const userPrefs = await getUserPreferences();
+        setPreferences(userPrefs);
       } catch (error) {
-        console.error('Error loading settings:', error);
+        console.error('Failed to load preferences:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    loadSettings();
+    loadPreferences();
   }, []);
   
-  const handleSaveSettings = async () => {
-    setLoading(true);
-    setSaveSuccess(false);
-    
+  // Handle saving preferences
+  const handleSavePreferences = async () => {
     try {
-      await updateSettings({
-        theme,
-        defaultCommentaryStyle,
-        autoSaveNotes
-      });
+      setIsLoading(true);
+      await updateUserPreferences(preferences);
+      setSaveMessage('Settings saved successfully');
       
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 3000);
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('Failed to save preferences:', error);
+      setSaveMessage('Failed to save settings');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
   
+  // Handle preference change
+  const handlePreferenceChange = (key: string, value: any) => {
+    setPreferences(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+  
   return (
-    <div className="flex flex-col h-full">
-      <header className="flex justify-between items-center p-4 border-b">
-        <button 
-          onClick={() => navigate('/')}
-          className="flex items-center text-primary"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="ml-2">Back</span>
-        </button>
-        <Logo size="small" variant="icon" />
-      </header>
+    <div className="settings-view">
+      <div className="settings-header">
+        <h2>Settings</h2>
+      </div>
       
-      <div className="flex-grow p-4 overflow-y-auto">
-        <h1 className="text-xl font-medium mb-6">Settings</h1>
+      <div className="settings-content">
+        <div className="about-section">
+          <Logo size="small" variant="default" />
+          <div className="version-info">
+            <p>Version 1.0.0</p>
+            <p><a href="https://vyna.live/help" target="_blank" rel="noopener noreferrer">Help Center</a></p>
+          </div>
+        </div>
         
-        {saveSuccess && (
-          <div className="bg-green-50 p-3 rounded-md text-green-600 text-sm mb-6">
-            Settings saved successfully
-          </div>
-        )}
-        
-        <div className="space-y-6">
-          <div>
-            <h2 className="font-medium mb-3">Appearance</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Theme</label>
-                <select
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
-                  className="w-full"
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="system">System Default</option>
-                </select>
-              </div>
-            </div>
-          </div>
+        <div className="settings-section">
+          <h3>Appearance</h3>
           
-          <div>
-            <h2 className="font-medium mb-3">AI Assistant</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">Default Commentary Style</label>
-                <select
-                  value={defaultCommentaryStyle}
-                  onChange={(e) => setDefaultCommentaryStyle(e.target.value as 'play-by-play' | 'color')}
-                  className="w-full"
-                >
-                  <option value="color">Color Commentary (detailed, insightful)</option>
-                  <option value="play-by-play">Play-by-Play (quick, action-oriented)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h2 className="font-medium mb-3">Notepad</h2>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="auto-save"
-                  checked={autoSaveNotes}
-                  onChange={(e) => setAutoSaveNotes(e.target.checked)}
-                  className="mr-2"
-                />
-                <label htmlFor="auto-save" className="text-sm font-medium">Auto-save notes</label>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h2 className="font-medium mb-3">Account</h2>
-            <div className="mb-2">
-              <span className="text-sm">Signed in as: </span>
-              <span className="text-sm font-medium">{user.username}</span>
-            </div>
-            <button
-              onClick={() => {
-                clearUserAuth();
-                window.location.reload();
-              }}
-              className="text-red-600 text-sm font-medium"
+          <div className="setting-item">
+            <label htmlFor="theme">Theme</label>
+            <select 
+              id="theme" 
+              value={preferences.theme} 
+              onChange={(e) => handlePreferenceChange('theme', e.target.value)}
+              disabled={isLoading}
             >
-              Sign out
-            </button>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="system">System Default</option>
+            </select>
           </div>
           
-          <div>
-            <h2 className="font-medium mb-3">About</h2>
-            <div className="text-sm space-y-1">
-              <p>Vyna Extension v1.0.0</p>
-              <p>© 2025 Vyna.live</p>
-              <p className="mt-2">
-                <a 
-                  href="https://vyna.live/privacy" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary"
-                >
-                  Privacy Policy
-                </a>
-                {' '}&middot;{' '}
-                <a 
-                  href="https://vyna.live/terms" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary"
-                >
-                  Terms of Service
-                </a>
-              </p>
+          <div className="setting-item">
+            <label htmlFor="fontSize">Font Size</label>
+            <select 
+              id="fontSize" 
+              value={preferences.fontSize} 
+              onChange={(e) => handlePreferenceChange('fontSize', e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="settings-section">
+          <h3>AI Assistant</h3>
+          
+          <div className="setting-item">
+            <label htmlFor="defaultCommentaryStyle">Default Commentary Style</label>
+            <select 
+              id="defaultCommentaryStyle" 
+              value={preferences.defaultCommentaryStyle} 
+              onChange={(e) => handlePreferenceChange('defaultCommentaryStyle', e.target.value)}
+              disabled={isLoading}
+            >
+              <option value="color">Color Commentary</option>
+              <option value="play-by-play">Play-by-Play Commentary</option>
+            </select>
+          </div>
+          
+          <div className="setting-item">
+            <label htmlFor="teleprompterSpeed">Teleprompter Speed</label>
+            <div className="slider-container">
+              <input 
+                type="range" 
+                id="teleprompterSpeed" 
+                min="1" 
+                max="10" 
+                value={preferences.teleprompterSpeed} 
+                onChange={(e) => handlePreferenceChange('teleprompterSpeed', parseInt(e.target.value))}
+                disabled={isLoading}
+              />
+              <span className="slider-value">{preferences.teleprompterSpeed}</span>
             </div>
           </div>
         </div>
+        
+        <div className="settings-section">
+          <h3>Account</h3>
+          
+          <button 
+            className="logout-button" 
+            onClick={onLogout}
+            disabled={isLoading}
+          >
+            Sign Out
+          </button>
+        </div>
+        
+        <div className="settings-actions">
+          <button 
+            className="save-button"
+            onClick={handleSavePreferences}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Settings'}
+          </button>
+          
+          {saveMessage && (
+            <div className="save-message">{saveMessage}</div>
+          )}
+        </div>
       </div>
-      
-      <footer className="border-t p-4">
-        <button
-          onClick={handleSaveSettings}
-          className="btn btn-primary w-full"
-          disabled={loading}
-        >
-          {loading ? 'Saving...' : 'Save Settings'}
-        </button>
-      </footer>
     </div>
   );
 };

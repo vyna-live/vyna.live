@@ -1,170 +1,138 @@
-// Storage Utility Functions for Browser Extension
+/**
+ * Utilities for working with browser extension storage
+ */
 
-// Define types for stored data
-export interface UserAuth {
-  user: any;
-  token: string;
-  expiresAt?: number;
-}
-
-export interface Settings {
+// Types for stored data
+export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
+  fontSize: 'small' | 'medium' | 'large';
+  teleprompterSpeed: number; // 1-10
   defaultCommentaryStyle: 'play-by-play' | 'color';
-  autoSaveNotes: boolean;
 }
 
-// Constants
-const USER_AUTH_KEY = 'userAuth';
-const SETTINGS_KEY = 'settings';
+export interface StoredAuthData {
+  token?: string;
+  userId?: number;
+  username?: string;
+  displayName?: string;
+  lastLogin?: string;
+}
 
-// Default settings
-const DEFAULT_SETTINGS: Settings = {
+// Default values
+const DEFAULT_PREFERENCES: UserPreferences = {
   theme: 'system',
+  fontSize: 'medium',
+  teleprompterSpeed: 5,
   defaultCommentaryStyle: 'color',
-  autoSaveNotes: true
 };
 
-// Initialize storage with default values if needed
-export const initStorage = async (): Promise<void> => {
-  try {
-    // Check if settings exist, if not create them
-    const settings = await chrome.storage.local.get(SETTINGS_KEY);
-    if (!settings[SETTINGS_KEY]) {
-      await chrome.storage.local.set({ [SETTINGS_KEY]: DEFAULT_SETTINGS });
-    }
-    
-    // Check if auth token is expired and clear if needed
-    const auth = await chrome.storage.local.get(USER_AUTH_KEY);
-    if (auth[USER_AUTH_KEY]?.expiresAt && auth[USER_AUTH_KEY].expiresAt < Date.now()) {
-      await chrome.storage.local.remove(USER_AUTH_KEY);
-    }
-  } catch (error) {
-    console.error('Error initializing storage:', error);
-  }
-};
+/**
+ * Get data from storage
+ */
+export async function getStorageData<T>(key: string, defaultValue: T): Promise<T> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(key, (result) => {
+      resolve(result[key] === undefined ? defaultValue : result[key]);
+    });
+  });
+}
 
-// User Authentication Storage
+/**
+ * Save data to storage
+ */
+export async function setStorageData(key: string, value: any): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [key]: value }, () => {
+      resolve();
+    });
+  });
+}
 
-// Set user authentication data
-export const setUserAuth = async (authData: UserAuth): Promise<void> => {
-  try {
-    // Add expiration time if not present (default 7 days)
-    if (!authData.expiresAt) {
-      authData.expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
-    }
-    
-    await chrome.storage.local.set({ [USER_AUTH_KEY]: authData });
-  } catch (error) {
-    console.error('Error saving auth data:', error);
-    throw error;
-  }
-};
+/**
+ * Remove data from storage
+ */
+export async function removeStorageData(key: string): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.remove(key, () => {
+      resolve();
+    });
+  });
+}
 
-// Get user authentication data
-export const getUserAuth = async (): Promise<UserAuth | null> => {
-  try {
-    const data = await chrome.storage.local.get(USER_AUTH_KEY);
-    return data[USER_AUTH_KEY] || null;
-  } catch (error) {
-    console.error('Error getting auth data:', error);
-    return null;
-  }
-};
+/**
+ * Get user preferences
+ */
+export async function getUserPreferences(): Promise<UserPreferences> {
+  return getStorageData<UserPreferences>('preferences', DEFAULT_PREFERENCES);
+}
 
-// Clear user authentication data (logout)
-export const clearUserAuth = async (): Promise<void> => {
-  try {
-    await chrome.storage.local.remove(USER_AUTH_KEY);
-  } catch (error) {
-    console.error('Error clearing auth data:', error);
-    throw error;
-  }
-};
+/**
+ * Update user preferences
+ */
+export async function updateUserPreferences(preferences: Partial<UserPreferences>): Promise<UserPreferences> {
+  const currentPreferences = await getUserPreferences();
+  const updatedPreferences = { ...currentPreferences, ...preferences };
+  await setStorageData('preferences', updatedPreferences);
+  return updatedPreferences;
+}
 
-// Settings Storage
+/**
+ * Get authenticated user data
+ */
+export async function getAuthData(): Promise<StoredAuthData | null> {
+  return getStorageData<StoredAuthData | null>('authData', null);
+}
 
-// Get user settings
-export const getSettings = async (): Promise<Settings> => {
-  try {
-    const data = await chrome.storage.local.get(SETTINGS_KEY);
-    return data[SETTINGS_KEY] || DEFAULT_SETTINGS;
-  } catch (error) {
-    console.error('Error getting settings:', error);
-    return DEFAULT_SETTINGS;
-  }
-};
+/**
+ * Set authenticated user data
+ */
+export async function setAuthData(authData: StoredAuthData): Promise<void> {
+  return setStorageData('authData', authData);
+}
 
-// Update user settings
-export const updateSettings = async (settings: Settings): Promise<void> => {
-  try {
-    await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
-    
-    // Apply theme to document
-    document.documentElement.setAttribute('data-theme', settings.theme);
-  } catch (error) {
-    console.error('Error updating settings:', error);
-    throw error;
-  }
-};
+/**
+ * Clear authenticated user data (logout)
+ */
+export async function clearAuthData(): Promise<void> {
+  return removeStorageData('authData');
+}
 
-// Recent Searches Storage
+/**
+ * Save currently selected session ID
+ */
+export async function setCurrentSessionId(sessionId: number): Promise<void> {
+  return setStorageData('currentSessionId', sessionId);
+}
 
-const RECENT_SEARCHES_KEY = 'recentSearches';
-const MAX_RECENT_SEARCHES = 10;
+/**
+ * Get currently selected session ID
+ */
+export async function getCurrentSessionId(): Promise<number | null> {
+  return getStorageData<number | null>('currentSessionId', null);
+}
 
-// Add a search query to recent searches
-export const addRecentSearch = async (query: string): Promise<void> => {
-  try {
-    const data = await chrome.storage.local.get(RECENT_SEARCHES_KEY);
-    let searches = data[RECENT_SEARCHES_KEY] || [];
-    
-    // Remove if already exists (to avoid duplicates)
-    searches = searches.filter((item: string) => item !== query);
-    
-    // Add to beginning of array
-    searches.unshift(query);
-    
-    // Limit to max items
-    searches = searches.slice(0, MAX_RECENT_SEARCHES);
-    
-    await chrome.storage.local.set({ [RECENT_SEARCHES_KEY]: searches });
-  } catch (error) {
-    console.error('Error adding recent search:', error);
-  }
-};
+/**
+ * Save page context for current page
+ */
+export async function savePageContext(pageData: {
+  url: string;
+  title: string;
+  content: string;
+}): Promise<void> {
+  return setStorageData('pageContext', {
+    ...pageData,
+    timestamp: new Date().toISOString(),
+  });
+}
 
-// Get recent searches
-export const getRecentSearches = async (): Promise<string[]> => {
-  try {
-    const data = await chrome.storage.local.get(RECENT_SEARCHES_KEY);
-    return data[RECENT_SEARCHES_KEY] || [];
-  } catch (error) {
-    console.error('Error getting recent searches:', error);
-    return [];
-  }
-};
-
-// Clear recent searches
-export const clearRecentSearches = async (): Promise<void> => {
-  try {
-    await chrome.storage.local.remove(RECENT_SEARCHES_KEY);
-  } catch (error) {
-    console.error('Error clearing recent searches:', error);
-  }
-};
-
-// Apply Settings Function
-
-// Apply current settings to the UI
-export const applyCurrentSettings = async (): Promise<void> => {
-  try {
-    const settings = await getSettings();
-    
-    // Apply theme to document
-    document.documentElement.setAttribute('data-theme', settings.theme);
-    
-    // Apply any other settings as needed
-  } catch (error) {
-    console.error('Error applying settings:', error);
-  }
-};
+/**
+ * Get saved page context
+ */
+export async function getPageContext(): Promise<{
+  url: string;
+  title: string;
+  content: string;
+  timestamp: string;
+} | null> {
+  return getStorageData('pageContext', null);
+}

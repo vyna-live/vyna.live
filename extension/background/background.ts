@@ -1,112 +1,145 @@
-// Background script for Vyna browser extension
+/**
+ * Background script for Vyna AI Assistant
+ * 
+ * This script runs in the background and is responsible for:
+ * 1. Handling messages from content scripts
+ * 2. Managing authentication state
+ * 3. Coordinating with the API
+ * 4. Storing and retrieving data
+ */
 
-// Import PageContent type from content script
-import { PageContent } from '../content/content';
+import { savePageContext, getPageContext } from '@libs/utils/storage';
+import { sendPageContext } from '@libs/utils/api';
 
-// Store page content temporarily
-let currentPageContent: PageContent | null = null;
+interface PageData {
+  url: string;
+  title: string;
+  content: string;
+}
 
-// Store user's selection
-let currentSelection: string = '';
+// Global state to track the active tab
+let activeTabId: number | null = null;
+let currentPageContent: PageData | null = null;
 
-// Initialize badge
-chrome.action.setBadgeBackgroundColor({ color: '#5D1C34' }); // Vyna maroon color
-
-// Listen for messages from content scripts and popup
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  // Handle content script loading
-  if (message.action === 'contentScriptLoaded') {
-    // Content script loaded on a page, can track this if needed
-    chrome.action.setBadgeText({ text: '✓' });
-    setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2000);
-    
-    // Clear the current page content as we're on a new page
-    currentPageContent = null;
-  }
-  
-  // Handle selection updates from content script
-  else if (message.action === 'updateSelection') {
-    currentSelection = message.selection;
-  }
-  
-  // Handle page content requests from popup
-  else if (message.action === 'getPageContent') {
-    // If we already have page content cached, return it immediately
-    if (currentPageContent) {
-      // Update with latest selection
-      currentPageContent.selection = currentSelection;
-      sendResponse({
-        success: true,
-        content: currentPageContent
-      });
-      return true;
-    }
-    
-    // Otherwise, get it from the active tab
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (!tabs[0] || !tabs[0].id) {
-        sendResponse({
-          success: false,
-          error: 'No active tab found'
-        });
-        return;
-      }
-      
-      // Send message to content script to get page content
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'getPageContent' }, (response) => {
-        if (chrome.runtime.lastError) {
-          // Content script might not be loaded
-          sendResponse({
-            success: false,
-            error: chrome.runtime.lastError.message || 'Could not communicate with page'
-          });
-          return;
-        }
-        
-        if (response && response.success) {
-          // Cache the page content
-          currentPageContent = response.content;
-          // Make sure we have the most recent selection
-          if (currentSelection) {
-            currentPageContent.selection = currentSelection;
-          }
-          
-          sendResponse({
-            success: true,
-            content: currentPageContent
-          });
-        } else {
-          sendResponse({
-            success: false,
-            error: 'Failed to extract page content'
-          });
-        }
-      });
-    });
-    
-    // Return true to indicate we'll respond asynchronously
-    return true;
-  }
-});
-
-// Listen for tab updates to reset page content
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete') {
-    // Reset page content when a tab completes loading
-    currentPageContent = null;
-    currentSelection = '';
-  }
-});
-
-// Listen for installation or update
-chrome.runtime.onInstalled.addListener((details) => {
+/**
+ * Initialize the extension when installed or updated
+ */
+chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
-    // First time installation
+    // First-time installation
+    console.log('Vyna AI Assistant installed');
+    
+    // Open the welcome page
     chrome.tabs.create({
       url: 'https://vyna.live/welcome-extension'
     });
   } else if (details.reason === 'update') {
-    // Extension updated - could show release notes
-    console.log('Vyna extension updated to version', chrome.runtime.getManifest().version);
+    console.log(`Vyna AI Assistant updated to version ${chrome.runtime.getManifest().version}`);
   }
 });
+
+/**
+ * Handle messages from content scripts and popup
+ */
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Handle messages based on action
+  if (message.action === 'setPageContext') {
+    handlePageContext(message.data, sender.tab?.id);
+    sendResponse({ success: true });
+  } else if (message.action === 'getPageContext') {
+    getPageContext().then(context => {
+      sendResponse({ success: true, data: context });
+    });
+    return true; // Keep the message channel open for async response
+  } else if (message.action === 'refreshPageContext') {
+    refreshPageContext().then(response => {
+      sendResponse(response);
+    });
+    return true; // Keep the message channel open for async response
+  }
+});
+
+/**
+ * Track active tab changes
+ */
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  activeTabId = activeInfo.tabId;
+  await requestContentFromActiveTab();
+});
+
+/**
+ * Track tab URL changes
+ */
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (tabId === activeTabId && changeInfo.status === 'complete') {
+    await requestContentFromActiveTab();
+  }
+});
+
+/**
+ * Handle page context data from content script
+ */
+async function handlePageContext(pageData: PageData, tabId?: number) {
+  if (tabId && tabId === activeTabId) {
+    currentPageContent = pageData;
+    await savePageContext(pageData);
+    
+    // Optionally send to API if user is authenticated
+    try {
+      await sendPageContext(pageData);
+    } catch (error) {
+      console.log('Failed to send page context to API, user may not be authenticated');
+    }
+  }
+}
+
+/**
+ * Request fresh content from the active tab
+ */
+async function requestContentFromActiveTab(): Promise<PageData | null> {
+  if (!activeTabId) return null;
+  
+  try {
+    // Check if the tab is still available
+    const tab = await chrome.tabs.get(activeTabId);
+    
+    // Skip if it's a chrome:// or edge:// or about: URL (extensions can't access these)
+    if (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:'))) {
+      return null;
+    }
+    
+    // Send a message to the content script to get the page content
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(activeTabId!, { action: 'getPageContent' }, (response) => {
+        if (chrome.runtime.lastError) {
+          // Content script not available or not loaded yet
+          console.log('Content script not available:', chrome.runtime.lastError.message);
+          resolve(null);
+          return;
+        }
+        
+        if (response) {
+          handlePageContext(response, activeTabId);
+          resolve(response);
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error requesting content from tab:', error);
+    return null;
+  }
+}
+
+/**
+ * Refresh the page context data (used by popup)
+ */
+async function refreshPageContext(): Promise<{ success: boolean; data?: PageData }> {
+  const data = await requestContentFromActiveTab();
+  if (data) {
+    return { success: true, data };
+  } else {
+    return { success: false };
+  }
+}

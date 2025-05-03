@@ -1,242 +1,137 @@
-// API Utility Functions
-
-// Base API URL
+// Base URL for the API
 const API_BASE_URL = 'https://vyna.live/api';
 
-// Helper function to construct API URLs
-const buildUrl = (endpoint: string): string => {
-  return `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-};
+/**
+ * Base function for making API requests
+ */
+async function apiRequest<T>(
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  endpoint: string,
+  data?: any
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const options: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for authentication
+  };
 
-// Basic request function with error handling
-const makeRequest = async (url: string, options: RequestInit = {}) => {
-  try {
-    const response = await fetch(url, options);
-    const data = await response.json();
-    
-    if (!response.ok) {
-      return {
-        success: false,
-        error: data.message || data.error || 'An error occurred while making the request',
-        status: response.status
-      };
-    }
-    
-    return {
-      success: true,
-      data,
-      status: response.status
-    };
-  } catch (error) {
-    console.error('API request error:', error);
-    return {
-      success: false,
-      error: 'Network error. Please check your connection.',
-      status: 0
-    };
+  if (data) {
+    options.body = JSON.stringify(data);
   }
-};
 
-// Authentication Functions
-
-// Register a new user
-export const register = async (username: string, email: string, password: string) => {
-  const url = buildUrl('/register');
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ username, email, password })
-  };
+  const response = await fetch(url, options);
   
-  return await makeRequest(url, options);
-};
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+    throw new Error(errorData.message || `API request failed with status ${response.status}`);
+  }
 
-// Login an existing user
-export const login = async (username: string, password: string) => {
-  const url = buildUrl('/login');
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ username, password })
-  };
-  
-  return await makeRequest(url, options);
-};
+  return response.json();
+}
 
-// Logout current user
-export const logout = async (token: string) => {
-  const url = buildUrl('/logout');
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
+/**
+ * Auth-related API functions
+ */
+export async function getAuthStatus(): Promise<{ isAuthenticated: boolean, user?: any }> {
+  try {
+    const user = await apiRequest<any>('GET', '/user');
+    return { isAuthenticated: true, user };
+  } catch (error) {
+    return { isAuthenticated: false };
+  }
+}
 
-// Get current user information
-export const getCurrentUser = async (token: string) => {
-  const url = buildUrl('/user');
-  const options = {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function login(username: string, password: string): Promise<any> {
+  return apiRequest<any>('POST', '/login', { username, password });
+}
 
-// AI Chat Functions
+export async function logout(): Promise<void> {
+  return apiRequest<void>('POST', '/logout');
+}
 
-// Get AI response
-export const getAiResponse = async (message: string, commentaryStyle: 'play-by-play' | 'color', token: string) => {
-  const url = buildUrl('/ai/chat');
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ message, commentaryStyle })
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function register(userData: { 
+  username: string; 
+  email: string; 
+  password: string; 
+  displayName?: string 
+}): Promise<any> {
+  return apiRequest<any>('POST', '/register', userData);
+}
 
-// Create new chat session
-export const createChatSession = async (title: string, token: string) => {
-  const url = buildUrl('/ai/chat/session');
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ title })
-  };
-  
-  return await makeRequest(url, options);
-};
+/**
+ * AI Chat API functions
+ */
+export async function getChatSessions(): Promise<any[]> {
+  return apiRequest<any[]>('GET', '/ai-chat/sessions');
+}
 
-// Get chat sessions
-export const getChatSessions = async (token: string) => {
-  const url = buildUrl('/ai/chat/sessions');
-  const options = {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function createChatSession(title: string): Promise<any> {
+  return apiRequest<any>('POST', '/ai-chat/sessions', { title });
+}
 
-// Get chat session messages
-export const getChatSessionMessages = async (sessionId: number, token: string) => {
-  const url = buildUrl(`/ai/chat/session/${sessionId}`);
-  const options = {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function getChatMessages(sessionId: number): Promise<any[]> {
+  return apiRequest<any[]>('GET', `/ai-chat/sessions/${sessionId}/messages`);
+}
 
-// Notepad Functions
+export async function sendChatMessage(sessionId: number, message: string, commentaryStyle?: 'play-by-play' | 'color'): Promise<any> {
+  return apiRequest<any>('POST', `/ai-chat/sessions/${sessionId}/messages`, { 
+    content: message,
+    commentaryStyle: commentaryStyle || 'color'
+  });
+}
 
-// Get user notes
-export const getNotes = async (token: string) => {
-  const url = buildUrl('/notes');
-  const options = {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
+/**
+ * Notepad API functions
+ */
+export async function getNotes(): Promise<any[]> {
+  return apiRequest<any[]>('GET', '/notepads');
+}
 
-// Get specific note
-export const getNote = async (noteId: number, token: string) => {
-  const url = buildUrl(`/notes/${noteId}`);
-  const options = {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function createNote(title: string, content: string): Promise<any> {
+  return apiRequest<any>('POST', '/notepads', { title, content });
+}
 
-// Save new note
-export const saveNote = async (title: string, content: string, token: string) => {
-  const url = buildUrl('/notes');
-  const options = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ title, content })
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function updateNote(noteId: number, data: { title?: string; content?: string }): Promise<any> {
+  return apiRequest<any>('PUT', `/notepads/${noteId}`, data);
+}
 
-// Update existing note
-export const updateNote = async (noteId: number, title: string, content: string, token: string) => {
-  const url = buildUrl(`/notes/${noteId}`);
-  const options = {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ title, content })
-  };
-  
-  return await makeRequest(url, options);
-};
+export async function deleteNote(noteId: number): Promise<void> {
+  return apiRequest<void>('DELETE', `/notepads/${noteId}`);
+}
 
-// Delete note
-export const deleteNote = async (noteId: number, token: string) => {
-  const url = buildUrl(`/notes/${noteId}`);
-  const options = {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
-  };
-  
-  return await makeRequest(url, options);
-};
-
-// File upload function (for AI context)
-export const uploadFile = async (file: File, token: string) => {
-  const url = buildUrl('/files/upload');
-  
+/**
+ * File upload API functions
+ */
+export async function uploadFile(file: File): Promise<any> {
   const formData = new FormData();
   formData.append('file', file);
   
-  const options = {
+  const url = `${API_BASE_URL}/files/upload`;
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    body: formData
-  };
+    credentials: 'include',
+    body: formData,
+  });
   
-  return await makeRequest(url, options);
-};
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+    throw new Error(errorData.message || `File upload failed with status ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Page context API function to send current page data to be processed
+ */
+export async function sendPageContext(pageData: {
+  url: string;
+  title: string;
+  content: string;
+}): Promise<any> {
+  return apiRequest<any>('POST', '/context', pageData);
+}

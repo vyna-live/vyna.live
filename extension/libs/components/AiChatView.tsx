@@ -1,107 +1,147 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { getChatSessions, createChatSession, getChatMessages, sendChatMessage } from '@libs/utils/api';
+import { getPageContext, getCurrentSessionId, setCurrentSessionId } from '@libs/utils/storage';
 
-interface AiChatViewProps {
-  user: any;
+interface ChatSession {
+  id: number;
+  title: string;
+  createdAt: string;
 }
 
-const AiChatView: React.FC<AiChatViewProps> = ({ user }) => {
-  const navigate = useNavigate();
-  const { getAiResponse, createChatSession } = require('../utils/api');
-  const { getUserAuth } = require('../utils/storage');
-  const Logo = require('./ui/Logo').default;
-  
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string>('');
-  const [messages, setMessages] = useState<Array<{content: string, role: 'user' | 'assistant', timestamp: number}>>([]);
+interface ChatMessage {
+  id: number;
+  content: string;
+  role: 'user' | 'assistant';
+  commentaryStyle?: 'play-by-play' | 'color';
+  createdAt: string;
+}
+
+const AiChatView: React.FC = () => {
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionIdState] = useState<number | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [pageContext, setPageContext] = useState<any>(null);
   const [commentaryStyle, setCommentaryStyle] = useState<'play-by-play' | 'color'>('color');
-  const [pageContent, setPageContent] = useState<any>(null);
-  const [token, setToken] = useState<string>('');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-  
-  // Get page content and token on mount
+
   useEffect(() => {
-    const init = async () => {
+    const loadInitialData = async () => {
       try {
-        // Get user token
-        const auth = await getUserAuth();
-        if (auth?.token) {
-          setToken(auth.token);
-        }
+        setIsLoading(true);
         
-        // Get content from current page
-        chrome.runtime.sendMessage({ action: 'getPageContent' }, (response) => {
-          if (response?.success && response?.content) {
-            setPageContent(response.content);
-          }
-        });
+        // Load page context
+        const context = await getPageContext();
+        setPageContext(context);
+        
+        // Load chat sessions
+        const allSessions = await getChatSessions();
+        setSessions(allSessions);
+        
+        // Get stored current session ID
+        const storedSessionId = await getCurrentSessionId();
+        
+        if (storedSessionId && allSessions.some(s => s.id === storedSessionId)) {
+          // If stored session exists, use it
+          setCurrentSessionIdState(storedSessionId);
+          const sessionMessages = await getChatMessages(storedSessionId);
+          setMessages(sessionMessages);
+        } else if (allSessions.length > 0) {
+          // Otherwise use the most recent session
+          const latestSession = allSessions[0];
+          setCurrentSessionIdState(latestSession.id);
+          await setCurrentSessionId(latestSession.id);
+          const sessionMessages = await getChatMessages(latestSession.id);
+          setMessages(sessionMessages);
+        }
       } catch (error) {
-        console.error('Error initializing AI chat:', error);
+        console.error('Failed to load initial data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    init();
+    loadInitialData();
   }, []);
   
   useEffect(() => {
-    scrollToBottom();
+    // Scroll to bottom of messages
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!message.trim()) return;
-    
-    const userMsg = message.trim();
-    setMessage('');
-    
-    // Add user message to chat
-    setMessages(prev => [...prev, {
-      content: userMsg,
-      role: 'user',
-      timestamp: Date.now()
-    }]);
-    
-    setLoading(true);
-    setError(null);
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !currentSessionId || isLoading) return;
     
     try {
-      // Add page context if available
-      let contextMessage = userMsg;
-      if (pageContent) {
-        // If user has highlighted text, use that as context
-        if (pageContent.selection) {
-          contextMessage = `[Context from current page: "${pageContent.selection}"] ${userMsg}`;
-        } 
-        // Otherwise use the page title and URL as minimal context
-        else {
-          contextMessage = `[Currently on: ${pageContent.title} (${pageContent.url})] ${userMsg}`;
-        }
-      }
+      setIsLoading(true);
       
-      const response = await getAiResponse(contextMessage, commentaryStyle, token);
+      // Add user message to UI immediately
+      const userMessage: ChatMessage = {
+        id: Date.now(), // Temporary ID
+        content: inputMessage,
+        role: 'user',
+        createdAt: new Date().toISOString()
+      };
       
-      if (response.success && response.data) {
-        setMessages(prev => [...prev, {
-          content: response.data.text || 'Sorry, I couldn\'t generate a response.',
-          role: 'assistant',
-          timestamp: Date.now()
-        }]);
-      } else {
-        setError(response.error || 'Failed to get AI response');
-      }
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setError('An error occurred while communicating with the AI');
+      setMessages([...messages, userMessage]);
+      setInputMessage('');
+      
+      // Send message to API
+      const response = await sendChatMessage(
+        currentSessionId,
+        inputMessage,
+        commentaryStyle
+      );
+      
+      // Add assistant response to messages
+      setMessages(prev => [...prev, response]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+  
+  const handleNewChat = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Create a default title based on current page
+      const title = pageContext?.title
+        ? `Chat about ${pageContext.title.substring(0, 30)}${pageContext.title.length > 30 ? '...' : ''}`
+        : `New chat ${new Date().toLocaleString()}`;
+      
+      // Create new session
+      const newSession = await createChatSession(title);
+      
+      // Update state
+      setSessions([newSession, ...sessions]);
+      setCurrentSessionIdState(newSession.id);
+      await setCurrentSessionId(newSession.id);
+      setMessages([]);
+    } catch (error) {
+      console.error('Failed to create new chat:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleSessionClick = async (sessionId: number) => {
+    if (sessionId === currentSessionId || isLoading) return;
+    
+    try {
+      setIsLoading(true);
+      setCurrentSessionIdState(sessionId);
+      await setCurrentSessionId(sessionId);
+      
+      const sessionMessages = await getChatMessages(sessionId);
+      setMessages(sessionMessages);
+    } catch (error) {
+      console.error('Failed to switch sessions:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -110,95 +150,118 @@ const AiChatView: React.FC<AiChatViewProps> = ({ user }) => {
   };
   
   return (
-    <div className="flex flex-col h-full">
-      <header className="flex justify-between items-center p-4 border-b">
+    <div className="ai-chat-view">
+      <div className="chat-sidebar">
         <button 
-          onClick={() => navigate('/')}
-          className="flex items-center text-primary"
+          className="new-chat-button"
+          onClick={handleNewChat}
+          disabled={isLoading}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="ml-2">Back</span>
+          New Chat
         </button>
-        <Logo size="small" variant="icon" />
-      </header>
-      
-      <div className="flex-grow overflow-y-auto p-4" style={{ maxHeight: 'calc(100% - 134px)' }}>
-        {messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-6">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium">No messages yet</h3>
-            <p className="mt-1 text-sm">
-              Start a conversation with Vyna AI Assistant
-            </p>
-            <p className="mt-3 text-xs">
-              Current mode: <span className="font-medium">{commentaryStyle === 'color' ? 'Color Commentary' : 'Play-by-Play'}</span>
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((msg, index) => (
-              <div key={index} className={`message-bubble ${msg.role}`}>
-                {msg.content}
+        
+        <div className="session-list">
+          {sessions.map(session => (
+            <div 
+              key={session.id}
+              className={`session-item ${session.id === currentSessionId ? 'active' : ''}`}
+              onClick={() => handleSessionClick(session.id)}
+            >
+              <div className="session-title">{session.title}</div>
+              <div className="session-date">
+                {new Date(session.createdAt).toLocaleDateString()}
               </div>
-            ))}
-            {loading && (
-              <div className="flex items-center justify-center py-2">
-                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
-                <span className="ml-2 text-sm text-gray-500">Vyna is thinking...</span>
-              </div>
-            )}
-            {error && (
-              <div className="bg-red-50 p-3 rounded-md text-red-600 text-sm">
-                {error}
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
       
-      <div className="border-t p-4">
-        <div className="flex mb-2">
-          <button
-            type="button"
-            onClick={toggleCommentaryStyle}
-            className={`px-2 py-1 text-xs rounded mr-2 ${commentaryStyle === 'color' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
-            title="Color Commentary mode provides detailed, insightful analysis"
-          >
-            CC
-          </button>
-          <button
-            type="button"
-            onClick={toggleCommentaryStyle}
-            className={`px-2 py-1 text-xs rounded ${commentaryStyle === 'play-by-play' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700'}`}
-            title="Play-by-Play mode provides quick, action-oriented responses"
-          >
-            PP
-          </button>
+      <div className="chat-main">
+        <div className="chat-messages">
+          {messages.map(message => (
+            <div 
+              key={message.id} 
+              className={`message ${message.role === 'user' ? 'user-message' : 'assistant-message'}`}
+            >
+              <div className="message-header">
+                <span className="message-sender">
+                  {message.role === 'user' ? 'You' : 'Vyna AI'}
+                </span>
+                {message.role === 'assistant' && message.commentaryStyle && (
+                  <span className="commentary-style-badge">
+                    {message.commentaryStyle === 'play-by-play' ? 'Play-by-play' : 'Color'}
+                  </span>
+                )}
+              </div>
+              <div className="message-content">{message.content}</div>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="loading-indicator">
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div>Vyna AI is thinking...</div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
         </div>
-        <form onSubmit={handleSubmit} className="flex">
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Ask Vyna AI something..."
-            className="flex-grow mr-2"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            className="btn btn-primary"
-            disabled={loading || !message.trim()}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </form>
+        
+        <div className="chat-input-container">
+          {pageContext && (
+            <div className="page-context-indicator">
+              <span className="context-icon">📄</span>
+              <span className="context-text">
+                Context: {pageContext.title}
+              </span>
+            </div>
+          )}
+          
+          <div className="input-controls">
+            <div className="commentary-style-toggle">
+              <button 
+                className={`style-toggle-button ${commentaryStyle === 'play-by-play' ? 'active' : ''}`}
+                onClick={() => setCommentaryStyle('play-by-play')}
+                title="Play-by-play Commentary"
+              >
+                PP
+              </button>
+              <button 
+                className={`style-toggle-button ${commentaryStyle === 'color' ? 'active' : ''}`}
+                onClick={() => setCommentaryStyle('color')}
+                title="Color Commentary"
+              >
+                CC
+              </button>
+            </div>
+            
+            <textarea
+              className="chat-input"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Ask me anything..."
+              disabled={isLoading || !currentSessionId}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            
+            <button 
+              className="send-button"
+              onClick={handleSendMessage}
+              disabled={isLoading || !inputMessage.trim() || !currentSessionId}
+            >
+              Send
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
