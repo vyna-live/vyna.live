@@ -208,6 +208,7 @@ async function handleLogin() {
     
     // Send login request
     console.log('Sending login request to:', `${API_BASE_URL}/api/login`);
+    console.log('Login payload:', { usernameOrEmail: username, password: '****' });
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       credentials: 'include',
@@ -1174,36 +1175,48 @@ function showNoteViewer(note) {
 }
 
 function addNoteLine() {
-  const noteInput = document.getElementById('noteInput');
-  const currentValue = noteInput.value;
-  
-  // Add a proper new line with bullet point
-  // If there's no content yet, don't add a leading newline
-  if (currentValue.trim() === '') {
-    noteInput.value = '- ';
-  } else {
-    // If the content doesn't end with a newline, add one
-    if (!currentValue.endsWith('\n')) {
-      noteInput.value = currentValue + '\n- ';
-    } else {
-      noteInput.value = currentValue + '- ';
+  try {
+    const noteInput = document.getElementById('noteInput');
+    if (!noteInput) {
+      console.error('addNoteLine: noteInput element not found');
+      return;
     }
+    
+    const currentValue = noteInput.value;
+    console.log('addNoteLine: Adding new line to note input');
+  
+    // Add a proper new line with bullet point
+    // If there's no content yet, don't add a leading newline
+    if (currentValue.trim() === '') {
+      noteInput.value = '- ';
+    } else {
+      // If the content doesn't end with a newline, add one
+      if (!currentValue.endsWith('\n')) {
+        noteInput.value = currentValue + '\n- ';
+      } else {
+        noteInput.value = currentValue + '- ';
+      }
+    }
+    
+    noteInput.focus();
+    
+    // Move cursor to the end
+    noteInput.selectionStart = noteInput.selectionEnd = noteInput.value.length;
+    
+    // Manually trigger input event to update save button state
+    noteInput.dispatchEvent(new Event('input'));
+    console.log('addNoteLine: Line added successfully, button state updated');
+  } catch (error) {
+    console.error('Error in addNoteLine:', error);
+    showToast('Error adding new line', true);
   }
-  
-  noteInput.focus();
-  
-  // Move cursor to the end
-  noteInput.selectionStart = noteInput.selectionEnd = noteInput.value.length;
-  
-  // Manually trigger input event to update save button state
-  noteInput.dispatchEvent(new Event('input'));
 }
 
 async function saveNote() {
   const title = document.getElementById('noteTitle').value.trim();
   const content = document.getElementById('noteInput').value.trim();
   
-  console.log('Attempting to save note:', { title, content, isAuthenticated, currentUser });
+  console.log('Attempting to save note:', { title, content, isAuthenticated, userId: currentUser?.id });
   
   if (!title && !content) {
     showToast('Please enter a title or some content', true);
@@ -1211,7 +1224,7 @@ async function saveNote() {
   }
   
   // Verify we have user credentials
-  if (!isAuthenticated || !currentUser) {
+  if (!isAuthenticated || !currentUser || !currentUser.id) {
     console.error('Cannot save note: User not authenticated');
     showToast('You must be logged in to save notes', true);
     return;
@@ -1230,7 +1243,8 @@ async function saveNote() {
         },
         body: JSON.stringify({
           title,
-          content
+          content,
+          hostId: currentUser.id  // Include hostId in updates as well
         })
       });
     } else {
