@@ -535,6 +535,7 @@ function initializeTabs() {
 }
 
 function switchTab(tabName) {
+  console.log('Switching to tab:', tabName);
   // Update active tab
   activeTab = tabName;
   
@@ -553,6 +554,7 @@ function switchTab(tabName) {
   tabContents.forEach(content => {
     if (content.id === `${tabName}-content`) {
       content.classList.add('active');
+      console.log(`Activating content: ${content.id}`);
     } else {
       content.classList.remove('active');
     }
