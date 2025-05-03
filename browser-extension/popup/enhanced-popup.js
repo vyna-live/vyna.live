@@ -1177,6 +1177,23 @@ async function loadNotes() {
         
         notesList.innerHTML = '';
         
+        // Use event delegation for note items
+        notesList.addEventListener('click', (event) => {
+          // Find the clicked note item or its parent
+          const noteItem = event.target.closest('.note-item');
+          if (noteItem) {
+            const noteId = noteItem.getAttribute('data-note-id');
+            if (noteId) {
+              // Find the note in the saved notes
+              const note = savedNotes.find(n => n.id === parseInt(noteId) || n.id === noteId);
+              if (note) {
+                console.log('Note item clicked via delegation, triggering handleViewNote for note ID:', noteId);
+                handleViewNote(note);
+              }
+            }
+          }
+        });
+        
         // Create and append note items
         notes.forEach(note => {
           const noteItem = createNoteItem(note);
@@ -1284,14 +1301,16 @@ async function loadNotes() {
         </div>
       `;
       
-      // Add retry button functionality
-      const retryButton = document.getElementById('retryNotesButton');
-      if (retryButton) {
-        retryButton.addEventListener('click', () => {
-          console.log('Retrying to load notes...');
-          loadNotes();
-        });
-      }
+      // Add retry button functionality with a timeout to ensure DOM is ready
+      setTimeout(() => {
+        const retryButton = document.getElementById('retryNotesButton');
+        if (retryButton) {
+          retryButton.addEventListener('click', () => {
+            console.log('Retrying to load notes...');
+            loadNotes();
+          });
+        }
+      }, 100);
     }
   } catch (error) {
     console.error('Error loading notes:', error);
@@ -1325,14 +1344,16 @@ async function loadNotes() {
         </div>
       `;
       
-      // Add retry button functionality
-      const retryButton = document.getElementById('retryNotesButton');
-      if (retryButton) {
-        retryButton.addEventListener('click', () => {
-          console.log('Retrying to load notes...');
-          loadNotes();
-        });
-      }
+      // Add retry button functionality with a timeout to ensure DOM is ready
+      setTimeout(() => {
+        const retryButton = document.getElementById('retryNotesButton');
+        if (retryButton) {
+          retryButton.addEventListener('click', () => {
+            console.log('Retrying to load notes...');
+            loadNotes();
+          });
+        }
+      }, 100);
     }
   }
 }
@@ -1358,11 +1379,8 @@ function createNoteItem(note) {
   // Set note ID
   noteItem.setAttribute('data-note-id', note.id);
   
-  // Add click event listener
-  noteItem.addEventListener('click', () => {
-    console.log('Note item clicked, triggering handleViewNote for note ID:', note.id);
-    handleViewNote(note);
-  });
+  // We're now using event delegation in the parent notes list container
+  // instead of adding a click listener to each individual note item
   
   // Set title
   const titleElement = noteItem.querySelector('.note-title');

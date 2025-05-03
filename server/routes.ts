@@ -1593,7 +1593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Query the database to check if this host has an active stream
-      let streams = [];
+      let streams: typeof streamSessions.$inferSelect[] = [];
       
       try {
         // First try to find streams using the numeric ID if valid
