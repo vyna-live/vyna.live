@@ -19,16 +19,24 @@ async function initializeApp() {
     // Check if user is authenticated
     const authStatus = await checkAuthentication();
     
+    // Clear the app container completely
+    const appContainer = document.getElementById('app');
+    appContainer.innerHTML = '';
+    
     if (authStatus.isAuthenticated) {
-      // User is authenticated, show main interface
-      const mainInterface = document.querySelector('.main-interface');
-      mainInterface.style.display = 'flex';
+      // User is authenticated, show main interface from template
+      const mainInterface = document.querySelector('template#main-interface-template');
+      const mainInterfaceContent = document.importNode(mainInterface.content, true);
+      appContainer.appendChild(mainInterfaceContent);
+      
+      // Update the user info display
       document.querySelector('#username').textContent = authStatus.user.displayName || authStatus.user.username;
       
+      // Set user avatar if available
       if (authStatus.user.avatarUrl) {
         document.querySelector('#userAvatar').src = authStatus.user.avatarUrl;
       } else {
-        // Set default avatar
+        // Default avatar
         document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
       }
       
@@ -42,15 +50,6 @@ async function initializeApp() {
       // Initialize the interface
       initializeTabs();
       loadActiveTab();
-      
-      // Make sure we clear any previous content in the app container
-      // This is needed when we come from login/register
-      const appContainer = document.getElementById('app');
-      Array.from(appContainer.children).forEach(child => {
-        if (!child.classList.contains('main-interface')) {
-          appContainer.removeChild(child);
-        }
-      });
     } else {
       // User is not authenticated, show login screen
       showLoginScreen();
@@ -81,23 +80,28 @@ async function checkAuthentication() {
 }
 
 function showLoginScreen() {
-  // Clear the app container
+  // Clear the app container completely
   const appContainer = document.getElementById('app');
   appContainer.innerHTML = '';
   
   // Get the auth template and clone it
   const authTemplate = document.getElementById('auth-template');
-  const authContent = document.importNode(authTemplate.content, true);
-  
-  // Append to the app container
-  appContainer.appendChild(authContent);
-  
-  // Initialize auth tabs
-  initializeAuthTabs();
-  
-  // Add event listeners for login and register forms
-  document.getElementById('loginButton').addEventListener('click', handleLogin);
-  document.getElementById('registerButton').addEventListener('click', handleRegister);
+  if (authTemplate) {
+    const authContent = document.importNode(authTemplate.content, true);
+    
+    // Append to the app container
+    appContainer.appendChild(authContent);
+    
+    // Initialize auth tabs
+    initializeAuthTabs();
+    
+    // Add event listeners for login and register forms
+    document.getElementById('loginButton').addEventListener('click', handleLogin);
+    document.getElementById('registerButton').addEventListener('click', handleRegister);
+  } else {
+    // If template not found, show error
+    appContainer.innerHTML = '<div class="auth-error">Failed to load authentication interface. Please reload the extension.</div>';
+  }
 }
 
 function initializeAuthTabs() {
@@ -164,42 +168,47 @@ async function handleLogin() {
       // Show success toast
       showToast('Successfully signed in');
       
-      // Clear the app container first to remove the auth form
+      // Clear the app container completely
       const appContainer = document.getElementById('app');
-      // Keep only the main interface
-      Array.from(appContainer.children).forEach(child => {
-        if (!child.classList.contains('main-interface')) {
-          appContainer.removeChild(child);
+      appContainer.innerHTML = '';
+      
+      // Re-add the main interface
+      const mainInterface = document.querySelector('template#main-interface-template');
+      if (mainInterface) {
+        const mainInterfaceContent = document.importNode(mainInterface.content, true);
+        appContainer.appendChild(mainInterfaceContent);
+        
+        // Update the user info display
+        document.querySelector('#username').textContent = userData.displayName || userData.username;
+        
+        // Set user avatar if available
+        if (userData.avatarUrl) {
+          document.querySelector('#userAvatar').src = userData.avatarUrl;
+        } else {
+          // Default avatar
+          document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
         }
-      });
-      
-      // Show the main interface
-      const mainInterface = document.querySelector('.main-interface');
-      mainInterface.style.display = 'flex';
-      
-      // Update the user info display
-      document.querySelector('#username').textContent = userData.displayName || userData.username;
-      
-      // Set user avatar if available
-      if (userData.avatarUrl) {
-        document.querySelector('#userAvatar').src = userData.avatarUrl;
+        
+        // Initialize the interface
+        initializeUserDropdown();
+        initializeTabs();
+        loadActiveTab();
       } else {
-        // Default avatar
-        document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
+        // If template not found, reload the entire extension
+        window.location.reload();
       }
-      
-      // Initialize the interface
-      initializeUserDropdown();
-      initializeTabs();
-      loadActiveTab();
     } else {
       // Re-enable the login button
       loginButton.disabled = false;
       loginButton.innerHTML = '<span class="button-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span> Sign in';
       
-      // Show error message
-      const errorData = await response.json();
-      showError('loginError', errorData.error || 'Login failed. Please check your credentials.');
+      try {
+        // Show error message
+        const errorData = await response.json();
+        showError('loginError', errorData.error || 'Login failed. Please check your credentials.');
+      } catch (error) {
+        showError('loginError', 'Login failed. Please check your credentials.');
+      }
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -270,34 +279,35 @@ async function handleRegister() {
       // Show success toast
       showToast('Account created successfully');
       
-      // Clear the app container first to remove the auth form
+      // Clear the app container completely
       const appContainer = document.getElementById('app');
-      // Keep only the main interface
-      Array.from(appContainer.children).forEach(child => {
-        if (!child.classList.contains('main-interface')) {
-          appContainer.removeChild(child);
+      appContainer.innerHTML = '';
+      
+      // Re-add the main interface
+      const mainInterface = document.querySelector('template#main-interface-template');
+      if (mainInterface) {
+        const mainInterfaceContent = document.importNode(mainInterface.content, true);
+        appContainer.appendChild(mainInterfaceContent);
+        
+        // Update the user info display
+        document.querySelector('#username').textContent = userData.displayName || userData.username;
+        
+        // Set user avatar if available
+        if (userData.avatarUrl) {
+          document.querySelector('#userAvatar').src = userData.avatarUrl;
+        } else {
+          // Default avatar
+          document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
         }
-      });
-      
-      // Show the main interface
-      const mainInterface = document.querySelector('.main-interface');
-      mainInterface.style.display = 'flex';
-      
-      // Update the user info display
-      document.querySelector('#username').textContent = userData.displayName || userData.username;
-      
-      // Set user avatar if available
-      if (userData.avatarUrl) {
-        document.querySelector('#userAvatar').src = userData.avatarUrl;
+        
+        // Initialize the interface
+        initializeUserDropdown();
+        initializeTabs();
+        loadActiveTab();
       } else {
-        // Default avatar
-        document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
+        // If template not found, reload the entire extension
+        window.location.reload();
       }
-      
-      // Initialize the interface
-      initializeUserDropdown();
-      initializeTabs();
-      loadActiveTab();
     } else {
       // Re-enable the register button
       registerButton.disabled = false;
