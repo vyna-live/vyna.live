@@ -100,8 +100,29 @@ async function initializeApp() {
       initializeUserDropdown();
       
       // Initialize the interface
+      console.log('Setting up interface with activeTab:', activeTab);
+      const defaultTabElement = document.querySelector('.tabs .tab[data-tab="vynaai"]');
+      if (defaultTabElement) {
+        defaultTabElement.classList.add('active');
+      } else {
+        console.error('Default tab element not found');
+      }
+      
+      const defaultContentElement = document.getElementById('vynaai-content');
+      if (defaultContentElement) {
+        defaultContentElement.classList.add('active');
+      } else {
+        console.error('Default content element not found');
+      }
+      
+      // Initialize tabs with event delegation
       initializeTabs();
-      loadActiveTab();
+      
+      // Load the active tab content
+      setTimeout(() => {
+        console.log('Loading initial tab content');
+        loadActiveTab();
+      }, 100);
     } else {
       // User is not authenticated, show login screen
       showLoginScreen();
@@ -548,6 +569,12 @@ function initializeTabs() {
 
 function switchTab(tabName) {
   console.log('Switching to tab:', tabName);
+  // Validate tab name
+  if (!tabName || (tabName !== 'vynaai' && tabName !== 'notepad')) {
+    console.error('Invalid tab name:', tabName);
+    return;
+  }
+  
   // Update active tab
   activeTab = tabName;
   
