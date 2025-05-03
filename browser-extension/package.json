@@ -4,7 +4,7 @@
   "description": "Browser extension for Vyna.live AI chat and notepad",
   "private": true,
   "scripts": {
-    "build": "zip -r vyna-extension.zip . -x "*.git*" "*.zip" "node_modules/*" "package.json" "package-lock.json"
+    "build": "zip -r vyna-extension.zip . -x '*.git*' '*.zip' 'node_modules/*' 'package.json' 'package-lock.json'"
   },
   "author": "Vyna.live",
   "license": "UNLICENSED"
