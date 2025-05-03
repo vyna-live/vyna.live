@@ -779,6 +779,12 @@ body {
   margin-bottom: 24px;
 }
 
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
 .auth-header h2 {
   font-size: 20px;
   font-weight: 600;
