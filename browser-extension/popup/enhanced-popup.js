@@ -1175,7 +1175,21 @@ function showNoteViewer(note) {
 
 function addNoteLine() {
   const noteInput = document.getElementById('noteInput');
-  noteInput.value += '\n- ';
+  const currentValue = noteInput.value;
+  
+  // Add a proper new line with bullet point
+  // If there's no content yet, don't add a leading newline
+  if (currentValue.trim() === '') {
+    noteInput.value = '- ';
+  } else {
+    // If the content doesn't end with a newline, add one
+    if (!currentValue.endsWith('\n')) {
+      noteInput.value = currentValue + '\n- ';
+    } else {
+      noteInput.value = currentValue + '- ';
+    }
+  }
+  
   noteInput.focus();
   
   // Move cursor to the end
@@ -1189,8 +1203,17 @@ async function saveNote() {
   const title = document.getElementById('noteTitle').value.trim();
   const content = document.getElementById('noteInput').value.trim();
   
+  console.log('Attempting to save note:', { title, content, isAuthenticated, currentUser });
+  
   if (!title && !content) {
     showToast('Please enter a title or some content', true);
+    return;
+  }
+  
+  // Verify we have user credentials
+  if (!isAuthenticated || !currentUser) {
+    console.error('Cannot save note: User not authenticated');
+    showToast('You must be logged in to save notes', true);
     return;
   }
   
@@ -1219,7 +1242,7 @@ async function saveNote() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          userId: currentUser.id,
+          hostId: currentUser.id,
           title: title || 'Untitled Note',
           content
         })
@@ -1230,10 +1253,19 @@ async function saveNote() {
       const noteData = await response.json();
       currentNoteId = noteData.id;
       
+      console.log('Note saved successfully:', noteData);
       showToast('Note saved successfully');
       showNoteViewer(noteData);
     } else {
-      showToast('Failed to save note', true);
+      // Try to get more detailed error information
+      try {
+        const errorData = await response.json();
+        console.error('Failed to save note:', { status: response.status, error: errorData });
+        showToast(`Failed to save note: ${errorData.error || 'Unknown error'}`, true);
+      } catch (parseError) {
+        console.error('Failed to save note (could not parse error):', { status: response.status });
+        showToast(`Failed to save note: Server returned ${response.status}`, true);
+      }
     }
   } catch (error) {
     console.error('Error saving note:', error);
