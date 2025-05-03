@@ -1,23 +1,24 @@
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
   mode: 'production',
   entry: {
-    popup: './popup/index.tsx',
-    background: './background/background.ts',
-    content: './content/content.ts'
+    popup: path.resolve(__dirname, 'popup/index.tsx'),
+    background: path.resolve(__dirname, 'background/background.ts'),
+    content: path.resolve(__dirname, 'content/content.ts')
   },
   output: {
     path: path.resolve(__dirname, 'dist/chrome'),
-    filename: '[name]/[name].js',
-    clean: true
+    filename: '[name].js'
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
     alias: {
-      '@libs': path.resolve(__dirname, 'libs')
+      '@libs': path.resolve(__dirname, 'libs'),
+      '@assets': path.resolve(__dirname, 'assets')
     }
   },
   module: {
@@ -28,29 +29,26 @@ module.exports = {
         exclude: /node_modules/
       },
       {
-        test: /\.css$/i,
+        test: /\.css$/,
         use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.svg$/,
-        use: ['@svgr/webpack']
-      },
-      {
-        test: /\.(png|jpg|jpeg|gif)$/i,
+        test: /\.(png|jpg|jpeg|svg|gif)$/i,
         type: 'asset/resource'
       }
     ]
   },
   plugins: [
-    new CopyPlugin({
+    new CleanWebpackPlugin(),
+    new CopyWebpackPlugin({
       patterns: [
-        { from: 'manifest.json', to: '../chrome/manifest.json' },
-        { from: 'icons', to: '../chrome/icons' }
+        { from: 'manifest.json' },
+        { from: 'icons/*.png', to: 'icons/[name][ext]' }
       ]
     }),
     new HtmlWebpackPlugin({
-      template: './popup/popup.html',
-      filename: 'popup/popup.html',
+      template: path.resolve(__dirname, 'popup/popup.html'),
+      filename: 'popup.html',
       chunks: ['popup']
     })
   ]

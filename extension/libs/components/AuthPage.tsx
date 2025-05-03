@@ -3,7 +3,7 @@ import { login, register } from '@libs/utils/api';
 import { setAuthData, StoredAuthData } from '@libs/utils/storage';
 import Logo from './ui/Logo';
 
-interface AuthPageProps {
+export interface AuthPageProps {
   onLoginSuccess: (data: StoredAuthData) => void;
   error?: string | null;
 }
