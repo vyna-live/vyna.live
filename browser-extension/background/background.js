@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = 'https://api.vyna.live';
+const API_BASE_URL = 'https://vyna-live.replit.app';
 
 // Authentication state
 let authState = {
@@ -20,8 +20,9 @@ async function initialize() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/user`, {
         headers: {
-          'Authorization': `Bearer ${stored.authToken}`
-        }
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -156,13 +157,14 @@ async function register(userData) {
 // Handle logout
 async function logout() {
   try {
-    if (authState.token) {
-      await fetch(`${API_BASE_URL}/api/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`
-        }
-      });
+    // Send logout request with cookies
+    await fetch(`${API_BASE_URL}/api/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
     }
   } catch (error) {
     console.error('Logout error:', error);
