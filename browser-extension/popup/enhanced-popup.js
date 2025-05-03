@@ -299,10 +299,33 @@ async function handleLogin() {
           document.querySelector('#userAvatar').src = '../assets/user-avatar.png';
         }
         
-        // Initialize the interface
+        // Initialize the interface after login
         initializeUserDropdown();
+        
+        // Setup default tabs
+        console.log('Login: Setting up interface with activeTab:', activeTab);
+        const loginTabElement = document.querySelector('.tabs .tab[data-tab="vynaai"]');
+        if (loginTabElement) {
+          loginTabElement.classList.add('active');
+        } else {
+          console.error('Login: Default tab element not found');
+        }
+        
+        const loginContentElement = document.getElementById('vynaai-content');
+        if (loginContentElement) {
+          loginContentElement.classList.add('active');
+        } else {
+          console.error('Login: Default content element not found');
+        }
+        
+        // Initialize tab switching
         initializeTabs();
-        loadActiveTab();
+        
+        // Load initial content with a small delay to ensure DOM is ready
+        setTimeout(() => {
+          console.log('Login: Loading initial tab content');
+          loadActiveTab();
+        }, 100);
       } else {
         // If template not found, reload the entire extension
         window.location.reload();
