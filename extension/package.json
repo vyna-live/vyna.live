@@ -7,8 +7,8 @@
     "build": "webpack --config webpack.config.js",
     "build:firefox": "webpack --config webpack.firefox.config.js",
     "watch": "webpack --config webpack.config.js --watch",
-    "convert-icons": "node scripts/convert-icons.js",
-    "package": "npm run build && npm run build:firefox && node scripts/package.js"
+    "convert-icons": "node convertIcons.js",
+    "package": "npm run convert-icons && npm run build && npm run build:firefox && node scripts/package.js"
   },
   "keywords": [
     "vyna",
