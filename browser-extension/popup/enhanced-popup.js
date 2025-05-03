@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://vyna.live';
+const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://vyna-live.replit.app';
 
 // User state
 let currentUser = null;
@@ -336,8 +336,16 @@ async function showChatInterface() {
     
     // Add event listeners
     document.getElementById('backToSessions').addEventListener('click', () => loadChatSessions());
-    document.getElementById('sendButton').addEventListener('click', sendMessage);
-    document.getElementById('chatInput').addEventListener('keydown', handleChatInputKeyDown);
+    const sendButton = document.getElementById('sendButton');
+    const chatInput = document.getElementById('chatInput');
+    
+    sendButton.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keydown', handleChatInputKeyDown);
+    
+    // Enable/disable send button based on input
+    chatInput.addEventListener('input', () => {
+      sendButton.disabled = chatInput.value.trim() === '';
+    });
     
     // Add event listeners for file inputs
     document.getElementById('docButton').addEventListener('click', () => document.getElementById('fileInput').click());
@@ -882,6 +890,13 @@ function showNoteEditor(existingNote = null) {
     document.getElementById('addLineButton').addEventListener('click', addNoteLine);
     
     const noteInput = document.getElementById('noteInput');
+    const addLineButton = document.getElementById('addLineButton');
+    
+    // Enable/disable add button based on input
+    noteInput.addEventListener('input', () => {
+      addLineButton.disabled = noteInput.value.trim() === '';
+    });
+    
     noteInput.addEventListener('keydown', handleNoteInputKeyDown);
     noteInput.focus();
   } catch (error) {

@@ -3,6 +3,9 @@
 // Base URL for all API calls
 const API_BASE_URL = 'https://vyna-live.replit.app';
 
+// For local development, uncomment this line
+// const API_BASE_URL = 'http://localhost:5000';
+
 // Authentication state
 let authState = {
   isAuthenticated: false,
@@ -139,11 +142,13 @@ async function login(username, password) {
 // Handle registration
 async function register(userData) {
   try {
+    console.log('Registering with:', { ...userData, password: '***' });
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
+      credentials: 'include',
       body: JSON.stringify(userData)
     });
     
