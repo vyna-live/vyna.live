@@ -8,7 +8,10 @@
     "build:firefox": "webpack --config webpack.firefox.config.js",
     "watch": "webpack --config webpack.config.js --watch",
     "convert-icons": "node convertIcons.js",
-    "package": "npm run convert-icons && npm run build && npm run build:firefox && node scripts/package.js"
+    "package": "npm run convert-icons && npm run build && npm run build:firefox && node scripts/package.js",
+    "zip:chrome": "node simple-package.js ./dist/chrome vyna-assistant-chrome.zip",
+    "zip:firefox": "node simple-package.js ./dist/firefox vyna-assistant-firefox.zip",
+    "zip": "npm run zip:chrome && npm run zip:firefox"
   },
   "keywords": [
     "vyna",
