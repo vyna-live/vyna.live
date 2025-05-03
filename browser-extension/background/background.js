@@ -103,13 +103,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function login(username, password) {
   try {
     console.log('Trying to login with:', { usernameOrEmail: username, password: '***' });
+    console.log('API base URL:', API_BASE_URL);
+    
+    // Check for existing cookies before login attempt
+    chrome.cookies.getAll({domain: new URL(API_BASE_URL).hostname}, (cookies) => {
+      console.log('Cookies before login attempt:', cookies);
+    });
+    
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({ usernameOrEmail: username, password }),
-      credentials: 'include'
+      credentials: 'include' // Important for session cookie handling
     });
     
     if (!response.ok) {
@@ -124,6 +132,11 @@ async function login(username, password) {
     // Generate a token based on the user ID for local storage 
     // (we're using cookie-based auth so this is just for state tracking)
     const token = `session_${user.id}_${Date.now()}`;
+    
+    // Check for session cookies after login attempt
+    chrome.cookies.getAll({domain: new URL(API_BASE_URL).hostname}, (cookies) => {
+      console.log('Cookies after successful login:', cookies);
+    });
     
     // Save authentication data
     authState = {
@@ -149,10 +162,18 @@ async function login(username, password) {
 async function register(userData) {
   try {
     console.log('Registering with:', { ...userData, password: '***' });
+    console.log('API base URL for register:', API_BASE_URL);
+    
+    // Check for existing cookies before register attempt
+    chrome.cookies.getAll({domain: new URL(API_BASE_URL).hostname}, (cookies) => {
+      console.log('Cookies before register attempt:', cookies);
+    });
+    
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       credentials: 'include',
       body: JSON.stringify(userData)
