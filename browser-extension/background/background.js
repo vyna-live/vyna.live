@@ -165,7 +165,6 @@ async function logout() {
       },
       credentials: 'include'
     });
-    }
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
@@ -180,13 +179,10 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
       'Content-Type': 'application/json'
     };
     
-    if (includeAuth && authState.token) {
-      headers['Authorization'] = `Bearer ${authState.token}`;
-    }
-    
     const fetchOptions = {
       method,
-      headers
+      headers,
+      credentials: 'include' // Always include credentials for cookies
     };
     
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
@@ -240,9 +236,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     fetch(`${API_BASE_URL}/api/files/upload`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authState.token}`
-      },
+      credentials: 'include', // Include cookies for authentication
       body: formData
     })
     .then(response => response.json())

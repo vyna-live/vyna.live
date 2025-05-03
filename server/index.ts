@@ -5,33 +5,10 @@ import cors from "cors";
 
 const app = express();
 
-// Configure CORS for browser extensions and other origins
+// Configure CORS with a wide-open policy for development
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true);
-    
-    // Allow requests from browser extensions (chrome-extension://, moz-extension://, etc.)
-    if (origin.startsWith('chrome-extension://') || 
-        origin.startsWith('moz-extension://') || 
-        origin.startsWith('edge-extension://')) {
-      return callback(null, true);
-    }
-    
-    // Add your app's domain and other trusted domains
-    const allowedDomains = [
-      'https://vyna-live.replit.app',
-      'http://localhost:5000',
-      'http://localhost:3000'
-    ];
-    
-    if (allowedDomains.indexOf(origin) !== -1) {
-      return callback(null, true);
-    } else {
-      return callback(null, false);
-    }
-  },
-  credentials: true, // Allow cookies and authentication headers
+  origin: true, // Allow all origins
+  credentials: true, // Allow credentials (cookies, authorization headers, etc)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
@@ -39,7 +16,18 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Add explicit CORS headers to every response
 app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
