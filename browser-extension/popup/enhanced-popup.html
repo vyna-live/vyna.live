@@ -310,24 +310,13 @@
         <!-- Empty state -->
         <div class="empty-state" id="chatEmptyState">
           <div class="empty-state-icon">
-            <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-              <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
-              <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
-              <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
-              <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
-              <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
-              <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
-              <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
-              <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
-              <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
-              <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
-              <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
-              <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
-              <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
-            </svg>
+            <!-- Vyna logo with a simpler design -->
+            <div class="avatar" style="width: 40px; height: 40px; margin: 0 auto; margin-bottom: 16px;">
+              <span style="color: #ffffff; font-size: 20px; font-weight: 600;">V</span>
+            </div>
           </div>
-          <h3>VynaAI</h3>
-          <p>Ask questions to quickly research topics while streaming</p>
+          <h3 style="font-size: 18px; font-weight: 600; color: #ffffff; margin-bottom: 8px;">Vyna AI Assistant</h3>
+          <p style="font-size: 14px; color: #9e9e9e; max-width: 280px; margin: 0 auto; line-height: 1.4;">Ask me anything! I can help with research, facts, and creative ideas for your stream.</p>
         </div>
       </div>
       
@@ -370,8 +359,9 @@
   <!-- Message Template -->
   <template id="message-template">
     <div class="message">
-      <div class="avatar" style="display: none;">
-        <img src="" alt="" width="24" height="24">
+      <!-- AI avatar with Vyna logo/initial -->
+      <div class="avatar">
+        <span style="color: #ffffff; font-size: 14px; font-weight: 600;">V</span>
       </div>
       <div class="message-content"></div>
     </div>

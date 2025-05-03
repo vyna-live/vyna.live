@@ -409,7 +409,8 @@ body {
 .user-message .message-content {
   background-color: #363636; /* Dark gray background for user messages */
   color: #ffffff;
-  border-radius: 16px 4px 16px 16px; /* Rounded on left, slight point on right */
+  border-radius: 14px 4px 14px 14px; /* Rounded on left, slight point on right */
+  max-width: 80%;
 }
 
 /* AI message styling - left aligned with avatar and lighter background */
@@ -427,12 +428,14 @@ body {
   justify-content: center;
   margin-right: 8px;
   flex-shrink: 0;
+  margin-top: 2px; /* Slight alignment adjustment */
 }
 
 .ai-message .message-content {
-  background-color: #434343; /* Lighter gray for AI responses */
+  background-color: #292929; /* Darker gray for AI responses to match mobile */
   color: #ffffff;
-  border-radius: 4px 16px 16px 16px; /* Rounded on right, slight point on left */
+  border-radius: 4px 14px 14px 14px; /* Rounded on right, slight point on left */
+  max-width: 80%;
 }
 
 .message-content {
