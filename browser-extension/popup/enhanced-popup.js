@@ -889,13 +889,30 @@ async function loadChatMessages(sessionId) {
 
 function createMessageElement(message) {
   const messageDiv = document.createElement('div');
-  messageDiv.className = `message ${message.role === 'user' ? 'user-message' : 'ai-message'}`;
+  const isUserMessage = message.role === 'user';
+  messageDiv.className = isUserMessage ? 'message user-message' : 'message ai-message';
+  
+  // For AI messages, add the avatar
+  if (!isUserMessage) {
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'avatar';
+    
+    // Add the Vyna logo or initials in the avatar
+    const avatarContent = document.createElement('span');
+    avatarContent.textContent = 'V';
+    avatarContent.style.color = '#ffffff';
+    avatarContent.style.fontSize = '14px';
+    avatarContent.style.fontWeight = '600';
+    
+    avatarDiv.appendChild(avatarContent);
+    messageDiv.appendChild(avatarDiv);
+  }
   
   const contentDiv = document.createElement('div');
   contentDiv.className = 'message-content';
   
   // Process message content
-  if (message.content.includes('{"type":"infoGraphic"')) {
+  if (message.content && message.content.includes('{"type":"infoGraphic"')) {
     try {
       // This is a message with an info graphic
       const infoGraphicData = JSON.parse(message.content);
@@ -919,16 +936,23 @@ function createMessageElement(message) {
     }
   } else {
     // Regular text message
-    contentDiv.textContent = message.content;
+    contentDiv.textContent = message.content || '';
   }
   
   messageDiv.appendChild(contentDiv);
   
-  // Add message metadata
-  const metaDiv = document.createElement('div');
-  metaDiv.className = 'message-meta';
-  metaDiv.textContent = new Date(message.createdAt).toLocaleTimeString();
-  messageDiv.appendChild(metaDiv);
+  // Time metadata is hidden in mobile design, but keeping it for desktop view
+  // with reduced opacity
+  if (message.createdAt) {
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'message-meta';
+    metaDiv.style.fontSize = '10px';
+    metaDiv.style.opacity = '0.6';
+    metaDiv.style.marginTop = '4px';
+    metaDiv.style.color = '#9e9e9e';
+    metaDiv.textContent = new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    contentDiv.appendChild(metaDiv);
+  }
   
   return messageDiv;
 }
@@ -952,19 +976,25 @@ async function sendMessage() {
   // Hide empty state if visible
   emptyState.style.display = 'none';
   
-  // Create and add user message element
+  // Create and add user message element using our updated style
   const userMessageElement = document.createElement('div');
   userMessageElement.className = 'message user-message';
   
   const userContentDiv = document.createElement('div');
   userContentDiv.className = 'message-content';
   userContentDiv.textContent = message;
-  userMessageElement.appendChild(userContentDiv);
   
+  // Add metadata inside the content div with styling for mobile design
   const userMetaDiv = document.createElement('div');
   userMetaDiv.className = 'message-meta';
-  userMetaDiv.textContent = new Date().toLocaleTimeString();
-  userMessageElement.appendChild(userMetaDiv);
+  userMetaDiv.style.fontSize = '10px';
+  userMetaDiv.style.opacity = '0.6';
+  userMetaDiv.style.marginTop = '4px';
+  userMetaDiv.style.color = '#9e9e9e';
+  userMetaDiv.textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  userContentDiv.appendChild(userMetaDiv);
+  
+  userMessageElement.appendChild(userContentDiv);
   
   messagesContainer.appendChild(userMessageElement);
   
@@ -974,13 +1004,30 @@ async function sendMessage() {
   // Add loading indicator for AI response
   const loadingElement = document.createElement('div');
   loadingElement.className = 'message ai-message loading';
-  loadingElement.innerHTML = `
-    <div class="message-content">
-      <div class="loading-dots">
-        <span></span><span></span><span></span>
-      </div>
+  
+  // Add avatar for AI
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'avatar';
+  
+  // Add the Vyna logo or initials in the avatar
+  const avatarContent = document.createElement('span');
+  avatarContent.textContent = 'V';
+  avatarContent.style.color = '#ffffff';
+  avatarContent.style.fontSize = '14px';
+  avatarContent.style.fontWeight = '600';
+  
+  avatarDiv.appendChild(avatarContent);
+  loadingElement.appendChild(avatarDiv);
+  
+  // Add the loading content
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
+  contentDiv.innerHTML = `
+    <div class="loading-dots">
+      <span></span><span></span><span></span>
     </div>
   `;
+  loadingElement.appendChild(contentDiv);
   messagesContainer.appendChild(loadingElement);
   
   // Scroll to the bottom again
