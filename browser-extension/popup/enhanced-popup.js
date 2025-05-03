@@ -558,10 +558,15 @@ function switchTab(tabName) {
 }
 
 async function loadActiveTab() {
+  console.log('Loading active tab:', activeTab);
   if (activeTab === 'vynaai') {
+    console.log('Loading VynaAI chat sessions...');
     await loadChatSessions();
   } else if (activeTab === 'notepad') {
+    console.log('Loading notepad content...');
     await loadNotes();
+  } else {
+    console.warn('Unknown active tab:', activeTab);
   }
 }
 
@@ -1073,9 +1078,19 @@ async function loadNotes() {
 
 // Create a note item element for the list
 function createNoteItem(note) {
+  console.log('Creating note item for note:', note);
+  if (!note || !note.id) {
+    console.error('Invalid note object:', note);
+    return document.createElement('div'); // Return empty div to prevent errors
+  }
+  
   const noteItem = document.createElement('div');
   noteItem.className = 'p-2 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-lg cursor-pointer transition-colors';
-  noteItem.addEventListener('click', () => handleViewNote(note));
+  noteItem.setAttribute('data-note-id', note.id);
+  noteItem.addEventListener('click', () => {
+    console.log('Note item clicked, triggering handleViewNote for note ID:', note.id);
+    handleViewNote(note);
+  });
   
   const title = document.createElement('h3');
   title.className = 'text-sm font-medium text-white mb-1 line-clamp-1';
@@ -1129,8 +1144,18 @@ function handleNewNote() {
 
 // Handle viewing a note
 function handleViewNote(note) {
-  console.log('Viewing note:', note.id);
+  console.log('Viewing note:', note.id, note);
+  // Validate we have a valid note object
+  if (!note || !note.id) {
+    console.error('Invalid note object:', note);
+    return;
+  }
+  
   const notepadContent = document.getElementById('notepad-content');
+  if (!notepadContent) {
+    console.error('notepad-content element not found');
+    return;
+  }
   
   // Get the note viewer template
   const template = getTemplate('note-viewer-template');
@@ -1163,12 +1188,20 @@ function handleViewNote(note) {
 
 // Handle editing a note
 function handleEditNote(note) {
-  console.log('Editing note:', note.id);
+  console.log('Editing note:', note.id, note);
+  // Validate we have a valid note object
+  if (!note || !note.id) {
+    console.error('Invalid note object:', note);
+    return;
+  }
+  
   // Set current note ID
   currentNoteId = note.id;
   
   // Split the content into lines
+  console.log('Note content before splitting:', note.content);
   noteLines = note.content ? note.content.split('\n') : [];
+  console.log('Note lines after splitting:', noteLines);
   
   // Show the note editor
   const notepadContent = document.getElementById('notepad-content');
@@ -1196,89 +1229,151 @@ function handleEditNote(note) {
 
 // Set up event listeners for the note editor
 function setupNoteEditorEventListeners() {
+  console.log('Setting up note editor event listeners');
   // Back button
-  document.querySelector('.back-button').addEventListener('click', () => loadNotes());
+  const backButton = document.querySelector('.back-button');
+  if (!backButton) {
+    console.error('Back button not found in the note editor');
+  } else {
+    backButton.addEventListener('click', () => {
+      console.log('Back button clicked, returning to notes list');
+      loadNotes();
+    });
+  }
   
   // Save button
   const saveButton = document.getElementById('saveNoteButton');
-  saveButton.addEventListener('click', handleSaveNote);
+  if (!saveButton) {
+    console.error('Save button not found in the note editor');
+    return;
+  }
+  
+  saveButton.addEventListener('click', () => {
+    console.log('Save button clicked');
+    handleSaveNote();
+  });
   saveButton.disabled = noteLines.length === 0;
+  console.log('Save button initial state:', saveButton.disabled ? 'disabled' : 'enabled');
   
   // Add line button
   const addLineButton = document.getElementById('addLineButton');
-  addLineButton.addEventListener('click', handleAddNoteLine);
+  if (!addLineButton) {
+    console.error('Add line button not found in the note editor');
+    return;
+  }
+  
+  addLineButton.addEventListener('click', () => {
+    console.log('Add line button clicked');
+    handleAddNoteLine();
+  });
   
   // Input field
   const noteInput = document.getElementById('noteInput');
+  if (!noteInput) {
+    console.error('Note input field not found in the note editor');
+    return;
+  }
+  
   noteInput.addEventListener('input', () => {
     addLineButton.disabled = !noteInput.value.trim();
   });
   
   noteInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
+      console.log('Enter key pressed in note input');
       event.preventDefault();
       handleAddNoteLine();
     }
   });
+  
+  console.log('All note editor event listeners set up successfully');
 }
 
 // Refresh the display of note lines
 function refreshNoteLines() {
+  console.log('Refreshing note lines display:', noteLines);
   const linesContainer = document.getElementById('note-lines');
-  if (!linesContainer) return;
+  if (!linesContainer) {
+    console.error('Note lines container not found');
+    return;
+  }
   
   // Clear the container
   linesContainer.innerHTML = '';
+  console.log('Cleared lines container');
   
   // Add each line as a div
-  noteLines.forEach(line => {
+  noteLines.forEach((line, index) => {
     const lineElement = document.createElement('div');
     lineElement.className = 'bg-zinc-800/40 p-2 rounded-lg text-sm text-white';
     lineElement.textContent = line;
+    lineElement.setAttribute('data-line-index', index);
     linesContainer.appendChild(lineElement);
   });
+  console.log(`Added ${noteLines.length} lines to the display`);
   
   // Update save button state
   const saveButton = document.getElementById('saveNoteButton');
   if (saveButton) {
-    saveButton.disabled = noteLines.length === 0;
+    const newDisabledState = noteLines.length === 0;
+    saveButton.disabled = newDisabledState;
+    console.log('Updated save button state:', newDisabledState ? 'disabled' : 'enabled');
+  } else {
+    console.error('Save button not found when updating state');
   }
 }
 
 // Handle adding a line to the note
 function handleAddNoteLine() {
+  console.log('Handling add note line');
   const noteInput = document.getElementById('noteInput');
-  if (!noteInput) return;
+  if (!noteInput) {
+    console.error('Note input field not found when trying to add line');
+    return;
+  }
   
   const line = noteInput.value.trim();
-  if (!line) return;
+  if (!line) {
+    console.log('Empty line, not adding');
+    return;
+  }
   
   // Add the line to our array
+  console.log('Adding line to noteLines array:', line);
   noteLines.push(line);
+  console.log('Current noteLines array:', noteLines);
   
   // Clear the input field
   noteInput.value = '';
   
   // Refresh the line display
+  console.log('Refreshing line display after adding line');
   refreshNoteLines();
   
   // Focus back on the input
   noteInput.focus();
+  console.log('Focus returned to input field');
 }
 
 // Handle saving the note
 async function handleSaveNote() {
+  console.log('Handling save note, current state:', { noteLines, currentNoteId });
+  
   // Validate we have content
   if (noteLines.length === 0) {
+    console.error('Cannot save note: Note content is empty');
     showToast('Note content cannot be empty', true);
     return;
   }
   
   // Validate user is authenticated
   if (!isAuthenticated || !currentUser) {
+    console.error('Cannot save note: User not authenticated');
     showToast('You must be logged in to save notes', true);
     return;
   }
+  
+  console.log('Authentication and content validation passed');
   
   // Disable the save button
   const saveButton = document.getElementById('saveNoteButton');
@@ -1291,36 +1386,54 @@ async function handleSaveNote() {
     const title = noteLines[0].substring(0, 50) + (noteLines[0].length > 50 ? '...' : '');
     
     let response;
+    const requestData = {
+      hostId: currentUser.id,
+      title,
+      content,
+    };
+    
+    console.log('Preparing request data:', requestData);
+    
     if (currentNoteId) {
       // Update existing note
       console.log(`Updating note ${currentNoteId}`);
-      response = await fetch(`${API_BASE_URL}/api/notepads/note/${currentNoteId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          hostId: currentUser.id,
-          title,
-          content,
-        }),
-      });
+      const apiUrl = `${API_BASE_URL}/api/notepads/note/${currentNoteId}`;
+      console.log('API URL for update:', apiUrl);
+      
+      try {
+        response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(requestData),
+        });
+        console.log('Update note response status:', response.status);
+      } catch (fetchError) {
+        console.error('Fetch error during note update:', fetchError);
+        throw fetchError;
+      }
     } else {
       // Create new note
       console.log('Creating new note');
-      response = await fetch(`${API_BASE_URL}/api/notepads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          hostId: currentUser.id,
-          title,
-          content,
-        }),
-      });
+      const apiUrl = `${API_BASE_URL}/api/notepads`;
+      console.log('API URL for create:', apiUrl);
+      
+      try {
+        response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(requestData),
+        });
+        console.log('Create note response status:', response.status);
+      } catch (fetchError) {
+        console.error('Fetch error during note creation:', fetchError);
+        throw fetchError;
+      }
     }
     
     if (response.ok) {
