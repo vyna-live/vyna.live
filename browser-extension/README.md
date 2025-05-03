@@ -1,64 +1,76 @@
 # Vyna.live Browser Extension
 
-This browser extension brings the AI chat and notepad functionality from Vyna.live to your browser. It allows you to use these tools while browsing the web, without having to navigate to the Vyna.live website.
+## Overview
+The Vyna.live browser extension provides quick access to AI chat and notepad functionality from your browser without needing to open the full Vyna.live application. This extension is designed to match the look and feel of the main Vyna.live application while providing a streamlined, focused experience.
 
 ## Features
-
-- **AI Chat**: Chat with the Vyna AI assistant with two commentary styles:
-  - **Color Commentary**: Detailed, insightful responses
-  - **Play-by-Play**: Quick, action-oriented responses
-- **File uploads**: Upload documents, images, and record audio messages
-- **Notepad**: Create and edit notes with a simple, clean interface
-- **Authentication**: Securely log in to your Vyna.live account
+- **VynaAI Chat**: Access the AI assistant directly from your browser
+- **Notepad**: Create and manage notes directly from your browser
+- **Seamless Authentication**: Uses the same account as your Vyna.live web application
+- **Consistent Design**: Matches the look and feel of the main application
 
 ## Installation
 
 ### Chrome
-
-1. Download and extract the extension
+1. Download or clone this repository
 2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" (toggle in the top right)
-4. Click "Load unpacked"
-5. Select the `browser-extension` folder
+3. Enable "Developer mode" in the top right corner
+4. Click "Load unpacked" and select the `browser-extension` folder
+5. The extension should now appear in your extensions list
 
 ### Firefox
-
-1. Download and extract the extension
+1. Download or clone this repository
 2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on..."
-4. Select the `manifest.json` file in the `browser-extension` folder
+4. Select the `manifest.json` file within the `browser-extension` folder
+5. The extension should now appear in your extensions list
 
 ### Microsoft Edge
-
-1. Download and extract the extension
+1. Download or clone this repository
 2. Open Edge and navigate to `edge://extensions/`
-3. Enable "Developer mode" (toggle on the left sidebar)
-4. Click "Load unpacked"
-5. Select the `browser-extension` folder
+3. Enable "Developer mode" using the toggle at the bottom left
+4. Click "Load unpacked" and select the `browser-extension` folder
+5. The extension should now appear in your extensions list
 
 ## Usage
 
-1. Click the Vyna.live extension icon in your browser toolbar
-2. Log in with your Vyna.live account credentials
-3. Use the AI chat or notepad features
+### Authentication
+Before using the extension, you need to be logged in to your Vyna.live account. If you're not logged in, the extension will prompt you to do so.
+
+### VynaAI Chat
+1. Click on the Vyna.live extension icon in your browser toolbar
+2. The default tab is VynaAI chat
+3. Type your message in the input field and press Enter or click the send button
+4. Choose between Color Commentary (CC) or Play-by-Play (PP) styles using the toggle at the top of the input field
+
+### Notepad
+1. Click on the Vyna.live extension icon in your browser toolbar
+2. Click on the "Notepad" tab
+3. Click on "New Note" to create a new note
+4. Add lines to your note using the input field
+5. Click "Save" to save your note
 
 ## Development
 
-This extension is built using standard web technologies:
+### Extension Structure
+- `manifest.json`: Extension configuration
+- `popup/enhanced-popup.html`: Main HTML for the extension popup
+- `popup/enhanced-popup.js`: JavaScript for the extension popup
+- `styles/enhanced-popup.css`: CSS for the extension popup
+- `assets/`: Icons and other assets
+- `background/background.js`: Background service worker script
 
-- HTML, CSS, and JavaScript
-- Web Extension API (compatible with Chrome, Firefox, and Edge)
+### Design Principles
+1. **Consistency**: The extension UI should match the main application
+2. **Simplicity**: Focus on core functionality
+3. **Performance**: Minimize API calls and optimize resource usage
 
-### Building
+### API Integration
+The extension communicates with the Vyna.live backend API using the same endpoints as the main application. Authentication is handled through cookies, allowing for a seamless experience between the web application and the extension.
 
-No build step is required for development. Simply load the unpacked extension in your browser.
+## Known Issues
+- Performance may be slower compared to the main application
+- Limited offline functionality
 
-For production distribution, you can create a zip file of the extension folder:
-
-```bash
-zip -r vyna-extension.zip browser-extension/
-```
-
-## License
-
-All rights reserved. Copyright © 2025 Vyna.live
+## Contributing
+We welcome contributions to improve the Vyna.live browser extension. Please feel free to submit pull requests or open issues for bugs and feature requests.
