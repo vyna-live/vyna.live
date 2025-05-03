@@ -522,14 +522,27 @@ function showToast(message, isError = false) {
 
 // Tab functions
 function initializeTabs() {
-  // Add event listeners to the tab buttons
-  const tabButtons = document.querySelectorAll('.tab');
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabName = button.getAttribute('data-tab');
+  console.log('Initializing tabs...');
+  
+  // Use event delegation for tab buttons
+  const tabsNav = document.querySelector('.tabs-nav');
+  if (!tabsNav) {
+    console.error('Tabs navigation container not found');
+    return;
+  }
+  
+  // Add event listener to the parent container
+  tabsNav.addEventListener('click', (event) => {
+    // Find the closest tab button if we clicked on a child element
+    const tabButton = event.target.closest('.tab');
+    if (tabButton) {
+      const tabName = tabButton.getAttribute('data-tab');
+      console.log('Tab clicked:', tabName);
       switchTab(tabName);
-    });
+    }
   });
+  
+  console.log('Tab event delegation set up successfully');
 }
 
 function switchTab(tabName) {
@@ -1446,9 +1459,27 @@ function handleViewNote(note) {
     noteContent.textContent = 'No content';
   }
   
-  // Add event listeners
-  document.querySelector('.back-button').addEventListener('click', () => loadNotes());
-  document.getElementById('editNoteButton').addEventListener('click', () => handleEditNote(note));
+  // Add event listeners using event delegation for safety
+  const noteViewerContainer = document.getElementById('note-view-container');
+  if (noteViewerContainer) {
+    noteViewerContainer.addEventListener('click', (event) => {
+      // Check if the clicked element is the back button or a parent of it has the class
+      if (event.target.classList.contains('back-button') || 
+          event.target.closest('.back-button')) {
+        loadNotes();
+        return;
+      }
+      
+      // Check if the clicked element is the edit button or a parent of it has the ID
+      if (event.target.id === 'editNoteButton' || 
+          event.target.closest('#editNoteButton')) {
+        handleEditNote(note);
+        return;
+      }
+    });
+  } else {
+    console.error('Note viewer container not found');
+  }
 }
 
 // Handle editing a note
@@ -1495,61 +1526,79 @@ function handleEditNote(note) {
 // Set up event listeners for the note editor
 function setupNoteEditorEventListeners() {
   console.log('Setting up note editor event listeners');
-  // Back button
-  const backButton = document.querySelector('.back-button');
-  if (!backButton) {
-    console.error('Back button not found in the note editor');
-  } else {
-    backButton.addEventListener('click', () => {
+  
+  // Use a single parent element and event delegation for most of the buttons
+  const noteEditorContainer = document.getElementById('note-editor-container');
+  if (!noteEditorContainer) {
+    console.error('Note editor container not found');
+    return;
+  }
+  
+  // Set up event delegation for the note editor container
+  noteEditorContainer.addEventListener('click', (event) => {
+    // Back button
+    if (event.target.classList.contains('back-button') || 
+        event.target.closest('.back-button')) {
       console.log('Back button clicked, returning to notes list');
       loadNotes();
-    });
-  }
-  
-  // Save button
-  const saveButton = document.getElementById('saveNoteButton');
-  if (!saveButton) {
-    console.error('Save button not found in the note editor');
-    return;
-  }
-  
-  saveButton.addEventListener('click', () => {
-    console.log('Save button clicked');
-    handleSaveNote();
-  });
-  saveButton.disabled = noteLines.length === 0;
-  console.log('Save button initial state:', saveButton.disabled ? 'disabled' : 'enabled');
-  
-  // Add line button
-  const addLineButton = document.getElementById('addLineButton');
-  if (!addLineButton) {
-    console.error('Add line button not found in the note editor');
-    return;
-  }
-  
-  addLineButton.addEventListener('click', () => {
-    console.log('Add line button clicked');
-    handleAddNoteLine();
-  });
-  
-  // Input field
-  const noteInput = document.getElementById('noteInput');
-  if (!noteInput) {
-    console.error('Note input field not found in the note editor');
-    return;
-  }
-  
-  noteInput.addEventListener('input', () => {
-    addLineButton.disabled = !noteInput.value.trim();
-  });
-  
-  noteInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      console.log('Enter key pressed in note input');
-      event.preventDefault();
+      return;
+    }
+    
+    // Save button
+    if (event.target.id === 'saveNoteButton' || 
+        event.target.closest('#saveNoteButton')) {
+      if (event.target.closest('button').disabled) return;
+      console.log('Save button clicked');
+      handleSaveNote();
+      return;
+    }
+    
+    // Add line button
+    if (event.target.id === 'addLineButton' || 
+        event.target.closest('#addLineButton')) {
+      if (event.target.closest('button').disabled) return;
+      console.log('Add line button clicked');
       handleAddNoteLine();
+      return;
     }
   });
+  
+  // Set initial state for save button
+  const saveButton = document.getElementById('saveNoteButton');
+  if (saveButton) {
+    saveButton.disabled = noteLines.length === 0;
+    console.log('Save button initial state:', saveButton.disabled ? 'disabled' : 'enabled');
+  }
+  
+  // Add line button initial state
+  const addLineButton = document.getElementById('addLineButton');
+  if (addLineButton) {
+    addLineButton.disabled = true;
+  }
+  
+  // Input field events need direct attachment
+  const noteInput = document.getElementById('noteInput');
+  if (noteInput) {
+    noteInput.addEventListener('input', () => {
+      const addLineButton = document.getElementById('addLineButton');
+      if (addLineButton) {
+        addLineButton.disabled = !noteInput.value.trim();
+      }
+    });
+    
+    noteInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        console.log('Enter key pressed in note input');
+        event.preventDefault();
+        handleAddNoteLine();
+      }
+    });
+    
+    // Focus on the input
+    setTimeout(() => noteInput.focus(), 100);
+  } else {
+    console.error('Note input field not found in the note editor');
+  }
   
   console.log('All note editor event listeners set up successfully');
 }
