@@ -72,33 +72,41 @@ function showLoginScreen() {
   const appContainer = document.getElementById('app');
   appContainer.innerHTML = '';
   
-  // Get the login template and clone it
-  const loginTemplate = document.getElementById('login-template');
-  const loginContent = document.importNode(loginTemplate.content, true);
+  // Get the auth template and clone it
+  const authTemplate = document.getElementById('auth-template');
+  const authContent = document.importNode(authTemplate.content, true);
   
   // Append to the app container
-  appContainer.appendChild(loginContent);
+  appContainer.appendChild(authContent);
   
-  // Add event listeners
+  // Initialize auth tabs
+  initializeAuthTabs();
+  
+  // Add event listeners for login and register forms
   document.getElementById('loginButton').addEventListener('click', handleLogin);
-  document.getElementById('switchToRegister').addEventListener('click', showRegisterScreen);
+  document.getElementById('registerButton').addEventListener('click', handleRegister);
 }
 
-function showRegisterScreen() {
-  // Clear the app container
-  const appContainer = document.getElementById('app');
-  appContainer.innerHTML = '';
+function initializeAuthTabs() {
+  const tabs = document.querySelectorAll('.auth-tab');
+  const contents = document.querySelectorAll('.auth-tab-content');
   
-  // Get the register template and clone it
-  const registerTemplate = document.getElementById('register-template');
-  const registerContent = document.importNode(registerTemplate.content, true);
-  
-  // Append to the app container
-  appContainer.appendChild(registerContent);
-  
-  // Add event listeners
-  document.getElementById('registerButton').addEventListener('click', handleRegister);
-  document.getElementById('switchToLogin').addEventListener('click', showLoginScreen);
+  // Add click event to each tab
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active class from all tabs and contents
+      tabs.forEach(t => t.classList.remove('active'));
+      contents.forEach(c => c.classList.remove('active'));
+      
+      // Add active class to clicked tab and corresponding content
+      const tabType = tab.dataset.tab;
+      tab.classList.add('active');
+      document.getElementById(`${tabType}-content`).classList.add('active');
+      
+      // Clear any error messages
+      document.getElementById('authError').style.display = 'none';
+    });
+  });
 }
 
 async function handleLogin() {
@@ -113,6 +121,14 @@ async function handleLogin() {
   }
   
   try {
+    // Disable the login button and show loading state
+    const loginButton = document.getElementById('loginButton');
+    loginButton.disabled = true;
+    loginButton.innerHTML = '<span class="loading-spinner"></span> Signing in...';
+    
+    // Clear any previous errors
+    document.getElementById('authError').style.display = 'none';
+    
     // Send login request
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
@@ -132,14 +148,28 @@ async function handleLogin() {
       currentUser = userData;
       isAuthenticated = true;
       
+      // Show success toast
+      showToast('Successfully signed in');
+      
       // Reload the app
       initializeApp();
     } else {
+      // Re-enable the login button
+      loginButton.disabled = false;
+      loginButton.innerHTML = '<span class="button-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span> Sign in';
+      
+      // Show error message
       const errorData = await response.json();
       showError('loginError', errorData.error || 'Login failed. Please check your credentials.');
     }
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Re-enable the login button
+    const loginButton = document.getElementById('loginButton');
+    loginButton.disabled = false;
+    loginButton.innerHTML = '<span class="button-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span> Sign in';
+    
     showError('loginError', 'Login failed due to a network error. Please try again.');
   }
 }
@@ -162,7 +192,21 @@ async function handleRegister() {
     return;
   }
   
+  // Email format validation
+  if (!email.includes('@') || !email.includes('.')) {
+    showError('registerError', 'Please enter a valid email address');
+    return;
+  }
+  
   try {
+    // Disable the register button and show loading state
+    const registerButton = document.getElementById('registerButton');
+    registerButton.disabled = true;
+    registerButton.innerHTML = '<span class="loading-spinner"></span> Creating account...';
+    
+    // Clear any previous errors
+    document.getElementById('authError').style.display = 'none';
+    
     // Send register request
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
@@ -184,22 +228,51 @@ async function handleRegister() {
       currentUser = userData;
       isAuthenticated = true;
       
+      // Show success toast
+      showToast('Account created successfully');
+      
       // Reload the app
       initializeApp();
     } else {
-      const errorData = await response.json();
-      showError('registerError', errorData.error || 'Registration failed. Please try again.');
+      // Re-enable the register button
+      registerButton.disabled = false;
+      registerButton.innerHTML = '<span class="button-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg></span> Create account';
+      
+      // Show error message
+      try {
+        const errorData = await response.json();
+        showError('registerError', errorData.error || 'Registration failed. Please try again.');
+      } catch (e) {
+        showError('registerError', 'Registration failed. Please try again.');
+      }
     }
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Re-enable the register button
+    const registerButton = document.getElementById('registerButton');
+    registerButton.disabled = false;
+    registerButton.innerHTML = '<span class="button-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg></span> Create account';
+    
     showError('registerError', 'Registration failed due to a network error. Please try again.');
   }
 }
 
 function showError(elementId, message) {
-  const errorElement = document.getElementById(elementId);
-  errorElement.textContent = message;
-  errorElement.style.display = 'block';
+  // For the new tabbed auth UI, we use a single error display
+  if (elementId === 'loginError' || elementId === 'registerError') {
+    const errorElement = document.getElementById('authError');
+    const errorMessageElement = document.getElementById('authErrorMessage');
+    errorMessageElement.textContent = message;
+    errorElement.style.display = 'flex';
+  } else {
+    // For other error elements
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+      errorElement.textContent = message;
+      errorElement.style.display = 'block';
+    }
+  }
 }
 
 // User dropdown functions
