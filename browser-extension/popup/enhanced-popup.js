@@ -525,11 +525,12 @@ function initializeTabs() {
   console.log('Initializing tabs...');
   
   // Use event delegation for tab buttons
-  const tabsNav = document.querySelector('.tabs-nav');
+  const tabsNav = document.querySelector('.tabs');
   if (!tabsNav) {
     console.error('Tabs navigation container not found');
     return;
   }
+  console.log('Found tabs container:', tabsNav);
   
   // Add event listener to the parent container
   tabsNav.addEventListener('click', (event) => {
@@ -550,26 +551,39 @@ function switchTab(tabName) {
   // Update active tab
   activeTab = tabName;
   
-  // Update tab UI
-  const tabs = document.querySelectorAll('.tab');
-  tabs.forEach(tab => {
-    if (tab.getAttribute('data-tab') === tabName) {
-      tab.classList.add('active');
-    } else {
-      tab.classList.remove('active');
-    }
-  });
+  // Update tab UI - only target tabs in the navigation, not nested tabs in content
+  const tabsContainer = document.querySelector('.tabs');
+  if (tabsContainer) {
+    const tabs = tabsContainer.querySelectorAll('.tab');
+    console.log(`Found ${tabs.length} navigation tabs`);
+    tabs.forEach(tab => {
+      if (tab.getAttribute('data-tab') === tabName) {
+        tab.classList.add('active');
+      } else {
+        tab.classList.remove('active');
+      }
+    });
+  } else {
+    console.error('Tabs container not found when updating tab UI');
+  }
   
-  // Update content UI
-  const tabContents = document.querySelectorAll('.tab-content');
-  tabContents.forEach(content => {
-    if (content.id === `${tabName}-content`) {
-      content.classList.add('active');
-      console.log(`Activating content: ${content.id}`);
-    } else {
-      content.classList.remove('active');
-    }
-  });
+  // Update content UI - only select direct children of content container
+  const contentContainer = document.querySelector('.content');
+  if (contentContainer) {
+    const tabContents = contentContainer.querySelectorAll('.tab-content');
+    console.log(`Found ${tabContents.length} tab content elements`);
+    
+    tabContents.forEach(content => {
+      if (content.id === `${tabName}-content`) {
+        content.classList.add('active');
+        console.log(`Activating content: ${content.id}`);
+      } else {
+        content.classList.remove('active');
+      }
+    });
+  } else {
+    console.error('Content container not found when updating content UI');
+  }
   
   // Load the content for the active tab
   loadActiveTab();
@@ -611,9 +625,21 @@ async function loadActiveTab() {
   } catch (error) {
     console.error(`Error loading ${activeTab} tab:`, error);
     // Show error in the tab content area
-    const contentElement = document.querySelector('.tab-content.active') || 
-      document.getElementById('vynaai-content') || 
-      document.getElementById('notepad-content');
+    let contentElement = null;
+    // First try to find the active tab content in the content container
+    const contentContainer = document.querySelector('.content');
+    if (contentContainer) {
+      contentElement = contentContainer.querySelector('.tab-content.active');
+    }
+    // Fallback to the current tab's content by ID if we couldn't find the active one
+    if (!contentElement) {
+      contentElement = document.getElementById(`${activeTab}-content`);
+    }
+    // Last resort fallbacks
+    if (!contentElement) {
+      contentElement = document.getElementById('vynaai-content') || 
+                       document.getElementById('notepad-content');
+    }
       
     if (contentElement) {
       contentElement.innerHTML = `
