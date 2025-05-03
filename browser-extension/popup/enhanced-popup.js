@@ -1,5 +1,10 @@
 // API Base URL
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://vyna-live.replit.app';
+// Get the correct API base URL based on environment
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000' 
+  : 'https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev';
+
+console.log('Using API base URL:', API_BASE_URL);
 
 // Helper function to get templates, even if they're removed from the DOM
 const templates = {};
@@ -1013,32 +1018,75 @@ async function handleImageUpload(event) {
 // Notepad functions
 async function loadNotes() {
   console.log('Loading notes...');
+  
+  // Check authentication status first
   if (!isAuthenticated || !currentUser) {
     console.error('Cannot load notes: User not authenticated');
-    return;
+    // Try to re-authenticate
+    const authStatus = await checkAuthentication();
+    if (!authStatus.isAuthenticated) {
+      // Show error with login option
+      const notepadContent = document.getElementById('notepad-content');
+      notepadContent.innerHTML = `
+        <div class="p-4 text-center">
+          <div class="text-red-400 mb-2">Authentication required to load notes</div>
+          <div class="text-zinc-400 text-sm">Please sign in to access your notes</div>
+          <button id="loginFromNotes" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
+            Sign in
+          </button>
+        </div>
+      `;
+      
+      // Add login button functionality
+      const loginButton = document.getElementById('loginFromNotes');
+      if (loginButton) {
+        loginButton.addEventListener('click', () => {
+          showLoginScreen();
+        });
+      }
+      return;
+    } else {
+      // Authentication succeeded, store user data
+      currentUser = authStatus.user;
+      isAuthenticated = true;
+    }
   }
   
   try {
     const notepadContent = document.getElementById('notepad-content');
     notepadContent.innerHTML = '<div class="flex justify-center items-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
     
-    console.log(`Fetching from: ${API_BASE_URL}/api/notepads/${currentUser.id}`);
+    // Print detailed request information for debugging
+    console.log(`Fetching notes from: ${API_BASE_URL}/api/notepads/${currentUser.id}`);
+    console.log('Using credentials include for CORS support');
+    console.log('Current user ID:', currentUser.id);
+    
+    // Make the API request with credentials included
     const response = await fetch(`${API_BASE_URL}/api/notepads/${currentUser.id}`, {
+      method: 'GET',
       credentials: 'include',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }
     });
-    console.log('Response status:', response.status, response.statusText);
+    
+    console.log('Notes response status:', response.status, response.statusText);
     
     if (response.ok) {
+      // Parse the JSON response
       const notes = await response.json();
-      console.log(`Loaded ${notes.length} notes`);      
+      console.log(`Successfully loaded ${notes.length} notes:`, notes);
       savedNotes = notes;
       
       // Get the notes list template and populate it
       const template = getTemplate('notepad-list-template');
+      if (!template) {
+        console.error('Notepad list template not found');
+        notepadContent.innerHTML = '<div class="p-4 text-center text-red-400">Template error: Could not find notepad list template</div>';
+        return;
+      }
+      
       const content = document.importNode(template.content, true);
       
       // Clear the notepad content and append our template
@@ -1049,6 +1097,11 @@ async function loadNotes() {
       if (notes && notes.length > 0) {
         // Show notes list
         const notesList = document.getElementById('notes-list');
+        if (!notesList) {
+          console.error('Notes list element not found in template');
+          return;
+        }
+        
         notesList.innerHTML = '';
         
         // Create and append note items
@@ -1058,15 +1111,29 @@ async function loadNotes() {
         });
         
         // Hide empty state
-        document.getElementById('empty-notes').style.display = 'none';
+        const emptyNotes = document.getElementById('empty-notes');
+        if (emptyNotes) {
+          emptyNotes.style.display = 'none';
+        }
       } else {
         // Show empty state
-        document.getElementById('notes-list').innerHTML = '';
-        document.getElementById('empty-notes').style.display = 'flex';
+        const notesList = document.getElementById('notes-list');
+        if (notesList) {
+          notesList.innerHTML = '';
+        }
+        
+        const emptyNotes = document.getElementById('empty-notes');
+        if (emptyNotes) {
+          emptyNotes.style.display = 'flex';
+        }
       }
       
       // Add event listeners
-      document.getElementById('newNoteButton').addEventListener('click', handleNewNote);
+      const newNoteButton = document.getElementById('newNoteButton');
+      if (newNoteButton) {
+        newNoteButton.addEventListener('click', handleNewNote);
+      }
+      
       const emptyNewButton = document.getElementById('empty-new-note-button');
       if (emptyNewButton) {
         emptyNewButton.addEventListener('click', () => {
@@ -1095,9 +1162,61 @@ async function loadNotes() {
         });
       }
       
+    } else if (response.status === 401) {
+      // Unauthorized - session may have expired
+      console.error('Unauthorized: Session may have expired');
+      isAuthenticated = false;
+      currentUser = null;
+      
+      notepadContent.innerHTML = `
+        <div class="p-4 text-center">
+          <div class="text-red-400 mb-2">Session expired</div>
+          <div class="text-zinc-400 text-sm">Please sign in again to access your notes</div>
+          <button id="reLoginButton" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
+            Sign in
+          </button>
+        </div>
+      `;
+      
+      // Add login button functionality
+      const reLoginButton = document.getElementById('reLoginButton');
+      if (reLoginButton) {
+        reLoginButton.addEventListener('click', () => {
+          showLoginScreen();
+        });
+      }
     } else {
+      // Other server error
       console.error('Failed to load notes:', response.status);
-      notepadContent.innerHTML = '<div class="p-4 text-center text-red-400">Failed to load notes</div>';
+      
+      // Try to get error details from response
+      let errorDetails = '';
+      try {
+        const errorData = await response.json();
+        errorDetails = errorData.error || errorData.message || '';
+        console.error('Server error details:', errorDetails);
+      } catch (e) {
+        console.error('Could not parse error response:', e);
+      }
+      
+      notepadContent.innerHTML = `
+        <div class="p-4 text-center">
+          <div class="text-red-400 mb-2">Failed to load notes (${response.status})</div>
+          ${errorDetails ? `<div class="text-zinc-400 text-sm">${errorDetails}</div>` : ''}
+          <button id="retryNotesButton" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
+            Retry
+          </button>
+        </div>
+      `;
+      
+      // Add retry button functionality
+      const retryButton = document.getElementById('retryNotesButton');
+      if (retryButton) {
+        retryButton.addEventListener('click', () => {
+          console.log('Retrying to load notes...');
+          loadNotes();
+        });
+      }
     }
   } catch (error) {
     console.error('Error loading notes:', error);
@@ -1114,25 +1233,31 @@ async function loadNotes() {
       helpText = 'Check your internet connection or server availability';
     } else if (error.message && error.message.includes('SyntaxError')) {
       helpText = 'Server response could not be parsed as JSON';
+    } else if (error.message && error.message.includes('Failed to fetch')) {
+      helpText = 'Could not connect to the server. The API URL might be incorrect or the server is down.';
     }
     
-    document.getElementById('notepad-content').innerHTML = `
-      <div class="p-4 text-center">
-        <div class="text-red-400 mb-2">${errorMessage}</div>
-        ${helpText ? `<div class="text-zinc-400 text-sm">${helpText}</div>` : ''}
-        <button id="retryNotesButton" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
-          Retry Loading Notes
-        </button>
-      </div>
-    `;
-    
-    // Add retry button functionality
-    const retryButton = document.getElementById('retryNotesButton');
-    if (retryButton) {
-      retryButton.addEventListener('click', () => {
-        console.log('Retrying to load notes...');
-        loadNotes();
-      });
+    const notepadContent = document.getElementById('notepad-content');
+    if (notepadContent) {
+      notepadContent.innerHTML = `
+        <div class="p-4 text-center">
+          <div class="text-red-400 mb-2">${errorMessage}</div>
+          ${helpText ? `<div class="text-zinc-400 text-sm">${helpText}</div>` : ''}
+          <div class="text-zinc-400 text-xs mt-2">API URL: ${API_BASE_URL}</div>
+          <button id="retryNotesButton" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
+            Retry Loading Notes
+          </button>
+        </div>
+      `;
+      
+      // Add retry button functionality
+      const retryButton = document.getElementById('retryNotesButton');
+      if (retryButton) {
+        retryButton.addEventListener('click', () => {
+          console.log('Retrying to load notes...');
+          loadNotes();
+        });
+      }
     }
   }
 }
