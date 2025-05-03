@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUserPreferences, updateUserPreferences, clearAuthData } from '@libs/utils/storage';
+import { getUserPreferences, updateUserPreferences, clearAuthData, UserPreferences } from '@libs/utils/storage';
 import Logo from './ui/Logo';
 
 interface SettingsViewProps {
@@ -7,7 +7,7 @@ interface SettingsViewProps {
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
-  const [preferences, setPreferences] = useState({
+  const [preferences, setPreferences] = useState<UserPreferences>({
     theme: 'system',
     fontSize: 'medium',
     teleprompterSpeed: 5,
@@ -53,7 +53,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
   };
   
   // Handle preference change
-  const handlePreferenceChange = (key: string, value: any) => {
+  const handlePreferenceChange = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
     setPreferences(prev => ({
       ...prev,
       [key]: value
@@ -83,7 +83,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
             <select 
               id="theme" 
               value={preferences.theme} 
-              onChange={(e) => handlePreferenceChange('theme', e.target.value)}
+              onChange={(e) => handlePreferenceChange('theme', e.target.value as 'light' | 'dark' | 'system')}
               disabled={isLoading}
             >
               <option value="light">Light</option>
@@ -97,7 +97,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
             <select 
               id="fontSize" 
               value={preferences.fontSize} 
-              onChange={(e) => handlePreferenceChange('fontSize', e.target.value)}
+              onChange={(e) => handlePreferenceChange('fontSize', e.target.value as 'small' | 'medium' | 'large')}
               disabled={isLoading}
             >
               <option value="small">Small</option>
@@ -115,7 +115,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onLogout }) => {
             <select 
               id="defaultCommentaryStyle" 
               value={preferences.defaultCommentaryStyle} 
-              onChange={(e) => handlePreferenceChange('defaultCommentaryStyle', e.target.value)}
+              onChange={(e) => handlePreferenceChange('defaultCommentaryStyle', e.target.value as 'play-by-play' | 'color')}
               disabled={isLoading}
             >
               <option value="color">Color Commentary</option>

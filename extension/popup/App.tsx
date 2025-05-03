@@ -1,60 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { getAuthStatus } from '@libs/utils/api';
 import AuthPage from '@libs/components/AuthPage';
 import Dashboard from '@libs/components/Dashboard';
+import { getAuthData, clearAuthData } from '@libs/utils/storage';
+import { type StoredAuthData } from '@libs/utils/storage';
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [authData, setAuthData] = useState<StoredAuthData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        setIsLoading(true);
-        const authStatus = await getAuthStatus();
-        setIsAuthenticated(authStatus.isAuthenticated);
-      } catch (err) {
-        console.error('Authentication check failed:', err);
-        setError('Failed to check authentication status');
+        const data = await getAuthData();
+        setAuthData(data);
+      } catch (error) {
+        console.error('Auth check failed:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     checkAuth();
   }, []);
 
-  const handleLogin = async (credentials: { username: string; password: string }) => {
+  // Handle login success
+  const handleLoginSuccess = (data: StoredAuthData) => {
+    setAuthData(data);
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Call login API
-      const response = await fetch('https://vyna.live/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(credentials),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-      }
-
-      setIsAuthenticated(true);
-    } catch (err: any) {
-      console.error('Login failed:', err);
-      setError(err.message || 'Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
+      await clearAuthData();
+      setAuthData(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -64,17 +49,13 @@ const App: React.FC = () => {
     );
   }
 
-  return (
-    <Router>
-      <Routes>
-        {isAuthenticated ? (
-          <Route path="*" element={<Dashboard />} />
-        ) : (
-          <Route path="*" element={<AuthPage onLogin={handleLogin} error={error} />} />
-        )}
-      </Routes>
-    </Router>
-  );
+  // Show auth page if not authenticated
+  if (!authData || !authData.token) {
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Show dashboard if authenticated
+  return <Dashboard user={authData} onLogout={handleLogout} />;
 };
 
 export default App;
