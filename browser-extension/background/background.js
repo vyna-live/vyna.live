@@ -15,17 +15,23 @@ let authState = {
 
 // Initialize the extension
 async function initialize() {
+  console.log('Initializing extension with API URL:', API_BASE_URL);
+  
   // Try to restore auth state from storage
   const stored = await chrome.storage.local.get(['authToken', 'user']);
+  console.log('Stored auth data found:', !!stored.authToken, !!stored.user);
   
   if (stored.authToken && stored.user) {
+    console.log('Attempting to verify user session for:', stored.user.username || stored.user.id);
     // Verify the token is still valid
     try {
       const response = await fetch(`${API_BASE_URL}/api/user`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        credentials: 'include'
+        credentials: 'include'  // This is critical for cookie-based auth
       });
       
       if (response.ok) {
