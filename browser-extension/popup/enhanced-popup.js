@@ -564,14 +564,66 @@ function switchTab(tabName) {
 
 async function loadActiveTab() {
   console.log('Loading active tab:', activeTab);
-  if (activeTab === 'vynaai') {
-    console.log('Loading VynaAI chat sessions...');
-    await loadChatSessions();
-  } else if (activeTab === 'notepad') {
-    console.log('Loading notepad content...');
-    await loadNotes();
-  } else {
-    console.warn('Unknown active tab:', activeTab);
+  
+  try {
+    // First ensure we have the right content element
+    const tabContent = {
+      'vynaai': document.getElementById('vynaai-content'),
+      'notepad': document.getElementById('notepad-content')
+    }[activeTab];
+    
+    if (!tabContent) {
+      console.error(`Content element for tab '${activeTab}' not found`);
+      return;
+    }
+    
+    if (activeTab === 'vynaai') {
+      console.log('Loading VynaAI chat sessions...');
+      // Set a loading state before async call
+      tabContent.innerHTML = '<div class="flex justify-center items-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
+      await loadChatSessions();
+    } else if (activeTab === 'notepad') {
+      console.log('Loading notepad content...');
+      // Set a loading state before async call
+      tabContent.innerHTML = '<div class="flex justify-center items-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div></div>';
+      await loadNotes();
+    } else {
+      console.warn('Unknown active tab:', activeTab);
+      // Show a message in the tab content area
+      const contentElement = document.querySelector('.tab-content.active');
+      if (contentElement) {
+        contentElement.innerHTML = `<div class="p-4 text-center text-red-400">Unknown tab: ${activeTab}</div>`;
+      }
+    }
+  } catch (error) {
+    console.error(`Error loading ${activeTab} tab:`, error);
+    // Show error in the tab content area
+    const contentElement = document.querySelector('.tab-content.active') || 
+      document.getElementById('vynaai-content') || 
+      document.getElementById('notepad-content');
+      
+    if (contentElement) {
+      contentElement.innerHTML = `
+        <div class="p-4 text-center">
+          <div class="text-red-400 mb-2">Error loading content</div>
+          <div class="text-zinc-400 text-sm">${error.message || 'Unknown error'}</div>
+          <button id="retryLoadTab" class="mt-4 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg">
+            Retry
+          </button>
+        </div>
+      `;
+      
+      // Add retry button functionality with a timeout to ensure DOM is ready
+      setTimeout(() => {
+        const retryButton = document.getElementById('retryLoadTab');
+        if (retryButton) {
+          retryButton.addEventListener('click', () => {
+            console.log('Retrying to load tab...');
+            loadActiveTab();
+          });
+        }
+      }, 100);
+    }
   }
 }
 
@@ -1019,6 +1071,13 @@ async function handleImageUpload(event) {
 async function loadNotes() {
   console.log('Loading notes...');
   
+  // Make sure we have the notepad content element
+  const notepadContent = document.getElementById('notepad-content');
+  if (!notepadContent) {
+    console.error('Cannot load notes: notepad-content element not found');
+    return;
+  }
+  
   // Check authentication status first
   if (!isAuthenticated || !currentUser) {
     console.error('Cannot load notes: User not authenticated');
@@ -1026,7 +1085,6 @@ async function loadNotes() {
     const authStatus = await checkAuthentication();
     if (!authStatus.isAuthenticated) {
       // Show error with login option
-      const notepadContent = document.getElementById('notepad-content');
       notepadContent.innerHTML = `
         <div class="p-4 text-center">
           <div class="text-red-400 mb-2">Authentication required to load notes</div>
@@ -1037,13 +1095,15 @@ async function loadNotes() {
         </div>
       `;
       
-      // Add login button functionality
-      const loginButton = document.getElementById('loginFromNotes');
-      if (loginButton) {
-        loginButton.addEventListener('click', () => {
-          showLoginScreen();
-        });
-      }
+      // Add login button functionality with a timeout to ensure DOM is ready
+      setTimeout(() => {
+        const loginButton = document.getElementById('loginFromNotes');
+        if (loginButton) {
+          loginButton.addEventListener('click', () => {
+            showLoginScreen();
+          });
+        }
+      }, 100);
       return;
     } else {
       // Authentication succeeded, store user data
@@ -1178,13 +1238,15 @@ async function loadNotes() {
         </div>
       `;
       
-      // Add login button functionality
-      const reLoginButton = document.getElementById('reLoginButton');
-      if (reLoginButton) {
-        reLoginButton.addEventListener('click', () => {
-          showLoginScreen();
-        });
-      }
+      // Add login button functionality with a timeout to ensure DOM is ready
+      setTimeout(() => {
+        const reLoginButton = document.getElementById('reLoginButton');
+        if (reLoginButton) {
+          reLoginButton.addEventListener('click', () => {
+            showLoginScreen();
+          });
+        }
+      }, 100);
     } else {
       // Other server error
       console.error('Failed to load notes:', response.status);
