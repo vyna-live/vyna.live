@@ -31,6 +31,14 @@ let savedNotes = [];
 let currentNoteId = null;
 let commentaryStyle = 'color'; // Default to color commentary
 
+// State for notepad with line-by-line functionality
+const state = {
+  user: null,
+  notes: [],
+  currentNote: null,
+  noteLines: []
+};
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', initializeApp);
 
@@ -1013,29 +1021,13 @@ async function loadNotes() {
     
     if (response.ok) {
       const notesData = await response.json();
-      savedNotes = notesData;
+      state.notes = notesData;
+      savedNotes = notesData; // Keep for backward compatibility
+      state.user = currentUser; // Sync users
+      state.currentNote = null;
+      state.noteLines = [];
       
-      // Get the notes list template and clone it
-      const notesListTemplate = getTemplate('notepad-list-template'); // Using the cache to get template
-      const notesListContent = document.importNode(notesListTemplate.content, true);
-      
-      // Clear the content area and append the template
-      notepadContent.innerHTML = '';
-      notepadContent.appendChild(notesListContent);
-      
-      // Populate the notes list
-      const notesList = document.querySelector('.notes-list');
-      if (savedNotes.length > 0) {
-        savedNotes.forEach(note => {
-          const noteItem = createNoteItem(note);
-          notesList.appendChild(noteItem);
-        });
-      } else {
-        notesList.innerHTML = '<div class="empty-notes-message">No saved notes. Create a new note to get started.</div>';
-      }
-      
-      // Add event listener to new note button
-      document.getElementById('newNoteButton').addEventListener('click', createNewNote);
+      renderNotepadTab();
     } else {
       notepadContent.innerHTML = '<div class="error">Failed to load notes</div>';
     }
@@ -1043,6 +1035,50 @@ async function loadNotes() {
     console.error('Error loading notes:', error);
     document.getElementById('notepad-content').innerHTML = '<div class="error">Error loading notes</div>';
   }
+}
+
+function renderNotepadTab() {
+  const notepadContent = document.getElementById('notepad-content');
+  
+  if (state.currentNote) {
+    // Show the note editor/viewer
+    if (state.currentNote.id) {
+      // Editing existing note
+      renderNoteEditor();
+    } else {
+      // Creating new note
+      renderNoteEditor();
+    }
+  } else {
+    // Show the notes list
+    renderNotesList();
+  }
+}
+
+function renderNotesList() {
+  const notepadContent = document.getElementById('notepad-content');
+  
+  // Get the notes list template and clone it
+  const notesListTemplate = getTemplate('notepad-list-template');
+  const notesListContent = document.importNode(notesListTemplate.content, true);
+  
+  // Clear the content area and append the template
+  notepadContent.innerHTML = '';
+  notepadContent.appendChild(notesListContent);
+  
+  // Populate the notes list
+  const notesList = document.querySelector('.notes-list');
+  if (state.notes.length > 0) {
+    state.notes.forEach(note => {
+      const noteItem = createNoteItem(note);
+      notesList.appendChild(noteItem);
+    });
+  } else {
+    notesList.innerHTML = '<div class="empty-notes-message">No saved notes. Create a new note to get started.</div>';
+  }
+  
+  // Add event listener to new note button
+  document.getElementById('newNoteButton').addEventListener('click', createNewNote);
 }
 
 function createNoteItem(note) {
@@ -1070,7 +1106,9 @@ function createNoteItem(note) {
 
 function createNewNote() {
   currentNoteId = null;
-  showNoteEditor();
+  state.currentNote = { id: null, title: '', content: '' };
+  state.noteLines = [];
+  renderNotepadTab();
 }
 
 async function viewNote(noteId) {
