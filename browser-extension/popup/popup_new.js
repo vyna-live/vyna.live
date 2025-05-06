@@ -1895,7 +1895,7 @@ async function loadNote(noteId) {
                 data: {
                   endpoint: `/api/notepads/${state.currentNote.id}`,
                   method: 'PATCH',
-                  body: noteData
+                  data: { ...noteData, hostId: state.user?.id }
                 }
               });
               
