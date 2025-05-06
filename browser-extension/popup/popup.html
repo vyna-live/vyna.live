@@ -10,279 +10,165 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-container" id="app">
-    <!-- Auth screens will be rendered here if not authenticated -->
-    
-    <!-- Main app interface -->
-    <div class="main-interface" style="display: none;">
-      <!-- Header -->
-      <div class="header">
-        <div class="logo">
-          <svg width="84" height="28" viewBox="0 0 84 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18.333 3.5L26.25 14L18.333 24.5L10.417 14L18.333 3.5Z" fill="#A67D44" stroke="#A67D44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M10.417 3.5L18.333 14L10.417 24.5L2.5 14L10.417 3.5Z" fill="#5D1C34" stroke="#5D1C34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M38.77 20.368V8.176H42.626C43.7993 8.176 44.7833 8.38133 45.578 8.792C46.3873 9.18667 47.0033 9.744 47.426 10.464C47.8487 11.168 48.06 11.984 48.06 12.912C48.06 13.84 47.8487 14.664 47.426 15.384C47.0033 16.088 46.3873 16.6453 45.578 17.056C44.7833 17.4667 43.7993 17.672 42.626 17.672H40.618V20.368H38.77ZM40.618 16.04H42.514C43.4513 16.04 44.1553 15.8213 44.626 15.384C45.0967 14.9467 45.332 14.3227 45.332 13.512V12.312C45.332 11.5013 45.0967 10.8773 44.626 10.44C44.1553 10.0027 43.4513 9.784 42.514 9.784H40.618V16.04ZM53.6256 20.536C52.7843 20.536 52.039 20.3547 51.3896 19.992C50.7403 19.6293 50.2323 19.1213 49.8656 18.468C49.499 17.8147 49.3176 17.0587 49.3176 16.2C49.3176 15.3413 49.499 14.5853 49.8656 13.932C50.2323 13.2787 50.7403 12.7707 51.3896 12.408C52.039 12.0453 52.7843 11.864 53.6256 11.864C54.467 11.864 55.2123 12.0453 55.8616 12.408C56.511 12.7707 57.0216 13.2787 57.3936 13.932C57.7656 14.5853 57.9516 15.3413 57.9516 16.2C57.9516 17.0587 57.7656 17.8147 57.3936 18.468C57.0216 19.1213 56.511 19.6293 55.8616 19.992C55.2123 20.3547 54.467 20.536 53.6256 20.536ZM53.6256 18.952C54.1896 18.952 54.6763 18.804 55.0856 18.508C55.495 18.212 55.8056 17.8147 56.0176 17.316C56.2296 16.8173 56.3356 16.2613 56.3356 15.648C56.3356 15.0347 56.2296 14.4787 56.0176 13.98C55.8056 13.4813 55.495 13.084 55.0856 12.788C54.6763 12.492 54.1896 12.344 53.6256 12.344C53.0616 12.344 52.575 12.492 52.1656 12.788C51.7563 13.084 51.4456 13.4813 51.2336 13.98C51.0216 14.4787 50.9156 15.0347 50.9156 15.648C50.9156 16.2613 51.0216 16.8173 51.2336 17.316C51.4456 17.8147 51.7563 18.212 52.1656 18.508C52.575 18.804 53.0616 18.952 53.6256 18.952ZM59.3221 20.368V12.032H60.8001V13.44C61.0681 12.944 61.4508 12.5533 61.9481 12.264C62.4454 11.9747 63.0068 11.8293 63.6321 11.828V13.668H63.1628C62.7534 13.668 62.3721 13.7413 62.0188 13.888C61.6654 14.0347 61.3828 14.2773 61.1708 14.616C60.9588 14.9547 60.8528 15.424 60.8528 16.024V20.368H59.3221ZM67.6297 20.536C66.791 20.536 66.047 20.3573 65.397 20C64.7617 19.6427 64.2617 19.1347 63.897 18.476C63.5324 17.8173 63.3497 17.0587 63.3497 16.2C63.3497 15.3413 63.5324 14.5853 63.897 13.932C64.2617 13.2787 64.7617 12.7707 65.397 12.408C66.047 12.0453 66.791 11.864 67.6297 11.864C68.3324 11.864 68.9577 12.0027 69.5057 12.28C70.0684 12.5573 70.5124 12.9507 70.8377 13.46V12.032H72.3157V20.368H70.8377V18.92C70.5124 19.4347 70.0657 19.836 69.497 20.124C68.9284 20.3987 68.3084 20.536 67.6297 20.536ZM67.8577 19.064C68.4004 19.064 68.871 18.9333 69.2697 18.672C69.6684 18.4107 69.975 18.052 70.1897 17.596C70.4044 17.14 70.5117 16.6107 70.5117 16.008C70.5117 15.416 70.4044 14.8947 70.1897 14.444C69.975 13.9933 69.6684 13.6373 69.2697 13.376C68.871 13.1147 68.4004 12.984 67.8577 12.984C67.3257 12.984 66.855 13.1173 66.4457 13.384C66.0364 13.6507 65.7177 14.0093 65.4897 14.46C65.2764 14.9107 65.1697 15.424 65.1697 16C65.1697 16.5867 65.2764 17.1053 65.4897 17.556C65.7177 18.0067 66.0364 18.3653 66.4457 18.632C66.855 18.92 67.3257 19.064 67.8577 19.064ZM78.8622 20.536C78.1115 20.536 77.4355 20.396 76.8342 20.116C76.2329 19.8213 75.7489 19.4227 75.3822 18.92C75.0155 18.4027 74.7955 17.8093 74.7222 17.14H76.3062C76.3795 17.6747 76.6262 18.1053 77.0462 18.432C77.4662 18.7587 78.0089 18.9227 78.6742 18.924C79.2915 18.924 79.7702 18.7907 80.1102 18.524C80.4502 18.2573 80.6202 17.9173 80.6202 17.504C80.6202 17.0693 80.4715 16.7427 80.1742 16.524C79.8915 16.3053 79.4209 16.1147 78.7622 15.952L77.9902 15.768C77.1115 15.5347 76.4462 15.208 75.9942 14.788C75.5422 14.368 75.3162 13.8213 75.3162 13.148C75.3162 12.6493 75.4569 12.2067 75.7382 11.82C76.0195 11.4333 76.4075 11.1307 76.9022 10.912C77.4115 10.6933 77.9902 10.584 78.6382 10.584C79.5702 10.584 80.3315 10.8107 80.9222 11.264C81.5275 11.7173 81.8809 12.3347 81.9822 13.116H80.4342C80.3609 12.6813 80.1395 12.336 79.7702 12.08C79.4009 11.8093 78.9275 11.6747 78.3502 11.676C77.7969 11.676 77.3609 11.8013 77.0422 12.052C76.7235 12.288 76.5642 12.6013 76.5642 12.992C76.5642 13.3493 76.6895 13.6347 76.9402 13.848C77.1909 14.0467 77.5709 14.2107 78.0802 14.34L79.1262 14.6C80.0209 14.8493 80.6915 15.1893 81.1382 15.62C81.5995 16.036 81.8302 16.5947 81.8302 17.296C81.8302 17.7787 81.6869 18.2147 81.4002 18.604C81.1135 18.9933 80.7149 19.304 80.2042 19.536C79.6935 19.7533 79.1102 19.8627 78.4422 19.864C78.2435 19.9013 78.0475 19.9253 77.8542 19.936C77.6609 19.9467 77.5035 19.952 77.3862 19.952L77.3702 19.968H77.3422L77.3142 19.984C77.8542 19.9467 78.3502 19.8627 78.8022 19.732V20.152C78.4942 20.2693 78.0902 20.3733 77.5902 20.464C77.6209 20.448 77.6635 20.4293 77.7182 20.408C77.7729 20.4013 77.8275 20.3947 77.8822 20.388C77.9369 20.3813 77.9862 20.3787 78.0302 20.38C78.0742 20.3813 78.1102 20.384 78.1422 20.388C78.1742 20.3773 78.2049 20.3707 78.2342 20.368C78.2635 20.3653 78.2902 20.364 78.3142 20.364C78.3382 20.364 78.3635 20.364 78.3902 20.364C78.4169 20.364 78.4529 20.364 78.4982 20.364C78.5435 20.3793 78.6035 20.3867 78.6742 20.388C78.7449 20.3893 78.8169 20.392 78.8902 20.396C78.9635 20.4 79.0289 20.408 79.0862 20.42H79.1022C79.1289 20.42 79.1635 20.42 79.2062 20.42C79.2489 20.42 79.2915 20.4173 79.3342 20.412C79.3769 20.4067 79.4195 20.396 79.4622 20.38C79.5049 20.364 79.5382 20.348 79.5622 20.332C79.7315 20.2707 79.9235 20.1987 80.1382 20.116V19.696C79.7395 19.9333 79.2915 20.124 78.7942 20.268C78.8249 20.2493 78.8662 20.2333 78.9182 20.22C78.9702 20.2067 79.0142 20.1973 79.0502 20.192L79.0942 20.188L79.1382 20.184C79.1822 20.1693 79.2208 20.1587 79.2542 20.152C79.2875 20.1453 79.3235 20.1387 79.3622 20.132L79.3982 20.128C79.4769 20.112 79.5462 20.096 79.6062 20.08C79.6662 20.0533 79.7315 20.028 79.8022 20.004C79.8729 19.98 79.9569 19.9493 80.0542 19.912C80.1515 19.8747 80.2755 19.832 80.4262 19.784V19.364C79.9289 19.596 79.4062 19.7587 78.8582 19.852L78.8622 20.536Z" fill="white"/>
-          </svg>
-        </div>
-        <div class="user-profile" id="userProfile">
-          <div class="avatar">
-            <img id="userAvatar" src="../assets/default-avatar.png" alt="User" width="24" height="24">
-          </div>
-          <div class="username" id="username">Username</div>
-        </div>
-      </div>
-      
-      <!-- Tabs -->
-      <div class="tabs">
-        <div class="tab active" data-tab="vynaai">VynaAI</div>
-        <div class="tab" data-tab="notepad">Notepad</div>
-      </div>
-      
-      <!-- Content area -->
-      <div class="content">
-        <!-- VynaAI tab -->
-        <div class="tab-content active" id="vynaai-content">
-          <!-- This will be populated dynamically -->
-        </div>
-        
-        <!-- Notepad tab -->
-        <div class="tab-content" id="notepad-content">
-          <!-- This will be populated dynamically -->
-        </div>
-      </div>
-    </div>
+  <!-- Main container -->
+  <div id="app" class="container">
+    <!-- Login page will be inserted here by JS when user is not authenticated -->
   </div>
   
   <!-- Templates -->
-  <!-- Login Screen Template -->
+  
+  <!-- Login page template -->
   <template id="login-template">
-    <div class="auth-screen">
-      <div class="auth-container">
-        <div class="auth-header">
-          <h2>Welcome Back</h2>
-          <p>Sign in to continue using Vyna.live</p>
-        </div>
-        <div class="auth-form" id="loginForm">
-          <div class="form-group">
-            <label for="loginUsername">Username</label>
-            <input type="text" id="loginUsername" placeholder="Enter your username">
-          </div>
-          <div class="form-group">
-            <label for="loginPassword">Password</label>
-            <input type="password" id="loginPassword" placeholder="Enter your password">
-          </div>
-          <div class="error-message" id="loginError" style="display: none;"></div>
-          <button class="auth-button" id="loginButton">Sign In</button>
-        </div>
-        <div class="auth-switcher">
-          Don't have an account? <a id="switchToRegister">Sign Up</a>
-        </div>
+    <div class="login-container">
+      <div class="logo-container">
+        <img src="../assets/logo.png" alt="Vyna.live" width="120">
       </div>
-    </div>
-  </template>
-  
-  <!-- Registration Screen Template -->
-  <template id="register-template">
-    <div class="auth-screen">
-      <div class="auth-container">
-        <div class="auth-header">
-          <h2>Create Account</h2>
-          <p>Sign up to use Vyna.live</p>
-        </div>
-        <div class="auth-form" id="registerForm">
-          <div class="form-group">
-            <label for="registerUsername">Username</label>
-            <input type="text" id="registerUsername" placeholder="Choose a username">
-          </div>
-          <div class="form-group">
-            <label for="registerEmail">Email</label>
-            <input type="email" id="registerEmail" placeholder="Enter your email">
-          </div>
-          <div class="form-group">
-            <label for="registerPassword">Password</label>
-            <input type="password" id="registerPassword" placeholder="Create a password">
-          </div>
-          <div class="form-group">
-            <label for="registerConfirmPassword">Confirm Password</label>
-            <input type="password" id="registerConfirmPassword" placeholder="Confirm your password">
-          </div>
-          <div class="error-message" id="registerError" style="display: none;"></div>
-          <button class="auth-button" id="registerButton">Sign Up</button>
-        </div>
-        <div class="auth-switcher">
-          Already have an account? <a id="switchToLogin">Sign In</a>
-        </div>
-      </div>
-    </div>
-  </template>
-  
-  <!-- VynaAI Chat Sessions List Template -->
-  <template id="chat-sessions-template">
-    <div class="chat-list">
-      <!-- Dynamic chat sessions will be inserted here -->
-    </div>
-    <button class="new-chat-button" id="newChatButton">
-      <span class="plus-icon">+</span> New Chat
-    </button>
-  </template>
-  
-  <!-- Chat Session Item Template -->
-  <template id="chat-session-item-template">
-    <div class="chat-session">
-      <div class="chat-session-title"></div>
-    </div>
-  </template>
-  
-  <!-- VynaAI Chat Interface Template -->
-  <template id="chat-interface-template">
-    <div class="chat-container">
-      <div class="chat-header">
-        <div class="back-button" id="backToSessions">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 18L9 12L15 6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="chat-title" id="chatTitle">New Chat</div>
-      </div>
-      
-      <div class="messages-container" id="messagesContainer">
-        <!-- Messages will be dynamically inserted here -->
-        <!-- Empty state -->
-        <div class="empty-state" id="chatEmptyState">
-          <div class="empty-state-icon">
-            <svg width="32" height="32" viewBox="0 0 36 36" fill="none">
-              <path d="M18.0002 0L23.6784 6.69459H12.3219L18.0002 0Z" fill="#40C4D0"/>
-              <path d="M12.3219 6.69458L18.0002 0L18.0002 6.69458H12.3219Z" fill="#65D3DC"/>
-              <path d="M23.6781 6.69458L18 0L18 6.69458H23.6781Z" fill="#1AA7B3"/>
-              <path d="M0 18.0002L6.69459 12.3219V23.6784L0 18.0002Z" fill="#65D3DC"/>
-              <path d="M6.69458 23.6781L0 18L6.69458 18L6.69458 23.6781Z" fill="#1AA7B3"/>
-              <path d="M6.69458 12.3219L0 18L6.69458 18L6.69458 12.3219Z" fill="#40C4D0"/>
-              <path d="M36.0002 18.0002L29.3056 23.6784V12.3219L36.0002 18.0002Z" fill="#40C4D0"/>
-              <path d="M29.3054 12.3219L36 18L29.3054 18L29.3054 12.3219Z" fill="#1AA7B3"/>
-              <path d="M29.3054 23.6781L36 18L29.3054 18L29.3054 23.6781Z" fill="#65D3DC"/>
-              <path d="M18.0002 36.0002L12.3219 29.3056H23.6784L18.0002 36.0002Z" fill="#40C4D0"/>
-              <path d="M23.6781 29.3054L18 36L18 29.3054H23.6781Z" fill="#65D3DC"/>
-              <path d="M12.3219 29.3054L18 36L18 29.3054H12.3219Z" fill="#1AA7B3"/>
-              <path d="M18 11.6393L11.6393 18L18 24.3607L24.3607 18L18 11.6393Z" fill="#133C40"/>
-            </svg>
-          </div>
-          <h3>VynaAI</h3>
-          <p>Ask questions to quickly research topics while streaming</p>
-        </div>
-      </div>
-      
-      <div class="chat-input-container">
-        <div class="commentary-select">
-          <div class="commentary-option" data-style="color">CC - Color Commentary</div>
-          <div class="commentary-option" data-style="play-by-play">PP - Play-by-Play</div>
-        </div>
-        <div class="chat-input-wrapper">
-          <textarea class="chat-input" id="chatInput" placeholder="Type your message here..."></textarea>
-          <div class="input-buttons">
-            <button class="input-button" id="docButton" title="Upload document">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
-              </svg>
-            </button>
-            <button class="input-button" id="audioButton" title="Record audio">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" y1="19" x2="12" y2="23"></line>
-                <line x1="8" y1="23" x2="16" y2="23"></line>
-              </svg>
-            </button>
-            <button class="input-button" id="imageButton" title="Upload image">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-            </button>
-          </div>
-          <button class="send-button" id="sendButton">
-            Send
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      <!-- Hidden file inputs -->
-      <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt">
-      <input type="file" id="imageInput" class="hidden" accept="image/*">
-    </div>
-  </template>
-  
-  <!-- Message Template -->
-  <template id="message-template">
-    <div class="message">
-      <div class="avatar" style="display: none;">
-        <img src="" alt="" width="24" height="24">
-      </div>
-      <div class="message-content"></div>
-    </div>
-  </template>
-  
-  <!-- Notepad List Template -->
-  <template id="notepad-list-template">
-    <div class="notes-list" id="notesList">
-      <!-- Notes will be inserted here dynamically -->
-    </div>
-    <button class="new-note-button" id="newNoteButton">
-      <span class="plus-icon">+</span> New Note
-    </button>
-  </template>
-  
-  <!-- Note Item Template -->
-  <template id="note-item-template">
-    <div class="note-item">
-      <div class="note-title"></div>
-      <div class="note-preview"></div>
-    </div>
-  </template>
-  
-  <!-- Note Editor Template -->
-  <template id="note-editor-template">
-    <div class="note-editor">
-      <div class="note-editor-header">
-        <div class="note-editor-back" id="backToNotes">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 18L9 12L15 6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div class="note-editor-title" id="noteEditorTitle">New Note</div>
-        <button class="note-editor-save" id="saveNoteButton">Save</button>
-      </div>
-      
-      <div class="note-editor-content">
-        <div class="note-paragraphs" id="noteParagraphs">
-          <!-- Note paragraphs will be inserted here -->
+      <form class="login-form" id="login-form">
+        <input type="text" class="input-field" placeholder="Email address" id="login-email">
+        <input type="password" class="input-field" placeholder="Password" id="login-password">
+        <button type="submit" class="btn btn-primary" id="login-btn">Login</button>
+        
+        <div class="separator">
+          <hr>
+          <span>or</span>
+          <hr>
         </div>
         
-        <div class="note-input-container">
-          <textarea class="note-textarea" id="noteInput" placeholder="Type and press Enter to add a paragraph"></textarea>
-          <button class="note-add-line" id="addLineButton">Add Line</button>
+        <button type="button" class="btn btn-secondary google-btn" id="google-btn">
+          <img src="../assets/google-icon.svg" alt="Google" class="google-icon">
+          Sign up with Google
+        </button>
+      </form>
+    </div>
+  </template>
+  
+  <!-- Main app template -->
+  <template id="app-template">
+    <div class="header">
+      <img src="../assets/logo.png" alt="Vyna.live" class="header-logo">
+    </div>
+    
+    <div class="tab-container">
+      <div class="tab active" data-tab="vynaai">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+        VynaAI
+      </div>
+      <div class="tab" data-tab="notepad">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Notepad
+      </div>
+    </div>
+    
+    <div class="content">
+      <!-- VynaAI tab content -->
+      <div class="tab-content active" id="vynaai-content">
+        <div class="empty-state" id="vynaai-empty-state">
+          <div class="icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          </div>
+          <h3 class="empty-state-title">VynaAI</h3>
+          <p class="empty-state-subtitle">Ask questions to quickly research topics while streaming</p>
+        </div>
+        
+        <div id="chat-container" class="hidden">
+          <!-- Chat messages will be inserted here by JS -->
+        </div>
+        
+        <div class="input-container">
+          <div class="input-wrapper">
+            <textarea class="input-area" placeholder="Message" id="chat-input"></textarea>
+            <div class="input-actions">
+              <button class="input-action-btn" id="attachment-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+                </svg>
+              </button>
+              <button class="input-action-btn" id="mic-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+              <button class="input-action-btn" id="image-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Notepad tab content -->
+      <div class="tab-content" id="notepad-content">
+        <div class="note-container">
+          <div class="note-header">
+            <h2 class="note-title">Research Notes</h2>
+            <p class="note-subtitle">Save important information for your stream</p>
+          </div>
+          
+          <div id="notes-list">
+            <!-- Note items will be inserted here by JS -->
+          </div>
+          
+          <div class="note-input-container">
+            <div class="input-wrapper">
+              <textarea class="input-area" placeholder="Type a new note" id="note-input"></textarea>
+              <div class="input-actions">
+                <button class="input-action-btn" id="note-attachment-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path>
+                  </svg>
+                </button>
+                <button class="input-action-btn" id="note-mic-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                </button>
+                <button class="input-action-btn" id="note-image-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <button class="add-note-btn" id="add-note-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add note
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </template>
   
-  <!-- Note Paragraph Template -->
-  <template id="note-paragraph-template">
-    <p class="note-paragraph"></p>
-  </template>
+  <!-- Hidden file inputs -->
+  <input type="file" id="file-input" class="hidden" accept=".pdf,.doc,.docx,.txt">
+  <input type="file" id="image-input" class="hidden" accept="image/*">
   
-  <!-- Loading Template -->
-  <template id="loading-template">
-    <div class="loading">
-      <div class="spinner"></div>
-    </div>
-  </template>
-  
-  <!-- Scripts -->
-  <script src="popup.js" type="module"></script>
+  <!-- Script -->
+  <script src="popup.js"></script>
 </body>
 </html>

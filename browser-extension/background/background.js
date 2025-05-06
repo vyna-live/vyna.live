@@ -75,6 +75,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
   
+  if (message.type === 'GOOGLE_AUTH') {
+    handleGoogleAuth()
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+  
   if (message.type === 'LOGOUT') {
     logout().then(() => sendResponse({ success: true }));
     return true;
@@ -123,6 +130,63 @@ async function login(username, password) {
     return { success: true, user: data.user };
   } catch (error) {
     console.error('Login error:', error);
+    throw error;
+  }
+}
+
+// Handle Google authentication
+async function handleGoogleAuth() {
+  try {
+    // This is a simplified version - in a real extension, you'd use chrome.identity.launchWebAuthFlow
+    // For now, we'll just redirect to the Google auth endpoint
+    const redirectURL = chrome.identity.getRedirectURL();
+    const clientId = 'YOUR_GOOGLE_CLIENT_ID';
+    
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
+    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('redirect_uri', redirectURL);
+    authUrl.searchParams.set('response_type', 'token');
+    authUrl.searchParams.set('scope', 'profile email');
+    
+    const responseUrl = await chrome.identity.launchWebAuthFlow({
+      url: authUrl.toString(),
+      interactive: true
+    });
+    
+    // Parse the access token from the response URL
+    const accessToken = new URLSearchParams(new URL(responseUrl).hash.substring(1)).get('access_token');
+    
+    // Send the token to your backend
+    const response = await fetch(`${API_BASE_URL}/api/google-auth`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token: accessToken })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Google authentication failed');
+    }
+    
+    const data = await response.json();
+    
+    // Save authentication data
+    authState = {
+      isAuthenticated: true,
+      token: data.token,
+      user: data.user
+    };
+    
+    await chrome.storage.local.set({
+      authToken: data.token,
+      user: data.user
+    });
+    
+    return { success: true, user: data.user };
+  } catch (error) {
+    console.error('Google auth error:', error);
     throw error;
   }
 }
