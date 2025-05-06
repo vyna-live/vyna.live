@@ -196,7 +196,13 @@ async function sendChatMessage() {
   const chatInput = document.getElementById('chat-input');
   const message = chatInput.value.trim();
   
-  if (!message || !state.currentSession) return;
+  // If no message, or if we're in empty state and don't have a session yet
+  if (!message) return;
+  
+  // Create a new session if needed
+  if (!state.currentSession) {
+    await createNewChatSession();
+  }
   
   // Add commentary style if selected
   const commentaryParams = state.commentaryStyle ? `?style=${state.commentaryStyle}` : '';
@@ -563,7 +569,6 @@ function renderApp() {
   const chatConversationView = document.getElementById('chat-conversation-view');
   const backToSessionsButton = document.getElementById('back-to-sessions-button');
   const chatInput = document.getElementById('chat-input');
-  const sendMessageBtn = document.getElementById('send-message-btn');
   
   if (backToSessionsButton) {
     backToSessionsButton.addEventListener('click', () => {
@@ -573,7 +578,7 @@ function renderApp() {
     });
   }
   
-  if (chatInput && sendMessageBtn) {
+  if (chatInput) {
     chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -582,7 +587,16 @@ function renderApp() {
     });
     
     chatInput.addEventListener('input', autoResizeTextarea);
-    sendMessageBtn.addEventListener('click', sendChatMessage);
+  }
+  
+  // Handle empty state view - allow clicking anywhere to focus on input
+  const chatEmptyState = document.getElementById('chat-empty-state');
+  if (chatEmptyState) {
+    chatEmptyState.addEventListener('click', () => {
+      if (chatInput) {
+        chatInput.focus();
+      }
+    });
   }
   
   // Set up commentary style chips
@@ -690,17 +704,47 @@ function renderChatMessage(message) {
   const messagesContainer = document.getElementById('messages-container');
   if (!messagesContainer) return;
   
-  const messageElement = document.createElement('div');
-  messageElement.className = `message ${message.sender === 'user' ? 'user-message' : 'assistant-message'}`;
-  messageElement.dataset.messageId = message.id;
+  // Hide empty state if present
+  const emptyState = document.getElementById('chat-empty-state');
+  if (emptyState) {
+    emptyState.classList.add('hidden');
+  }
   
-  const messageContent = document.createElement('div');
-  messageContent.className = 'message-content';
+  // Clone the message template
+  const messageTemplate = document.getElementById('message-template');
+  const messageElement = messageTemplate.content.cloneNode(true);
   
-  // Format message content with Markdown
+  // Get the message container and set classes
+  const messageContainer = messageElement.querySelector('.message');
+  messageContainer.classList.add(message.sender === 'user' ? 'user-message' : 'assistant-message');
+  messageContainer.dataset.messageId = message.id;
+  
+  // Set avatar image based on sender
+  const avatarImg = messageElement.querySelector('.message-avatar img');
+  if (message.sender === 'user') {
+    // Use user avatar
+    if (state.user && state.user.avatarUrl) {
+      avatarImg.src = state.user.avatarUrl;
+    } else {
+      // Use default avatar for user
+      avatarImg.src = '../assets/default-avatar.png';
+    }
+  } else {
+    // Use AI avatar
+    avatarImg.src = '../assets/ai-avatar.png';
+  }
+  
+  // Set message content
+  const messageContent = messageElement.querySelector('.message-content');
   messageContent.innerHTML = formatMessageContent(message.content);
   
-  messageElement.appendChild(messageContent);
+  // Show/hide action buttons based on sender
+  const messageActions = messageElement.querySelector('.message-actions');
+  if (message.sender === 'user') {
+    messageActions.remove(); // No action buttons for user messages
+  }
+  
+  // Add to container
   messagesContainer.appendChild(messageElement);
   
   // Scroll to bottom
