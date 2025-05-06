@@ -1355,7 +1355,7 @@ async function addQuickNote() {
         data: {
           endpoint: '/api/notepads',
           method: 'POST',
-          body: noteData
+          data: { ...noteData, hostId: state.user?.id }
         }
       });
       
@@ -1465,7 +1465,7 @@ async function createNewNote() {
                 data: {
                   endpoint: '/api/notepads',
                   method: 'POST',
-                  body: noteData
+                  data: { ...noteData, hostId: state.user?.id }
                 }
               });
             } else {
@@ -1475,7 +1475,7 @@ async function createNewNote() {
                 data: {
                   endpoint: `/api/notepads/${state.currentNote.id}`,
                   method: 'PATCH',
-                  body: noteData
+                  data: { ...noteData, hostId: state.user?.id }
                 }
               });
             }
@@ -1564,7 +1564,7 @@ async function createNewNote() {
                   data: {
                     endpoint: '/api/notepads',
                     method: 'POST',
-                    body: noteData
+                    data: { ...noteData, hostId: state.user?.id }
                   }
                 });
               } else {
@@ -1574,7 +1574,7 @@ async function createNewNote() {
                   data: {
                     endpoint: `/api/notepads/${state.currentNote.id}`,
                     method: 'PATCH',
-                    body: noteData
+                    data: { ...noteData, hostId: state.user?.id }
                   }
                 });
               }

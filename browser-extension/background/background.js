@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = 'https://rest-express-diweesomchi.replit.app';
+const API_BASE_URL = 'https://vyna-assistant-diweesomchi.replit.app';
 
 // Authentication state
 let authState = {
