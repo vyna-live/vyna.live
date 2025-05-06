@@ -149,46 +149,83 @@ async function loadChatSession(sessionId) {
 // Create a new chat session
 async function createNewChatSession() {
   try {
+    console.log('Creating new chat session...');
+    
+    // Get the user's ID
+    const userId = state.user?.id;
+    if (!userId) {
+      console.error('User ID not found, cannot create chat session');
+      showErrorToast('Please log in to create a new chat');
+      return;
+    }
+    
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
         endpoint: '/api/ai-chat-sessions',
         method: 'POST',
-        body: {
-          title: 'New Chat'
+        data: {
+          title: 'New Chat',
+          hostId: userId
         }
       }
     });
     
+    console.log('Create chat session response:', response);
+    
     if (response.success) {
       const newSession = {
         id: response.data.id.toString(),
-        title: response.data.title,
+        title: response.data.title || 'New Chat',
         createdAt: new Date(response.data.createdAt),
         updatedAt: new Date(response.data.updatedAt)
       };
       
+      console.log('Created new session:', newSession);
+      
+      // Add to the beginning of sessions list
       state.chatSessions.unshift(newSession);
       state.currentSession = newSession.id;
       state.messages = [];
       
       // Set title
-      document.getElementById('current-chat-title').textContent = 'New Chat';
+      const titleElement = document.getElementById('current-chat-title');
+      if (titleElement) {
+        titleElement.textContent = 'New Chat';
+      }
       
       // Clear message container
       const messagesContainer = document.getElementById('messages-container');
-      messagesContainer.innerHTML = '';
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '';
+      }
       
       // Show conversation view
-      document.getElementById('sessions-list-view').classList.add('hidden');
-      document.getElementById('chat-conversation-view').classList.remove('hidden');
+      const sessionsListView = document.getElementById('sessions-list-view');
+      const chatConversationView = document.getElementById('chat-conversation-view');
       
-      // Focus the input
-      document.getElementById('chat-input').focus();
+      if (sessionsListView && chatConversationView) {
+        sessionsListView.classList.add('hidden');
+        chatConversationView.classList.remove('hidden');
+        
+        // Focus the input
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput) {
+          chatInput.focus();
+        }
+      } else {
+        console.error('Required view elements not found');
+      }
+      
+      // Show success toast
+      showSuccessToast('New chat created');
+    } else {
+      console.error('API returned success: false when creating chat session');
+      showErrorToast(response.error || 'Failed to create a new chat');
     }
   } catch (error) {
     console.error('Error creating new chat session:', error);
-    showErrorToast('Failed to create a new chat');
+    showErrorToast('Failed to create a new chat: ' + (error.message || 'Unknown error'));
   }
 }
 
@@ -231,10 +268,11 @@ async function sendChatMessage() {
       data: {
         endpoint: `/api/ai-chat-messages${commentaryParams}`,
         method: 'POST',
-        body: {
+        data: {
           sessionId: state.currentSession,
           content: message,
-          role: 'user'
+          role: 'user',
+          hostId: state.user?.id
         }
       }
     });
@@ -255,9 +293,10 @@ async function sendChatMessage() {
         data: {
           endpoint: `/api/ai-chat/process${commentaryParams}`,
           method: 'POST',
-          body: {
+          data: {
             sessionId: state.currentSession,
-            message
+            message,
+            hostId: state.user?.id
           }
         }
       });
@@ -292,8 +331,9 @@ async function sendChatMessage() {
             data: {
               endpoint: `/api/ai-chat-sessions/${state.currentSession}`,
               method: 'PATCH',
-              body: {
-                title: suggestedTitle
+              data: {
+                title: suggestedTitle,
+                hostId: state.user?.id
               }
             }
           });
