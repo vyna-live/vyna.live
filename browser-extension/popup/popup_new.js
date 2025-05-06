@@ -265,6 +265,14 @@ async function sendChatMessage() {
   // If no message, or if we're in empty state and don't have a session yet
   if (!message) return;
   
+  // Get the user's ID
+  const userId = state.user?.id;
+  if (!userId) {
+    console.error('User ID not found, cannot send message');
+    showErrorToast('Please log in to send a message');
+    return;
+  }
+  
   // Create a new session if needed
   if (!state.currentSession) {
     await createNewChatSession();
@@ -299,7 +307,7 @@ async function sendChatMessage() {
         data: {
           sessionId: state.currentSession,
           message: message,
-          hostId: state.user?.id
+          hostId: userId
         }
       }
     });
@@ -357,7 +365,7 @@ async function sendChatMessage() {
               method: 'PATCH',
               data: {
                 title: suggestedTitle,
-                hostId: state.user?.id
+                hostId: userId
               }
             }
           });
