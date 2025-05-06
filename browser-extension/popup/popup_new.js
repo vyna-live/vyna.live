@@ -742,6 +742,14 @@ function renderApp() {
     });
   }
   
+  // Set up new note button
+  const newNoteButton = document.getElementById('new-note-button');
+  if (newNoteButton) {
+    newNoteButton.addEventListener('click', () => {
+      createNewNote();
+    });
+  }
+  
   // Set up attachment, mic, and image buttons for notepad
   const notepadAttachmentBtn = document.getElementById('attachment-btn');
   const notepadMicBtn = document.getElementById('mic-btn');
@@ -1653,6 +1661,121 @@ async function createNewNote() {
     console.error('Error creating new note:', error);
     showErrorToast('Failed to create a new note');
   }
+}
+
+// Create a new note
+async function createNewNote() {
+  try {
+    console.log('Creating new note...');
+    
+    // Get the user's ID
+    const userId = state.user?.id;
+    if (!userId) {
+      console.error('User ID not found, cannot create note');
+      showErrorToast('Please log in to create a new note');
+      return;
+    }
+    
+    // Create a temporary note
+    const tempNote = {
+      id: `temp-${Date.now()}`,
+      title: 'New Note',
+      content: '',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    // Set as current note
+    state.currentNote = tempNote;
+    
+    // Show note editor view
+    const notesListView = document.getElementById('notes-list-view');
+    const noteEditorView = document.getElementById('note-editor-view');
+    
+    if (notesListView && noteEditorView) {
+      notesListView.classList.add('hidden');
+      noteEditorView.classList.remove('hidden');
+      
+      // Set up title display
+      const titleDisplay = document.getElementById('note-title-display');
+      if (titleDisplay) {
+        titleDisplay.textContent = tempNote.title;
+      }
+      
+      // Set up editor content
+      const contentTextarea = document.getElementById('note-editor-textarea');
+      if (contentTextarea) {
+        contentTextarea.value = tempNote.content;
+        
+        // Focus the textarea for immediate typing
+        contentTextarea.focus();
+      }
+      
+      // Set up back button with save functionality
+      const backButton = document.getElementById('back-to-notes-button');
+      if (backButton) {
+        backButton.onclick = async () => {
+          // Save note to server if content exists
+          const content = contentTextarea.value.trim();
+          if (content) {
+            try {
+              const response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: '/api/notepads',
+                  method: 'POST',
+                  data: {
+                    title: 'New Note', // This will be improved later
+                    content: content,
+                    hostId: userId
+                  }
+                }
+              });
+              
+              if (response.success) {
+                // Add to notes list
+                const newNote = {
+                  id: response.data.id.toString(),
+                  title: response.data.title || generateTitleFromContent(content),
+                  content: content,
+                  createdAt: new Date(response.data.createdAt),
+                  updatedAt: new Date(response.data.updatedAt)
+                };
+                
+                state.notes.unshift(newNote);
+                showSuccessToast('Note saved');
+              }
+            } catch (error) {
+              console.error('Error saving new note:', error);
+              showErrorToast('Failed to save note');
+            }
+          }
+          
+          // Return to notes list view
+          notesListView.classList.remove('hidden');
+          noteEditorView.classList.add('hidden');
+          
+          // Update notes display
+          renderNotes();
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error creating new note:', error);
+    showErrorToast('Failed to create new note');
+  }
+}
+
+// Generate a title from note content
+function generateTitleFromContent(content) {
+  if (!content) return 'New Note';
+  
+  // Use first 3-5 words or 30 characters
+  const words = content.split(' ');
+  if (words.length <= 5) return content;
+  
+  const shortTitle = words.slice(0, 4).join(' ');
+  return shortTitle.length > 30 ? shortTitle.substring(0, 30) + '...' : shortTitle + '...';
 }
 
 // Load a note for editing
