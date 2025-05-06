@@ -16,6 +16,7 @@ import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
 import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
+import { debugAuth, debugRequest } from "./debug";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -31,6 +32,11 @@ if (!fs.existsSync(LOGO_DIR)) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add debug middleware for authentication routes
+  app.use('/api/login', debugRequest);
+  app.use('/api/register', debugRequest);
+  app.use('/api/user', debugAuth);
+  
   // Setup authentication
   setupAuth(app);
   
