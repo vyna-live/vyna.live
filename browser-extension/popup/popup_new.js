@@ -633,8 +633,13 @@ function renderApp() {
         tab.classList.add('active');
         
         // Hide all and show the selected tab
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-        document.getElementById(`${tabName}-content`).classList.remove('hidden');
+        document.querySelectorAll('.tab-content').forEach(c => {
+          c.classList.remove('active');
+          c.classList.add('hidden');
+        });
+        const selectedTab = document.getElementById(`${tabName}-content`);
+        selectedTab.classList.add('active');
+        selectedTab.classList.remove('hidden');
         
         // Load appropriate data when switching tabs
         if (tabName === 'notepad') {
