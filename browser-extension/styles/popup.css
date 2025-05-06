@@ -380,6 +380,74 @@ body {
   padding: 0 16px 16px;
 }
 
+/* Tag related styles */
+.note-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.note-tag-filter {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.note-tag-filter:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}
+
+.note-tag-filter.active {
+  background-color: var(--accent-color);
+  color: var(--text-primary);
+}
+
+.note-item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.note-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.note-tag:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+}
+
+/* Highlighting for tags in note editor */
+.inline-tag {
+  display: inline;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+.notes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .notes-empty-state {
   display: flex;
   flex-direction: column;
@@ -417,10 +485,53 @@ body {
   margin-bottom: 12px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  position: relative;
 }
 
 .note-item:hover {
   background-color: rgba(42, 42, 45, 0.8);
+}
+
+.note-item:hover .note-item-actions {
+  opacity: 1;
+}
+
+.note-item-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.note-item-action {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: none;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.note-item-action:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: var(--text-primary);
+}
+
+.note-item-action.delete-note:hover {
+  background-color: rgba(255, 65, 54, 0.2);
+  color: #FF4136;
+}
+
+.note-item-action svg {
+  width: 16px;
+  height: 16px;
 }
 
 .note-item-title {

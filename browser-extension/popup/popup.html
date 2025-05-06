@@ -119,6 +119,10 @@
             <p class="note-subtitle">Save important information for your stream</p>
           </div>
           
+          <div class="notes-header">
+            <input type="text" class="notes-search" id="notes-search" placeholder="Search notes...">
+          </div>
+          
           <div class="notes-list" id="notes-list">
             <!-- Note items will be inserted here by JS -->
           </div>
@@ -174,7 +178,13 @@
     <div class="note-item">
       <div class="note-item-title"></div>
       <div class="note-item-preview"></div>
+      <div class="note-item-tags"></div>
     </div>
+  </template>
+  
+  <!-- Note tag template -->
+  <template id="note-tag-template">
+    <span class="note-tag"></span>
   </template>
   
   <!-- Hidden file inputs -->

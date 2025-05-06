@@ -10,7 +10,10 @@ let state = {
   chatSessions: [],
   currentSession: null,
   currentNote: null,
-  noteLines: []
+  noteLines: [],
+  noteTags: [],
+  filterTag: null,
+  searchQuery: ''
 };
 
 // DOM Elements
@@ -111,29 +114,139 @@ async function loadChatSession(sessionId) {
   }
 }
 
+// Extract and collect tags from all notes
+function collectAllTags() {
+  state.noteTags = [];
+  
+  if (!state.notes || state.notes.length === 0) return;
+  
+  // Extract tags from all notes
+  state.notes.forEach(note => {
+    // Extract tags from content using hashtag pattern
+    const content = note.content || '';
+    const tagMatches = content.match(/#\w+/g) || [];
+    
+    // Process and add unique tags
+    tagMatches.forEach(tag => {
+      const cleanTag = tag.substring(1).toLowerCase(); // Remove # and lowercase
+      if (!state.noteTags.includes(cleanTag)) {
+        state.noteTags.push(cleanTag);
+      }
+    });
+  });
+  
+  // Sort tags alphabetically
+  state.noteTags.sort();
+}
+
+// Extract tags from a single note
+function extractNoteTags(note) {
+  const content = note.content || '';
+  const tagMatches = content.match(/#\w+/g) || [];
+  return tagMatches.map(tag => tag.substring(1).toLowerCase());
+}
+
 // Render all notes
-function renderAllNotes() {
+function renderAllNotes(searchQuery = '') {
   const notesList = document.getElementById('notes-list');
   clearElement(notesList);
   
+  // Update state
+  state.searchQuery = searchQuery;
+  
+  // Collect all tags
+  collectAllTags();
+  
+  // Add tag filters if we have tags
+  if (state.noteTags.length > 0) {
+    const tagFiltersContainer = document.createElement('div');
+    tagFiltersContainer.className = 'note-tag-filters';
+    
+    // Add "All" filter
+    const allTagChip = document.createElement('div');
+    allTagChip.className = `note-tag-filter ${!state.filterTag ? 'active' : ''}`;
+    allTagChip.textContent = 'All';
+    allTagChip.addEventListener('click', () => {
+      state.filterTag = null;
+      renderAllNotes(state.searchQuery);
+    });
+    tagFiltersContainer.appendChild(allTagChip);
+    
+    // Add tag filters
+    state.noteTags.forEach(tag => {
+      const tagChip = document.createElement('div');
+      tagChip.className = `note-tag-filter ${state.filterTag === tag ? 'active' : ''}`;
+      tagChip.textContent = `#${tag}`;
+      tagChip.addEventListener('click', () => {
+        state.filterTag = tag;
+        renderAllNotes(state.searchQuery);
+      });
+      tagFiltersContainer.appendChild(tagChip);
+    });
+    
+    notesList.appendChild(tagFiltersContainer);
+  }
+  
   if (state.notes && state.notes.length > 0) {
-    state.notes.forEach(note => renderNote(note));
-  } else {
-    // Show empty state
-    const emptyState = document.createElement('div');
-    emptyState.className = 'empty-state';
-    emptyState.innerHTML = `
-      <div class="icon-circle">
+    // Filter notes by tag and search query
+    let filteredNotes = state.notes;
+    
+    // Filter by tag if a tag filter is selected
+    if (state.filterTag) {
+      filteredNotes = filteredNotes.filter(note => {
+        const noteTags = extractNoteTags(note);
+        return noteTags.includes(state.filterTag);
+      });
+    }
+    
+    // Filter by search query if provided
+    if (searchQuery) {
+      filteredNotes = filteredNotes.filter(note => {
+        const content = (note.content || '').toLowerCase();
+        const title = (note.title || '').toLowerCase();
+        return content.includes(searchQuery.toLowerCase()) || title.includes(searchQuery.toLowerCase());
+      });
+    }
+    
+    if (filteredNotes.length === 0) {
+      // Show empty state for search/filter
+      const emptyState = document.createElement('div');
+      emptyState.className = 'notes-empty-state';
+      emptyState.innerHTML = `
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-      </div>
-      <h3 class="empty-state-title">No Notes Yet</h3>
-      <p class="empty-state-subtitle">Create a new note to see it here</p>
+        <h3>No matches found</h3>
+        <p>${state.filterTag ? `No notes with tag #${state.filterTag}` : `We couldn't find any notes matching "${searchQuery}"`}</p>
+      `;
+      notesList.appendChild(emptyState);
+    } else {
+      // Create notes container
+      const notesContainer = document.createElement('div');
+      notesContainer.className = 'notes-container';
+      
+      // Render filtered notes
+      filteredNotes.forEach(note => {
+        renderNote(note, notesContainer);
+      });
+      
+      notesList.appendChild(notesContainer);
+    }
+  } else {
+    // Show empty state for no notes
+    const emptyState = document.createElement('div');
+    emptyState.className = 'notes-empty-state';
+    emptyState.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="16" y1="13" x2="8" y2="13"></line>
+        <line x1="16" y1="17" x2="8" y2="17"></line>
+        <polyline points="10 9 9 9 8 9"></polyline>
+      </svg>
+      <h3>No notes yet</h3>
+      <p>Start adding notes by typing in the input field below</p>
     `;
     notesList.appendChild(emptyState);
   }
@@ -226,6 +339,23 @@ function renderApp() {
       e.preventDefault();
       addNote();
     }
+  });
+  
+  // Add event listener for note search
+  const notesSearchInput = document.getElementById('notes-search');
+  notesSearchInput.addEventListener('input', (e) => {
+    const searchQuery = e.target.value.trim();
+    renderAllNotes(searchQuery);
+  });
+  
+  // Add debounce to search input
+  let searchTimeout;
+  notesSearchInput.addEventListener('keyup', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      const searchQuery = e.target.value.trim();
+      renderAllNotes(searchQuery);
+    }, 300);
   });
   
   // Render sessions list
@@ -734,9 +864,52 @@ async function addNote() {
   }
 }
 
+// Delete a note
+async function deleteNote(noteId, event) {
+  if (event) {
+    event.stopPropagation(); // Prevent opening the note editor when clicking delete
+  }
+  
+  // Ask for confirmation
+  if (!confirm('Are you sure you want to delete this note?')) {
+    return;
+  }
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'API_REQUEST',
+      data: {
+        endpoint: `/api/notepads/${noteId}`,
+        method: 'DELETE'
+      }
+    });
+    
+    if (response.success) {
+      // Remove from state
+      state.notes = state.notes.filter(note => note.id !== noteId);
+      
+      // If this was the current note, clear current note
+      if (state.currentNote && state.currentNote.id === noteId) {
+        state.currentNote = null;
+        state.noteLines = [];
+        closeNoteEditor();
+      }
+      
+      // Re-render notes list
+      renderAllNotes();
+    } else {
+      console.error('Error deleting note:', response.error);
+      alert('Error deleting note. Please try again.');
+    }
+  } catch (error) {
+    console.error('Error deleting note:', error);
+    alert('Error deleting note. Please try again.');
+  }
+}
+
 // Render a note in the notes list
-function renderNote(note) {
-  const notesList = document.getElementById('notes-list');
+function renderNote(note, container = null) {
+  const noteContainer = container || document.getElementById('notes-list');
   
   // Get note template
   const noteItemTemplate = document.getElementById('note-item-template');
@@ -748,11 +921,83 @@ function renderNote(note) {
   noteEl.querySelector('.note-item-title').textContent = note.title || 'Untitled Note';
   noteEl.querySelector('.note-item-preview').textContent = note.content?.substring(0, 50) + (note.content?.length > 50 ? '...' : '');
   
-  // Add click event
+  // Render tags
+  const tagsContainer = noteEl.querySelector('.note-item-tags');
+  const noteTags = extractNoteTags(note);
+  
+  if (noteTags.length > 0) {
+    noteTags.forEach(tag => {
+      const tagEl = document.createElement('span');
+      tagEl.className = 'note-tag';
+      tagEl.textContent = `#${tag}`;
+      tagEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.filterTag = tag;
+        renderAllNotes(state.searchQuery);
+      });
+      tagsContainer.appendChild(tagEl);
+    });
+  }
+  
+  // Create actions container
+  const actionsContainer = document.createElement('div');
+  actionsContainer.className = 'note-item-actions';
+  
+  // Create delete button
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'note-item-action delete-note';
+  deleteBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      <line x1="10" y1="11" x2="10" y2="17"></line>
+      <line x1="14" y1="11" x2="14" y2="17"></line>
+    </svg>
+  `;
+  deleteBtn.addEventListener('click', (e) => deleteNote(note.id, e));
+  
+  // Create export button
+  const exportBtn = document.createElement('button');
+  exportBtn.className = 'note-item-action export-note';
+  exportBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+      <polyline points="7 10 12 15 17 10"></polyline>
+      <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+  `;
+  exportBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Export note as text file
+    const blob = new Blob([note.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${note.title || 'untitled'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  
+  // Add buttons to actions container
+  actionsContainer.appendChild(exportBtn);
+  actionsContainer.appendChild(deleteBtn);
+  
+  // Add actions container to note item
+  noteEl.appendChild(actionsContainer);
+  
+  // Add click event for opening note
   noteEl.addEventListener('click', () => openNote(note));
   
   // Append to list
-  notesList.appendChild(noteNode);
+  noteContainer.appendChild(noteNode);
+}
+
+// Helper function to process line text and highlight tags
+function processLineWithTags(line) {
+  const tagRegex = /#\w+/g;
+  return line.replace(tagRegex, match => {
+    return `<span class="inline-tag">${match}</span>`;
+  });
 }
 
 // Open a note for editing
@@ -764,6 +1009,12 @@ function openNote(note) {
   // Hide notes list and show note editor
   const notesList = document.getElementById('notes-list');
   notesList.style.display = 'none';
+  
+  // Process lines to highlight tags
+  const processedLines = state.noteLines.map(line => {
+    const processedLine = processLineWithTags(line);
+    return `<p class="note-paragraph">${processedLine}</p>`;
+  }).join('');
   
   // Create note editor interface
   const noteEditor = document.createElement('div');
@@ -782,11 +1033,11 @@ function openNote(note) {
     
     <div class="note-editor-content">
       <div class="note-paragraphs" id="note-paragraphs">
-        ${state.noteLines.map(line => `<p class="note-paragraph">${line}</p>`).join('')}
+        ${processedLines}
       </div>
       
       <div class="note-input-container">
-        <textarea class="input-area" id="note-edit-input" placeholder="Add to your note"></textarea>
+        <textarea class="input-area" id="note-edit-input" placeholder="Add to your note (use #tag for categorization)"></textarea>
         <button class="add-note-btn" id="add-note-line">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -847,7 +1098,15 @@ function addNoteLineToEditor() {
   const noteParagraphs = document.getElementById('note-paragraphs');
   const newParagraph = document.createElement('p');
   newParagraph.className = 'note-paragraph';
-  newParagraph.textContent = line;
+  
+  // Check for tags in the line and highlight them
+  const tagRegex = /#\w+/g;
+  const lineWithHighlightedTags = line.replace(tagRegex, match => {
+    return `<span class="inline-tag">${match}</span>`;
+  });
+  
+  // Use innerHTML to render the tags as styled spans
+  newParagraph.innerHTML = lineWithHighlightedTags;
   noteParagraphs.appendChild(newParagraph);
   
   // Clear input
