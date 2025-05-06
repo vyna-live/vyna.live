@@ -88,11 +88,20 @@ body {
   color: var(--text-color);
   cursor: pointer;
   margin-top: 8px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .login-button:hover {
   background-color: #B38950;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.login-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .separator {
@@ -131,11 +140,20 @@ body {
   width: 100%;
   color: var(--text-color);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .google-button:hover {
   background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.google-button:active {
+  transform: translateY(0);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .google-icon {
@@ -181,13 +199,24 @@ body {
   justify-content: center;
   gap: 6px;
   color: rgba(255, 255, 255, 0.7);
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--text-color);
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .tab.active {
   color: var(--text-color);
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid var(--primary-color);
+  transition: all 0.2s ease;
+}
+
+.tab.active .tab-icon {
+  color: var(--primary-color);
 }
 
 .tab-icon {
@@ -286,6 +315,15 @@ body {
   min-height: 24px;
   resize: none;
   padding: 4px 0;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: var(--primary-color);
+}
+
+.input-field:focus ~ .input-tools .tool-icon {
+  color: var(--text-color);
 }
 
 .input-field::placeholder {
@@ -303,16 +341,24 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .tool-button:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+.tool-button:hover .tool-icon {
+  color: var(--text-color);
+}
+
+.tool-button:active {
+  transform: scale(0.95);
 }
 
 .tool-icon {
@@ -333,11 +379,19 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .add-button:hover {
   background-color: #E5E5E5;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.add-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .add-button-text {
@@ -418,6 +472,38 @@ body {
 
 .note-text {
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* Error Messages */
+.error-message {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border-left: 3px solid #dc3545;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin: 10px 0;
+  border-radius: 4px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading Indicator */
+.loading-indicator {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Utility */
