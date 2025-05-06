@@ -462,27 +462,52 @@ async function handleLogin(e) {
     const loginBtn = document.getElementById('login-btn');
     const originalBtnContent = loginBtn.innerHTML;
     
+    console.log(`Attempting login with username/email: ${usernameOrEmail}`);
+    
     // Show loading state
     loginBtn.innerHTML = `<span class="loading-indicator"></span> Signing in...`;
     loginBtn.disabled = true;
+    
+    // Show brief status in the error area to indicate progress
+    errorMessageElement.textContent = "Connecting to server...";
+    errorElement.style.display = 'flex';
+    errorElement.classList.add('info');
     
     const result = await chrome.runtime.sendMessage({
       type: 'LOGIN',
       data: { usernameOrEmail, password }
     });
     
-    if (result.success) {
+    console.log('Login response:', result);
+    
+    if (result && result.success) {
+      errorElement.style.display = 'none';
+      errorElement.classList.remove('info');
+      
+      console.log('Login successful, user:', result.user);
       state.isAuthenticated = true;
       state.user = result.user;
+      
+      // Quick check to ensure we have a valid user object
+      if (!result.user || !result.user.id) {
+        console.warn('Login succeeded but user object is incomplete:', result.user);
+        errorMessageElement.textContent = 'Login successful but user data is incomplete. Please try again.';
+        errorElement.style.display = 'flex';
+        return;
+      }
+      
       renderApp();
       await loadUserData();
     } else {
       // Show error message
-      errorMessageElement.textContent = result.error || 'Login failed. Please try again.';
+      console.error('Login failed:', result?.error || 'Unknown error');
+      errorElement.classList.remove('info');
+      errorMessageElement.textContent = result?.error || 'Login failed. Please try again.';
       errorElement.style.display = 'flex';
     }
   } catch (error) {
     console.error('Login error:', error);
+    errorElement.classList.remove('info');
     errorMessageElement.textContent = 'An error occurred during login. Please try again.';
     errorElement.style.display = 'flex';
   } finally {
@@ -551,27 +576,52 @@ async function handleRegister(e) {
     const registerBtn = document.getElementById('register-btn');
     const originalBtnContent = registerBtn.innerHTML;
     
+    console.log(`Attempting registration for username: ${username}, email: ${email}`);
+    
     // Show loading state
     registerBtn.innerHTML = `<span class="loading-indicator"></span> Creating account...`;
     registerBtn.disabled = true;
+    
+    // Show brief status in the error area to indicate progress
+    errorMessageElement.textContent = "Connecting to server...";
+    errorElement.style.display = 'flex';
+    errorElement.classList.add('info');
     
     const result = await chrome.runtime.sendMessage({
       type: 'REGISTER',
       data: { username, email, password }
     });
     
-    if (result.success) {
+    console.log('Registration response:', result);
+    
+    if (result && result.success) {
+      errorElement.style.display = 'none';
+      errorElement.classList.remove('info');
+      
+      console.log('Registration successful, user:', result.user);
       state.isAuthenticated = true;
       state.user = result.user;
+      
+      // Quick check to ensure we have a valid user object
+      if (!result.user || !result.user.id) {
+        console.warn('Registration succeeded but user object is incomplete:', result.user);
+        errorMessageElement.textContent = 'Registration successful but user data is incomplete. Please try again or login manually.';
+        errorElement.style.display = 'flex';
+        return;
+      }
+      
       renderApp();
       await loadUserData();
     } else {
       // Show error message
-      errorMessageElement.textContent = result.error || 'Registration failed. Please try again.';
+      console.error('Registration failed:', result?.error || 'Unknown error');
+      errorElement.classList.remove('info');
+      errorMessageElement.textContent = result?.error || 'Registration failed. Please try again.';
       errorElement.style.display = 'flex';
     }
   } catch (error) {
     console.error('Registration error:', error);
+    errorElement.classList.remove('info');
     errorMessageElement.textContent = 'An error occurred during registration. Please try again.';
     errorElement.style.display = 'flex';
   } finally {
