@@ -18,7 +18,7 @@ async function initialize() {
   if (stored.authToken && stored.user) {
     // Verify the token is still valid
     try {
-      const response = await fetch(`${API_BASE_URL}/api/extension/user`, {
+      const response = await fetch(`${API_BASE_URL}/ext/user`, {
         headers: {
           'Authorization': `Bearer ${stored.authToken}`,
           'Origin': chrome.runtime.getURL('')
@@ -103,7 +103,7 @@ async function login(usernameOrEmail, password) {
   try {
     console.log('Attempting login with:', usernameOrEmail);
     
-    const response = await fetch(`${API_BASE_URL}/api/extension/login`, {
+    const response = await fetch(`${API_BASE_URL}/ext/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -211,7 +211,7 @@ async function handleGoogleAuth() {
 // Handle registration
 async function register(userData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/extension/register`, {
+    const response = await fetch(`${API_BASE_URL}/ext/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

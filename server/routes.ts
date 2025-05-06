@@ -16,6 +16,7 @@ import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
 import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
+import extensionRouter from "./extension-proxy";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -34,7 +35,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   
-  // Extension-specific endpoints with special CORS handling
+  // Mount the extension router at /ext to avoid any conflicts
+  app.use('/ext', extensionRouter);
+  
   
   // Extension login endpoint
   app.options("/api/extension/login", (req, res) => {
