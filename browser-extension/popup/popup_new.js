@@ -2016,7 +2016,7 @@ async function loadNote(noteId) {
                 data: {
                   endpoint: `/api/notepads/${state.currentNote.id}`,
                   method: 'PATCH',
-                  data: { ...noteData, hostId: state.user?.id }
+                  data: { ...noteData, hostId: userId }
                 }
               });
               
