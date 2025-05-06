@@ -1846,7 +1846,7 @@ async function createNewNote() {
                   endpoint: '/api/notepads',
                   method: 'POST',
                   data: {
-                    title: 'New Note', // This will be improved later
+                    title: generateTitleFromContent(content),
                     content: content,
                     hostId: userId
                   }
