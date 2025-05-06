@@ -16,6 +16,14 @@ let state = {
   searchQuery: ''
 };
 
+// Audio recording variables
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recordingTimer = null;
+let recordingDuration = 0;
+let recordingTab = null;
+
 // DOM Elements will be initialized when document is loaded
 let app;
 let loginTemplate;
@@ -1731,8 +1739,19 @@ async function startRecording() {
               renderChatMessage(aiMessage);
             }
           } else {
-            // Add audio content to note
-            if (aiResponse.success && aiResponse.data.transcript) {
+            // Add audio content to note - first get transcription
+            const aiResponse = await chrome.runtime.sendMessage({
+              type: 'API_REQUEST',
+              data: {
+                endpoint: '/api/ai-chat/transcribe-audio',
+                method: 'POST',
+                data: {
+                  fileId: response.data.id
+                }
+              }
+            });
+            
+            if (aiResponse && aiResponse.success && aiResponse.data.transcript) {
               const noteEditInput = document.getElementById('note-edit-input');
               if (noteEditInput) {
                 noteEditInput.value = aiResponse.data.transcript;
