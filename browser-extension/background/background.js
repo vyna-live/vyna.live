@@ -18,10 +18,12 @@ async function initialize() {
   if (stored.authToken && stored.user) {
     // Verify the token is still valid
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user`, {
+      const response = await fetch(`${API_BASE_URL}/api/extension/user`, {
         headers: {
-          'Authorization': `Bearer ${stored.authToken}`
-        }
+          'Authorization': `Bearer ${stored.authToken}`,
+          'Origin': chrome.runtime.getURL('')
+        },
+        mode: 'cors'
       });
       
       if (response.ok) {
@@ -209,7 +211,7 @@ async function handleGoogleAuth() {
 // Handle registration
 async function register(userData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/extension/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

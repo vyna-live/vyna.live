@@ -108,6 +108,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(200).end();
   });
   
+  // Extension user endpoint
+  app.options("/api/extension/user", (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.status(200).end();
+  });
+  
+  app.get("/api/extension/user", async (req, res) => {
+    // Set CORS headers specifically for extension requests
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    try {
+      // Get authorization header
+      const authHeader = req.headers.authorization;
+      
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      
+      // In a real app, verify the token properly
+      // For this simple version, we'll decode the base64 token
+      try {
+        const decodedToken = Buffer.from(token, 'base64').toString();
+        const [userId, timestamp] = decodedToken.split(':');
+        
+        // Find user by ID
+        const [user] = await db.select()
+          .from(users)
+          .where(eq(users.id, parseInt(userId)))
+          .limit(1);
+        
+        if (!user) {
+          return res.status(401).json({ error: "Invalid authentication" });
+        }
+        
+        res.status(200).json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role
+        });
+      } catch (error) {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+    } catch (error) {
+      console.error("Extension user endpoint error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+  
   app.post("/api/extension/register", async (req, res) => {
     // Set CORS headers specifically for extension requests
     res.header('Access-Control-Allow-Origin', '*');
