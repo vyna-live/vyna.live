@@ -639,26 +639,26 @@ function renderApp() {
     });
   }
   
-  // Set up file upload
-  const fileInput = document.getElementById('file-input');
-  const attachmentBtn = document.getElementById('attachment-btn');
-  if (fileInput && attachmentBtn) {
-    attachmentBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleFileUpload);
+  // Set up file upload for chat
+  const chatFileInput = document.getElementById('file-input');
+  const chatAttachmentBtn = document.getElementById('attachment-btn');
+  if (chatFileInput && chatAttachmentBtn) {
+    chatAttachmentBtn.addEventListener('click', () => chatFileInput.click());
+    chatFileInput.addEventListener('change', handleFileUpload);
   }
   
-  // Set up image upload
-  const imageInput = document.getElementById('image-input');
-  const imageBtn = document.getElementById('image-btn');
-  if (imageInput && imageBtn) {
-    imageBtn.addEventListener('click', () => imageInput.click());
-    imageInput.addEventListener('change', handleImageUpload);
+  // Set up image upload for chat
+  const chatImageInput = document.getElementById('image-input');
+  const chatImageBtn = document.getElementById('image-btn');
+  if (chatImageInput && chatImageBtn) {
+    chatImageBtn.addEventListener('click', () => chatImageInput.click());
+    chatImageInput.addEventListener('change', handleImageUpload);
   }
   
-  // Set up audio recording
-  const micBtn = document.getElementById('mic-btn');
-  if (micBtn) {
-    micBtn.addEventListener('click', toggleAudioRecording);
+  // Set up audio recording for chat
+  const chatMicBtn = document.getElementById('mic-btn');
+  if (chatMicBtn) {
+    chatMicBtn.addEventListener('click', toggleAudioRecording);
   }
   
   // Set up notes functionality
@@ -703,26 +703,26 @@ function renderApp() {
   }
   
   // Set up attachment, mic, and image buttons for notepad
-  const attachmentBtn = document.getElementById('attachment-btn');
-  const micBtn = document.getElementById('mic-btn');
-  const imageBtn = document.getElementById('image-btn');
+  const notepadAttachmentBtn = document.getElementById('attachment-btn');
+  const notepadMicBtn = document.getElementById('mic-btn');
+  const notepadImageBtn = document.getElementById('image-btn');
   
-  if (attachmentBtn) {
-    attachmentBtn.addEventListener('click', () => {
+  if (notepadAttachmentBtn) {
+    notepadAttachmentBtn.addEventListener('click', () => {
       const fileInput = document.getElementById('file-input');
       if (fileInput) fileInput.click();
     });
   }
   
-  if (micBtn) {
-    micBtn.addEventListener('click', () => {
+  if (notepadMicBtn) {
+    notepadMicBtn.addEventListener('click', () => {
       toggleAudioRecording();
       recordingTab = 'notepad';
     });
   }
   
-  if (imageBtn) {
-    imageBtn.addEventListener('click', () => {
+  if (notepadImageBtn) {
+    notepadImageBtn.addEventListener('click', () => {
       const imageInput = document.getElementById('image-input');
       if (imageInput) imageInput.click();
     });
@@ -1069,6 +1069,46 @@ function showErrorToast(message) {
       <circle cx="12" cy="12" r="10"></circle>
       <line x1="12" y1="8" x2="12" y2="12"></line>
       <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <span>${message}</span>
+  `;
+  
+  // Add to container
+  toastContainer.appendChild(toast);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('fadeout');
+    setTimeout(() => {
+      toast.remove();
+      
+      // Remove container if empty
+      if (toastContainer.children.length === 0) {
+        toastContainer.remove();
+      }
+    }, 300);
+  }, 3000);
+}
+
+// Show success toast notification
+function showSuccessToast(message) {
+  // Check if toast container exists
+  let toastContainer = document.querySelector('.toast-container');
+  
+  // Create toast container if it doesn't exist
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+  
+  // Create toast
+  const toast = document.createElement('div');
+  toast.className = 'toast success';
+  toast.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
     </svg>
     <span>${message}</span>
   `;
