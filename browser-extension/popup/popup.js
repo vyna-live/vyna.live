@@ -260,7 +260,32 @@ function renderLogin() {
   
   // Add event listeners
   document.getElementById('login-form').addEventListener('submit', handleLogin);
+  document.getElementById('register-form').addEventListener('submit', handleRegister);
   document.getElementById('google-btn').addEventListener('click', handleGoogleAuth);
+  
+  // Setup tab switching
+  const tabTriggers = document.querySelectorAll('.tab-trigger');
+  tabTriggers.forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      // Remove active class from all triggers
+      tabTriggers.forEach(t => t.classList.remove('active'));
+      // Add active class to clicked trigger
+      trigger.classList.add('active');
+      
+      // Update tab content visibility
+      const tabName = trigger.dataset.tab;
+      document.querySelectorAll('.auth-tabs .tab-content').forEach(content => {
+        if (content.id === `${tabName}-tab`) {
+          content.classList.add('active');
+        } else {
+          content.classList.remove('active');
+        }
+      });
+      
+      // Clear error messages when switching tabs
+      document.getElementById('auth-error').style.display = 'none';
+    });
+  });
 }
 
 // Render main app
@@ -456,6 +481,96 @@ async function handleLogin(e) {
         <span>Sign in</span>
       `;
       loginBtn.disabled = false;
+    }
+  }
+}
+
+// Handle registration form submission
+async function handleRegister(e) {
+  e.preventDefault();
+  
+  const username = document.getElementById('register-username').value;
+  const email = document.getElementById('register-email').value;
+  const password = document.getElementById('register-password').value;
+  const errorElement = document.getElementById('auth-error');
+  const errorMessageElement = document.getElementById('error-message');
+  
+  // Clear existing errors
+  errorElement.style.display = 'none';
+  document.getElementById('register-username-error').textContent = '';
+  document.getElementById('register-email-error').textContent = '';
+  document.getElementById('register-password-error').textContent = '';
+  
+  // Validate inputs
+  let hasErrors = false;
+  if (!username) {
+    document.getElementById('register-username-error').textContent = 'Username is required';
+    hasErrors = true;
+  } else if (username.length < 3) {
+    document.getElementById('register-username-error').textContent = 'Username must be at least 3 characters';
+    hasErrors = true;
+  }
+  
+  if (!email) {
+    document.getElementById('register-email-error').textContent = 'Email is required';
+    hasErrors = true;
+  } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+    document.getElementById('register-email-error').textContent = 'Invalid email address';
+    hasErrors = true;
+  }
+  
+  if (!password) {
+    document.getElementById('register-password-error').textContent = 'Password is required';
+    hasErrors = true;
+  } else if (password.length < 8) {
+    document.getElementById('register-password-error').textContent = 'Password must be at least 8 characters';
+    hasErrors = true;
+  }
+  
+  if (hasErrors) {
+    return;
+  }
+  
+  try {
+    const registerBtn = document.getElementById('register-btn');
+    const originalBtnContent = registerBtn.innerHTML;
+    
+    // Show loading state
+    registerBtn.innerHTML = `<span class="loading-indicator"></span> Creating account...`;
+    registerBtn.disabled = true;
+    
+    const result = await chrome.runtime.sendMessage({
+      type: 'REGISTER',
+      data: { username, email, password }
+    });
+    
+    if (result.success) {
+      state.isAuthenticated = true;
+      state.user = result.user;
+      renderApp();
+      await loadUserData();
+    } else {
+      // Show error message
+      errorMessageElement.textContent = result.error || 'Registration failed. Please try again.';
+      errorElement.style.display = 'flex';
+    }
+  } catch (error) {
+    console.error('Registration error:', error);
+    errorMessageElement.textContent = 'An error occurred during registration. Please try again.';
+    errorElement.style.display = 'flex';
+  } finally {
+    const registerBtn = document.getElementById('register-btn');
+    if (registerBtn) {
+      registerBtn.innerHTML = `
+        <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="8.5" cy="7" r="4"></circle>
+          <line x1="20" y1="8" x2="20" y2="14"></line>
+          <line x1="23" y1="11" x2="17" y2="11"></line>
+        </svg>
+        <span>Create account</span>
+      `;
+      registerBtn.disabled = false;
     }
   }
 }
