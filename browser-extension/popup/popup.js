@@ -26,11 +26,7 @@ let recordingTab = null;
 
 // DOM Elements will be initialized when document is loaded
 let app;
-let loginTemplate;
-let appTemplate;
-let messageTemplate;
-let noteItemTemplate;
-let noteTagTemplate;
+// Using direct HTML approach instead of templates for better compatibility
 
 // Initialize popup
 async function initPopup() {
@@ -270,45 +266,206 @@ function renderAllNotes(searchQuery = '') {
 
 // Render login page
 function renderLogin() {
-  clearElement(app);
-  const loginNode = document.importNode(loginTemplate.content, true);
-  app.appendChild(loginNode);
-  
-  // Add event listeners
-  document.getElementById('login-form').addEventListener('submit', handleLogin);
-  document.getElementById('register-form').addEventListener('submit', handleRegister);
-  document.getElementById('google-btn').addEventListener('click', handleGoogleAuth);
-  
-  // Setup tab switching
-  const tabTriggers = document.querySelectorAll('.tab-trigger');
-  tabTriggers.forEach(trigger => {
-    trigger.addEventListener('click', () => {
-      // Remove active class from all triggers
-      tabTriggers.forEach(t => t.classList.remove('active'));
-      // Add active class to clicked trigger
-      trigger.classList.add('active');
-      
-      // Update tab content visibility
-      const tabName = trigger.dataset.tab;
-      document.querySelectorAll('.auth-tabs .tab-content').forEach(content => {
-        if (content.id === `${tabName}-tab`) {
-          content.classList.add('active');
-        } else {
-          content.classList.remove('active');
+  try {
+    if (!app) {
+      console.error('App container not found');
+      return;
+    }
+    
+    clearElement(app);
+    
+    // Create login page content directly
+    const loginHTML = `
+      <div class="auth-container">
+        <!-- Left side - Authentication form -->
+        <div class="auth-form-container">
+          <!-- Logo -->
+          <div class="auth-logo">
+            <img src="../assets/logo.png" alt="Vyna.live" width="160">
+          </div>
+          
+          <!-- Authentication content -->
+          <div class="auth-content">
+            <div class="auth-header">
+              <h2>Welcome to Vyna.live</h2>
+              <p>Sign in to continue or create a new account.</p>
+            </div>
+            
+            <!-- Error message (hidden by default) -->
+            <div class="auth-error" id="auth-error" style="display: none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span id="error-message">There was an error logging in</span>
+            </div>
+            
+            <!-- Tabs for login/register -->
+            <div class="auth-tabs">
+              <div class="tab-triggers">
+                <button type="button" class="tab-trigger active" data-tab="login">Login</button>
+                <button type="button" class="tab-trigger" data-tab="register">Register</button>
+              </div>
+              
+              <!-- Login tab content -->
+              <div class="tab-content active" id="login-tab">
+                <form class="auth-form" id="login-form">
+                  <div class="form-field">
+                    <label for="usernameOrEmail">Username or Email</label>
+                    <div class="input-wrapper">
+                      <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <input type="text" id="usernameOrEmail" placeholder="Enter username or email" required>
+                    </div>
+                    <p class="form-error" id="usernameOrEmail-error"></p>
+                  </div>
+                  
+                  <div class="form-field">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                      <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      <input type="password" id="password" placeholder="Enter password" required>
+                    </div>
+                    <p class="form-error" id="password-error"></p>
+                  </div>
+                  
+                  <button type="submit" class="auth-button" id="login-btn">
+                    <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                      <polyline points="10 17 15 12 10 7"></polyline>
+                      <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    <span>Sign in</span>
+                  </button>
+                </form>
+              </div>
+              
+              <!-- Register tab content -->
+              <div class="tab-content" id="register-tab">
+                <form class="auth-form" id="register-form">
+                  <div class="form-field">
+                    <label for="register-username">Username</label>
+                    <div class="input-wrapper">
+                      <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <input type="text" id="register-username" placeholder="Choose a username" required>
+                    </div>
+                    <p class="form-error" id="register-username-error"></p>
+                  </div>
+                  
+                  <div class="form-field">
+                    <label for="register-email">Email</label>
+                    <div class="input-wrapper">
+                      <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <input type="email" id="register-email" placeholder="Enter your email" required>
+                    </div>
+                    <p class="form-error" id="register-email-error"></p>
+                  </div>
+                  
+                  <div class="form-field">
+                    <label for="register-password">Password</label>
+                    <div class="input-wrapper">
+                      <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                      <input type="password" id="register-password" placeholder="Create a password" required>
+                    </div>
+                    <p class="form-error" id="register-password-error"></p>
+                  </div>
+                  
+                  <button type="submit" class="auth-button" id="register-btn">
+                    <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <line x1="20" y1="8" x2="20" y2="14"></line>
+                      <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    <span>Create account</span>
+                  </button>
+                </form>
+              </div>
+              
+              <div class="separator">
+                <hr>
+                <span>or</span>
+                <hr>
+              </div>
+              
+              <button type="button" class="google-btn" id="google-btn">
+                <img src="../assets/google-icon.svg" alt="Google" class="google-icon">
+                <span>Continue with Google</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right side - Hero section -->
+        <div class="auth-hero">
+          <div class="hero-content">
+            <h2>Enhance Your Streams</h2>
+            <p>Elevate your livestreams with AI-powered tools, notes, and seamless controls.</p>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    app.innerHTML = loginHTML;
+    
+    // Add event listeners
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('register-form').addEventListener('submit', handleRegister);
+    document.getElementById('google-btn').addEventListener('click', handleGoogleAuth);
+    
+    // Setup tab switching
+    const tabTriggers = document.querySelectorAll('.tab-trigger');
+    tabTriggers.forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        // Remove active class from all triggers
+        tabTriggers.forEach(t => t.classList.remove('active'));
+        // Add active class to clicked trigger
+        trigger.classList.add('active');
+        
+        // Update tab content visibility
+        const tabName = trigger.dataset.tab;
+        document.querySelectorAll('.auth-tabs .tab-content').forEach(content => {
+          if (content.id === `${tabName}-tab`) {
+            content.classList.add('active');
+          } else {
+            content.classList.remove('active');
+          }
+        });
+        
+        // Clear error messages when switching tabs
+        const authError = document.getElementById('auth-error');
+        if (authError) {
+          authError.style.display = 'none';
         }
       });
-      
-      // Clear error messages when switching tabs
-      document.getElementById('auth-error').style.display = 'none';
     });
-  });
+  } catch (error) {
+    console.error('Error rendering login page:', error);
+  }
 }
 
 // Render main app
 function renderApp() {
-  clearElement(app);
-  const appNode = document.importNode(appTemplate.content, true);
-  app.appendChild(appNode);
+  try {
+    clearElement(app);
+    
+    // Create app HTML directly
+    const appHTML = `
   
   // Add tab switching event listeners
   const tabs = document.querySelectorAll('.tab');
@@ -1826,27 +1983,77 @@ function clearElement(element) {
   }
 }
 
-// Initialize the popup
+// Initialize the popup - with much simplified logic
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize DOM references
-  app = document.getElementById('app');
-  loginTemplate = document.getElementById('login-template');
-  appTemplate = document.getElementById('app-template');
-  messageTemplate = document.getElementById('message-template');
-  noteItemTemplate = document.getElementById('note-item-template');
-  noteTagTemplate = document.getElementById('note-tag-template');
-  
-  // Check if templates are loaded properly
-  if (!app) {
-    console.error('App container not found');
-    return;
+  try {
+    // Basic DOM reference - the app container is always needed
+    app = document.getElementById('app');
+    
+    // Check if app container is available
+    if (!app) {
+      console.error('App container not found');
+      return;
+    }
+    
+    // Set up event listeners for login/register forms
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    const registerForm = document.getElementById('register-form');
+    if (registerForm) {
+      registerForm.addEventListener('submit', handleRegister);
+    }
+    
+    const googleBtn = document.getElementById('google-btn');
+    if (googleBtn) {
+      googleBtn.addEventListener('click', handleGoogleAuth);
+    }
+    
+    // Setup tab switching
+    const tabTriggers = document.querySelectorAll('.tab-trigger');
+    tabTriggers.forEach(trigger => {
+      trigger.addEventListener('click', () => {
+        // Remove active class from all triggers
+        tabTriggers.forEach(t => t.classList.remove('active'));
+        // Add active class to clicked trigger
+        trigger.classList.add('active');
+        
+        // Update tab content visibility
+        const tabName = trigger.dataset.tab;
+        document.querySelectorAll('.auth-tabs .tab-content').forEach(content => {
+          if (content.id === `${tabName}-tab`) {
+            content.classList.add('active');
+          } else {
+            content.classList.remove('active');
+          }
+        });
+        
+        // Clear error messages when switching tabs
+        const authError = document.getElementById('auth-error');
+        if (authError) {
+          authError.style.display = 'none';
+        }
+      });
+    });
+    
+    // Check if the user is already logged in
+    chrome.runtime.sendMessage({ type: 'GET_AUTH_STATE' }).then(authState => {
+      state.isAuthenticated = authState.isAuthenticated;
+      state.user = authState.user;
+      
+      if (state.isAuthenticated) {
+        // Show app UI
+        renderApp();
+        loadUserData();
+      }
+    }).catch(error => {
+      console.error('Error checking auth state:', error);
+    });
+    
+    console.log('Popup initialized successfully');
+  } catch (error) {
+    console.error('Error during popup initialization:', error);
   }
-  
-  if (!loginTemplate || !appTemplate) {
-    console.error('Templates not found. loginTemplate:', loginTemplate, 'appTemplate:', appTemplate);
-    return;
-  }
-  
-  // Initialize the main popup functionality
-  initPopup();
 });
