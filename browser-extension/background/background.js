@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://api.vyna.live';
+const API_BASE_URL = 'https://vyna-assistant-diweesomchi.replit.app';
 
 // Authentication state
 let authState = {
@@ -110,18 +110,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function login(usernameOrEmail, password) {
   try {
     console.log('Attempting login with:', usernameOrEmail);
+    console.log('Using API URL:', API_BASE_URL);
     
+    // Test CORS with a simple OPTIONS request first
+    console.log('Testing CORS with OPTIONS request...');
+    try {
+      const optionsResponse = await fetch(`${API_BASE_URL}/api/login`, {
+        method: 'OPTIONS',
+        headers: {
+          'Accept': 'application/json',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type,Accept',
+          'Origin': chrome.runtime.getURL('')
+        }
+      });
+      console.log('OPTIONS request result:', {
+        status: optionsResponse.status,
+        statusText: optionsResponse.statusText,
+        headers: [...optionsResponse.headers.entries()].map(e => `${e[0]}: ${e[1]}`).join(', ')
+      });
+    } catch (optionsError) {
+      console.error('OPTIONS preflight failed:', optionsError);
+    }
+    
+    // Now try the actual login request
+    console.log('Sending actual login request...');
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Origin': chrome.runtime.getURL('')
       },
       body: JSON.stringify({ usernameOrEmail, password }),
       credentials: 'include' // Include cookies in the request
     });
     
     console.log('Login response status:', response.status);
+    console.log('Login response headers:', [...response.headers.entries()].map(e => `${e[0]}: ${e[1]}`).join(', '));
     
     if (!response.ok) {
       let errorMessage = 'Login failed';
@@ -234,15 +260,45 @@ async function handleGoogleAuth() {
 // Handle registration
 async function register(userData) {
   try {
+    console.log('Attempting to register user:', userData.username);
+    console.log('Using API URL:', API_BASE_URL);
+    
+    // Test CORS with a simple OPTIONS request first
+    console.log('Testing CORS with OPTIONS request for registration...');
+    try {
+      const optionsResponse = await fetch(`${API_BASE_URL}/api/register`, {
+        method: 'OPTIONS',
+        headers: {
+          'Accept': 'application/json',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type,Accept',
+          'Origin': chrome.runtime.getURL('')
+        }
+      });
+      console.log('Registration OPTIONS request result:', {
+        status: optionsResponse.status,
+        statusText: optionsResponse.statusText,
+        headers: [...optionsResponse.headers.entries()].map(e => `${e[0]}: ${e[1]}`).join(', ')
+      });
+    } catch (optionsError) {
+      console.error('Registration OPTIONS preflight failed:', optionsError);
+    }
+    
+    // Now try the actual registration request
+    console.log('Sending actual registration request...');
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Origin': chrome.runtime.getURL('')
       },
       body: JSON.stringify(userData),
       credentials: 'include'
     });
+    
+    console.log('Registration response status:', response.status);
+    console.log('Registration response headers:', [...response.headers.entries()].map(e => `${e[0]}: ${e[1]}`).join(', '));
     
     if (!response.ok) {
       const errorData = await response.json();
@@ -289,6 +345,33 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
       hasUser: !!authState.user,
       bodyData: data ? 'data present' : 'no data'
     });
+    
+    // Get the full URL for easier debugging
+    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    console.log(`Full API URL: ${fullUrl}`);
+    
+    // If this is going to be a POST/PUT/PATCH request, do an OPTIONS preflight test first
+    if (method !== 'GET' && method !== 'HEAD') {
+      console.log(`Testing CORS with OPTIONS request for ${method} ${endpoint}...`);
+      try {
+        const optionsResponse = await fetch(fullUrl, {
+          method: 'OPTIONS',
+          headers: {
+            'Accept': 'application/json',
+            'Access-Control-Request-Method': method,
+            'Access-Control-Request-Headers': 'Content-Type,Accept,Authorization',
+            'Origin': chrome.runtime.getURL('')
+          }
+        });
+        console.log(`OPTIONS request result for ${endpoint}:`, {
+          status: optionsResponse.status,
+          statusText: optionsResponse.statusText,
+          headers: [...optionsResponse.headers.entries()].map(e => `${e[0]}: ${e[1]}`).join(', ')
+        });
+      } catch (optionsError) {
+        console.error(`OPTIONS preflight failed for ${endpoint}:`, optionsError);
+      }
+    }
     
     const headers = {
       'Content-Type': 'application/json',
