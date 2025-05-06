@@ -1,84 +1,86 @@
-// Main popup script
+// Popup script for Vyna.live browser extension
+
+// DOM elements
+const loginScreen = document.getElementById('login-screen');
+const mainInterface = document.getElementById('main-interface');
+const loginForm = document.getElementById('login-form');
+const googleLoginButton = document.getElementById('google-login-button');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const tabs = document.querySelectorAll('.tab');
+const tabContents = document.querySelectorAll('.tab-content');
+const aiMessageInput = document.getElementById('ai-message-input');
+const noteInput = document.getElementById('note-input');
+const addNoteButton = document.getElementById('add-note-button');
+
+// File upload elements
+const attachmentButton = document.getElementById('attachment-button');
+const micButton = document.getElementById('mic-button');
+const cameraButton = document.getElementById('camera-button');
+const fileInput = document.getElementById('file-input');
+const imageInput = document.getElementById('image-input');
+
+const noteAttachmentButton = document.getElementById('note-attachment-button');
+const noteMicButton = document.getElementById('note-mic-button');
+const noteCameraButton = document.getElementById('note-camera-button');
+const noteFileInput = document.getElementById('note-file-input');
+const noteImageInput = document.getElementById('note-image-input');
 
 // State management
 let state = {
   isAuthenticated: false,
   user: null,
   activeTab: 'vynaai',
-  chatSessions: [],
-  currentChatSession: null,
   messages: [],
-  notes: [],
-  currentNote: null,
-  noteLines: [],
-  isLoading: false,
-  commentaryStyle: 'color' // Default to color commentary
+  notes: []
 };
 
-// DOM references
-const app = document.getElementById('app');
-const mainInterface = document.querySelector('.main-interface');
+// Audio recording state
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
 
-// Templates
-const loginTemplate = document.getElementById('login-template');
-const registerTemplate = document.getElementById('register-template');
-const chatSessionsTemplate = document.getElementById('chat-sessions-template');
-const chatInterfaceTemplate = document.getElementById('chat-interface-template');
-const messageTemplate = document.getElementById('message-template');
-const notepadListTemplate = document.getElementById('notepad-list-template');
-const noteEditorTemplate = document.getElementById('note-editor-template');
-const loadingTemplate = document.getElementById('loading-template');
-
-// Tab content containers
-const vynaaiContent = document.getElementById('vynaai-content');
-const notepadContent = document.getElementById('notepad-content');
-
-// Initialize the popup
-async function initializePopup() {
-  // Check authentication state
-  state.isLoading = true;
-  renderLoading(app);
-  
+// Initialize the extension
+async function initializeExtension() {
   try {
-    const authState = await chrome.runtime.sendMessage({ type: 'GET_AUTH_STATE' });
-    state.isAuthenticated = authState.isAuthenticated;
-    state.user = authState.user;
+    // Check authentication state
+    const authResponse = await chrome.runtime.sendMessage({ type: 'GET_AUTH_STATE' });
     
-    if (state.isAuthenticated) {
-      await loadInitialData();
-      renderMainInterface();
+    if (authResponse.isAuthenticated) {
+      state.isAuthenticated = true;
+      state.user = authResponse.user;
+      showMainInterface();
+      loadUserData();
     } else {
-      renderLogin();
+      showLoginScreen();
     }
   } catch (error) {
-    console.error('Error initializing popup:', error);
-    renderLogin();
-  } finally {
-    state.isLoading = false;
+    console.error('Initialization error:', error);
+    showLoginScreen();
   }
 }
 
-// Load initial data for authenticated users
-async function loadInitialData() {
+// Load user data
+async function loadUserData() {
   try {
-    // Load chat sessions
-    const chatSessionsResponse = await chrome.runtime.sendMessage({
+    // Load messages
+    const messagesResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: `/api/ai-chat-sessions/${state.user.id}`,
+        endpoint: '/api/ai-chats/' + state.user.id,
         method: 'GET'
       }
     });
     
-    if (chatSessionsResponse.success) {
-      state.chatSessions = chatSessionsResponse.data;
+    if (messagesResponse.success) {
+      state.messages = messagesResponse.data;
     }
     
     // Load notes
     const notesResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: `/api/notepads/${state.user.id}`,
+        endpoint: '/api/notepads/' + state.user.id,
         method: 'GET'
       }
     });
@@ -87,389 +89,96 @@ async function loadInitialData() {
       state.notes = notesResponse.data;
     }
   } catch (error) {
-    console.error('Error loading initial data:', error);
+    console.error('Error loading user data:', error);
   }
 }
 
-// Render functions
-function renderLogin() {
-  clearElement(app);
-  const loginNode = document.importNode(loginTemplate.content, true);
-  app.appendChild(loginNode);
-  
-  // Add event listeners
-  document.getElementById('loginButton').addEventListener('click', handleLogin);
-  document.getElementById('switchToRegister').addEventListener('click', renderRegister);
+// Show login screen
+function showLoginScreen() {
+  loginScreen.classList.remove('hidden');
+  mainInterface.classList.add('hidden');
 }
 
-function renderRegister() {
-  clearElement(app);
-  const registerNode = document.importNode(registerTemplate.content, true);
-  app.appendChild(registerNode);
-  
-  // Add event listeners
-  document.getElementById('registerButton').addEventListener('click', handleRegister);
-  document.getElementById('switchToLogin').addEventListener('click', renderLogin);
+// Show main interface
+function showMainInterface() {
+  loginScreen.classList.add('hidden');
+  mainInterface.classList.remove('hidden');
 }
 
-function renderMainInterface() {
-  clearElement(app);
-  mainInterface.style.display = 'flex';
-  app.appendChild(mainInterface);
+// Handle login form submission
+async function handleLogin(e) {
+  e.preventDefault();
   
-  // Update user profile
-  if (state.user) {
-    document.getElementById('username').textContent = state.user.displayName || state.user.username;
-    if (state.user.avatarUrl) {
-      document.getElementById('userAvatar').src = state.user.avatarUrl;
-    }
-  }
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
   
-  // Add tab click handlers
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-  
-  // User profile dropdown
-  document.getElementById('userProfile').addEventListener('click', handleLogout);
-  
-  // Render initial tab content
-  renderVynaAITab();
-  renderNotepadTab();
-}
-
-function renderVynaAITab() {
-  clearElement(vynaaiContent);
-  
-  if (state.currentChatSession) {
-    renderChatInterface();
-  } else {
-    renderChatSessionsList();
-  }
-}
-
-function renderChatSessionsList() {
-  const sessionsNode = document.importNode(chatSessionsTemplate.content, true);
-  vynaaiContent.appendChild(sessionsNode);
-  
-  const chatList = vynaaiContent.querySelector('.chat-list');
-  const sessionItemTemplate = document.getElementById('chat-session-item-template');
-  
-  // Render chat sessions
-  if (state.chatSessions && state.chatSessions.length > 0) {
-    state.chatSessions.forEach(session => {
-      const sessionNode = document.importNode(sessionItemTemplate.content, true);
-      const sessionItem = sessionNode.querySelector('.chat-session');
-      
-      sessionItem.dataset.id = session.id;
-      sessionItem.querySelector('.chat-session-title').textContent = 
-        session.title || `Chat from ${new Date(session.createdAt).toLocaleString()}`;
-      
-      sessionItem.addEventListener('click', () => selectChatSession(session));
-      chatList.appendChild(sessionNode);
-    });
-  } else {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'text-center p-4 text-muted';
-    emptyMessage.textContent = 'No chat sessions yet';
-    chatList.appendChild(emptyMessage);
-  }
-  
-  // New chat button
-  vynaaiContent.querySelector('#newChatButton').addEventListener('click', createNewChat);
-}
-
-function renderChatInterface() {
-  const chatNode = document.importNode(chatInterfaceTemplate.content, true);
-  vynaaiContent.appendChild(chatNode);
-  
-  // Set chat title
-  const chatTitle = vynaaiContent.querySelector('#chatTitle');
-  if (state.currentChatSession && state.currentChatSession.title) {
-    chatTitle.textContent = state.currentChatSession.title;
-  } else {
-    chatTitle.textContent = 'New Chat';
-  }
-  
-  // Set commentary style
-  const commentaryOptions = vynaaiContent.querySelectorAll('.commentary-option');
-  commentaryOptions.forEach(option => {
-    if (option.dataset.style === state.commentaryStyle) {
-      option.classList.add('active');
-    }
-    
-    option.addEventListener('click', () => {
-      commentaryOptions.forEach(opt => opt.classList.remove('active'));
-      option.classList.add('active');
-      state.commentaryStyle = option.dataset.style;
-    });
-  });
-  
-  // Render messages
-  const messagesContainer = vynaaiContent.querySelector('#messagesContainer');
-  const emptyState = vynaaiContent.querySelector('#chatEmptyState');
-  
-  if (state.messages.length > 0) {
-    emptyState.style.display = 'none';
-    renderMessages(messagesContainer);
-  } else {
-    emptyState.style.display = 'flex';
-  }
-  
-  // Add event listeners
-  vynaaiContent.querySelector('#backToSessions').addEventListener('click', backToChatSessions);
-  vynaaiContent.querySelector('#sendButton').addEventListener('click', sendMessage);
-  
-  // File upload handlers
-  setupFileUploadHandlers();
-  
-  // Input handlers
-  const chatInput = vynaaiContent.querySelector('#chatInput');
-  chatInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-}
-
-function renderMessages(container) {
-  // Clear existing messages
-  container.querySelectorAll('.message').forEach(el => el.remove());
-  
-  state.messages.forEach(message => {
-    const messageNode = document.importNode(messageTemplate.content, true);
-    const messageEl = messageNode.querySelector('.message');
-    
-    messageEl.classList.add(message.role);
-    messageEl.querySelector('.message-content').textContent = message.content;
-    
-    // Show avatar only for assistant messages
-    if (message.role === 'assistant') {
-      const avatar = messageEl.querySelector('.avatar');
-      avatar.style.display = 'block';
-      avatar.querySelector('img').src = '../assets/vyna-icon.png';
-      avatar.querySelector('img').alt = 'VynaAI';
-    }
-    
-    container.appendChild(messageNode);
-  });
-  
-  // Scroll to bottom
-  container.scrollTop = container.scrollHeight;
-}
-
-function renderNotepadTab() {
-  clearElement(notepadContent);
-  
-  if (state.currentNote) {
-    renderNoteEditor();
-  } else {
-    renderNotesList();
-  }
-}
-
-function renderNotesList() {
-  const notesNode = document.importNode(notepadListTemplate.content, true);
-  notepadContent.appendChild(notesNode);
-  
-  const notesList = notepadContent.querySelector('#notesList');
-  const noteItemTemplate = document.getElementById('note-item-template');
-  
-  // Render notes
-  if (state.notes && state.notes.length > 0) {
-    state.notes.forEach(note => {
-      const noteNode = document.importNode(noteItemTemplate.content, true);
-      const noteItem = noteNode.querySelector('.note-item');
-      
-      noteItem.dataset.id = note.id;
-      noteItem.querySelector('.note-title').textContent = note.title || 'Untitled Note';
-      noteItem.querySelector('.note-preview').textContent = note.content?.substring(0, 50) + '...';
-      
-      noteItem.addEventListener('click', () => selectNote(note));
-      notesList.appendChild(noteNode);
-    });
-  } else {
-    const emptyMessage = document.createElement('div');
-    emptyMessage.className = 'text-center p-4 text-muted';
-    emptyMessage.textContent = 'No notes yet';
-    notesList.appendChild(emptyMessage);
-  }
-  
-  // New note button
-  notepadContent.querySelector('#newNoteButton').addEventListener('click', createNewNote);
-}
-
-function renderNoteEditor() {
-  const editorNode = document.importNode(noteEditorTemplate.content, true);
-  notepadContent.appendChild(editorNode);
-  
-  // Set editor title
-  const editorTitle = notepadContent.querySelector('#noteEditorTitle');
-  if (state.currentNote && state.currentNote.id) {
-    editorTitle.textContent = 'Edit Note';
-  } else {
-    editorTitle.textContent = 'New Note';
-  }
-  
-  // Render note paragraphs
-  const paragraphsContainer = notepadContent.querySelector('#noteParagraphs');
-  renderNoteParagraphs(paragraphsContainer);
-  
-  // Add event listeners
-  notepadContent.querySelector('#backToNotes').addEventListener('click', backToNotesList);
-  notepadContent.querySelector('#saveNoteButton').addEventListener('click', saveNote);
-  notepadContent.querySelector('#addLineButton').addEventListener('click', addNoteLine);
-  
-  // Input handlers
-  const noteInput = notepadContent.querySelector('#noteInput');
-  noteInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      addNoteLine();
-    }
-  });
-}
-
-function renderNoteParagraphs(container) {
-  clearElement(container);
-  
-  if (state.noteLines && state.noteLines.length > 0) {
-    const paragraphTemplate = document.getElementById('note-paragraph-template');
-    
-    state.noteLines.forEach(line => {
-      const paragraphNode = document.importNode(paragraphTemplate.content, true);
-      const paragraph = paragraphNode.querySelector('.note-paragraph');
-      paragraph.textContent = line;
-      container.appendChild(paragraphNode);
-    });
-  }
-}
-
-function renderLoading(container) {
-  clearElement(container);
-  const loadingNode = document.importNode(loadingTemplate.content, true);
-  container.appendChild(loadingNode);
-}
-
-// Event handlers
-async function handleLogin() {
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
-  const errorElement = document.getElementById('loginError');
-  
-  if (!username || !password) {
-    errorElement.textContent = 'Please enter both username and password';
-    errorElement.style.display = 'block';
+  if (!email || !password) {
+    showError('Please enter both email and password');
     return;
   }
   
   try {
-    const loginButton = document.getElementById('loginButton');
-    loginButton.disabled = true;
-    loginButton.textContent = 'Signing in...';
-    
-    const result = await chrome.runtime.sendMessage({
+    const response = await chrome.runtime.sendMessage({
       type: 'LOGIN',
-      data: { username, password }
+      data: { email, password }
     });
     
-    if (result.success) {
+    if (response.success) {
       state.isAuthenticated = true;
-      state.user = result.user;
-      await loadInitialData();
-      renderMainInterface();
+      state.user = response.user;
+      showMainInterface();
+      loadUserData();
     } else {
-      errorElement.textContent = result.error || 'Login failed';
-      errorElement.style.display = 'block';
+      showError(response.error || 'Login failed. Please check your credentials.');
     }
   } catch (error) {
-    errorElement.textContent = error.message || 'Login failed';
-    errorElement.style.display = 'block';
-  } finally {
-    const loginButton = document.getElementById('loginButton');
-    if (loginButton) {
-      loginButton.disabled = false;
-      loginButton.textContent = 'Sign In';
-    }
+    showError('Login failed: ' + error.message);
   }
 }
 
-async function handleRegister() {
-  const username = document.getElementById('registerUsername').value;
-  const email = document.getElementById('registerEmail').value;
-  const password = document.getElementById('registerPassword').value;
-  const confirmPassword = document.getElementById('registerConfirmPassword').value;
-  const errorElement = document.getElementById('registerError');
-  
-  if (!username || !email || !password || !confirmPassword) {
-    errorElement.textContent = 'Please fill in all fields';
-    errorElement.style.display = 'block';
-    return;
-  }
-  
-  if (password !== confirmPassword) {
-    errorElement.textContent = 'Passwords do not match';
-    errorElement.style.display = 'block';
-    return;
-  }
-  
+// Handle Google login
+async function handleGoogleLogin() {
   try {
-    const registerButton = document.getElementById('registerButton');
-    registerButton.disabled = true;
-    registerButton.textContent = 'Signing up...';
-    
-    const result = await chrome.runtime.sendMessage({
-      type: 'REGISTER',
-      data: { username, email, password, displayName: username }
+    const response = await chrome.runtime.sendMessage({
+      type: 'LOGIN_WITH_GOOGLE'
     });
     
-    if (result.success) {
+    if (response.success) {
       state.isAuthenticated = true;
-      state.user = result.user;
-      await loadInitialData();
-      renderMainInterface();
+      state.user = response.user;
+      showMainInterface();
+      loadUserData();
     } else {
-      errorElement.textContent = result.error || 'Registration failed';
-      errorElement.style.display = 'block';
+      showError(response.error || 'Google login failed.');
     }
   } catch (error) {
-    errorElement.textContent = error.message || 'Registration failed';
-    errorElement.style.display = 'block';
-  } finally {
-    const registerButton = document.getElementById('registerButton');
-    if (registerButton) {
-      registerButton.disabled = false;
-      registerButton.textContent = 'Sign Up';
-    }
+    showError('Google login failed: ' + error.message);
   }
 }
 
-async function handleLogout() {
-  try {
-    await chrome.runtime.sendMessage({ type: 'LOGOUT' });
-    state.isAuthenticated = false;
-    state.user = null;
-    state.chatSessions = [];
-    state.currentChatSession = null;
-    state.messages = [];
-    state.notes = [];
-    state.currentNote = null;
-    state.noteLines = [];
-    renderLogin();
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
+// Show error message
+function showError(message) {
+  // Create and show an error message
+  const errorDiv = document.createElement('div');
+  errorDiv.className = 'error-message';
+  errorDiv.textContent = message;
+  
+  // Insert before the login button
+  loginForm.insertBefore(errorDiv, document.getElementById('login-button'));
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    errorDiv.remove();
+  }, 3000);
 }
 
+// Switch tabs
 function switchTab(tabId) {
-  if (state.activeTab === tabId) return;
-  
-  // Update active tab
+  // Update active tab in state
   state.activeTab = tabId;
   
-  // Update UI
-  document.querySelectorAll('.tab').forEach(tab => {
+  // Update tab UI
+  tabs.forEach(tab => {
     if (tab.dataset.tab === tabId) {
       tab.classList.add('active');
     } else {
@@ -477,8 +186,9 @@ function switchTab(tabId) {
     }
   });
   
-  document.querySelectorAll('.tab-content').forEach(content => {
-    if (content.id === `${tabId}-content`) {
+  // Update content UI
+  tabContents.forEach(content => {
+    if (content.id === tabId + '-content') {
       content.classList.add('active');
     } else {
       content.classList.remove('active');
@@ -486,79 +196,17 @@ function switchTab(tabId) {
   });
 }
 
-async function selectChatSession(session) {
-  state.currentChatSession = session;
-  state.isLoading = true;
-  renderLoading(vynaaiContent);
-  
-  try {
-    // Load messages for this session
-    const messagesResponse = await chrome.runtime.sendMessage({
-      type: 'API_REQUEST',
-      data: {
-        endpoint: `/api/ai-chat-messages/${session.id}`,
-        method: 'GET'
-      }
-    });
-    
-    if (messagesResponse.success) {
-      state.messages = messagesResponse.data.map(msg => ({
-        id: msg.id.toString(),
-        content: msg.content,
-        role: msg.role
-      }));
-    }
-  } catch (error) {
-    console.error('Error loading messages:', error);
-    state.messages = [];
-  } finally {
-    state.isLoading = false;
-    renderVynaAITab();
-  }
-}
-
-function createNewChat() {
-  state.currentChatSession = { id: null, title: 'New Chat' };
-  state.messages = [];
-  renderVynaAITab();
-}
-
-function backToChatSessions() {
-  state.currentChatSession = null;
-  renderVynaAITab();
-}
-
-async function sendMessage() {
-  const chatInput = vynaaiContent.querySelector('#chatInput');
-  const message = chatInput.value.trim();
+// Send message to VynaAI
+async function sendAiMessage() {
+  const message = aiMessageInput.value.trim();
   
   if (!message) return;
   
-  // Clear input
-  chatInput.value = '';
-  
-  // Add user message to state
-  const userMessage = {
-    id: Date.now().toString(),
-    content: message,
-    role: 'user'
-  };
-  
-  state.messages.push(userMessage);
-  
-  // Update UI
-  const messagesContainer = vynaaiContent.querySelector('#messagesContainer');
-  const emptyState = vynaaiContent.querySelector('#chatEmptyState');
-  emptyState.style.display = 'none';
-  renderMessages(messagesContainer);
-  
-  // Show loading indicator
-  const sendButton = vynaaiContent.querySelector('#sendButton');
-  sendButton.disabled = true;
-  sendButton.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div>';
+  // Clear the input field
+  aiMessageInput.value = '';
   
   try {
-    // Send message to backend
+    // Send message to API
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
@@ -567,178 +215,87 @@ async function sendMessage() {
         data: {
           hostId: state.user.id,
           message: message,
-          sessionId: state.currentChatSession?.id || null,
-          commentaryStyle: state.commentaryStyle
+          commentaryStyle: 'color' // Default to color commentary
         }
       }
     });
     
     if (response.success) {
-      // Add AI response
-      const aiMessage = {
-        id: Date.now().toString(),
-        content: response.data.aiMessage?.content || response.data.response,
-        role: 'assistant'
-      };
-      
-      state.messages.push(aiMessage);
-      
-      // Update session if necessary
-      if (response.data.isNewSession && response.data.sessionId) {
-        // Refresh sessions
-        const sessionsResponse = await chrome.runtime.sendMessage({
-          type: 'API_REQUEST',
-          data: {
-            endpoint: `/api/ai-chat-sessions/${state.user.id}`,
-            method: 'GET'
-          }
-        });
-        
-        if (sessionsResponse.success) {
-          state.chatSessions = sessionsResponse.data;
-          state.currentChatSession = state.chatSessions.find(s => s.id === response.data.sessionId);
-        }
-      }
-    } else {
-      // Add error message
+      // Add to state
       state.messages.push({
-        id: Date.now().toString(),
-        content: 'Sorry, I encountered an error processing your request.',
-        role: 'assistant'
+        message: message,
+        response: response.data.response || response.data.aiMessage?.content,
+        createdAt: new Date().toISOString()
       });
+      
+      // Update UI (could implement a chat interface here)
+      // For now just clear the VynaAI tab and show empty state
     }
   } catch (error) {
     console.error('Error sending message:', error);
-    
-    // Add error message
-    state.messages.push({
-      id: Date.now().toString(),
-      content: 'Sorry, I encountered an error processing your request.',
-      role: 'assistant'
-    });
-  } finally {
-    // Update UI
-    renderMessages(messagesContainer);
-    sendButton.disabled = false;
-    sendButton.innerHTML = 'Send <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
   }
 }
 
-function setupFileUploadHandlers() {
-  // Document upload
-  const docButton = vynaaiContent.querySelector('#docButton');
-  const fileInput = vynaaiContent.querySelector('#fileInput');
+// Add a new note
+async function addNote() {
+  const noteText = noteInput.value.trim();
   
-  docButton.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', handleFileUpload);
+  if (!noteText) return;
   
-  // Image upload
-  const imageButton = vynaaiContent.querySelector('#imageButton');
-  const imageInput = vynaaiContent.querySelector('#imageInput');
+  // Clear the input field
+  noteInput.value = '';
   
-  imageButton.addEventListener('click', () => imageInput.click());
-  imageInput.addEventListener('change', handleImageUpload);
-  
-  // Audio recording
-  const audioButton = vynaaiContent.querySelector('#audioButton');
-  audioButton.addEventListener('click', handleAudioRecording);
-}
-
-async function handleFileUpload(event) {
-  if (!event.target.files || event.target.files.length === 0) return;
-  
-  const file = event.target.files[0];
-  const fileReader = new FileReader();
-  
-  fileReader.onload = async function(e) {
-    try {
-      const fileData = e.target.result;
-      
-      // Upload file
-      const result = await chrome.runtime.sendMessage({
-        type: 'UPLOAD_FILE',
+  try {
+    // Send note to API
+    const response = await chrome.runtime.sendMessage({
+      type: 'API_REQUEST',
+      data: {
+        endpoint: '/api/notepads',
+        method: 'POST',
         data: {
-          fileData,
-          fileName: file.name,
-          hostId: state.user.id
-        }
-      });
-      
-      if (result.success) {
-        // Add file info to chat input
-        const chatInput = vynaaiContent.querySelector('#chatInput');
-        chatInput.value += ` [Uploaded file: ${file.name}] ${result.data.url || ''}`;
-        chatInput.focus();
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    } finally {
-      // Reset input
-      event.target.value = '';
-    }
-  };
-  
-  fileReader.readAsDataURL(file);
-}
-
-async function handleImageUpload(event) {
-  if (!event.target.files || event.target.files.length === 0) return;
-  
-  const file = event.target.files[0];
-  if (!file.type.includes('image/')) {
-    console.error('Not an image file');
-    event.target.value = '';
-    return;
-  }
-  
-  const fileReader = new FileReader();
-  
-  fileReader.onload = async function(e) {
-    try {
-      const fileData = e.target.result;
-      
-      // Upload image
-      const result = await chrome.runtime.sendMessage({
-        type: 'UPLOAD_FILE',
-        data: {
-          fileData,
-          fileName: file.name,
           hostId: state.user.id,
-          fileType: 'image'
+          title: noteText.split('\n')[0] || 'Untitled Note',
+          content: noteText
         }
+      }
+    });
+    
+    if (response.success) {
+      // Add to state
+      state.notes.push({
+        id: response.data.id,
+        title: response.data.title,
+        content: response.data.content,
+        createdAt: new Date().toISOString()
       });
       
-      if (result.success) {
-        // Add image info to chat input
-        const chatInput = vynaaiContent.querySelector('#chatInput');
-        chatInput.value += ` [Uploaded image: ${file.name}] ${result.data.url || ''}`;
-        chatInput.focus();
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    } finally {
-      // Reset input
-      event.target.value = '';
+      // Update UI (could implement a notes list here)
+      // For now just keep the empty state
     }
-  };
-  
-  fileReader.readAsDataURL(file);
+  } catch (error) {
+    console.error('Error adding note:', error);
+  }
 }
 
-// Audio recording state
-let mediaRecorder = null;
-let audioChunks = [];
-let isRecording = false;
+// Handle file attachments
+function handleAttachment() {
+  fileInput.click();
+}
 
-async function handleAudioRecording() {
+function handleNoteAttachment() {
+  noteFileInput.click();
+}
+
+// Handle microphone recording
+async function toggleRecording(context) {
   if (isRecording) {
     stopRecording();
   } else {
-    startRecording();
+    await startRecording(context);
   }
 }
 
-async function startRecording() {
+async function startRecording(context) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
@@ -759,21 +316,22 @@ async function startRecording() {
           const fileData = e.target.result;
           
           // Upload audio
-          const result = await chrome.runtime.sendMessage({
+          const response = await chrome.runtime.sendMessage({
             type: 'UPLOAD_FILE',
             data: {
               fileData,
               fileName: 'recording.wav',
-              hostId: state.user.id,
               fileType: 'audio'
             }
           });
           
-          if (result.success) {
-            // Add audio info to chat input
-            const chatInput = vynaaiContent.querySelector('#chatInput');
-            chatInput.value += ` [Recorded audio] ${result.data.url || ''}`;
-            chatInput.focus();
+          if (response.success) {
+            // Add reference to input field
+            if (context === 'ai') {
+              aiMessageInput.value += ` [Audio: ${response.data.url || 'recording.wav'}]`;
+            } else if (context === 'note') {
+              noteInput.value += ` [Audio: ${response.data.url || 'recording.wav'}]`;
+            }
           }
         } catch (error) {
           console.error('Error uploading audio:', error);
@@ -787,9 +345,8 @@ async function startRecording() {
     isRecording = true;
     
     // Update UI
-    const audioButton = vynaaiContent.querySelector('#audioButton');
-    audioButton.classList.add('recording');
-    audioButton.title = 'Stop recording';
+    const button = context === 'ai' ? micButton : noteMicButton;
+    button.classList.add('recording');
   } catch (error) {
     console.error('Error starting recording:', error);
   }
@@ -798,131 +355,111 @@ async function startRecording() {
 function stopRecording() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
-    // Stop all tracks
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
     isRecording = false;
     
     // Update UI
-    const audioButton = vynaaiContent.querySelector('#audioButton');
-    audioButton.classList.remove('recording');
-    audioButton.title = 'Record audio';
+    micButton.classList.remove('recording');
+    noteMicButton.classList.remove('recording');
   }
 }
 
-function selectNote(note) {
-  state.currentNote = note;
-  state.noteLines = note.content.split('\n');
-  renderNotepadTab();
+// Handle camera image capture
+function handleCamera() {
+  imageInput.click();
 }
 
-function createNewNote() {
-  state.currentNote = { id: null, title: '', content: '' };
-  state.noteLines = [];
-  renderNotepadTab();
+function handleNoteCamera() {
+  noteImageInput.click();
 }
 
-function backToNotesList() {
-  state.currentNote = null;
-  state.noteLines = [];
-  renderNotepadTab();
-}
-
-function addNoteLine() {
-  const noteInput = notepadContent.querySelector('#noteInput');
-  const line = noteInput.value.trim();
+// Handle file upload change
+async function handleFileChange(e, context) {
+  const file = e.target.files[0];
+  if (!file) return;
   
-  if (!line) return;
+  const fileReader = new FileReader();
   
-  // Add line to state
-  state.noteLines.push(line);
-  
-  // Clear input
-  noteInput.value = '';
-  
-  // Update UI
-  const paragraphsContainer = notepadContent.querySelector('#noteParagraphs');
-  renderNoteParagraphs(paragraphsContainer);
-}
-
-async function saveNote() {
-  if (state.noteLines.length === 0) return;
-  
-  const content = state.noteLines.join('\n');
-  const title = state.noteLines[0].substring(0, 50) + (state.noteLines[0].length > 50 ? '...' : '');
-  
-  try {
-    const saveButton = notepadContent.querySelector('#saveNoteButton');
-    saveButton.disabled = true;
-    saveButton.textContent = 'Saving...';
-    
-    // Save note
-    let response;
-    if (state.currentNote && state.currentNote.id) {
-      // Update existing note
-      response = await chrome.runtime.sendMessage({
-        type: 'API_REQUEST',
+  fileReader.onload = async function(e) {
+    try {
+      const fileData = e.target.result;
+      
+      // Upload file
+      const response = await chrome.runtime.sendMessage({
+        type: 'UPLOAD_FILE',
         data: {
-          endpoint: `/api/notepads/${state.currentNote.id}`,
-          method: 'PUT',
-          data: {
-            hostId: state.user.id,
-            title,
-            content
-          }
-        }
-      });
-    } else {
-      // Create new note
-      response = await chrome.runtime.sendMessage({
-        type: 'API_REQUEST',
-        data: {
-          endpoint: '/api/notepads',
-          method: 'POST',
-          data: {
-            hostId: state.user.id,
-            title,
-            content
-          }
-        }
-      });
-    }
-    
-    if (response.success) {
-      // Refresh notes
-      const notesResponse = await chrome.runtime.sendMessage({
-        type: 'API_REQUEST',
-        data: {
-          endpoint: `/api/notepads/${state.user.id}`,
-          method: 'GET'
+          fileData,
+          fileName: file.name,
+          fileType: file.type.includes('image/') ? 'image' : 'document'
         }
       });
       
-      if (notesResponse.success) {
-        state.notes = notesResponse.data;
+      if (response.success) {
+        // Add reference to input field
+        if (context === 'ai') {
+          aiMessageInput.value += ` [File: ${file.name} - ${response.data.url || ''}]`;
+        } else if (context === 'note') {
+          noteInput.value += ` [File: ${file.name} - ${response.data.url || ''}]`;
+        }
       }
-      
-      // Go back to notes list
-      state.currentNote = null;
-      state.noteLines = [];
-      renderNotepadTab();
+    } catch (error) {
+      console.error('Error uploading file:', error);
     }
-  } catch (error) {
-    console.error('Error saving note:', error);
-  } finally {
-    const saveButton = notepadContent.querySelector('#saveNoteButton');
-    if (saveButton) {
-      saveButton.disabled = false;
-      saveButton.textContent = 'Save';
-    }
-  }
+  };
+  
+  fileReader.readAsDataURL(file);
 }
 
-// Utility functions
-function clearElement(element) {
-  while (element.firstChild) {
-    element.removeChild(element.firstChild);
-  }
-}
-
-// Initialize on load
-window.addEventListener('DOMContentLoaded', initializePopup);
+// Event listeners
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize the extension
+  initializeExtension();
+  
+  // Login form submission
+  loginForm.addEventListener('submit', handleLogin);
+  
+  // Google login
+  googleLoginButton.addEventListener('click', handleGoogleLogin);
+  
+  // Tab switching
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      switchTab(tab.dataset.tab);
+    });
+  });
+  
+  // AI message input
+  aiMessageInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendAiMessage();
+    }
+  });
+  
+  // Note input
+  addNoteButton.addEventListener('click', addNote);
+  noteInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && e.ctrlKey) {
+      e.preventDefault();
+      addNote();
+    }
+  });
+  
+  // File attachments
+  attachmentButton.addEventListener('click', handleAttachment);
+  noteAttachmentButton.addEventListener('click', handleNoteAttachment);
+  
+  fileInput.addEventListener('change', (e) => handleFileChange(e, 'ai'));
+  noteFileInput.addEventListener('change', (e) => handleFileChange(e, 'note'));
+  
+  // Microphone
+  micButton.addEventListener('click', () => toggleRecording('ai'));
+  noteMicButton.addEventListener('click', () => toggleRecording('note'));
+  
+  // Camera
+  cameraButton.addEventListener('click', handleCamera);
+  noteCameraButton.addEventListener('click', handleNoteCamera);
+  
+  imageInput.addEventListener('change', (e) => handleFileChange(e, 'ai'));
+  noteImageInput.addEventListener('change', (e) => handleFileChange(e, 'note'));
+});

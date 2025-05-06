@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Vyna.live Assistant",
   "version": "1.0.0",
-  "description": "AI-powered chat and notepad for content creators",
+  "description": "Access Vyna.live AI chat and notepad features directly from your browser",
   "icons": {
     "16": "assets/icon-16.png",
     "48": "assets/icon-48.png",
@@ -14,37 +14,28 @@
       "16": "assets/icon-16.png",
       "48": "assets/icon-48.png",
       "128": "assets/icon-128.png"
-    },
-    "default_title": "Vyna.live Assistant"
+    }
   },
   "permissions": [
     "storage",
-    "identity",
     "activeTab"
   ],
-  "optional_permissions": [
-    "microphone"
-  ],
   "host_permissions": [
-    "*://*.vyna.live/*"
+    "https://api.vyna.live/*"
   ],
   "background": {
-    "service_worker": "background/background.js",
-    "type": "module"
+    "service_worker": "background/background.js"
   },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"]
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": ["assets/*"],
       "matches": ["<all_urls>"]
     }
-  ],
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "vyna-assistant@vyna.live",
-      "strict_min_version": "109.0"
-    }
-  }
+  ]
 }

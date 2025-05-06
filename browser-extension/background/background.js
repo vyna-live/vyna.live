@@ -62,7 +62,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.type === 'LOGIN') {
-    login(message.data.username, message.data.password)
+    login(message.data.email, message.data.password)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+  
+  if (message.type === 'LOGIN_WITH_GOOGLE') {
+    loginWithGoogle()
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
@@ -87,17 +94,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
+
+  // Handle file uploads
+  if (message.type === 'UPLOAD_FILE') {
+    handleFileUpload(message.data)
+      .then(result => sendResponse(result))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
 });
 
 // Handle login
-async function login(username, password) {
+async function login(email, password) {
   try {
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
       credentials: 'include'
     });
     
@@ -127,6 +142,42 @@ async function login(username, password) {
   }
 }
 
+// Handle Google login
+async function loginWithGoogle() {
+  try {
+    // In a real implementation, this would redirect to Google OAuth
+    // Since we can't actually implement OAuth in an extension example, we'd just call a backend endpoint
+    const response = await fetch(`${API_BASE_URL}/api/login/google`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Google login failed');
+    }
+    
+    const data = await response.json();
+    
+    // Save authentication data
+    authState = {
+      isAuthenticated: true,
+      token: data.token,
+      user: data.user
+    };
+    
+    await chrome.storage.local.set({
+      authToken: data.token,
+      user: data.user
+    });
+    
+    return { success: true, user: data.user };
+  } catch (error) {
+    console.error('Google login error:', error);
+    throw error;
+  }
+}
+
 // Handle registration
 async function register(userData) {
   try {
@@ -146,7 +197,7 @@ async function register(userData) {
     const data = await response.json();
     
     // Auto-login after successful registration
-    return login(userData.username, userData.password);
+    return login(userData.email, userData.password);
   } catch (error) {
     console.error('Registration error:', error);
     throw error;
@@ -213,10 +264,8 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
 }
 
 // Handle file uploads
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'UPLOAD_FILE') {
-    const { fileData, fileName, fileType, hostId } = message.data;
-    
+async function handleFileUpload({ fileData, fileName, fileType }) {
+  try {
     // Convert base64 to blob
     const byteString = atob(fileData.split(',')[1]);
     const mimeString = fileData.split(',')[0].split(':')[1].split(';')[0];
@@ -230,29 +279,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const blob = new Blob([ab], { type: mimeString });
     const formData = new FormData();
     formData.append('file', blob, fileName);
-    formData.append('hostId', hostId);
     
     if (fileType) {
       formData.append('fileType', fileType);
     }
     
-    fetch(`${API_BASE_URL}/api/files/upload`, {
+    const headers = {};
+    if (authState.token) {
+      headers['Authorization'] = `Bearer ${authState.token}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/files/upload`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authState.token}`
-      },
+      headers,
       body: formData
-    })
-    .then(response => response.json())
-    .then(data => sendResponse({ success: true, data }))
-    .catch(error => {
-      console.error('Upload error:', error);
-      sendResponse({ success: false, error: error.message });
     });
     
-    return true;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || 'File upload failed');
+    }
+    
+    const responseData = await response.json();
+    return { success: true, data: responseData };
+  } catch (error) {
+    console.error('File upload error:', error);
+    throw error;
   }
-});
+}
 
 // Initialize the extension when installed or updated
 chrome.runtime.onInstalled.addListener(details => {
