@@ -1,42 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import cors from "cors";
-import cookieParser from "cookie-parser";
 
 const app = express();
-
-// Configure CORS with a wide-open policy for development
-app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true, // Allow credentials (cookies, authorization headers, etc)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser()); // Add cookie parser middleware
 
-// Import debug middleware
-import { debugAuth, debugRequest } from './debug';
-
-// Add debug middleware for authentication issues
-app.use(debugAuth);
-app.use(debugRequest);
-
-// Add explicit CORS headers to every response
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;

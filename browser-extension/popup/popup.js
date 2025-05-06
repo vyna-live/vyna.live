@@ -369,10 +369,9 @@ async function handleLogin() {
     loginButton.disabled = true;
     loginButton.textContent = 'Signing in...';
     
-    console.log('Sending login request with username:', username);
     const result = await chrome.runtime.sendMessage({
       type: 'LOGIN',
-      data: { username, password } // background.js now maps username to usernameOrEmail
+      data: { username, password }
     });
     
     if (result.success) {
