@@ -391,22 +391,43 @@ function switchTab(tabId) {
 async function handleLogin(e) {
   e.preventDefault();
   
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const usernameOrEmail = document.getElementById('usernameOrEmail').value;
+  const password = document.getElementById('password').value;
+  const errorElement = document.getElementById('auth-error');
+  const errorMessageElement = document.getElementById('error-message');
   
-  if (!email || !password) {
-    alert('Please enter both email and password');
+  // Clear existing errors
+  errorElement.style.display = 'none';
+  document.getElementById('usernameOrEmail-error').textContent = '';
+  document.getElementById('password-error').textContent = '';
+  
+  // Validate inputs
+  let hasErrors = false;
+  if (!usernameOrEmail) {
+    document.getElementById('usernameOrEmail-error').textContent = 'Username or email is required';
+    hasErrors = true;
+  }
+  
+  if (!password) {
+    document.getElementById('password-error').textContent = 'Password is required';
+    hasErrors = true;
+  }
+  
+  if (hasErrors) {
     return;
   }
   
   try {
     const loginBtn = document.getElementById('login-btn');
-    loginBtn.textContent = 'Logging in...';
+    const originalBtnContent = loginBtn.innerHTML;
+    
+    // Show loading state
+    loginBtn.innerHTML = `<span class="loading-indicator"></span> Signing in...`;
     loginBtn.disabled = true;
     
     const result = await chrome.runtime.sendMessage({
       type: 'LOGIN',
-      data: { username: email, password }
+      data: { usernameOrEmail, password }
     });
     
     if (result.success) {
@@ -415,15 +436,25 @@ async function handleLogin(e) {
       renderApp();
       await loadUserData();
     } else {
-      alert(result.error || 'Login failed. Please try again.');
+      // Show error message
+      errorMessageElement.textContent = result.error || 'Login failed. Please try again.';
+      errorElement.style.display = 'flex';
     }
   } catch (error) {
     console.error('Login error:', error);
-    alert('An error occurred during login. Please try again.');
+    errorMessageElement.textContent = 'An error occurred during login. Please try again.';
+    errorElement.style.display = 'flex';
   } finally {
     const loginBtn = document.getElementById('login-btn');
     if (loginBtn) {
-      loginBtn.textContent = 'Login';
+      loginBtn.innerHTML = `
+        <svg class="button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+          <polyline points="10 17 15 12 10 7"></polyline>
+          <line x1="15" y1="12" x2="3" y2="12"></line>
+        </svg>
+        <span>Sign in</span>
+      `;
       loginBtn.disabled = false;
     }
   }
@@ -433,7 +464,15 @@ async function handleLogin(e) {
 async function handleGoogleAuth() {
   try {
     const googleBtn = document.getElementById('google-btn');
-    googleBtn.textContent = 'Connecting...';
+    const originalBtnContent = googleBtn.innerHTML;
+    const errorElement = document.getElementById('auth-error');
+    const errorMessageElement = document.getElementById('error-message');
+    
+    // Clear existing errors
+    errorElement.style.display = 'none';
+    
+    // Show loading state
+    googleBtn.innerHTML = `<span class="loading-indicator"></span> Connecting...`;
     googleBtn.disabled = true;
     
     const result = await chrome.runtime.sendMessage({ type: 'GOOGLE_AUTH' });
@@ -444,15 +483,20 @@ async function handleGoogleAuth() {
       renderApp();
       await loadUserData();
     } else {
-      alert(result.error || 'Google authentication failed. Please try again.');
+      // Show error message
+      errorMessageElement.textContent = result.error || 'Google authentication failed. Please try again.';
+      errorElement.style.display = 'flex';
     }
   } catch (error) {
     console.error('Google auth error:', error);
-    alert('An error occurred during Google authentication. Please try again.');
+    const errorElement = document.getElementById('auth-error');
+    const errorMessageElement = document.getElementById('error-message');
+    errorMessageElement.textContent = 'An error occurred during Google authentication. Please try again.';
+    errorElement.style.display = 'flex';
   } finally {
     const googleBtn = document.getElementById('google-btn');
     if (googleBtn) {
-      googleBtn.innerHTML = '<img src="../assets/google-icon.svg" alt="Google" class="google-icon"> Sign up with Google';
+      googleBtn.innerHTML = '<img src="../assets/google-icon.svg" alt="Google" class="google-icon"><span>Continue with Google</span>';
       googleBtn.disabled = false;
     }
   }
