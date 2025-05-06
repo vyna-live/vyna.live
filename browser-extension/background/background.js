@@ -346,15 +346,15 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
       bodyData: data ? 'data present' : 'no data'
     });
     
-    // Get the full URL for easier debugging
-    const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log(`Full API URL: ${fullUrl}`);
+    // Build the URL for the request
+    let requestUrl = `${API_BASE_URL}${endpoint}`;
+    console.log(`Full API URL: ${requestUrl}`);
     
     // If this is going to be a POST/PUT/PATCH request, do an OPTIONS preflight test first
     if (method !== 'GET' && method !== 'HEAD') {
       console.log(`Testing CORS with OPTIONS request for ${method} ${endpoint}...`);
       try {
-        const optionsResponse = await fetch(fullUrl, {
+        const optionsResponse = await fetch(requestUrl, {
           method: 'OPTIONS',
           headers: {
             'Accept': 'application/json',
@@ -400,9 +400,8 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
       });
     }
     
-    // For debugging, log the full URL
-    const fullUrl = `${API_BASE_URL}${endpoint}`;
-    console.log(`Sending ${method} request to: ${fullUrl}`);
+    // URL was already defined above, just log the request now
+    console.log(`Sending ${method} request to: ${requestUrl}`);
     
     // If hostId is missing in the data but user is authenticated, add it
     if (data && !data.hostId && authState.user && authState.user.id && 
@@ -416,7 +415,7 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
       }
     }
     
-    const response = await fetch(fullUrl, fetchOptions);
+    const response = await fetch(requestUrl, fetchOptions);
     console.log(`Response received from ${endpoint}:`, { 
       status: response.status, 
       statusText: response.statusText,
