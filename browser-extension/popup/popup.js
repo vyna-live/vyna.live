@@ -649,8 +649,12 @@ async function handleGoogleAuth() {
     const errorElement = document.getElementById('auth-error');
     const errorMessageElement = document.getElementById('error-message');
     
-    // Clear existing errors
-    errorElement.style.display = 'none';
+    console.log('Attempting Google authentication');
+    
+    // Clear existing errors, show info state
+    errorElement.style.display = 'flex';
+    errorElement.classList.add('info');
+    errorMessageElement.textContent = "Connecting to Google...";
     
     // Show loading state
     googleBtn.innerHTML = `<span class="loading-indicator"></span> Connecting...`;
@@ -658,20 +662,36 @@ async function handleGoogleAuth() {
     
     const result = await chrome.runtime.sendMessage({ type: 'GOOGLE_AUTH' });
     
-    if (result.success) {
+    console.log('Google auth response:', result);
+    
+    if (result && result.success) {
+      errorElement.style.display = 'none';
+      errorElement.classList.remove('info');
+      
+      console.log('Google auth successful, user:', result.user);
       state.isAuthenticated = true;
       state.user = result.user;
+      
+      // Quick check to ensure we have a valid user object
+      if (!result.user || !result.user.id) {
+        console.warn('Google auth succeeded but user object is incomplete:', result.user);
+        errorMessageElement.textContent = 'Authentication successful but user data is incomplete. Please try again or login manually.';
+        errorElement.style.display = 'flex';
+        return;
+      }
+      
       renderApp();
       await loadUserData();
     } else {
       // Show error message
-      errorMessageElement.textContent = result.error || 'Google authentication failed. Please try again.';
+      console.error('Google auth failed:', result?.error || 'Unknown error');
+      errorElement.classList.remove('info');
+      errorMessageElement.textContent = result?.error || 'Google authentication failed. Please try again.';
       errorElement.style.display = 'flex';
     }
   } catch (error) {
     console.error('Google auth error:', error);
-    const errorElement = document.getElementById('auth-error');
-    const errorMessageElement = document.getElementById('error-message');
+    errorElement.classList.remove('info');
     errorMessageElement.textContent = 'An error occurred during Google authentication. Please try again.';
     errorElement.style.display = 'flex';
   } finally {
