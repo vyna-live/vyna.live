@@ -176,11 +176,13 @@ function renderApp() {
   const styleSelectionEl = document.createElement('div');
   styleSelectionEl.className = 'style-selection';
   styleSelectionEl.innerHTML = `
-    <div class="style-chip" data-style="play-by-play" title="Quick, action-oriented responses">
+    <div class="style-chip tooltip" data-style="play-by-play">
       <span>PP</span>
+      <span class="tooltip-text">Play-by-Play: Quick, action-oriented responses</span>
     </div>
-    <div class="style-chip active" data-style="color" title="Detailed, insightful responses">
+    <div class="style-chip tooltip active" data-style="color">
       <span>CC</span>
+      <span class="tooltip-text">Color Commentary: Detailed, insightful responses</span>
     </div>
   `;
   
@@ -411,6 +413,28 @@ function renderSessionsList() {
   }
 }
 
+// Show AI is typing indicator
+function showTypingIndicator() {
+  const chatContainer = document.getElementById('chat-container');
+  const loadingEl = document.createElement('div');
+  loadingEl.className = 'message-loading';
+  loadingEl.id = 'typing-indicator';
+  loadingEl.innerHTML = `
+    <span class="loading-dot"></span>
+    <span>Vyna is thinking...</span>
+  `;
+  chatContainer.appendChild(loadingEl);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Remove typing indicator
+function removeTypingIndicator() {
+  const typingIndicator = document.getElementById('typing-indicator');
+  if (typingIndicator) {
+    typingIndicator.remove();
+  }
+}
+
 // Send a chat message
 async function sendChatMessage() {
   const chatInput = document.getElementById('chat-input');
@@ -425,6 +449,7 @@ async function sendChatMessage() {
     }
     
     chatInput.value = '';
+    chatInput.disabled = true;
     
     // Create message object
     const newMessage = {
@@ -439,6 +464,9 @@ async function sendChatMessage() {
     
     // Render message
     renderChatMessage(newMessage);
+    
+    // Show typing indicator
+    showTypingIndicator();
     
     // Get selected commentary style
     const commentaryStyle = document.querySelector('.style-chip.active')?.dataset.style || 'color';
@@ -456,6 +484,9 @@ async function sendChatMessage() {
         }
       }
     });
+    
+    // Remove typing indicator
+    removeTypingIndicator();
     
     if (response.success) {
       // Create AI response message
@@ -501,9 +532,32 @@ async function sendChatMessage() {
       }
     } else {
       console.error('Error sending message:', response.error);
+      // Show error message in chat
+      const errorMessage = {
+        id: Date.now().toString(),
+        content: `<div class="error-message">Error: ${response.error || 'Failed to get response from Vyna'}</div>`,
+        sender: 'system',
+        timestamp: new Date().toISOString()
+      };
+      state.messages.push(errorMessage);
+      renderChatMessage(errorMessage);
     }
   } catch (error) {
     console.error('Error sending message:', error);
+    // Show error message in chat
+    removeTypingIndicator();
+    const errorMessage = {
+      id: Date.now().toString(),
+      content: `<div class="error-message">Error: ${error.message || 'Failed to communicate with the server'}</div>`,
+      sender: 'system',
+      timestamp: new Date().toISOString()
+    };
+    state.messages.push(errorMessage);
+    renderChatMessage(errorMessage);
+  } finally {
+    // Re-enable input
+    chatInput.disabled = false;
+    chatInput.focus();
   }
 }
 
@@ -531,11 +585,116 @@ function renderChatMessage(message) {
   // Set message content
   messageEl.querySelector('.message-content').innerHTML = message.content;
   
+  // Add message actions for AI responses
+  if (message.sender === 'assistant') {
+    const actionsContainer = document.createElement('div');
+    actionsContainer.className = 'message-actions';
+    
+    // Copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'message-action-btn copy-btn';
+    copyBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span>Copy</span>
+    `;
+    copyBtn.addEventListener('click', () => copyMessageToClipboard(message));
+    
+    // Save to note button
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'message-action-btn save-btn';
+    saveBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+      </svg>
+      <span>Save to Notes</span>
+    `;
+    saveBtn.addEventListener('click', () => saveMessageAsNote(message));
+    
+    actionsContainer.appendChild(copyBtn);
+    actionsContainer.appendChild(saveBtn);
+    messageEl.appendChild(actionsContainer);
+  }
+  
   // Append to container
   chatContainer.appendChild(messageNode);
   
   // Scroll to bottom
   chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Copy message content to clipboard
+async function copyMessageToClipboard(message) {
+  try {
+    // Extract text content from HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message.content;
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    
+    await navigator.clipboard.writeText(textContent);
+    
+    // Show copied notification
+    const copyBtn = document.querySelector('.copy-btn');
+    const originalText = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<span>Copied!</span>';
+    setTimeout(() => {
+      copyBtn.innerHTML = originalText;
+    }, 2000);
+  } catch (error) {
+    console.error('Failed to copy message:', error);
+  }
+}
+
+// Save message as a note
+async function saveMessageAsNote(message) {
+  try {
+    // Extract text content from HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message.content;
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // Generate a title from the first line
+    const firstLine = textContent.split('\n')[0];
+    const title = firstLine.substring(0, 30) + (firstLine.length > 30 ? '...' : '');
+    
+    // Create note
+    const response = await chrome.runtime.sendMessage({
+      type: 'API_REQUEST',
+      data: {
+        endpoint: '/api/notepads',
+        method: 'POST',
+        data: {
+          content: textContent,
+          title
+        }
+      }
+    });
+    
+    if (response.success) {
+      // Add to notes array
+      state.notes.push(response.data);
+      
+      // Show saved notification
+      const saveBtn = document.querySelector('.save-btn');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<span>Saved!</span>';
+      setTimeout(() => {
+        saveBtn.innerHTML = originalText;
+      }, 2000);
+      
+      // Switch to notes tab to show the newly created note
+      switchTab('notepad');
+      renderAllNotes();
+    } else {
+      console.error('Error creating note:', response.error);
+    }
+  } catch (error) {
+    console.error('Error saving note:', error);
+  }
 }
 
 // Add a note
