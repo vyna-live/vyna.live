@@ -111,7 +111,10 @@ async function loadChatSession(sessionId) {
       type: 'API_REQUEST',
       data: {
         endpoint: `/api/ai-chat-messages/${sessionId}`,
-        method: 'GET'
+        method: 'GET',
+        data: {
+          hostId: state.user?.id
+        }
       }
     });
     
@@ -162,23 +165,25 @@ async function createNewChatSession() {
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: '/api/ai-chat-sessions',
+        endpoint: '/api/ai-chat',
         method: 'POST',
         data: {
-          title: 'New Chat',
-          hostId: userId
+          message: 'New Chat',
+          hostId: userId,
+          sessionId: 'new' // This tells the server to create a new session
         }
       }
     });
     
     console.log('Create chat session response:', response);
     
-    if (response.success && response.data && response.data.id) {
+    if (response.success && response.data && response.data.sessionId) {
+      // Using the sessionId from the response
       const newSession = {
-        id: response.data.id.toString(),
-        title: response.data.title || 'New Chat',
-        createdAt: new Date(response.data.createdAt || Date.now()),
-        updatedAt: new Date(response.data.updatedAt || Date.now())
+        id: response.data.sessionId.toString(),
+        title: 'New Chat', // Will be updated when a real message is sent
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       
       console.log('Created new session:', newSession);
@@ -262,16 +267,15 @@ async function sendChatMessage() {
     };
     renderChatMessage(userMessage);
     
-    // Send message to server
+    // Send message to server using the ai-chat endpoint
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: `/api/ai-chat-messages${commentaryParams}`,
+        endpoint: `/api/ai-chat${commentaryParams}`,
         method: 'POST',
         data: {
           sessionId: state.currentSession,
-          content: message,
-          role: 'user',
+          message: message,
           hostId: state.user?.id
         }
       }
@@ -287,19 +291,16 @@ async function sendChatMessage() {
       // Show typing indicator
       showTypingIndicator();
       
-      // Get AI response
-      const aiResponse = await chrome.runtime.sendMessage({
-        type: 'API_REQUEST',
+      // The AI response is already included in the first response 
+      // We don't need to make a separate API call for the AI message
+      const aiResponse = {
+        success: true,
         data: {
-          endpoint: `/api/ai-chat/process${commentaryParams}`,
-          method: 'POST',
-          data: {
-            sessionId: state.currentSession,
-            message,
-            hostId: state.user?.id
-          }
+          id: response.data.aiMessage?.id || 'ai-' + Date.now(),
+          content: response.data.aiMessage?.content || response.data.response || 'No response',
+          role: 'assistant'
         }
-      });
+      };
       
       // Hide typing indicator
       hideTypingIndicator();
