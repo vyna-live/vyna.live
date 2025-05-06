@@ -1685,12 +1685,7 @@ async function handleImageUpload(event) {
 }
 
 // Handle audio recording
-let mediaRecorder = null;
-let audioChunks = [];
-let isRecording = false;
-let recordingTimer = null;
-let recordingDuration = 0;
-let recordingTab = null; // To track which tab is recording
+// Note: These variables are already declared at the top of the file
 
 async function handleAudioRecording(tabId = 'vynaai') {
   recordingTab = tabId;
