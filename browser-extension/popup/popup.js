@@ -51,11 +51,18 @@ async function loadUserData() {
     loadingEl.className = 'loading';
     loadingEl.innerHTML = '<div class="spinner"></div>';
     
+    if (!state.user || !state.user.id) {
+      console.error('User ID not available for loading data');
+      return;
+    }
+    
+    const hostId = state.user.id;
+    
     // Load notes
     const notesResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: '/api/notepads',
+        endpoint: `/api/notepads/${hostId}`,
         method: 'GET'
       }
     });
@@ -70,7 +77,7 @@ async function loadUserData() {
     const chatSessionsResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: '/api/ai-chat-sessions',
+        endpoint: `/api/ai-chat-sessions/${hostId}`,
         method: 'GET'
       }
     });
