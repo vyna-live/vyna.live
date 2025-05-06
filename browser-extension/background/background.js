@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
-// Base URL for all API calls
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://api.vyna.live';
+// Base URL for all API calls - using a hardcoded base URL for reliability
+const API_BASE_URL = 'http://localhost:5000';
 
 // Authentication state
 let authState = {
@@ -101,12 +101,20 @@ async function login(usernameOrEmail, password) {
   try {
     console.log('Attempting login with:', usernameOrEmail);
     
+    // Our API uses username and password fields, not usernameOrEmail
+    const loginData = { 
+      username: usernameOrEmail, 
+      password 
+    };
+    
+    console.log('Login data:', loginData);
+    
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ usernameOrEmail, password }),
+      body: JSON.stringify(loginData),
       credentials: 'include'
     });
     
