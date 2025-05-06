@@ -1,4 +1,4 @@
-// Popup script for Vyna.live extension
+// Popup script for Vyna.live extension - Simplified Version
 
 // State
 let state = {
@@ -16,7 +16,7 @@ let state = {
   searchQuery: ''
 };
 
-// Audio recording variables
+// Global variables for audio recording
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
@@ -24,9 +24,8 @@ let recordingTimer = null;
 let recordingDuration = 0;
 let recordingTab = null;
 
-// DOM Elements will be initialized when document is loaded
+// DOM reference
 let app;
-// Using direct HTML approach instead of templates for better compatibility
 
 // Initialize popup
 async function initPopup() {
