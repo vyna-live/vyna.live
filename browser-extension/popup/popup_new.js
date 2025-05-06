@@ -14,7 +14,8 @@ let state = {
   noteTags: [],
   filterTag: null,
   searchQuery: '',
-  commentaryStyle: null // 'play-by-play' or 'color' or null
+  commentaryStyle: null, // 'play-by-play' or 'color' or null
+  hasLoadedDemoNotes: false
 };
 
 // Audio recording variables
@@ -836,12 +837,29 @@ function renderNotes(searchQuery = '') {
     `;
     notesList.appendChild(emptyState);
   } else {
+    // Add sample notes for demo if we need to populate the UI for testing
+    // This would be replaced with actual notes from server
+    if (filteredNotes.length === 0 && !state.hasLoadedDemoNotes) {
+      // Create some sample notes for demonstration (only if user has no notes)
+      for (let i = 0; i < 6; i++) {
+        filteredNotes.push({
+          id: `demo-${i}`,
+          title: "Who is the best CODM gamer in Nigeria as of March 2025?",
+          content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff is before that date.",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+      state.hasLoadedDemoNotes = true;
+    }
+    
     // Render filtered notes
     filteredNotes.forEach(note => {
       const noteElement = noteItemTemplate.content.cloneNode(true);
       const noteItem = noteElement.querySelector('.note-item');
       const titleElement = noteElement.querySelector('.note-item-title');
       const previewElement = noteElement.querySelector('.note-item-preview');
+      const optionsButton = noteElement.querySelector('.note-options-button');
       
       noteItem.dataset.noteId = note.id;
       titleElement.textContent = note.title;
@@ -853,8 +871,17 @@ function renderNotes(searchQuery = '') {
       previewElement.textContent = preview;
       
       // Add click handler to open note
-      noteItem.addEventListener('click', () => {
-        loadNote(note.id);
+      noteItem.addEventListener('click', (e) => {
+        if (e.target !== optionsButton && !optionsButton.contains(e.target)) {
+          loadNote(note.id);
+        }
+      });
+      
+      // Add click handler to options button (three dots menu)
+      optionsButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Show options menu for this note (to be implemented)
+        console.log('Show options for note:', note.id);
       });
       
       notesList.appendChild(noteElement);
