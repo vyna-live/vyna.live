@@ -104,10 +104,12 @@ async function login(usernameOrEmail, password) {
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Origin': chrome.runtime.getURL('')
       },
       body: JSON.stringify({ usernameOrEmail, password }),
-      credentials: 'include'
+      credentials: 'include',
+      mode: 'cors'
     });
     
     console.log('Login response status:', response.status);
@@ -210,9 +212,12 @@ async function register(userData) {
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Origin': chrome.runtime.getURL('')
       },
-      body: JSON.stringify(userData)
+      body: JSON.stringify(userData),
+      credentials: 'include',
+      mode: 'cors'
     });
     
     if (!response.ok) {
@@ -252,7 +257,8 @@ async function logout() {
 async function handleApiRequest({ endpoint, method = 'GET', data = null, includeAuth = true }) {
   try {
     const headers = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Origin': chrome.runtime.getURL('')
     };
     
     if (includeAuth && authState.token) {
@@ -261,7 +267,9 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
     
     const fetchOptions = {
       method,
-      headers
+      headers,
+      mode: 'cors',
+      credentials: 'include'
     };
     
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
@@ -316,9 +324,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     fetch(`${API_BASE_URL}/api/files/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${authState.token}`
+        'Authorization': `Bearer ${authState.token}`,
+        'Origin': chrome.runtime.getURL('')
       },
-      body: formData
+      body: formData,
+      mode: 'cors',
+      credentials: 'include'
     })
     .then(response => response.json())
     .then(data => sendResponse({ success: true, data }))
