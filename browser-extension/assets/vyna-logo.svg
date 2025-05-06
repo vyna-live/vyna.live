@@ -1,7 +1,0 @@
-<svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M60 20C65.5228 20 70 15.5228 70 10C70 4.47715 65.5228 0 60 0C54.4772 0 50 4.47715 50 10C50 15.5228 54.4772 20 60 20Z" fill="white"/>
-  <path d="M94 45C94 61.5685 80.5685 75 64 75C47.4315 75 34 61.5685 34 45C34 28.4315 47.4315 15 64 15" stroke="#CDBCAB" stroke-width="10" stroke-linecap="round"/>
-  <path d="M38 63L50 50" stroke="white" stroke-width="5" stroke-linecap="round"/>
-  <text x="60" y="95" text-anchor="middle" font-family="serif" font-size="28" font-weight="bold" fill="white">Vyna</text>
-  <text x="60" y="107" text-anchor="middle" font-family="sans-serif" font-size="10" fill="white">.LIVE</text>
-</svg>
