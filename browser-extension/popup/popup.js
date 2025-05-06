@@ -866,68 +866,86 @@ async function sendChatMessage() {
 
 // Render a chat message
 function renderChatMessage(message) {
-  const chatContainer = document.getElementById('chat-container');
-  
-  // If empty state is visible, hide it
-  const emptyState = document.getElementById('vynaai-empty-state');
-  if (emptyState) {
-    emptyState.classList.add('hidden');
+  try {
+    const chatContainer = document.getElementById('chat-container');
+    if (!chatContainer) {
+      console.error('Chat container not found');
+      return;
+    }
+    
+    // If empty state is visible, hide it
+    const emptyState = document.getElementById('vynaai-empty-state');
+    if (emptyState) {
+      emptyState.classList.add('hidden');
+    }
+    
+    // Make chat container visible
+    chatContainer.classList.remove('hidden');
+    
+    // Use the globally stored messageTemplate variable
+    if (!messageTemplate) {
+      // Fallback to get it directly if the global one isn't initialized yet
+      console.log('Using fallback to get message template');
+      const templateEl = document.getElementById('message-template');
+      if (!templateEl) {
+        console.error('Message template not found');
+        return;
+      }
+      messageTemplate = templateEl;
+    }
+    
+    const messageNode = document.importNode(messageTemplate.content, true);
+    const messageEl = messageNode.querySelector('.message');
+    
+    // Set message class based on sender
+    messageEl.classList.add(message.sender);
+    
+    // Set message content
+    messageEl.querySelector('.message-content').innerHTML = message.content;
+    
+    // Add message actions for AI responses
+    if (message.sender === 'assistant') {
+      const actionsContainer = document.createElement('div');
+      actionsContainer.className = 'message-actions';
+      
+      // Copy button
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'message-action-btn copy-btn';
+      copyBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <span>Copy</span>
+      `;
+      copyBtn.addEventListener('click', () => copyMessageToClipboard(message));
+      
+      // Save to note button
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'message-action-btn save-btn';
+      saveBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        <span>Save to Notes</span>
+      `;
+      saveBtn.addEventListener('click', () => saveMessageAsNote(message));
+      
+      actionsContainer.appendChild(copyBtn);
+      actionsContainer.appendChild(saveBtn);
+      messageEl.appendChild(actionsContainer);
+    }
+    
+    // Append to container
+    chatContainer.appendChild(messageNode);
+    
+    // Scroll to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  } catch (error) {
+    console.error('Error rendering chat message:', error);
   }
-  
-  // Make chat container visible
-  chatContainer.classList.remove('hidden');
-  
-  // Get message template
-  const messageTemplate = document.getElementById('message-template');
-  const messageNode = document.importNode(messageTemplate.content, true);
-  const messageEl = messageNode.querySelector('.message');
-  
-  // Set message class based on sender
-  messageEl.classList.add(message.sender);
-  
-  // Set message content
-  messageEl.querySelector('.message-content').innerHTML = message.content;
-  
-  // Add message actions for AI responses
-  if (message.sender === 'assistant') {
-    const actionsContainer = document.createElement('div');
-    actionsContainer.className = 'message-actions';
-    
-    // Copy button
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'message-action-btn copy-btn';
-    copyBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-      </svg>
-      <span>Copy</span>
-    `;
-    copyBtn.addEventListener('click', () => copyMessageToClipboard(message));
-    
-    // Save to note button
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'message-action-btn save-btn';
-    saveBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-        <polyline points="7 3 7 8 15 8"></polyline>
-      </svg>
-      <span>Save to Notes</span>
-    `;
-    saveBtn.addEventListener('click', () => saveMessageAsNote(message));
-    
-    actionsContainer.appendChild(copyBtn);
-    actionsContainer.appendChild(saveBtn);
-    messageEl.appendChild(actionsContainer);
-  }
-  
-  // Append to container
-  chatContainer.appendChild(messageNode);
-  
-  // Scroll to bottom
-  chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 // Copy message content to clipboard
@@ -1094,12 +1112,27 @@ async function deleteNote(noteId, event) {
 
 // Render a note in the notes list
 function renderNote(note, container = null) {
-  const noteContainer = container || document.getElementById('notes-list');
-  
-  // Get note template
-  const noteItemTemplate = document.getElementById('note-item-template');
-  const noteNode = document.importNode(noteItemTemplate.content, true);
-  const noteEl = noteNode.querySelector('.note-item');
+  try {
+    const noteContainer = container || document.getElementById('notes-list');
+    if (!noteContainer) {
+      console.error('Notes container not found');
+      return;
+    }
+    
+    // Use the globally stored noteItemTemplate variable
+    if (!noteItemTemplate) {
+      // Fallback to get it directly if the global one isn't initialized yet
+      console.log('Using fallback to get note item template');
+      const templateEl = document.getElementById('note-item-template');
+      if (!templateEl) {
+        console.error('Note item template not found');
+        return;
+      }
+      noteItemTemplate = templateEl;
+    }
+    
+    const noteNode = document.importNode(noteItemTemplate.content, true);
+    const noteEl = noteNode.querySelector('.note-item');
   
   // Set note data
   noteEl.dataset.id = note.id;
@@ -1175,6 +1208,9 @@ function renderNote(note, container = null) {
   
   // Append to list
   noteContainer.appendChild(noteNode);
+  } catch (error) {
+    console.error('Error rendering note:', error);
+  }
 }
 
 // Helper function to process line text and highlight tags
