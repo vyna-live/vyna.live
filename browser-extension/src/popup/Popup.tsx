@@ -97,6 +97,33 @@ const Popup: React.FC = () => {
       setLoginLoading(false);
     }
   };
+  
+  const handleSignup = async (userData: { username: string; email: string; password: string; displayName?: string }) => {
+    try {
+      setLoginLoading(true);
+      setError('');
+      
+      // This would be replaced with an actual API call to register the user
+      console.log('Signing up with:', userData);
+      
+      // For demo purposes, we'll simulate a successful signup after a delay
+      setTimeout(() => {
+        const mockUser: User = {
+          id: 1,
+          username: userData.username,
+          displayName: userData.displayName || userData.username,
+        };
+        
+        setUser(mockUser);
+        setIsAuthenticated(true);
+        setLoginLoading(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError('An error occurred during signup. Please try again.');
+      setLoginLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -118,6 +145,7 @@ const Popup: React.FC = () => {
       ) : (
         <LoginScreen
           onLogin={handleLogin}
+          onSignup={handleSignup}
           onGoogleLogin={handleGoogleLogin}
           error={error}
           isLoading={loginLoading}

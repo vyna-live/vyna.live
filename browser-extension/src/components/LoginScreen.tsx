@@ -18,6 +18,7 @@ const validatePassword = (password: string) => {
 
 interface LoginScreenProps {
   onLogin: (username: string, password: string) => Promise<void>;
+  onSignup?: (userData: { username: string; email: string; password: string; displayName?: string }) => Promise<void>;
   onGoogleLogin: () => Promise<void>;
   error?: string;
   isLoading: boolean;
@@ -25,6 +26,7 @@ interface LoginScreenProps {
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ 
   onLogin, 
+  onSignup,
   onGoogleLogin, 
   error, 
   isLoading 
@@ -105,13 +107,22 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         return;
       }
       
-      // Handle signup - this would normally call an API
-      console.log('Sign up with:', { username, email, displayName, password });
-      
-      // After successful signup, switch to login screen and prefill the username
-      setIsSignUp(false);
-      // Clear form errors
-      setFormErrors({});
+      // Handle signup using the onSignup prop if provided
+      if (onSignup) {
+        onSignup({
+          username,
+          email,
+          password,
+          displayName
+        });
+      } else {
+        // Fallback if onSignup is not provided
+        console.log('Sign up with:', { username, email, displayName, password });
+        // After successful signup, switch to login screen and prefill the username
+        setIsSignUp(false);
+        // Clear form errors
+        setFormErrors({});
+      }
     } else {
       // For login, we'll validate on the server side
       onLogin(username, password);

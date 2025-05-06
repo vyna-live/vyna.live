@@ -4,16 +4,16 @@
   "version": "1.0.0",
   "description": "Access Vyna.live AI chat and notepad features directly from your browser",
   "icons": {
-    "16": "assets/icon-16.png",
-    "48": "assets/icon-48.png",
-    "128": "assets/icon-128.png"
+    "16": "src/assets/icon-16.svg",
+    "48": "src/assets/icon-48.svg",
+    "128": "src/assets/icon-128.svg"
   },
   "action": {
-    "default_popup": "popup/popup.html",
+    "default_popup": "src/popup/index.html",
     "default_icon": {
-      "16": "assets/icon-16.png",
-      "48": "assets/icon-48.png",
-      "128": "assets/icon-128.png"
+      "16": "src/assets/icon-16.svg",
+      "48": "src/assets/icon-48.svg",
+      "128": "src/assets/icon-128.svg"
     }
   },
   "permissions": [
@@ -24,17 +24,17 @@
     "https://api.vyna.live/*"
   ],
   "background": {
-    "service_worker": "background/background.js"
+    "service_worker": "src/background/background.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content/content.js"]
+      "js": ["src/content/content.js"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*"],
+      "resources": ["assets/*", "src/**/*", "dist/**/*"],
       "matches": ["<all_urls>"]
     }
   ]
