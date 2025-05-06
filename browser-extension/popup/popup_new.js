@@ -579,6 +579,13 @@ function renderApp() {
   app.innerHTML = '';
   app.appendChild(appTemplate.content.cloneNode(true));
   
+  // Ensure proper initial view state
+  // Make sure note editor view is hidden
+  const noteEditorView = document.getElementById('note-editor-view');
+  if (noteEditorView) {
+    noteEditorView.classList.add('hidden');
+  }
+  
   // Setup user profile info
   const userDisplayName = document.getElementById('user-display-name');
   const userAvatarImg = document.getElementById('user-avatar-img');
@@ -640,6 +647,16 @@ function renderApp() {
         const selectedTab = document.getElementById(`${tabName}-content`);
         selectedTab.classList.add('active');
         selectedTab.classList.remove('hidden');
+        
+        // If notepad tab selected, ensure note editor is hidden and notes list is visible
+        if (tabName === 'notepad') {
+          const notesListView = document.getElementById('notes-list-view');
+          const noteEditorView = document.getElementById('note-editor-view');
+          if (notesListView && noteEditorView) {
+            notesListView.classList.remove('hidden');
+            noteEditorView.classList.add('hidden');
+          }
+        }
         
         // Load appropriate data when switching tabs
         if (tabName === 'notepad') {
