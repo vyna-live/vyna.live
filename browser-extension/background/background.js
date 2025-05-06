@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = 'https://vyna-assistant-diweesomchi.replit.app';
+const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://api.vyna.live';
 
 // Authentication state
 let authState = {
@@ -18,12 +18,10 @@ async function initialize() {
   if (stored.authToken && stored.user) {
     // Verify the token is still valid
     try {
-      const response = await fetch(`${API_BASE_URL}/ext/user`, {
+      const response = await fetch(`${API_BASE_URL}/api/user`, {
         headers: {
-          'Authorization': `Bearer ${stored.authToken}`,
-          'Origin': chrome.runtime.getURL('')
-        },
-        mode: 'cors'
+          'Authorization': `Bearer ${stored.authToken}`
+        }
       });
       
       if (response.ok) {
@@ -103,15 +101,13 @@ async function login(usernameOrEmail, password) {
   try {
     console.log('Attempting login with:', usernameOrEmail);
     
-    const response = await fetch(`${API_BASE_URL}/ext/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Origin': chrome.runtime.getURL('')
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ usernameOrEmail, password }),
-      credentials: 'include',
-      mode: 'cors'
+      credentials: 'include'
     });
     
     console.log('Login response status:', response.status);
@@ -211,15 +207,12 @@ async function handleGoogleAuth() {
 // Handle registration
 async function register(userData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/ext/register`, {
+    const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Origin': chrome.runtime.getURL('')
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(userData),
-      credentials: 'include',
-      mode: 'cors'
+      body: JSON.stringify(userData)
     });
     
     if (!response.ok) {
@@ -259,8 +252,7 @@ async function logout() {
 async function handleApiRequest({ endpoint, method = 'GET', data = null, includeAuth = true }) {
   try {
     const headers = {
-      'Content-Type': 'application/json',
-      'Origin': chrome.runtime.getURL('')
+      'Content-Type': 'application/json'
     };
     
     if (includeAuth && authState.token) {
@@ -269,9 +261,7 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
     
     const fetchOptions = {
       method,
-      headers,
-      mode: 'cors',
-      credentials: 'include'
+      headers
     };
     
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
@@ -326,12 +316,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     fetch(`${API_BASE_URL}/api/files/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${authState.token}`,
-        'Origin': chrome.runtime.getURL('')
+        'Authorization': `Bearer ${authState.token}`
       },
-      body: formData,
-      mode: 'cors',
-      credentials: 'include'
+      body: formData
     })
     .then(response => response.json())
     .then(data => sendResponse({ success: true, data }))
