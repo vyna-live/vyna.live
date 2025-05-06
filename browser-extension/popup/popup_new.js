@@ -1530,13 +1530,7 @@ async function addQuickNote() {
   }
 }
 
-// Create a new note and open the full editor
-// This function has been relocated to line ~1543 to fix duplicate function issues
-async function _deprecated_createNewNote() {
-  console.log('This function is deprecated. Using the main createNewNote function at line ~1543 instead.');
-  // Redirecting to the main implementation
-  return createNewNote();
-}
+// Note: Original duplicate function was here but has been removed to fix rendering conflicts
 
 // Create a new note
 async function createNewNote() {
@@ -1770,7 +1764,7 @@ async function loadNote(noteId) {
                 data: {
                   endpoint: `/api/notepads/${state.currentNote.id}`,
                   method: 'PATCH',
-                  data: { ...noteData, hostId: userId }
+                  data: { ...noteData, hostId: state.user?.id }
                 }
               });
               
