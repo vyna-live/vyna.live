@@ -539,19 +539,32 @@ function renderApp() {
   
   // Handle tab switching
   navTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const tabName = tab.dataset.tab;
-      
-      // Update state
-      state.currentTab = tabName;
-      
-      // Update active tab visual
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
-      tab.classList.add('active');
-      document.getElementById(`${tabName}-content`).classList.add('active');
-    });
+    if (tab.classList.contains('back-btn')) {
+      // Handle back button
+      tab.addEventListener('click', () => {
+        // Go back to main view (equivalent to clicking home)
+        window.close(); // Simple approach to "go back" - just close the popup
+      });
+    } else if (tab.dataset.tab) {
+      // Handle main tabs
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+        
+        // Update state
+        state.currentTab = tabName;
+        
+        // Update active tab visual
+        document.querySelectorAll('.nav-tab').forEach(t => {
+          if (t.dataset.tab) t.classList.remove('active');
+        });
+        
+        tab.classList.add('active');
+        
+        // Hide all and show the selected tab
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`${tabName}-content`).classList.remove('hidden');
+      });
+    }
   });
   
   // Set up chat sessions list
@@ -651,18 +664,73 @@ function renderApp() {
   // Set up notes functionality
   const notesListView = document.getElementById('notes-list-view');
   const notesList = document.getElementById('notes-list');
-  const newNoteButton = document.getElementById('new-note-button');
-  const notesSearch = document.getElementById('notes-search');
+  const notepadInput = document.getElementById('notepad-input');
+  const addNoteButton = document.getElementById('add-note-button');
+  const noteTextarea = document.getElementById('note-editor-textarea');
   
-  if (newNoteButton) {
-    newNoteButton.addEventListener('click', () => {
-      // Create a new note and show editor
-      createNewNote();
+  // Handle the quick add note button
+  if (addNoteButton) {
+    addNoteButton.addEventListener('click', () => {
+      addQuickNote();
     });
   }
   
-  if (notesSearch) {
-    notesSearch.addEventListener('input', debounce(handleNoteSearch, 300));
+  // Handle notepad input enter key press
+  if (notepadInput) {
+    notepadInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addQuickNote();
+      }
+    });
+    
+    // Focus on notepad input when typing
+    notepadInput.addEventListener('focus', () => {
+      // If there's text, show the add note button
+      if (notepadInput.value.trim()) {
+        addNoteButton.style.display = 'block';
+      }
+    });
+    
+    // Show/hide add note button based on input content
+    notepadInput.addEventListener('input', () => {
+      if (notepadInput.value.trim()) {
+        addNoteButton.style.display = 'block';
+      } else {
+        addNoteButton.style.display = 'none';
+      }
+    });
+  }
+  
+  // Set up attachment, mic, and image buttons for notepad
+  const attachmentBtn = document.getElementById('attachment-btn');
+  const micBtn = document.getElementById('mic-btn');
+  const imageBtn = document.getElementById('image-btn');
+  
+  if (attachmentBtn) {
+    attachmentBtn.addEventListener('click', () => {
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) fileInput.click();
+    });
+  }
+  
+  if (micBtn) {
+    micBtn.addEventListener('click', () => {
+      toggleAudioRecording();
+      recordingTab = 'notepad';
+    });
+  }
+  
+  if (imageBtn) {
+    imageBtn.addEventListener('click', () => {
+      const imageInput = document.getElementById('image-input');
+      if (imageInput) imageInput.click();
+    });
+  }
+  
+  // Set up note textarea auto-resize
+  if (noteTextarea) {
+    noteTextarea.addEventListener('input', autoResizeTextarea);
   }
 }
 
@@ -880,8 +948,79 @@ function renderNotes(searchQuery = '') {
       // Add click handler to options button (three dots menu)
       optionsButton.addEventListener('click', (e) => {
         e.stopPropagation();
-        // Show options menu for this note (to be implemented)
-        console.log('Show options for note:', note.id);
+        
+        // Create and show options menu
+        const optionsMenu = document.createElement('div');
+        optionsMenu.className = 'note-options-menu';
+        optionsMenu.innerHTML = `
+          <div class="note-option" data-action="edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Edit</span>
+          </div>
+          <div class="note-option" data-action="delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Delete</span>
+          </div>
+        `;
+        
+        // Position the menu
+        const rect = optionsButton.getBoundingClientRect();
+        optionsMenu.style.top = `${rect.bottom + 5}px`;
+        optionsMenu.style.right = `${window.innerWidth - rect.right}px`;
+        
+        // Add to DOM
+        document.body.appendChild(optionsMenu);
+        
+        // Add click handlers to menu options
+        optionsMenu.querySelector('[data-action="edit"]').addEventListener('click', () => {
+          loadNote(note.id);
+          document.body.removeChild(optionsMenu);
+        });
+        
+        optionsMenu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+          if (confirm(`Are you sure you want to delete "${note.title}"?`)) {
+            try {
+              // Send delete request to API
+              const response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: `/api/notepads/${note.id}`,
+                  method: 'DELETE'
+                }
+              });
+              
+              if (response.success) {
+                // Remove from state
+                state.notes = state.notes.filter(n => n.id !== note.id);
+                // Re-render notes
+                renderNotes();
+              }
+            } catch (error) {
+              console.error('Error deleting note:', error);
+              showErrorToast('Failed to delete note');
+            }
+          }
+          document.body.removeChild(optionsMenu);
+        });
+        
+        // Close menu when clicking outside
+        const closeMenu = (e) => {
+          if (!optionsMenu.contains(e.target) && e.target !== optionsButton) {
+            document.body.removeChild(optionsMenu);
+            document.removeEventListener('click', closeMenu);
+          }
+        };
+        
+        // Add delay to prevent immediate closing
+        setTimeout(() => {
+          document.addEventListener('click', closeMenu);
+        }, 100);
       });
       
       notesList.appendChild(noteElement);
@@ -1092,11 +1231,544 @@ function updateRecordingIndicator() {
 function processAudioRecording() {
   // For now, just mention the recording in the input
   const isNotepad = recordingTab === 'notepad';
-  const inputElement = document.getElementById(isNotepad ? 'note-input' : 'chat-input');
+  const inputElement = document.getElementById(isNotepad ? 'note-editor-textarea' : 'chat-input');
   
   if (inputElement) {
     inputElement.value += ' [Audio Recording]';
     autoResizeTextarea.call(inputElement);
+  }
+}
+
+// Add a quick note from input field
+async function addQuickNote() {
+  try {
+    const noteInput = document.getElementById('notepad-input');
+    if (!noteInput || !noteInput.value.trim()) {
+      return;
+    }
+    
+    const noteContent = noteInput.value.trim();
+    
+    // Create a temporary title based on content (first 30 chars)
+    const title = noteContent.length > 30 
+      ? noteContent.substring(0, 30) + '...'
+      : noteContent;
+    
+    // Create the note data
+    const noteData = {
+      title: title,
+      content: noteContent
+    };
+    
+    // Send request to create note
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'API_REQUEST',
+        data: {
+          endpoint: '/api/notepads',
+          method: 'POST',
+          body: noteData
+        }
+      });
+      
+      if (response.success) {
+        // Add to the state
+        state.notes.unshift(response.data);
+        
+        // Clear input
+        noteInput.value = '';
+        
+        // Re-render notes
+        renderNotes();
+      }
+    } catch (error) {
+      console.error('Error adding quick note:', error);
+      showErrorToast('Failed to add note');
+    }
+  } catch (error) {
+    console.error('Error in add quick note:', error);
+    showErrorToast('Failed to add note');
+  }
+}
+
+// Create a new note and open the full editor
+async function createNewNote() {
+  try {
+    // Get input from notepad input if any
+    const noteInput = document.getElementById('notepad-input');
+    const initialContent = noteInput ? noteInput.value.trim() : '';
+    
+    // Create a temporary note for optimistic UI
+    const tempNote = {
+      id: `temp-${Date.now()}`,
+      title: 'About solana',
+      content: initialContent,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Add to state for UI rendering
+    state.currentNote = tempNote;
+    
+    // Show note editor view
+    const notesListView = document.getElementById('notes-list-view');
+    const noteEditorView = document.getElementById('note-editor-view');
+    
+    if (notesListView && noteEditorView) {
+      notesListView.classList.add('hidden');
+      noteEditorView.classList.remove('hidden');
+      
+      // Set up title display
+      const titleDisplay = document.getElementById('note-title-display');
+      if (titleDisplay) {
+        titleDisplay.textContent = tempNote.title;
+      }
+      
+      // Set up editor content
+      const contentTextarea = document.getElementById('note-editor-textarea');
+      if (contentTextarea) {
+        contentTextarea.value = initialContent;
+        
+        // Focus and place cursor at end
+        contentTextarea.focus();
+        contentTextarea.selectionStart = contentTextarea.value.length;
+        contentTextarea.selectionEnd = contentTextarea.value.length;
+        
+        // Resize the textarea
+        autoResizeTextarea.call(contentTextarea);
+      }
+      
+      // Set up back button
+      const backButton = document.getElementById('back-to-notes-button');
+      if (backButton) {
+        backButton.onclick = () => {
+          // If input had content, clear it
+          if (noteInput && initialContent) {
+            noteInput.value = '';
+          }
+          
+          notesListView.classList.remove('hidden');
+          noteEditorView.classList.add('hidden');
+        };
+      }
+      
+      // Set up teleprompt button
+      const telepromptButton = document.getElementById('teleprompt-button');
+      if (telepromptButton) {
+        telepromptButton.onclick = async () => {
+          // Save note and send to teleprompt
+          try {
+            if (!contentTextarea.value.trim()) {
+              contentTextarea.focus();
+              return;
+            }
+            
+            const noteData = {
+              title: tempNote.title,
+              content: contentTextarea.value.trim()
+            };
+            
+            let response;
+            
+            if (state.currentNote.id.startsWith('temp-')) {
+              // Create new note
+              response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: '/api/notepads',
+                  method: 'POST',
+                  body: noteData
+                }
+              });
+            } else {
+              // Update existing note
+              response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: `/api/notepads/${state.currentNote.id}`,
+                  method: 'PATCH',
+                  body: noteData
+                }
+              });
+            }
+            
+            if (response.success) {
+              // Show success message
+              showSuccessToast('Note sent to teleprompt');
+              
+              // Update note in state
+              const noteIndex = state.notes.findIndex(n => n.id === state.currentNote.id);
+              
+              if (noteIndex >= 0) {
+                state.notes[noteIndex] = response.data;
+              } else {
+                state.notes.unshift(response.data);
+              }
+              
+              // Reset current note and go back to list
+              state.currentNote = null;
+              notesListView.classList.remove('hidden');
+              noteEditorView.classList.add('hidden');
+              
+              // Re-render notes
+              renderNotes();
+            }
+          } catch (error) {
+            console.error('Error sending to teleprompt:', error);
+            showErrorToast('Failed to send to teleprompt');
+          }
+        };
+      }
+      
+      // Set up more options button
+      const moreOptionsButton = document.getElementById('more-options-button');
+      if (moreOptionsButton) {
+        moreOptionsButton.onclick = (e) => {
+          // Create and show options menu
+          const optionsMenu = document.createElement('div');
+          optionsMenu.className = 'note-options-menu';
+          optionsMenu.innerHTML = `
+            <div class="note-option" data-action="save">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              <span>Save</span>
+            </div>
+            <div class="note-option" data-action="delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Delete</span>
+            </div>
+          `;
+          
+          // Position the menu
+          const rect = moreOptionsButton.getBoundingClientRect();
+          optionsMenu.style.top = `${rect.bottom + 5}px`;
+          optionsMenu.style.right = `${window.innerWidth - rect.right}px`;
+          
+          // Add to DOM
+          document.body.appendChild(optionsMenu);
+          
+          // Add click handlers
+          optionsMenu.querySelector('[data-action="save"]').addEventListener('click', async () => {
+            // Save the note
+            try {
+              if (!contentTextarea.value.trim()) {
+                contentTextarea.focus();
+                return;
+              }
+              
+              const noteData = {
+                title: tempNote.title,
+                content: contentTextarea.value.trim()
+              };
+              
+              let response;
+              
+              if (state.currentNote.id.startsWith('temp-')) {
+                // Create new note
+                response = await chrome.runtime.sendMessage({
+                  type: 'API_REQUEST',
+                  data: {
+                    endpoint: '/api/notepads',
+                    method: 'POST',
+                    body: noteData
+                  }
+                });
+              } else {
+                // Update existing note
+                response = await chrome.runtime.sendMessage({
+                  type: 'API_REQUEST',
+                  data: {
+                    endpoint: `/api/notepads/${state.currentNote.id}`,
+                    method: 'PATCH',
+                    body: noteData
+                  }
+                });
+              }
+              
+              if (response.success) {
+                // Show success message
+                showSuccessToast('Note saved');
+                
+                // Update note in state
+                const noteIndex = state.notes.findIndex(n => n.id === state.currentNote.id);
+                
+                if (noteIndex >= 0) {
+                  state.notes[noteIndex] = response.data;
+                } else {
+                  state.notes.unshift(response.data);
+                }
+                
+                // Update current note
+                state.currentNote = response.data;
+              }
+            } catch (error) {
+              console.error('Error saving note:', error);
+              showErrorToast('Failed to save note');
+            }
+            
+            document.body.removeChild(optionsMenu);
+          });
+          
+          optionsMenu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+            if (confirm(`Are you sure you want to delete this note?`)) {
+              try {
+                // Only try to delete from server if it's not a temporary note
+                if (!state.currentNote.id.startsWith('temp-')) {
+                  const response = await chrome.runtime.sendMessage({
+                    type: 'API_REQUEST',
+                    data: {
+                      endpoint: `/api/notepads/${state.currentNote.id}`,
+                      method: 'DELETE'
+                    }
+                  });
+                  
+                  if (!response.success) {
+                    throw new Error('Failed to delete note');
+                  }
+                }
+                
+                // Remove from state
+                state.notes = state.notes.filter(n => n.id !== state.currentNote.id);
+                
+                // Reset current note
+                state.currentNote = null;
+                
+                // Go back to list view
+                notesListView.classList.remove('hidden');
+                noteEditorView.classList.add('hidden');
+                
+                // Re-render notes
+                renderNotes();
+              } catch (error) {
+                console.error('Error deleting note:', error);
+                showErrorToast('Failed to delete note');
+              }
+            }
+            
+            document.body.removeChild(optionsMenu);
+          });
+          
+          // Close menu when clicking outside
+          const closeMenu = (event) => {
+            if (!optionsMenu.contains(event.target) && event.target !== moreOptionsButton) {
+              document.body.removeChild(optionsMenu);
+              document.removeEventListener('click', closeMenu);
+            }
+          };
+          
+          // Add delay to prevent immediate closing
+          setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+          }, 100);
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error creating new note:', error);
+    showErrorToast('Failed to create a new note');
+  }
+}
+
+// Load a note for editing
+async function loadNote(noteId) {
+  try {
+    // Find note in state
+    const note = state.notes.find(n => n.id === noteId);
+    
+    if (!note) {
+      console.error('Note not found:', noteId);
+      showErrorToast('Note not found');
+      return;
+    }
+    
+    // Set current note
+    state.currentNote = note;
+    
+    // Show note editor view
+    const notesListView = document.getElementById('notes-list-view');
+    const noteEditorView = document.getElementById('note-editor-view');
+    
+    if (notesListView && noteEditorView) {
+      notesListView.classList.add('hidden');
+      noteEditorView.classList.remove('hidden');
+      
+      // Set up title display
+      const titleDisplay = document.getElementById('note-title-display');
+      if (titleDisplay) {
+        titleDisplay.textContent = note.title || '';
+      }
+      
+      // Set up editor content
+      const contentTextarea = document.getElementById('note-editor-textarea');
+      if (contentTextarea) {
+        contentTextarea.value = note.content || '';
+        
+        // Resize the textarea
+        autoResizeTextarea.call(contentTextarea);
+      }
+      
+      // Set up back button
+      const backButton = document.getElementById('back-to-notes-button');
+      if (backButton) {
+        backButton.onclick = () => {
+          notesListView.classList.remove('hidden');
+          noteEditorView.classList.add('hidden');
+        };
+      }
+      
+      // Set up teleprompt button
+      const telepromptButton = document.getElementById('teleprompt-button');
+      if (telepromptButton) {
+        telepromptButton.onclick = async () => {
+          try {
+            // Show success message - in a real implementation this would send to the teleprompter
+            showSuccessToast('Note sent to teleprompt');
+            
+            // Go back to list view
+            notesListView.classList.remove('hidden');
+            noteEditorView.classList.add('hidden');
+          } catch (error) {
+            console.error('Error sending to teleprompt:', error);
+            showErrorToast('Failed to send to teleprompt');
+          }
+        };
+      }
+      
+      // Set up more options button - this is set up with the same handler as in createNewNote
+      const moreOptionsButton = document.getElementById('more-options-button');
+      if (moreOptionsButton) {
+        moreOptionsButton.onclick = (e) => {
+          // Create and show options menu
+          const optionsMenu = document.createElement('div');
+          optionsMenu.className = 'note-options-menu';
+          optionsMenu.innerHTML = `
+            <div class="note-option" data-action="save">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              <span>Save</span>
+            </div>
+            <div class="note-option" data-action="delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Delete</span>
+            </div>
+          `;
+          
+          // Position the menu
+          const rect = moreOptionsButton.getBoundingClientRect();
+          optionsMenu.style.top = `${rect.bottom + 5}px`;
+          optionsMenu.style.right = `${window.innerWidth - rect.right}px`;
+          
+          // Add to DOM
+          document.body.appendChild(optionsMenu);
+          
+          // Add click handlers
+          optionsMenu.querySelector('[data-action="save"]').addEventListener('click', async () => {
+            // Save the note
+            try {
+              if (!contentTextarea.value.trim()) {
+                contentTextarea.focus();
+                return;
+              }
+              
+              const noteData = {
+                title: note.title,
+                content: contentTextarea.value.trim()
+              };
+              
+              const response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: `/api/notepads/${state.currentNote.id}`,
+                  method: 'PATCH',
+                  body: noteData
+                }
+              });
+              
+              if (response.success) {
+                // Show success message
+                showSuccessToast('Note saved');
+                
+                // Update note in state
+                const noteIndex = state.notes.findIndex(n => n.id === state.currentNote.id);
+                if (noteIndex >= 0) {
+                  state.notes[noteIndex] = response.data;
+                }
+                
+                // Update current note
+                state.currentNote = response.data;
+              }
+            } catch (error) {
+              console.error('Error saving note:', error);
+              showErrorToast('Failed to save note');
+            }
+            
+            document.body.removeChild(optionsMenu);
+          });
+          
+          optionsMenu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+            if (confirm(`Are you sure you want to delete "${note.title}"?`)) {
+              try {
+                const response = await chrome.runtime.sendMessage({
+                  type: 'API_REQUEST',
+                  data: {
+                    endpoint: `/api/notepads/${state.currentNote.id}`,
+                    method: 'DELETE'
+                  }
+                });
+                
+                if (response.success) {
+                  // Remove from state
+                  state.notes = state.notes.filter(n => n.id !== state.currentNote.id);
+                  
+                  // Reset current note
+                  state.currentNote = null;
+                  
+                  // Go back to list view
+                  notesListView.classList.remove('hidden');
+                  noteEditorView.classList.add('hidden');
+                  
+                  // Re-render notes
+                  renderNotes();
+                }
+              } catch (error) {
+                console.error('Error deleting note:', error);
+                showErrorToast('Failed to delete note');
+              }
+            }
+            
+            document.body.removeChild(optionsMenu);
+          });
+          
+          // Close menu when clicking outside
+          const closeMenu = (event) => {
+            if (!optionsMenu.contains(event.target) && event.target !== moreOptionsButton) {
+              document.body.removeChild(optionsMenu);
+              document.removeEventListener('click', closeMenu);
+            }
+          };
+          
+          // Add delay to prevent immediate closing
+          setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+          }, 100);
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error loading note:', error);
+    showErrorToast('Failed to load note');
   }
 }
 
