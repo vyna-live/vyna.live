@@ -20,13 +20,15 @@
   "permissions": [
     "storage",
     "identity",
-    "activeTab"
+    "activeTab",
+    "cookies"
   ],
   "optional_permissions": [
     "microphone"
   ],
   "host_permissions": [
-    "*://*.vyna.live/*"
+    "*://*.vyna.live/*",
+    "http://localhost:5000/*"
   ],
   "background": {
     "service_worker": "background/background.js",

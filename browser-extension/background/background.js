@@ -15,32 +15,42 @@ async function initialize() {
   // Try to restore auth state from storage
   const stored = await chrome.storage.local.get(['authToken', 'user']);
   
-  if (stored.authToken && stored.user) {
-    // Verify the token is still valid
+  if (stored.authToken || stored.user) {
+    // Verify the user session is still valid using cookies and/or token
     try {
+      console.log('Attempting to restore authentication state');
+      
+      // Use both token and cookie-based auth for maximum compatibility
       const response = await fetch(`${API_BASE_URL}/api/user`, {
         headers: {
-          'Authorization': `Bearer ${stored.authToken}`
-        }
+          'Accept': 'application/json',
+          ...(stored.authToken ? { 'Authorization': `Bearer ${stored.authToken}` } : {})
+        },
+        credentials: 'include' // Include cookies for session-based auth
       });
       
       if (response.ok) {
         const userData = await response.json();
+        console.log('User data retrieved successfully:', userData);
+        
         authState = {
           isAuthenticated: true,
-          token: stored.authToken,
+          token: stored.authToken || null,
           user: userData
         };
         
-        console.log('Authentication restored');
+        console.log('Authentication restored successfully');
       } else {
-        // Token invalid - clear storage
+        console.log('Authentication restoration failed:', response.status);
+        // Auth invalid - clear storage
         clearAuthData();
       }
     } catch (error) {
       console.error('Error verifying authentication:', error);
       clearAuthData();
     }
+  } else {
+    console.log('No stored authentication found');
   }
 }
 
@@ -104,10 +114,11 @@ async function login(usernameOrEmail, password) {
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({ usernameOrEmail, password }),
-      credentials: 'include'
+      credentials: 'include' // Include cookies in the request
     });
     
     console.log('Login response status:', response.status);
@@ -129,6 +140,7 @@ async function login(usernameOrEmail, password) {
     // Save authentication data - ensure we have the correct user data structure
     const userData = data.user || data;
     
+    // Store this session in the extension storage
     authState = {
       isAuthenticated: true,
       token: data.token || null, // Some authentication systems don't use tokens
@@ -150,10 +162,18 @@ async function login(usernameOrEmail, password) {
 // Handle Google authentication
 async function handleGoogleAuth() {
   try {
+    console.log('Starting Google authentication flow');
+    
     // This is a simplified version - in a real extension, you'd use chrome.identity.launchWebAuthFlow
     // For now, we'll just redirect to the Google auth endpoint
     const redirectURL = chrome.identity.getRedirectURL();
-    const clientId = 'YOUR_GOOGLE_CLIENT_ID';
+    console.log('Redirect URL:', redirectURL);
+    
+    // In a real implementation, you would use your own Google Client ID
+    // For now, we'll use a placeholder that will be replaced in production
+    const clientId = API_BASE_URL.includes('localhost') 
+      ? 'DEVELOPMENT_GOOGLE_CLIENT_ID' 
+      : 'PRODUCTION_GOOGLE_CLIENT_ID';
     
     const authUrl = new URL('https://accounts.google.com/o/oauth2/auth');
     authUrl.searchParams.set('client_id', clientId);
@@ -161,21 +181,28 @@ async function handleGoogleAuth() {
     authUrl.searchParams.set('response_type', 'token');
     authUrl.searchParams.set('scope', 'profile email');
     
+    console.log('Launching web auth flow with URL:', authUrl.toString());
+    
     const responseUrl = await chrome.identity.launchWebAuthFlow({
       url: authUrl.toString(),
       interactive: true
     });
     
+    console.log('Received auth response URL:', responseUrl);
+    
     // Parse the access token from the response URL
     const accessToken = new URLSearchParams(new URL(responseUrl).hash.substring(1)).get('access_token');
+    console.log('Extracted access token:', accessToken ? 'Token received' : 'No token found');
     
     // Send the token to your backend
     const response = await fetch(`${API_BASE_URL}/api/google-auth`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify({ token: accessToken })
+      body: JSON.stringify({ token: accessToken }),
+      credentials: 'include'
     });
     
     if (!response.ok) {
@@ -210,9 +237,11 @@ async function register(userData) {
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify(userData)
+      body: JSON.stringify(userData),
+      credentials: 'include'
     });
     
     if (!response.ok) {
@@ -233,14 +262,16 @@ async function register(userData) {
 // Handle logout
 async function logout() {
   try {
-    if (authState.token) {
-      await fetch(`${API_BASE_URL}/api/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authState.token}`
-        }
-      });
-    }
+    await fetch(`${API_BASE_URL}/api/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(authState.token ? { 'Authorization': `Bearer ${authState.token}` } : {})
+      },
+      credentials: 'include'
+    });
+    console.log("Logout request sent successfully");
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
@@ -252,25 +283,38 @@ async function logout() {
 async function handleApiRequest({ endpoint, method = 'GET', data = null, includeAuth = true }) {
   try {
     const headers = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     };
     
+    // Include credentials for session-based auth
+    const fetchOptions = {
+      method,
+      headers,
+      credentials: 'include'  // Include cookies for session auth
+    };
+    
+    // Also include token auth if available
     if (includeAuth && authState.token) {
       headers['Authorization'] = `Bearer ${authState.token}`;
     }
-    
-    const fetchOptions = {
-      method,
-      headers
-    };
     
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       fetchOptions.body = JSON.stringify(data);
     }
     
+    console.log(`API Request to ${endpoint}:`, { 
+      method, 
+      includeAuth, 
+      hasToken: !!authState.token,
+      withCredentials: true
+    });
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
     
     if (!response.ok) {
+      console.error(`API error for ${endpoint}:`, { status: response.status, statusText: response.statusText });
+      
       // Handle 401 Unauthorized
       if (response.status === 401 && includeAuth) {
         clearAuthData();
@@ -318,7 +362,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       headers: {
         'Authorization': `Bearer ${authState.token}`
       },
-      body: formData
+      body: formData,
+      credentials: 'include'
     })
     .then(response => response.json())
     .then(data => sendResponse({ success: true, data }))
