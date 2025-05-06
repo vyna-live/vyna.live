@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = 'https://api.vyna.live';
+const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://api.vyna.live';
 
 // Authentication state
 let authState = {
@@ -97,37 +97,50 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Handle login
-async function login(username, password) {
+async function login(usernameOrEmail, password) {
   try {
+    console.log('Attempting login with:', usernameOrEmail);
+    
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ usernameOrEmail, password }),
       credentials: 'include'
     });
     
+    console.log('Login response status:', response.status);
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
+      let errorMessage = 'Login failed';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (e) {
+        console.error('Error parsing error response:', e);
+      }
+      throw new Error(errorMessage);
     }
     
     const data = await response.json();
+    console.log('Login successful, user data:', data);
     
-    // Save authentication data
+    // Save authentication data - ensure we have the correct user data structure
+    const userData = data.user || data;
+    
     authState = {
       isAuthenticated: true,
-      token: data.token,
-      user: data.user
+      token: data.token || null, // Some authentication systems don't use tokens
+      user: userData
     };
     
     await chrome.storage.local.set({
-      authToken: data.token,
-      user: data.user
+      authToken: authState.token,
+      user: userData
     });
     
-    return { success: true, user: data.user };
+    return { success: true, user: userData };
   } catch (error) {
     console.error('Login error:', error);
     throw error;
