@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vyna.live Browser Extension Installation Guide</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 {
+      color: #5D1C34;
+      border-bottom: 2px solid #A67D44;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #A67D44;
+      margin-top: 30px;
+    }
+    .browser-section {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .browser-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    .browser-icon {
+      width: 24px;
+      height: 24px;
+    }
+    ol {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    code {
+      background-color: #f0f0f0;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    .note {
+      background-color: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 10px 15px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .header-logo {
+      max-width: 200px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <img src="assets/logo.png" alt="Vyna.live" class="header-logo">
+  <h1>Vyna.live Browser Extension Installation Guide</h1>
+  
+  <p>This guide will help you install the Vyna.live browser extension on your preferred browser. Follow the instructions for your specific browser below.</p>
+  
+  <div class="browser-section">
+    <div class="browser-title">
+      <svg class="browser-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" fill="#4285F4"/>
+        <circle cx="50" cy="50" r="18" fill="#FFF"/>
+        <path fill="#EA4335" d="M83 50c0-3.3-.6-6.5-1.6-9.5L50 50h33z"/>
+        <path fill="#FBBC05" d="M67 82.2c6.9-6.1 11.7-14.5 13.4-24.2H50l17 24.2z"/>
+        <path fill="#34A853" d="M32.9 82.2c9.5 8.4 23.5 9.2 33.9 2.4l-17-24.2-16.9 21.8z"/>
+        <path fill="#EA4335" d="M17 50c0 9.5 4.1 18.4 11.2 24.5l17-21.8-28.1-2.7z"/>
+      </svg>
+      Chrome
+    </div>
+    <ol>
+      <li>Download the <code>browser-extension.zip</code> file and extract it</li>
+      <li>Open Chrome and navigate to <code>chrome://extensions/</code></li>
+      <li>Enable "Developer mode" (toggle in the top right)</li>
+      <li>Click "Load unpacked"</li>
+      <li>Select the extracted <code>browser-extension</code> folder</li>
+    </ol>
+  </div>
+  
+  <div class="browser-section">
+    <div class="browser-title">
+      <svg class="browser-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" fill="#FF9500"/>
+        <circle cx="50" cy="50" r="30" fill="#0060DF"/>
+        <circle cx="50" cy="50" r="16" fill="#FFF"/>
+        <path fill="#00B3F4" d="M84.5 30c-3.5-7.3-9.8-12.7-17-15.6 10.9 8.2 12.7 20.3 12.7 31.6 0 28.5-26.3 37.8-34.3 14.5-1.4-4.3-1.4-5.7-4.3-9.9 1.4 0 2.8-.1 4.3-.4 12.4-2.3 15.7-15.6 11.4-22.9-4.3-7.3-13.5-8.5-20.2-2.7l-.6.6c14.2-31.1 60.3-16.8 48 54.8 0 0 .1-7.3-7.1-14.2-3.5 21.3-21.3 34.2-41.5 29.9-20.2-4.3-34.2-24.9-30-46.1 1.4-6.4 4.3-12.1 8.5-16.3-4.2 1.8-8.1 4.4-11.3 7.7-17.6 17-17 45.5.6 62.4s45.5 17 62.4-.6c16.4-15.8 17-41.3 1.4-57.8z"/>
+      </svg>
+      Firefox
+    </div>
+    <ol>
+      <li>Download the <code>browser-extension.zip</code> file and extract it</li>
+      <li>Open Firefox and navigate to <code>about:debugging#/runtime/this-firefox</code></li>
+      <li>Click "Load Temporary Add-on..."</li>
+      <li>Select the <code>manifest.json</code> file in the extracted <code>browser-extension</code> folder</li>
+    </ol>
+  </div>
+  
+  <div class="browser-section">
+    <div class="browser-title">
+      <svg class="browser-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" fill="#0078D7"/>
+        <path fill="#FFF" d="M32 32h36v36H32z"/>
+        <path fill="#0078D7" d="M43 43h14v14H43z"/>
+      </svg>
+      Microsoft Edge
+    </div>
+    <ol>
+      <li>Download the <code>browser-extension.zip</code> file and extract it</li>
+      <li>Open Edge and navigate to <code>edge://extensions/</code></li>
+      <li>Enable "Developer mode" (toggle on the left sidebar)</li>
+      <li>Click "Load unpacked"</li>
+      <li>Select the extracted <code>browser-extension</code> folder</li>
+    </ol>
+  </div>
+  
+  <div class="note">
+    <strong>Note:</strong> The extension requires you to have a Vyna.live account. You'll need to log in to access all features.
+  </div>
+  
+  <h2>Features</h2>
+  <ul>
+    <li><strong>VynaAI Chat:</strong> Ask questions and get AI-powered responses</li>
+    <li><strong>File Uploads:</strong> Share documents, images, and audio for analysis</li>
+    <li><strong>Research Notes:</strong> Save important information from your browsing sessions</li>
+  </ul>
+  
+  <div class="note">
+    <strong>Troubleshooting:</strong> If you encounter any issues with the extension, try reloading it or reinstalling it. If problems persist, please contact support at support@vyna.live.
+  </div>
+</body>
+</html>
