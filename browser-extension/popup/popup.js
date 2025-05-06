@@ -16,12 +16,13 @@ let state = {
   searchQuery: ''
 };
 
-// DOM Elements
-const app = document.getElementById('app');
-
-// Templates
-const loginTemplate = document.getElementById('login-template');
-const appTemplate = document.getElementById('app-template');
+// DOM Elements will be initialized when document is loaded
+let app;
+let loginTemplate;
+let appTemplate;
+let messageTemplate;
+let noteItemTemplate;
+let noteTagTemplate;
 
 // Initialize popup
 async function initPopup() {
@@ -639,12 +640,18 @@ async function createNewChatSession() {
     }
     
     // Create new session
+    if (!state.user || !state.user.id) {
+      console.error('User ID not available for creating new chat session');
+      return;
+    }
+    
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
         endpoint: '/api/ai-chat-sessions',
         method: 'POST',
         data: {
+          hostId: state.user.id,
           title: 'New Session',
         }
       }
@@ -957,6 +964,11 @@ async function saveMessageAsNote(message) {
     const firstLine = textContent.split('\n')[0];
     const title = firstLine.substring(0, 30) + (firstLine.length > 30 ? '...' : '');
     
+    if (!state.user || !state.user.id) {
+      console.error('User ID not available for saving note');
+      return;
+    }
+    
     // Create note
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
@@ -964,6 +976,7 @@ async function saveMessageAsNote(message) {
         endpoint: '/api/notepads',
         method: 'POST',
         data: {
+          hostId: state.user.id,
           content: textContent,
           title
         }
@@ -1000,16 +1013,22 @@ async function addNote() {
   
   if (!noteText) return;
   
+  if (!state.user || !state.user.id) {
+    console.error('User ID not available for saving note');
+    return;
+  }
+  
   try {
     noteInput.value = '';
     
-    // Send note to API
+    // Send note to API with hostId
     const response = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
         endpoint: '/api/notepads',
         method: 'POST',
         data: {
+          hostId: state.user.id,
           content: noteText,
           title: noteText.substring(0, 30) + (noteText.length > 30 ? '...' : '')
         }
@@ -1299,6 +1318,7 @@ async function saveEditedNote() {
         endpoint: `/api/notepads/${state.currentNote.id}`,
         method: 'PUT',
         data: {
+          hostId: state.user.id,
           title,
           content
         }
@@ -1753,6 +1773,25 @@ function clearElement(element) {
 
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize DOM references
+  app = document.getElementById('app');
+  loginTemplate = document.getElementById('login-template');
+  appTemplate = document.getElementById('app-template');
+  messageTemplate = document.getElementById('message-template');
+  noteItemTemplate = document.getElementById('note-item-template');
+  noteTagTemplate = document.getElementById('note-tag-template');
+  
+  // Check if templates are loaded properly
+  if (!app) {
+    console.error('App container not found');
+    return;
+  }
+  
+  if (!loginTemplate || !appTemplate) {
+    console.error('Templates not found. loginTemplate:', loginTemplate, 'appTemplate:', appTemplate);
+    return;
+  }
+  
   // Initialize the main popup functionality
   initPopup();
 });
