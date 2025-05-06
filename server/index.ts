@@ -1,10 +1,25 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configure CORS for browser extension
+app.use(cors({
+  origin: [
+    'chrome-extension://ndjkmjhpdjfblfiajamlpdddklkdojhk',
+    'chrome-extension://*',
+    'moz-extension://*',
+    'https://vyna-assistant-diweesomchi.replit.app',
+    'http://localhost:5000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
