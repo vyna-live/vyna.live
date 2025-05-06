@@ -58,23 +58,37 @@ async function initPopup() {
 // Load user data including chat sessions and notes
 async function loadUserData() {
   try {
+    if (!state.user || !state.user.id) {
+      console.error('User not authenticated for loadUserData');
+      return;
+    }
+    
     // Load AI chat sessions
     const chatSessionsResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
         endpoint: '/api/ai-chat-sessions',
-        method: 'GET'
+        method: 'GET',
+        data: {
+          hostId: state.user.id
+        }
       }
     });
     
-    if (chatSessionsResponse.success) {
+    console.log('Chat sessions response:', chatSessionsResponse);
+    
+    if (chatSessionsResponse.success && Array.isArray(chatSessionsResponse.data)) {
       state.chatSessions = chatSessionsResponse.data.map(session => ({
         id: session.id.toString(),
         title: session.title || 'Untitled Chat',
-        createdAt: new Date(session.createdAt),
-        updatedAt: new Date(session.updatedAt)
+        createdAt: new Date(session.createdAt || Date.now()),
+        updatedAt: new Date(session.updatedAt || Date.now())
       }));
       
+      renderChatSessions();
+    } else {
+      console.error('Failed to load chat sessions or response format not as expected');
+      state.chatSessions = [];
       renderChatSessions();
     }
     
@@ -83,20 +97,29 @@ async function loadUserData() {
       type: 'API_REQUEST',
       data: {
         endpoint: '/api/notepads',
-        method: 'GET'
+        method: 'GET',
+        data: {
+          hostId: state.user.id
+        }
       }
     });
     
-    if (notesResponse.success) {
+    console.log('Notes response:', notesResponse);
+    
+    if (notesResponse.success && Array.isArray(notesResponse.data)) {
       state.notes = notesResponse.data.map(note => ({
         id: note.id.toString(),
         title: note.title || 'Untitled Note',
         content: note.content || '',
-        createdAt: new Date(note.createdAt),
-        updatedAt: new Date(note.updatedAt)
+        createdAt: new Date(note.createdAt || Date.now()),
+        updatedAt: new Date(note.updatedAt || Date.now())
       }));
       
       collectAllTags();
+      renderNotes();
+    } else {
+      console.error('Failed to load notes or response format not as expected');
+      state.notes = [];
       renderNotes();
     }
   } catch (error) {
@@ -588,7 +611,7 @@ function renderApp() {
       });
     } else if (tab.dataset.tab) {
       // Handle main tabs
-      tab.addEventListener('click', () => {
+      tab.addEventListener('click', async () => {
         const tabName = tab.dataset.tab;
         
         // Update state
@@ -604,6 +627,75 @@ function renderApp() {
         // Hide all and show the selected tab
         document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
         document.getElementById(`${tabName}-content`).classList.remove('hidden');
+        
+        // Load appropriate data when switching tabs
+        if (tabName === 'notepad') {
+          // Load or refresh notes data when switching to notepad tab
+          try {
+            console.log('Loading notes data for notepad tab');
+            const notesResponse = await chrome.runtime.sendMessage({
+              type: 'API_REQUEST',
+              data: {
+                endpoint: '/api/notepads',
+                method: 'GET',
+                data: {
+                  hostId: state.user?.id
+                }
+              }
+            });
+            
+            console.log('Notes response:', notesResponse);
+            
+            if (notesResponse.success && Array.isArray(notesResponse.data)) {
+              state.notes = notesResponse.data.map(note => ({
+                id: note.id.toString(),
+                title: note.title || 'Untitled Note',
+                content: note.content || '',
+                createdAt: new Date(note.createdAt || Date.now()),
+                updatedAt: new Date(note.updatedAt || Date.now())
+              }));
+              
+              collectAllTags();
+              renderNotes();
+            }
+          } catch (error) {
+            console.error('Error loading notes data:', error);
+          }
+        } else if (tabName === 'vynaai') {
+          // Load or refresh chat sessions when switching to AI tab
+          try {
+            console.log('Loading chat sessions data for vynaai tab');
+            const chatSessionsResponse = await chrome.runtime.sendMessage({
+              type: 'API_REQUEST',
+              data: {
+                endpoint: '/api/ai-chat-sessions',
+                method: 'GET',
+                data: {
+                  hostId: state.user?.id
+                }
+              }
+            });
+            
+            console.log('Chat sessions response:', chatSessionsResponse);
+            
+            if (chatSessionsResponse.success && Array.isArray(chatSessionsResponse.data)) {
+              state.chatSessions = chatSessionsResponse.data.map(session => ({
+                id: session.id.toString(),
+                title: session.title || 'Untitled Chat',
+                createdAt: new Date(session.createdAt || Date.now()),
+                updatedAt: new Date(session.updatedAt || Date.now())
+              }));
+              
+              renderChatSessions();
+              
+              // Make sure we're showing the sessions list view by default
+              document.getElementById('sessions-list-view').classList.remove('hidden');
+              document.getElementById('chat-conversation-view').classList.add('hidden');
+            }
+          } catch (error) {
+            console.error('Error loading chat sessions:', error);
+          }
+        }
       });
     }
   });
@@ -626,7 +718,35 @@ function renderApp() {
   const chatInput = document.getElementById('chat-input');
   
   if (backToSessionsButton) {
-    backToSessionsButton.addEventListener('click', () => {
+    backToSessionsButton.addEventListener('click', async () => {
+      // Refresh chat sessions before showing the list
+      try {
+        console.log('Refreshing chat sessions before going back to list view');
+        const chatSessionsResponse = await chrome.runtime.sendMessage({
+          type: 'API_REQUEST',
+          data: {
+            endpoint: '/api/ai-chat-sessions',
+            method: 'GET',
+            data: {
+              hostId: state.user?.id
+            }
+          }
+        });
+        
+        if (chatSessionsResponse.success && Array.isArray(chatSessionsResponse.data)) {
+          state.chatSessions = chatSessionsResponse.data.map(session => ({
+            id: session.id.toString(),
+            title: session.title || 'Untitled Chat',
+            createdAt: new Date(session.createdAt || Date.now()),
+            updatedAt: new Date(session.updatedAt || Date.now())
+          }));
+          
+          renderChatSessions();
+        }
+      } catch (error) {
+        console.error('Error refreshing chat sessions:', error);
+      }
+      
       // Show sessions list view, hide conversation view
       sessionsListView.classList.remove('hidden');
       chatConversationView.classList.add('hidden');
