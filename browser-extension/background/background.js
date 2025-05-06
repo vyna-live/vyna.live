@@ -101,7 +101,7 @@ async function login(usernameOrEmail, password) {
   try {
     console.log('Attempting login with:', usernameOrEmail);
     
-    const response = await fetch(`${API_BASE_URL}/api/login`, {
+    const response = await fetch(`${API_BASE_URL}/api/extension/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
