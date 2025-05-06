@@ -196,34 +196,30 @@ function showError(message) {
 }
 
 function showSuccessMessage(message) {
-  // Replace the entire content with success message
-  const appElement = document.getElementById('app');
-  if (appElement) {
-    appElement.innerHTML = `
-      <div class="success-container">
-        <div class="success-message">
-          <svg viewBox="0 0 24 24" fill="none" class="success-icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-          <h3>${message}</h3>
-          <p>You can now access Vyna.live features.</p>
-          <button id="logout-btn" class="auth-button">Logout</button>
-        </div>
+  // Simplify by just setting the body directly
+  document.body.innerHTML = `
+    <div class="success-container" style="display:flex; align-items:center; justify-content:center; min-height:400px; background:#212121; color:#fff; padding:20px;">
+      <div class="success-message" style="text-align:center; max-width:300px;">
+        <svg viewBox="0 0 24 24" fill="none" style="width:60px; height:60px; margin:0 auto 20px; color:#10b981;" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <h3 style="margin-bottom:10px; font-size:18px;">${message}</h3>
+        <p style="margin-bottom:20px; opacity:0.8;">You can now access Vyna.live features.</p>
+        <button id="logout-btn" style="background:#5D1C34; border:none; color:white; padding:10px 15px; border-radius:4px; cursor:pointer;">Logout</button>
       </div>
-    `;
-    
-    // Add logout button event listener
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', function() {
-        chrome.runtime.sendMessage({ type: 'LOGOUT' }, function() {
-          window.location.reload();
-        });
+    </div>
+  `;
+  
+  // Add logout button event listener directly after creating it
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', function() {
+      chrome.runtime.sendMessage({ type: 'LOGOUT' }, function() {
+        window.location.reload();
       });
-    }
+    });
   } else {
-    console.error('App element not found');
-    alert(message); // Fallback
+    console.error('Logout button not found after adding it to DOM');
   }
 }
