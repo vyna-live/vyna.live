@@ -1745,4 +1745,7 @@ function clearElement(element) {
 }
 
 // Initialize the popup
-document.addEventListener('DOMContentLoaded', initPopup);
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize the main popup functionality
+  initPopup();
+});
