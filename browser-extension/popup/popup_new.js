@@ -173,12 +173,12 @@ async function createNewChatSession() {
     
     console.log('Create chat session response:', response);
     
-    if (response.success) {
+    if (response.success && response.data && response.data.id) {
       const newSession = {
         id: response.data.id.toString(),
         title: response.data.title || 'New Chat',
-        createdAt: new Date(response.data.createdAt),
-        updatedAt: new Date(response.data.updatedAt)
+        createdAt: new Date(response.data.createdAt || Date.now()),
+        updatedAt: new Date(response.data.updatedAt || Date.now())
       };
       
       console.log('Created new session:', newSession);
