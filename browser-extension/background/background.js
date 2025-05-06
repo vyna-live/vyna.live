@@ -1,10 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = 'https://vyna-live.replit.app';
-
-// For local development, uncomment this line
-// const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://api.vyna.live';
 
 // Authentication state
 let authState = {
@@ -15,23 +12,16 @@ let authState = {
 
 // Initialize the extension
 async function initialize() {
-  console.log('Initializing extension with API URL:', API_BASE_URL);
-  
   // Try to restore auth state from storage
   const stored = await chrome.storage.local.get(['authToken', 'user']);
-  console.log('Stored auth data found:', !!stored.authToken, !!stored.user);
   
   if (stored.authToken && stored.user) {
-    console.log('Attempting to verify user session for:', stored.user.username || stored.user.id);
     // Verify the token is still valid
     try {
       const response = await fetch(`${API_BASE_URL}/api/user`, {
-        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        credentials: 'include'  // This is critical for cookie-based auth
+          'Authorization': `Bearer ${stored.authToken}`
+        }
       });
       
       if (response.ok) {
@@ -102,56 +92,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Handle login
 async function login(username, password) {
   try {
-    console.log('Trying to login with:', { usernameOrEmail: username, password: '***' });
-    console.log('API base URL:', API_BASE_URL);
-    
-    // Check for existing cookies before login attempt
-    chrome.cookies.getAll({domain: new URL(API_BASE_URL).hostname}, (cookies) => {
-      console.log('Cookies before login attempt:', cookies);
-    });
-    
     const response = await fetch(`${API_BASE_URL}/api/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ usernameOrEmail: username, password }),
-      credentials: 'include' // Important for session cookie handling
+      body: JSON.stringify({ username, password }),
+      credentials: 'include'
     });
     
     if (!response.ok) {
-      const errorData = await response.json().catch(e => ({ error: 'Could not parse error response' }));
-      console.error('Login response error:', response.status, errorData);
-      throw new Error(errorData.error || 'Invalid username or password');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Login failed');
     }
     
-    // The server returns the user object directly, not wrapped in a data object
-    const user = await response.json();
-    
-    // Generate a token based on the user ID for local storage 
-    // (we're using cookie-based auth so this is just for state tracking)
-    const token = `session_${user.id}_${Date.now()}`;
-    
-    // Check for session cookies after login attempt
-    chrome.cookies.getAll({domain: new URL(API_BASE_URL).hostname}, (cookies) => {
-      console.log('Cookies after successful login:', cookies);
-    });
+    const data = await response.json();
     
     // Save authentication data
     authState = {
       isAuthenticated: true,
-      token: token,
-      user: user
+      token: data.token,
+      user: data.user
     };
     
     await chrome.storage.local.set({
-      authToken: token,
-      user: user
+      authToken: data.token,
+      user: data.user
     });
     
-    console.log('Login successful:', { user });
-    return { success: true, user: user };
+    return { success: true, user: data.user };
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -161,33 +130,20 @@ async function login(username, password) {
 // Handle registration
 async function register(userData) {
   try {
-    console.log('Registering with:', { ...userData, password: '***' });
-    console.log('API base URL for register:', API_BASE_URL);
-    
-    // Check for existing cookies before register attempt
-    chrome.cookies.getAll({domain: new URL(API_BASE_URL).hostname}, (cookies) => {
-      console.log('Cookies before register attempt:', cookies);
-    });
-    
     const response = await fetch(`${API_BASE_URL}/api/register`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Content-Type': 'application/json'
       },
-      credentials: 'include',
       body: JSON.stringify(userData)
     });
     
     if (!response.ok) {
-      const errorData = await response.json().catch(e => ({ error: 'Could not parse error response' }));
-      console.error('Registration response error:', response.status, errorData);
-      throw new Error(errorData.error || 'Registration failed. Please try again.');
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Registration failed');
     }
     
-    // The server returns the user object directly
-    const user = await response.json();
-    console.log('Registration successful:', { user });
+    const data = await response.json();
     
     // Auto-login after successful registration
     return login(userData.username, userData.password);
@@ -200,14 +156,14 @@ async function register(userData) {
 // Handle logout
 async function logout() {
   try {
-    // Send logout request with cookies
-    await fetch(`${API_BASE_URL}/api/logout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    });
+    if (authState.token) {
+      await fetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authState.token}`
+        }
+      });
+    }
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
@@ -222,10 +178,13 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
       'Content-Type': 'application/json'
     };
     
+    if (includeAuth && authState.token) {
+      headers['Authorization'] = `Bearer ${authState.token}`;
+    }
+    
     const fetchOptions = {
       method,
-      headers,
-      credentials: 'include' // Always include credentials for cookies
+      headers
     };
     
     if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
@@ -279,7 +238,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     
     fetch(`${API_BASE_URL}/api/files/upload`, {
       method: 'POST',
-      credentials: 'include', // Include cookies for authentication
+      headers: {
+        'Authorization': `Bearer ${authState.token}`
+      },
       body: formData
     })
     .then(response => response.json())

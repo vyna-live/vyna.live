@@ -224,24 +224,16 @@ export function setupAuth(app: Express) {
     });
   }
   // Session setup
-  const isProduction = process.env.NODE_ENV === 'production';
-  log(`Setting up auth with NODE_ENV: ${process.env.NODE_ENV}`, 'info');
-  
   const sessionSettings: session.SessionOptions = {
     store: sessionStore,
-    secret: process.env.SESSION_SECRET || 'vyna-live-secret-key',
+    secret: process.env.SESSION_SECRET || 'keyboard cat', // Use a proper secret in production
     resave: false,
-    saveUninitialized: true, // Changed to true to ensure cookie is always sent
+    saveUninitialized: false,
     cookie: {
-      secure: false, // Allow non-HTTPS for development
-      sameSite: 'lax', // More permissive SameSite policy for extensions
-      httpOnly: true, // Don't allow JavaScript access to cookies
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-      path: '/' // Make sure cookies are available throughout the site
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 // 1 day
     },
   };
-  
-  log('Session configuration set up', 'auth-debug');
 
   app.set('trust proxy', 1);
   app.use(session(sessionSettings));

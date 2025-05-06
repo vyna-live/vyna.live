@@ -16,7 +16,6 @@ import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
 import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
-import { debugAuth, debugRequest } from "./debug";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -32,11 +31,6 @@ if (!fs.existsSync(LOGO_DIR)) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Add debug middleware for authentication routes
-  app.use('/api/login', debugRequest);
-  app.use('/api/register', debugRequest);
-  app.use('/api/user', debugAuth);
-  
   // Setup authentication
   setupAuth(app);
   
@@ -293,6 +287,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating AI chat:", error);
       return res.status(500).json({ error: "Failed to create AI chat" });
+    }
+  });
+  
+  // Notepad endpoints
+  // Get notepads for a specific host
+  app.get("/api/notepads/:hostId", async (req, res) => {
+    try {
+      const hostId = parseInt(req.params.hostId);
+      if (isNaN(hostId)) {
+        return res.status(400).json({ error: "Invalid host ID" });
+      }
+      
+      // Get notepads for the specified host
+      const notes = await db.select()
+        .from(notepads)
+        .where(and(
+          eq(notepads.hostId, hostId),
+          eq(notepads.isDeleted, false)
+        ))
+        .orderBy(desc(notepads.createdAt));
+      
+      return res.status(200).json(notes);
+    } catch (error) {
+      console.error("Error fetching notepads:", error);
+      return res.status(500).json({ error: "Failed to fetch notepads" });
     }
   });
   
@@ -1593,7 +1612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Query the database to check if this host has an active stream
-      let streams: typeof streamSessions.$inferSelect[] = [];
+      let streams = [];
       
       try {
         // First try to find streams using the numeric ID if valid

@@ -107,8 +107,7 @@ export default function Dashboard() {
       
       // Navigate to the livestream page without query parameters
       // The LivestreamInterface will get the data from the database
-      console.log('Navigation to /livestream');
-      window.location.href = '/livestream'; // Using direct location change to ensure page reload
+      navigate('/livestream');
     } catch (error) {
       console.error('Error updating stream session:', error);
       // Could add toast notification here
