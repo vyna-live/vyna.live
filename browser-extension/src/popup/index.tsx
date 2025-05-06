@@ -1,10 +1,10 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import Popup from './Popup';
 import '../styles/tailwind.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Popup />
-  </React.StrictMode>
-);
+const container = document.getElementById('app');
+if (!container) throw new Error('Container element not found');
+
+const root = createRoot(container);
+root.render(<Popup />);

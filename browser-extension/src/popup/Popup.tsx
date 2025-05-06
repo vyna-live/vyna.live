@@ -5,105 +5,123 @@ import MainInterface from '../components/MainInterface';
 interface User {
   id: number;
   username: string;
-  email: string;
   displayName?: string;
+  avatarUrl?: string;
 }
 
 const Popup: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [loginLoading, setLoginLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const checkAuthState = async () => {
+    // Check authentication status on mount
+    const checkAuth = async () => {
       try {
-        // Using Chrome extension API to check authentication state
-        const authResponse = await chrome.runtime.sendMessage({ type: 'GET_AUTH_STATE' });
+        setLoading(true);
+        // Mock authentication check
+        // In a real implementation, this would be replaced with an API call
+        const mockUser: User = {
+          id: 1,
+          username: 'divine_samuel',
+          displayName: 'Divine Samuel',
+        };
         
-        if (authResponse.isAuthenticated) {
-          setIsAuthenticated(true);
-          setUser(authResponse.user);
-        }
+        setUser(mockUser);
+        setIsAuthenticated(true);
+        setLoading(false);
       } catch (error) {
-        console.error('Authentication check error:', error);
-      } finally {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
+        setUser(null);
         setLoading(false);
       }
     };
 
-    checkAuthState();
+    checkAuth();
   }, []);
 
-  const handleLogin = async (email: string, password: string) => {
+  const handleLogin = async (usernameOrEmail: string, password: string) => {
     try {
-      setLoading(true);
-      const response = await chrome.runtime.sendMessage({
-        type: 'API_REQUEST',
-        data: {
-          endpoint: '/api/login',
-          method: 'POST',
-          body: { username: email, password }
-        }
-      });
+      setLoginLoading(true);
+      setError('');
 
-      if (response.success) {
+      // This would be replaced with an actual API call
+      // In a real implementation, we would send both values to the server
+      // and the server would determine if it's an email or username
+      const isEmail = usernameOrEmail.includes('@');
+      
+      if ((usernameOrEmail === 'demo' || usernameOrEmail === 'demo@example.com') && password === 'password') {
+        const mockUser: User = {
+          id: 1,
+          username: 'divine_samuel',
+          displayName: 'Divine Samuel',
+        };
+        
+        setUser(mockUser);
         setIsAuthenticated(true);
-        setUser(response.data);
       } else {
-        throw new Error(response.error || 'Login failed');
+        setError(`Invalid ${isEmail ? 'email' : 'username'} or password`);
       }
+      
+      setLoginLoading(false);
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+      setError('An error occurred. Please try again.');
+      setLoginLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
-      setLoading(true);
-      // Open Google OAuth flow in a new tab
-      await chrome.runtime.sendMessage({ type: 'GOOGLE_SIGN_IN' });
+      setLoginLoading(true);
+      setError('');
+
+      // This would be replaced with an actual Google OAuth flow
+      setTimeout(() => {
+        const mockUser: User = {
+          id: 1,
+          username: 'divine_samuel',
+          displayName: 'Divine Samuel',
+        };
+        
+        setUser(mockUser);
+        setIsAuthenticated(true);
+        setLoginLoading(false);
+      }, 1500);
     } catch (error) {
       console.error('Google login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+      setError('An error occurred with Google login. Please try again.');
+      setLoginLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await chrome.runtime.sendMessage({
-        type: 'API_REQUEST',
-        data: {
-          endpoint: '/api/logout',
-          method: 'POST'
-        }
-      });
-      
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUser(null);
   };
 
   if (loading) {
     return (
-      <div className="w-[350px] h-[550px] bg-background flex items-center justify-center">
-        <div className="loading-indicator"></div>
+      <div className="w-[375px] h-[600px] flex justify-center items-center bg-[#1a1a1a] text-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-[350px] h-[550px] bg-background">
+    <div className="w-[375px] h-[600px] overflow-hidden">
       {isAuthenticated && user ? (
         <MainInterface user={user} onLogout={handleLogout} />
       ) : (
-        <LoginScreen onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} />
+        <LoginScreen
+          onLogin={handleLogin}
+          onGoogleLogin={handleGoogleLogin}
+          error={error}
+          isLoading={loginLoading}
+        />
       )}
     </div>
   );
