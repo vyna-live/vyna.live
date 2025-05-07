@@ -12,11 +12,13 @@ import ViewStream from "@/pages/ViewStream";
 import JoinStream from "@/pages/JoinStream";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/LandingPage";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={LandingPage} />
+      <Route path="/dashboard" component={Dashboard} />
       <Route path="/auth" component={Auth} />
       <Route path="/livestream">
         <ProtectedRoute>
