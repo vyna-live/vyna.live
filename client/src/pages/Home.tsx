@@ -451,10 +451,13 @@ export default function Home() {
             
             <button 
               onClick={startLivestream}
-              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg"
+              className="flex items-center space-x-1 bg-gradient-to-r from-[#A67D44] to-[#5D1C34] hover:from-[#B68D54] hover:to-[#6D2C44] text-white px-4 py-1.5 rounded-full text-sm font-medium transition-all shadow-md hover:shadow-lg relative"
             >
               <Video className="h-4 w-4" />
               <span>Go Live</span>
+              <div className="absolute -top-1 -right-1 bg-[#5D1C34] text-white text-[9px] px-1.5 py-0.5 rounded-full border border-[#A67D44] shadow-sm">
+                NEW
+              </div>
             </button>
           </div>
         </div>
@@ -472,35 +475,45 @@ export default function Home() {
                 />
               </div>
               
-              <p className="text-[hsl(var(--ai-text-secondary))] mb-10 max-w-lg mx-auto">
-                Your AI-powered research assistant for creating engaging livestream content.
-                Upload files, ask questions, and get a teleprompter script ready for your stream.
+              <p className="text-[hsl(var(--ai-text-secondary))] mb-4 max-w-lg mx-auto">
+                Your AI-powered livestreaming platform with integrated teleprompter and content assistance.
+                Create engaging streams with the help of our dual-mode AI commentary.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+              <p className="text-[#A67D44] font-medium mb-10 max-w-lg mx-auto text-sm">
+                ✨ New: Play-by-Play and Color Commentary modes for a professional streaming experience
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
                 <div 
                   className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-[hsl(var(--ai-card))] to-[hsl(var(--ai-card-glass))] p-5 border border-[#5D1C34]/20 cursor-pointer transition-all duration-300 hover:shadow-lg shadow-md"
-                  onClick={() => handleSubmit("Create a teleprompter script for my gaming livestream about the latest PlayStation releases")}
+                  onClick={() => handleSubmit("Create a play-by-play commentary script for a tech product livestream")}
                 >
+                  <div className="absolute top-0 left-0 bg-gradient-to-r from-[#5D1C34] to-transparent px-2 py-0.5 text-[10px] font-medium text-white rounded-br-lg">
+                    DUAL MODES
+                  </div>
                   <div className="flex flex-col items-center text-center">
                     <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#6D2C44] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
                       <MonitorSmartphone className="h-6 w-6 text-[#CDBCAB]" />
                     </div>
                     <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Teleprompter</h3>
-                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Generate streaming scripts from any topic</p>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Generate play-by-play or color commentary</p>
                   </div>
                 </div>
                 
                 <div 
                   className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-[hsl(var(--ai-card))] to-[hsl(var(--ai-card-glass))] p-5 border border-[#A67D44]/20 cursor-pointer transition-all duration-300 hover:shadow-lg shadow-md"
-                  onClick={() => handleSubmit("Research trending topics for tech livestreams this week")}
+                  onClick={() => handleSubmit("Research trending topics for livestreams that could benefit from both play-by-play and color commentary")}
                 >
+                  <div className="absolute bottom-0 right-0 w-16 h-16 opacity-10">
+                    <div className="w-full h-full rounded-tl-[40px] bg-gradient-to-tl from-[#A67D44] to-transparent"></div>
+                  </div>
                   <div className="flex flex-col items-center text-center">
                     <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#A67D44] to-[#B68D54] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
                       <SearchIcon className="h-6 w-6 text-[#EFE9E1]" />
                     </div>
-                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Research</h3>
-                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Find trending topics and insights</p>
+                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Stream Research</h3>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Find trending topics for your audience</p>
                   </div>
                 </div>
                 
@@ -511,12 +524,31 @@ export default function Home() {
                     document.getElementById('main-file-upload')?.click();
                   }}
                 >
+                  <div className="absolute top-1 right-1 w-6 h-6 text-[#899481] opacity-50 group-hover:opacity-80 transition-opacity">
+                    <Plus className="w-full h-full" />
+                  </div>
                   <div className="flex flex-col items-center text-center">
                     <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#899481] to-[#99A491] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
                       <FileText className="h-6 w-6 text-[#EFE9E1]" />
                     </div>
-                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Upload Content</h3>
-                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Analyze files for your streams</p>
+                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Content Analysis</h3>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Get AI insights from your files</p>
+                  </div>
+                </div>
+                
+                <div 
+                  className="relative group overflow-hidden rounded-xl bg-gradient-to-br from-[hsl(var(--ai-card))] via-[hsl(var(--ai-card-glass))] to-[hsl(var(--ai-card))] p-5 border border-[#5D1C34]/40 cursor-pointer transition-all duration-300 hover:shadow-lg shadow-md"
+                  onClick={startLivestream}
+                >
+                  <div className="absolute top-0 right-0 bg-gradient-to-l from-[#5D1C34] to-transparent px-2 py-0.5 text-[10px] font-medium text-white rounded-bl-lg">
+                    FEATURED
+                  </div>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-[#5D1C34] to-[#A67D44] flex items-center justify-center mb-3 transform group-hover:scale-110 transition-transform shadow-md">
+                      <Video className="h-6 w-6 text-[#EFE9E1]" />
+                    </div>
+                    <h3 className="text-[hsl(var(--ai-text-primary))] font-medium mb-2">Start Streaming</h3>
+                    <p className="text-xs text-[hsl(var(--ai-text-secondary))]">Go live with AI-powered assistance</p>
                   </div>
                 </div>
               </div>
