@@ -93,11 +93,8 @@ async function loadUserData() {
     const notesResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: '/api/notepads',
-        method: 'GET',
-        data: {
-          hostId: state.user.id
-        }
+        endpoint: `/api/notepads/${state.user.id}`,
+        method: 'GET'
       }
     });
     
@@ -377,12 +374,14 @@ async function sendChatMessage() {
 function generateTitleFromMessage(message) {
   if (!message) return 'New Chat';
   
-  // Use first 3-5 words or 30 characters
-  const words = message.split(' ');
-  if (words.length <= 5) return message;
+  // Always use the entire first message as the title 
+  // if it's short enough, otherwise truncate
+  if (message.length <= 50) {
+    return message;
+  }
   
-  const shortTitle = words.slice(0, 4).join(' ');
-  return shortTitle.length > 30 ? shortTitle.substring(0, 30) + '...' : shortTitle + '...';
+  // If message is too long, truncate to first 50 chars
+  return message.substring(0, 50) + '...';
 }
 
 // Show typing indicator
@@ -660,11 +659,8 @@ function renderApp() {
             const notesResponse = await chrome.runtime.sendMessage({
               type: 'API_REQUEST',
               data: {
-                endpoint: '/api/notepads',
-                method: 'GET',
-                data: {
-                  hostId: state.user?.id
-                }
+                endpoint: `/api/notepads/${state.user?.id}`,
+                method: 'GET'
               }
             });
             
