@@ -58,34 +58,23 @@ async function initPopup() {
 // Load user data including chat sessions and notes
 async function loadUserData() {
   try {
-    if (!state.user || !state.user.id) {
-      console.error('User not authenticated for loadUserData');
-      return;
-    }
-    
     // Load AI chat sessions
     const chatSessionsResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: `/api/ai-chat-sessions/${state.user.id}`,
+        endpoint: '/api/ai-chat-sessions',
         method: 'GET'
       }
     });
     
-    console.log('Chat sessions response:', chatSessionsResponse);
-    
-    if (chatSessionsResponse.success && Array.isArray(chatSessionsResponse.data)) {
+    if (chatSessionsResponse.success) {
       state.chatSessions = chatSessionsResponse.data.map(session => ({
         id: session.id.toString(),
         title: session.title || 'Untitled Chat',
-        createdAt: new Date(session.createdAt || Date.now()),
-        updatedAt: new Date(session.updatedAt || Date.now())
+        createdAt: new Date(session.createdAt),
+        updatedAt: new Date(session.updatedAt)
       }));
       
-      renderChatSessions();
-    } else {
-      console.error('Failed to load chat sessions or response format not as expected');
-      state.chatSessions = [];
       renderChatSessions();
     }
     
@@ -93,27 +82,21 @@ async function loadUserData() {
     const notesResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: `/api/notepads/${state.user.id}`,
+        endpoint: '/api/notepads',
         method: 'GET'
       }
     });
     
-    console.log('Notes response:', notesResponse);
-    
-    if (notesResponse.success && Array.isArray(notesResponse.data)) {
+    if (notesResponse.success) {
       state.notes = notesResponse.data.map(note => ({
         id: note.id.toString(),
         title: note.title || 'Untitled Note',
         content: note.content || '',
-        createdAt: new Date(note.createdAt || Date.now()),
-        updatedAt: new Date(note.updatedAt || Date.now())
+        createdAt: new Date(note.createdAt),
+        updatedAt: new Date(note.updatedAt)
       }));
       
       collectAllTags();
-      renderNotes();
-    } else {
-      console.error('Failed to load notes or response format not as expected');
-      state.notes = [];
       renderNotes();
     }
   } catch (error) {
@@ -128,7 +111,10 @@ async function loadChatSession(sessionId) {
       type: 'API_REQUEST',
       data: {
         endpoint: `/api/ai-chat-messages/${sessionId}`,
-        method: 'GET'
+        method: 'GET',
+        data: {
+          hostId: state.user?.id
+        }
       }
     });
     
@@ -256,14 +242,6 @@ async function sendChatMessage() {
   // If no message, or if we're in empty state and don't have a session yet
   if (!message) return;
   
-  // Get the user's ID
-  const userId = state.user?.id;
-  if (!userId) {
-    console.error('User ID not found, cannot send message');
-    showErrorToast('Please log in to send a message');
-    return;
-  }
-  
   // Create a new session if needed
   if (!state.currentSession) {
     await createNewChatSession();
@@ -298,7 +276,7 @@ async function sendChatMessage() {
         data: {
           sessionId: state.currentSession,
           message: message,
-          hostId: userId
+          hostId: state.user?.id
         }
       }
     });
@@ -356,7 +334,7 @@ async function sendChatMessage() {
               method: 'PATCH',
               data: {
                 title: suggestedTitle,
-                hostId: userId
+                hostId: state.user?.id
               }
             }
           });
@@ -374,14 +352,12 @@ async function sendChatMessage() {
 function generateTitleFromMessage(message) {
   if (!message) return 'New Chat';
   
-  // Always use the entire first message as the title 
-  // if it's short enough, otherwise truncate
-  if (message.length <= 50) {
-    return message;
-  }
+  // Use first 3-5 words or 30 characters
+  const words = message.split(' ');
+  if (words.length <= 5) return message;
   
-  // If message is too long, truncate to first 50 chars
-  return message.substring(0, 50) + '...';
+  const shortTitle = words.slice(0, 4).join(' ');
+  return shortTitle.length > 30 ? shortTitle.substring(0, 30) + '...' : shortTitle + '...';
 }
 
 // Show typing indicator
@@ -572,13 +548,6 @@ function renderApp() {
   app.innerHTML = '';
   app.appendChild(appTemplate.content.cloneNode(true));
   
-  // Ensure proper initial view state
-  // Make sure note editor view is hidden
-  const noteEditorView = document.getElementById('note-editor-view');
-  if (noteEditorView) {
-    noteEditorView.classList.add('hidden');
-  }
-  
   // Setup user profile info
   const userDisplayName = document.getElementById('user-display-name');
   const userAvatarImg = document.getElementById('user-avatar-img');
@@ -619,7 +588,7 @@ function renderApp() {
       });
     } else if (tab.dataset.tab) {
       // Handle main tabs
-      tab.addEventListener('click', async () => {
+      tab.addEventListener('click', () => {
         const tabName = tab.dataset.tab;
         
         // Update state
@@ -633,86 +602,8 @@ function renderApp() {
         tab.classList.add('active');
         
         // Hide all and show the selected tab
-        document.querySelectorAll('.tab-content').forEach(c => {
-          c.classList.remove('active');
-          c.classList.add('hidden');
-        });
-        const selectedTab = document.getElementById(`${tabName}-content`);
-        selectedTab.classList.add('active');
-        selectedTab.classList.remove('hidden');
-        
-        // If notepad tab selected, ensure note editor is hidden and notes list is visible
-        if (tabName === 'notepad') {
-          const notesListView = document.getElementById('notes-list-view');
-          const noteEditorView = document.getElementById('note-editor-view');
-          if (notesListView && noteEditorView) {
-            notesListView.classList.remove('hidden');
-            noteEditorView.classList.add('hidden');
-          }
-        }
-        
-        // Load appropriate data when switching tabs
-        if (tabName === 'notepad') {
-          // Load or refresh notes data when switching to notepad tab
-          try {
-            console.log('Loading notes data for notepad tab');
-            const notesResponse = await chrome.runtime.sendMessage({
-              type: 'API_REQUEST',
-              data: {
-                endpoint: `/api/notepads/${state.user?.id}`,
-                method: 'GET'
-              }
-            });
-            
-            console.log('Notes response:', notesResponse);
-            
-            if (notesResponse.success && Array.isArray(notesResponse.data)) {
-              state.notes = notesResponse.data.map(note => ({
-                id: note.id.toString(),
-                title: note.title || 'Untitled Note',
-                content: note.content || '',
-                createdAt: new Date(note.createdAt || Date.now()),
-                updatedAt: new Date(note.updatedAt || Date.now())
-              }));
-              
-              collectAllTags();
-              renderNotes();
-            }
-          } catch (error) {
-            console.error('Error loading notes data:', error);
-          }
-        } else if (tabName === 'vynaai') {
-          // Load or refresh chat sessions when switching to AI tab
-          try {
-            console.log('Loading chat sessions data for vynaai tab');
-            const chatSessionsResponse = await chrome.runtime.sendMessage({
-              type: 'API_REQUEST',
-              data: {
-                endpoint: `/api/ai-chat-sessions/${state.user?.id}`,
-                method: 'GET'
-              }
-            });
-            
-            console.log('Chat sessions response:', chatSessionsResponse);
-            
-            if (chatSessionsResponse.success && Array.isArray(chatSessionsResponse.data)) {
-              state.chatSessions = chatSessionsResponse.data.map(session => ({
-                id: session.id.toString(),
-                title: session.title || 'Untitled Chat',
-                createdAt: new Date(session.createdAt || Date.now()),
-                updatedAt: new Date(session.updatedAt || Date.now())
-              }));
-              
-              renderChatSessions();
-              
-              // Make sure we're showing the sessions list view by default
-              document.getElementById('sessions-list-view').classList.remove('hidden');
-              document.getElementById('chat-conversation-view').classList.add('hidden');
-            }
-          } catch (error) {
-            console.error('Error loading chat sessions:', error);
-          }
-        }
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`${tabName}-content`).classList.remove('hidden');
       });
     }
   });
@@ -735,32 +626,7 @@ function renderApp() {
   const chatInput = document.getElementById('chat-input');
   
   if (backToSessionsButton) {
-    backToSessionsButton.addEventListener('click', async () => {
-      // Refresh chat sessions before showing the list
-      try {
-        console.log('Refreshing chat sessions before going back to list view');
-        const chatSessionsResponse = await chrome.runtime.sendMessage({
-          type: 'API_REQUEST',
-          data: {
-            endpoint: `/api/ai-chat-sessions/${state.user?.id}`,
-            method: 'GET'
-          }
-        });
-        
-        if (chatSessionsResponse.success && Array.isArray(chatSessionsResponse.data)) {
-          state.chatSessions = chatSessionsResponse.data.map(session => ({
-            id: session.id.toString(),
-            title: session.title || 'Untitled Chat',
-            createdAt: new Date(session.createdAt || Date.now()),
-            updatedAt: new Date(session.updatedAt || Date.now())
-          }));
-          
-          renderChatSessions();
-        }
-      } catch (error) {
-        console.error('Error refreshing chat sessions:', error);
-      }
-      
+    backToSessionsButton.addEventListener('click', () => {
       // Show sessions list view, hide conversation view
       sessionsListView.classList.remove('hidden');
       chatConversationView.classList.add('hidden');
@@ -1514,7 +1380,289 @@ async function addQuickNote() {
   }
 }
 
-// Note: Original duplicate function was here but has been removed to fix rendering conflicts
+// Create a new note and open the full editor
+async function createNewNote() {
+  try {
+    // Get input from notepad input if any
+    const noteInput = document.getElementById('notepad-input');
+    const initialContent = noteInput ? noteInput.value.trim() : '';
+    
+    // Create a temporary note for optimistic UI
+    const tempNote = {
+      id: `temp-${Date.now()}`,
+      title: 'About solana',
+      content: initialContent,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Add to state for UI rendering
+    state.currentNote = tempNote;
+    
+    // Show note editor view
+    const notesListView = document.getElementById('notes-list-view');
+    const noteEditorView = document.getElementById('note-editor-view');
+    
+    if (notesListView && noteEditorView) {
+      notesListView.classList.add('hidden');
+      noteEditorView.classList.remove('hidden');
+      
+      // Set up title display
+      const titleDisplay = document.getElementById('note-title-display');
+      if (titleDisplay) {
+        titleDisplay.textContent = tempNote.title;
+      }
+      
+      // Set up editor content
+      const contentTextarea = document.getElementById('note-editor-textarea');
+      if (contentTextarea) {
+        contentTextarea.value = initialContent;
+        
+        // Focus and place cursor at end
+        contentTextarea.focus();
+        contentTextarea.selectionStart = contentTextarea.value.length;
+        contentTextarea.selectionEnd = contentTextarea.value.length;
+        
+        // Resize the textarea
+        autoResizeTextarea.call(contentTextarea);
+      }
+      
+      // Set up back button
+      const backButton = document.getElementById('back-to-notes-button');
+      if (backButton) {
+        backButton.onclick = () => {
+          // If input had content, clear it
+          if (noteInput && initialContent) {
+            noteInput.value = '';
+          }
+          
+          notesListView.classList.remove('hidden');
+          noteEditorView.classList.add('hidden');
+        };
+      }
+      
+      // Set up teleprompt button
+      const telepromptButton = document.getElementById('teleprompt-button');
+      if (telepromptButton) {
+        telepromptButton.onclick = async () => {
+          // Save note and send to teleprompt
+          try {
+            if (!contentTextarea.value.trim()) {
+              contentTextarea.focus();
+              return;
+            }
+            
+            const noteData = {
+              title: tempNote.title,
+              content: contentTextarea.value.trim()
+            };
+            
+            let response;
+            
+            if (state.currentNote.id.startsWith('temp-')) {
+              // Create new note
+              response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: '/api/notepads',
+                  method: 'POST',
+                  data: { ...noteData, hostId: state.user?.id }
+                }
+              });
+            } else {
+              // Update existing note
+              response = await chrome.runtime.sendMessage({
+                type: 'API_REQUEST',
+                data: {
+                  endpoint: `/api/notepads/${state.currentNote.id}`,
+                  method: 'PATCH',
+                  data: { ...noteData, hostId: state.user?.id }
+                }
+              });
+            }
+            
+            if (response.success) {
+              // Show success message
+              showSuccessToast('Note sent to teleprompt');
+              
+              // Update note in state
+              const noteIndex = state.notes.findIndex(n => n.id === state.currentNote.id);
+              
+              if (noteIndex >= 0) {
+                state.notes[noteIndex] = response.data;
+              } else {
+                state.notes.unshift(response.data);
+              }
+              
+              // Reset current note and go back to list
+              state.currentNote = null;
+              notesListView.classList.remove('hidden');
+              noteEditorView.classList.add('hidden');
+              
+              // Re-render notes
+              renderNotes();
+            }
+          } catch (error) {
+            console.error('Error sending to teleprompt:', error);
+            showErrorToast('Failed to send to teleprompt');
+          }
+        };
+      }
+      
+      // Set up more options button
+      const moreOptionsButton = document.getElementById('more-options-button');
+      if (moreOptionsButton) {
+        moreOptionsButton.onclick = (e) => {
+          // Create and show options menu
+          const optionsMenu = document.createElement('div');
+          optionsMenu.className = 'note-options-menu';
+          optionsMenu.innerHTML = `
+            <div class="note-option" data-action="save">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              <span>Save</span>
+            </div>
+            <div class="note-option" data-action="delete">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Delete</span>
+            </div>
+          `;
+          
+          // Position the menu
+          const rect = moreOptionsButton.getBoundingClientRect();
+          optionsMenu.style.top = `${rect.bottom + 5}px`;
+          optionsMenu.style.right = `${window.innerWidth - rect.right}px`;
+          
+          // Add to DOM
+          document.body.appendChild(optionsMenu);
+          
+          // Add click handlers
+          optionsMenu.querySelector('[data-action="save"]').addEventListener('click', async () => {
+            // Save the note
+            try {
+              if (!contentTextarea.value.trim()) {
+                contentTextarea.focus();
+                return;
+              }
+              
+              const noteData = {
+                title: tempNote.title,
+                content: contentTextarea.value.trim()
+              };
+              
+              let response;
+              
+              if (state.currentNote.id.startsWith('temp-')) {
+                // Create new note
+                response = await chrome.runtime.sendMessage({
+                  type: 'API_REQUEST',
+                  data: {
+                    endpoint: '/api/notepads',
+                    method: 'POST',
+                    data: { ...noteData, hostId: state.user?.id }
+                  }
+                });
+              } else {
+                // Update existing note
+                response = await chrome.runtime.sendMessage({
+                  type: 'API_REQUEST',
+                  data: {
+                    endpoint: `/api/notepads/${state.currentNote.id}`,
+                    method: 'PATCH',
+                    data: { ...noteData, hostId: state.user?.id }
+                  }
+                });
+              }
+              
+              if (response.success) {
+                // Show success message
+                showSuccessToast('Note saved');
+                
+                // Update note in state
+                const noteIndex = state.notes.findIndex(n => n.id === state.currentNote.id);
+                
+                if (noteIndex >= 0) {
+                  state.notes[noteIndex] = response.data;
+                } else {
+                  state.notes.unshift(response.data);
+                }
+                
+                // Update current note
+                state.currentNote = response.data;
+              }
+            } catch (error) {
+              console.error('Error saving note:', error);
+              showErrorToast('Failed to save note');
+            }
+            
+            document.body.removeChild(optionsMenu);
+          });
+          
+          optionsMenu.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+            if (confirm(`Are you sure you want to delete this note?`)) {
+              try {
+                // Only try to delete from server if it's not a temporary note
+                if (!state.currentNote.id.startsWith('temp-')) {
+                  const response = await chrome.runtime.sendMessage({
+                    type: 'API_REQUEST',
+                    data: {
+                      endpoint: `/api/notepads/${state.currentNote.id}`,
+                      method: 'DELETE'
+                    }
+                  });
+                  
+                  if (!response.success) {
+                    throw new Error('Failed to delete note');
+                  }
+                }
+                
+                // Remove from state
+                state.notes = state.notes.filter(n => n.id !== state.currentNote.id);
+                
+                // Reset current note
+                state.currentNote = null;
+                
+                // Go back to list view
+                notesListView.classList.remove('hidden');
+                noteEditorView.classList.add('hidden');
+                
+                // Re-render notes
+                renderNotes();
+              } catch (error) {
+                console.error('Error deleting note:', error);
+                showErrorToast('Failed to delete note');
+              }
+            }
+            
+            document.body.removeChild(optionsMenu);
+          });
+          
+          // Close menu when clicking outside
+          const closeMenu = (event) => {
+            if (!optionsMenu.contains(event.target) && event.target !== moreOptionsButton) {
+              document.body.removeChild(optionsMenu);
+              document.removeEventListener('click', closeMenu);
+            }
+          };
+          
+          // Add delay to prevent immediate closing
+          setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+          }, 100);
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error creating new note:', error);
+    showErrorToast('Failed to create a new note');
+  }
+}
 
 // Create a new note
 async function createNewNote() {
@@ -1578,7 +1726,7 @@ async function createNewNote() {
                   endpoint: '/api/notepads',
                   method: 'POST',
                   data: {
-                    title: generateTitleFromContent(content),
+                    title: 'New Note', // This will be improved later
                     content: content,
                     hostId: userId
                   }

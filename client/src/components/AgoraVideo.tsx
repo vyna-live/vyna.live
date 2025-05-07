@@ -927,48 +927,10 @@ export function AgoraVideo({
         
         // Create tracks if host
         if (role === 'host') {
-          try {
-            // First try with default options
-            console.log("Attempting to create camera and microphone tracks with default settings");
-            const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks({}, {
-              encoderConfig: "720p",
-              facingMode: "user"
-            });
-            
-            audioTrackRef.current = micTrack;
-            videoTrackRef.current = camTrack;
-            console.log("Successfully created camera and microphone tracks");
-          } catch (trackError) {
-            console.error("Error creating default tracks:", trackError);
-            
-            // Try with audio-only as fallback
-            try {
-              console.log("Attempting to create audio-only track as fallback");
-              const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-              audioTrackRef.current = audioTrack;
-              
-              // Set error to notify user about camera issue
-              setError("Camera unavailable. Check camera permissions or try a different browser.");
-              
-              // Try to create a fallback video track with lower quality
-              try {
-                console.log("Attempting to create camera track with lower quality");
-                const videoTrack = await AgoraRTC.createCameraVideoTrack({
-                  encoderConfig: "120p",
-                  facingMode: "user",
-                  cameraId: undefined
-                });
-                videoTrackRef.current = videoTrack;
-                console.log("Successfully created fallback camera track");
-              } catch (videoError) {
-                console.error("Could not create fallback video track:", videoError);
-                // Continue without video track
-              }
-            } catch (audioError) {
-              console.error("Failed to create even audio track:", audioError);
-              setError("Microphone and camera unavailable. Check device permissions.");
-            }
-          }
+          // Create microphone and camera tracks
+          const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          audioTrackRef.current = micTrack;
+          videoTrackRef.current = camTrack;
         }
         
         setIsLoading(false);
@@ -1104,65 +1066,17 @@ export function AgoraVideo({
       // Publish tracks if host
       if (role === 'host') {
         console.log('Host joined channel, checking for audience members');
-        
-        // Wrap track publishing in try-catch blocks to handle failures gracefully
-        // First try to publish audio
+        // Publish audio and video tracks separately to avoid type errors
+        // Add null checks to ensure tracks exist before publishing
         if (audioTrackRef.current) {
-          try {
-            console.log("Publishing audio track");
-            await client.publish(audioTrackRef.current);
-            console.log("Successfully published audio track");
-          } catch (audioPublishError) {
-            console.error("Failed to publish audio track:", audioPublishError);
-            // Try recreating the audio track
-            try {
-              console.log("Attempting to recreate audio track after publish failure");
-              const newAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-              audioTrackRef.current = newAudioTrack;
-              await client.publish(newAudioTrack);
-              console.log("Successfully published recreated audio track");
-            } catch (retryError) {
-              console.error("Failed to recreate and publish audio track:", retryError);
-              setError("Audio unavailable. Check microphone permissions.");
-            }
-          }
+          await client.publish(audioTrackRef.current);
         }
         
-        // Then try to publish video
         if (videoTrackRef.current) {
-          try {
-            console.log("Publishing video track");
-            await client.publish(videoTrackRef.current);
-            console.log("Successfully published video track");
-          } catch (videoPublishError) {
-            console.error("Failed to publish video track:", videoPublishError);
-            
-            // Try recreating with lower quality
-            try {
-              console.log("Attempting to recreate video track with lower quality after publish failure");
-              const newVideoTrack = await AgoraRTC.createCameraVideoTrack({
-                encoderConfig: "120p",
-                facingMode: "user"
-              });
-              
-              // Close old track before replacing
-              videoTrackRef.current.close();
-              videoTrackRef.current = newVideoTrack;
-              
-              // Try publishing the new track
-              await client.publish(newVideoTrack);
-              console.log("Successfully published recreated video track");
-            } catch (retryError) {
-              console.error("Failed to recreate and publish video track:", retryError);
-              setError("Video unavailable. Check camera permissions or try another browser.");
-            }
-          }
-        } else {
-          console.log("No video track available to publish");
-          setError("Camera not available. Check permissions or try another browser.");
+          await client.publish(videoTrackRef.current);
         }
         
-        console.log("Finished publishing tracks to Agora channel");
+        console.log("Published tracks to Agora channel");
         
         // Update database to set stream as active
         try {
@@ -1325,49 +1239,15 @@ export function AgoraVideo({
 
   // Toggle video
   const toggleVideo = async () => {
-    if (!videoTrackRef.current) {
-      // Try to create a video track if it doesn't exist
-      try {
-        console.log("Attempting to create video track on toggle");
-        const videoTrack = await AgoraRTC.createCameraVideoTrack({
-          encoderConfig: "480p",
-          facingMode: "user"
-        });
-        
-        videoTrackRef.current = videoTrack;
-        
-        // If we're already connected, publish it
-        if (clientRef.current && isJoined) {
-          try {
-            await clientRef.current.publish(videoTrack);
-            console.log("Successfully created and published new video track");
-            setIsVideoOn(true);
-            setError(null); // Clear any error message
-          } catch (publishError) {
-            console.error("Failed to publish newly created video track:", publishError);
-          }
-        } else {
-          setIsVideoOn(true);
-        }
-      } catch (err) {
-        console.error("Failed to create video track on toggle:", err);
-        setError("Camera not available. Check permissions or try another browser.");
-        return;
-      }
+    if (!videoTrackRef.current) return;
+    
+    if (isVideoOn) {
+      await videoTrackRef.current.setEnabled(false);
     } else {
-      // Normal toggle for existing track
-      try {
-        if (isVideoOn) {
-          await videoTrackRef.current.setEnabled(false);
-        } else {
-          await videoTrackRef.current.setEnabled(true);
-        }
-        
-        setIsVideoOn(!isVideoOn);
-      } catch (err) {
-        console.error("Error toggling video:", err);
-      }
+      await videoTrackRef.current.setEnabled(true);
     }
+    
+    setIsVideoOn(!isVideoOn);
   };
 
   // End stream
@@ -1734,29 +1614,15 @@ export function AgoraVideo({
           </p>
           
           {/* Preview of local video */}
-          <div className="mb-4 relative rounded-lg overflow-hidden shadow-lg">
-            <div className="w-full pb-[56.25%] relative"> {/* 16:9 aspect ratio */}
-              <div className="absolute inset-0">
-                {videoTrackRef.current ? (
+          {videoTrackRef.current && (
+            <div className="mb-4 relative rounded-lg overflow-hidden shadow-lg">
+              <div className="w-full pb-[56.25%] relative"> {/* 16:9 aspect ratio */}
+                <div className="absolute inset-0">
                   <VideoPlayer videoTrack={videoTrackRef.current} />
-                ) : (
-                  <div className="w-full h-full bg-gray-900 flex flex-col items-center justify-center">
-                    <Camera className="w-16 h-16 text-gray-600 mb-4" />
-                    <p className="text-gray-400 text-center px-4">
-                      {error ? error : "Camera not available. Check browser permissions."}
-                    </p>
-                    <button 
-                      onClick={toggleVideo} 
-                      className="mt-4 px-4 py-2 bg-[#5D1C34] hover:bg-[#4a1728] text-white rounded-md flex items-center gap-2 transition-colors"
-                    >
-                      <Camera className="w-4 h-4" />
-                      Try Again
-                    </button>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           {/* Controls */}
           <div className="mb-4 flex justify-center space-x-3">
@@ -1806,16 +1672,7 @@ export function AgoraVideo({
           </div>
         ) : (
           // For host camera track
-          videoTrackRef.current ? (
-            <VideoPlayer videoTrack={videoTrackRef.current} />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900">
-              <Camera className="w-20 h-20 text-gray-600 mb-4" />
-              <p className="text-gray-400 text-center px-4 max-w-md">
-                {error ? error : "Camera not available. Check browser permissions and try toggling the camera button below."}
-              </p>
-            </div>
-          )
+          videoTrackRef.current && <VideoPlayer videoTrack={videoTrackRef.current} />
         )}
       </div>
       
