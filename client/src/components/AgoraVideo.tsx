@@ -928,9 +928,16 @@ export function AgoraVideo({
         // Create tracks if host
         if (role === 'host') {
           // Create microphone and camera tracks
-          const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-          audioTrackRef.current = micTrack;
-          videoTrackRef.current = camTrack;
+          try {
+            console.log("Creating microphone and camera tracks...");
+            const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+            audioTrackRef.current = micTrack;
+            videoTrackRef.current = camTrack;
+            console.log("Successfully created tracks");
+          } catch (trackError) {
+            console.error("Failed to create audio/video tracks:", trackError);
+            setError("Failed to access camera and microphone. Please ensure they are connected and permissions are granted.");
+          }
         }
         
         setIsLoading(false);
