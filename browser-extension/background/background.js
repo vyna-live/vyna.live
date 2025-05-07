@@ -348,6 +348,21 @@ async function handleApiRequest({ endpoint, method = 'GET', data = null, include
     
     // Build the URL for the request
     let requestUrl = `${API_BASE_URL}${endpoint}`;
+    
+    // If it's a GET request and there's data, add it as query parameters
+    if (method === 'GET' && data) {
+      const queryParams = new URLSearchParams();
+      for (const key in data) {
+        if (data[key] !== undefined && data[key] !== null) {
+          queryParams.append(key, data[key]);
+        }
+      }
+      const queryString = queryParams.toString();
+      if (queryString) {
+        requestUrl += `?${queryString}`;
+      }
+    }
+    
     console.log(`Full API URL: ${requestUrl}`);
     
     // If this is going to be a POST/PUT/PATCH request, do an OPTIONS preflight test first

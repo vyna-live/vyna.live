@@ -67,11 +67,8 @@ async function loadUserData() {
     const chatSessionsResponse = await chrome.runtime.sendMessage({
       type: 'API_REQUEST',
       data: {
-        endpoint: '/api/ai-chat-sessions',
-        method: 'GET',
-        data: {
-          hostId: state.user.id
-        }
+        endpoint: `/api/ai-chat-sessions/${state.user.id}`,
+        method: 'GET'
       }
     });
     
@@ -134,10 +131,7 @@ async function loadChatSession(sessionId) {
       type: 'API_REQUEST',
       data: {
         endpoint: `/api/ai-chat-messages/${sessionId}`,
-        method: 'GET',
-        data: {
-          hostId: state.user?.id
-        }
+        method: 'GET'
       }
     });
     
@@ -698,11 +692,8 @@ function renderApp() {
             const chatSessionsResponse = await chrome.runtime.sendMessage({
               type: 'API_REQUEST',
               data: {
-                endpoint: '/api/ai-chat-sessions',
-                method: 'GET',
-                data: {
-                  hostId: state.user?.id
-                }
+                endpoint: `/api/ai-chat-sessions/${state.user?.id}`,
+                method: 'GET'
               }
             });
             
@@ -755,11 +746,8 @@ function renderApp() {
         const chatSessionsResponse = await chrome.runtime.sendMessage({
           type: 'API_REQUEST',
           data: {
-            endpoint: '/api/ai-chat-sessions',
-            method: 'GET',
-            data: {
-              hostId: state.user?.id
-            }
+            endpoint: `/api/ai-chat-sessions/${state.user?.id}`,
+            method: 'GET'
           }
         });
         
