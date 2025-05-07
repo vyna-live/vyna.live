@@ -927,51 +927,10 @@ export function AgoraVideo({
         
         // Create tracks if host
         if (role === 'host') {
-          try {
-            // Try with default settings first
-            console.log("Attempting to create camera and microphone tracks with default settings");
-            const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-            audioTrackRef.current = micTrack;
-            videoTrackRef.current = camTrack;
-            console.log("Successfully created camera and microphone tracks");
-          } catch (trackError) {
-            console.error("Failed to create tracks with default settings:", trackError);
-            
-            // If that fails, try with specific constraints for camera
-            try {
-              console.log("Attempting to create tracks with fallback constraints");
-              
-              // Create audio track separately
-              const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
-              audioTrackRef.current = micTrack;
-              
-              // Create video track with specific constraints
-              const camTrack = await AgoraRTC.createCameraVideoTrack({
-                encoderConfig: "360p_4",
-                facingMode: "user",
-                cameraId: undefined // Let the browser choose the best camera
-              });
-              videoTrackRef.current = camTrack;
-              console.log("Successfully created tracks with fallback constraints");
-            } catch (fallbackError) {
-              console.error("Failed with fallback constraints too:", fallbackError);
-              setError("Could not access camera or microphone. Please check permissions and ensure no other application is using your camera.");
-              
-              // Create only audio as a last resort
-              try {
-                console.log("Attempting to create only audio track");
-                const micTrack = await AgoraRTC.createMicrophoneAudioTrack();
-                audioTrackRef.current = micTrack;
-                // Set videoTrackRef to null to indicate we don't have video
-                videoTrackRef.current = null;
-                setIsVideoOn(false);
-                console.log("Created audio-only track");
-              } catch (audioOnlyError) {
-                console.error("Failed to create even audio track:", audioOnlyError);
-                setError("Could not access microphone. Please check permissions.");
-              }
-            }
-          }
+          // Create microphone and camera tracks
+          const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+          audioTrackRef.current = micTrack;
+          videoTrackRef.current = camTrack;
         }
         
         setIsLoading(false);
@@ -1092,12 +1051,8 @@ export function AgoraVideo({
     if (role === 'audience') {
       if (!clientRef.current) return;
     } else {
-      // For host, need to check client and at least audio track
-      // Video track can be null if camera isn't available but we'll still allow streaming with just audio
-      if (!clientRef.current || !audioTrackRef.current) {
-        console.error("Cannot join: Missing client or audio track");
-        return;
-      }
+      // For host, need to check all tracks
+      if (!clientRef.current || !audioTrackRef.current || !videoTrackRef.current) return;
     }
     
     try {
@@ -1284,29 +1239,7 @@ export function AgoraVideo({
 
   // Toggle video
   const toggleVideo = async () => {
-    if (!videoTrackRef.current) {
-      // If no video track exists, try to create one
-      try {
-        console.log("Attempting to create camera track on demand");
-        const camTrack = await AgoraRTC.createCameraVideoTrack({
-          encoderConfig: "360p_4",
-          facingMode: "user"
-        });
-        videoTrackRef.current = camTrack;
-        
-        // If we're already joined, publish the new track
-        if (isJoined && clientRef.current) {
-          await clientRef.current.publish(camTrack);
-          console.log("Published newly created camera track");
-        }
-        
-        setIsVideoOn(true);
-      } catch (err) {
-        console.error("Failed to create camera track on demand:", err);
-        setError("Could not access camera. Please check permissions and ensure no other application is using your camera.");
-      }
-      return;
-    }
+    if (!videoTrackRef.current) return;
     
     if (isVideoOn) {
       await videoTrackRef.current.setEnabled(false);
