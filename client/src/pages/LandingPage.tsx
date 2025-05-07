@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Download, Sparkles } from "lucide-react";
+import { Download, Sparkles, Paperclip, Mic, Image, Upload, Plus } from "lucide-react";
 import Logo from "@/components/Logo";
 import "./landing.css";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
 
   const handleLogin = () => {
     setLocation("/auth");
@@ -14,6 +15,10 @@ export default function LandingPage() {
   const handleExtensionDownload = () => {
     // Link to the extension download
     window.open("/browser-extension.zip", "_blank");
+  };
+  
+  const switchTab = (tab: 'vynaai' | 'notepad') => {
+    setActiveTab(tab);
   };
 
   return (
@@ -58,11 +63,17 @@ export default function LandingPage() {
           <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm">
             {/* Tabs */}
             <div className="flex items-center px-4 py-3 bg-[#252525] border-b border-[#333333]">
-              <button className="flex items-center gap-1.5 mr-2 px-4 py-1.5 text-sm font-medium rounded-md bg-[#DCC5A2] text-[#121212]">
+              <button 
+                className={`flex items-center gap-1.5 mr-2 px-4 py-1.5 text-sm rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                onClick={() => switchTab('vynaai')}
+              >
                 <Sparkles size={14} />
                 <span>VynaAI</span>
               </button>
-              <button className="flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-md bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white transition-colors">
+              <button 
+                className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                onClick={() => switchTab('notepad')}
+              >
                 <span>Notepad</span>
               </button>
               <div className="flex-1"></div>
@@ -76,53 +87,73 @@ export default function LandingPage() {
               </button>
             </div>
             
-            {/* Chat area */}
-            <div className="p-4">
-              <div className="mb-3">
-                <input 
-                  type="text"
-                  placeholder="Ask your question"
-                  className="w-full bg-[#262626] text-[#CCCCCC] rounded-lg px-4 py-3 outline-none text-sm border border-[#333333] focus:border-[#DCC5A2] focus:ring-1 focus:ring-[#DCC5A2]/20 transition-all"
-                />
-              </div>
-              
-              {/* Input controls */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 text-[#777777]">
-                  <button className="hover:text-[#DCC5A2] p-1 transition-colors" aria-label="Upload file">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="17 8 12 3 7 8"></polyline>
-                      <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                  </button>
-                  <button className="hover:text-[#DCC5A2] p-1 transition-colors" aria-label="Take photo">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                      <circle cx="12" cy="13" r="4"></circle>
-                    </svg>
-                  </button>
-                  <button className="hover:text-[#DCC5A2] p-1 transition-colors" aria-label="Record audio">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                      <line x1="12" y1="19" x2="12" y2="23"></line>
-                      <line x1="8" y1="23" x2="16" y2="23"></line>
-                    </svg>
+            {/* Content area - VynaAI */}
+            {activeTab === 'vynaai' && (
+              <div className="p-4 input-area">
+                <div className="mb-4">
+                  <textarea
+                    placeholder="Ask your question"
+                    className="w-full h-24 px-4 py-3 text-sm"
+                  />
+                </div>
+                
+                {/* Input controls */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6 text-white opacity-70">
+                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
+                      <Paperclip size={18} />
+                    </button>
+                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
+                      <Mic size={18} />
+                    </button>
+                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
+                      <Image size={18} />
+                    </button>
+                  </div>
+                  <button 
+                    className="button-hover-effect rounded-full px-6 py-2 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all"
+                    aria-label="Send message"
+                  >
+                    <span>Send</span>
+                    <Upload size={14} className="transform rotate-90" />
                   </button>
                 </div>
-                <button 
-                  className="button-hover-effect rounded-md px-4 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1 hover:bg-[#C6B190] transition-all shadow-sm"
-                  aria-label="Send message"
-                >
-                  <span>Send</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
               </div>
-            </div>
+            )}
+            
+            {/* Content area - Notepad */}
+            {activeTab === 'notepad' && (
+              <div className="p-4 input-area">
+                <div className="mb-4">
+                  <textarea
+                    placeholder="Type a note"
+                    className="w-full h-24 px-4 py-3 text-sm"
+                  />
+                </div>
+                
+                {/* Input controls */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6 text-white opacity-70">
+                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
+                      <Paperclip size={18} />
+                    </button>
+                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
+                      <Mic size={18} />
+                    </button>
+                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
+                      <Image size={18} />
+                    </button>
+                  </div>
+                  <button 
+                    className="button-hover-effect rounded-full px-6 py-2 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all"
+                    aria-label="Add note"
+                  >
+                    <span>Add note</span>
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
