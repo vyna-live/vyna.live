@@ -170,17 +170,32 @@
   <!-- Main app template -->
   <template id="app-template">
     <div class="header">
-      <img src="../assets/logo.png" alt="Vyna.live" class="header-logo">
+      <div class="logo-container">
+        <img src="../assets/logo.png" alt="Vyna.live" class="header-logo">
+      </div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          <img id="user-avatar" src="../assets/default-avatar.png" alt="User">
+        </div>
+        <span id="user-display-name">Loading...</span>
+        <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
     </div>
     
+    <div class="sidebar-toggle">
+      <div class="toggle-btn">»</div>
+    </div>
+
     <div class="tab-container">
-      <div class="tab active" data-tab="vynaai">
+      <button class="tab vynaai-tab active" data-tab="vynaai">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
         </svg>
-        VynaAI
-      </div>
-      <div class="tab" data-tab="notepad">
+        <span>VynaAI</span>
+      </button>
+      <button class="tab notepad-tab" data-tab="notepad">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
@@ -188,26 +203,34 @@
           <line x1="16" y1="17" x2="8" y2="17"></line>
           <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
-        Notepad
-      </div>
+        <span>Notepad</span>
+      </button>
     </div>
     
     <div class="content">
       <!-- VynaAI tab content -->
       <div class="tab-content active" id="vynaai-content">
-        <div class="empty-state" id="vynaai-empty-state">
-          <div class="icon-circle">
-            <img src="../assets/star-icon.svg" alt="VynaAI" width="38" height="38">
-          </div>
-          <h3 class="empty-state-title">VynaAI</h3>
-          <p class="empty-state-subtitle">Ask questions to quickly research topics while streaming</p>
+        <div class="sessions-header">
+          <h3 class="sessions-title">RECENTS</h3>
         </div>
         
-        <div id="chat-container" class="hidden">
+        <div id="chat-sessions-list" class="chat-sessions-list">
+          <!-- Chat sessions will be rendered here -->
+        </div>
+        
+        <button id="new-chat-btn" class="new-chat-btn">
+          <span>+</span> New chat
+        </button>
+        
+        <div id="chat-container" class="chat-container hidden">
           <!-- Chat messages will be inserted here by JS -->
         </div>
         
-        <div class="input-container">
+        <div class="input-container hidden" id="chat-input-container">
+          <div class="style-select">
+            <button class="style-btn pp-btn" title="Play-by-Play Commentary">PP</button>
+            <button class="style-btn cc-btn" title="Color Commentary">CC</button>
+          </div>
           <div class="input-wrapper">
             <textarea class="input-area" placeholder="Message" id="chat-input"></textarea>
             <div class="input-actions">
@@ -287,6 +310,16 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="footer-content">
+        <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>vynalive.com</span>
       </div>
     </div>
   </template>
