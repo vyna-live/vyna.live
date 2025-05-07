@@ -89,11 +89,11 @@ export default function LandingPage() {
             
             {/* Content area - VynaAI */}
             {activeTab === 'vynaai' && (
-              <div className="px-4 py-3 input-area flex flex-col">
+              <div className="px-4 pt-3 pb-4 input-area flex flex-col">
                 <div className="flex-grow mb-2">
                   <textarea
                     placeholder="Ask your question"
-                    className="w-full h-[108px] px-4 py-2.5 text-sm"
+                    className="w-full h-[100px] px-4 py-2.5 text-sm"
                   />
                 </div>
                 
@@ -111,7 +111,7 @@ export default function LandingPage() {
                     </button>
                   </div>
                   <button 
-                    className="button-hover-effect rounded-full px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
+                    className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                     aria-label="Send message"
                   >
                     <span>Send</span>
@@ -123,11 +123,11 @@ export default function LandingPage() {
             
             {/* Content area - Notepad */}
             {activeTab === 'notepad' && (
-              <div className="px-4 py-3 input-area flex flex-col">
+              <div className="px-4 pt-3 pb-4 input-area flex flex-col">
                 <div className="flex-grow mb-2">
                   <textarea
                     placeholder="Type a note"
-                    className="w-full h-[108px] px-4 py-2.5 text-sm"
+                    className="w-full h-[100px] px-4 py-2.5 text-sm"
                   />
                 </div>
                 
@@ -145,7 +145,7 @@ export default function LandingPage() {
                     </button>
                   </div>
                   <button 
-                    className="button-hover-effect rounded-full px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
+                    className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                     aria-label="Add note"
                   >
                     <span>Add note</span>
