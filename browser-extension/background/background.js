@@ -1,7 +1,7 @@
 // Background script for Vyna.live extension
 
 // Base URL for all API calls
-const API_BASE_URL = 'https://rest-express-diweesomchi.replit.app';
+const API_BASE_URL = 'https://vyna-assistant-diweesomchi.replit.app';
 
 // Authentication state
 let authState = {
@@ -72,7 +72,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.type === 'LOGIN') {
-    login(message.data.usernameOrEmail, message.data.password)
+    login(message.data.username, message.data.password)
       .then(result => sendResponse(result))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
