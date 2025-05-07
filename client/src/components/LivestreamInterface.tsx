@@ -204,20 +204,48 @@ export default function LivestreamInterface({
           // No stream info provided, need to create a new session
           console.log("No stream info provided, creating new session");
           
-          // This actually doesn't create a session, it just fetches a token
-          // Let's log out what info we have
-          console.log("Available channel name:", channelName);
-          
-          // Try to fetch host token
+          // Immediately try to go live
+          console.log("Auto-starting livestream...");
           try {
-            await fetchHostToken(channelName);
-            console.log("Fetched host token successfully");
+            // Create a new livestream with default values
+            const result = await createLivestream(
+              "Vyna.live Stream", 
+              isAuthenticated && user ? user.displayName || user.username : "Anonymous"
+            );
+            
+            if (result) {
+              console.log("Successfully created new livestream:", result);
+              setIsStreamActive(true);
+              
+              // Generate unique stream ID
+              const generatedStreamId = result.id || `stream_${Date.now()}`;
+              setStreamId(generatedStreamId);
+              
+              // Generate shareable link
+              const hostUrl = window.location.origin;
+              const link = `${hostUrl}/view-stream/${generatedStreamId}`;
+              setShareableLink(link);
+              setShowShareLink(true);
+              
+              toast({
+                title: "You're Live!",
+                description: "Your stream is now available to viewers",
+              });
+            } else {
+              throw new Error("Failed to create livestream");
+            }
           } catch (error) {
-            console.error("Failed to fetch host token:", error);
+            console.error("Failed to auto-start livestream:", error);
+            // Since auto-start failed, try to fetch a token at least
+            try {
+              await fetchHostToken(channelName);
+              console.log("Fetched host token as fallback");
+            } catch (tokenError) {
+              console.error("Failed to fetch host token:", tokenError);
+            }
           }
           
           // Set loading to false when everything is ready
-          // In a production app, this would happen automatically in the hook
           setIsLoading(false);
         }
       } catch (err) {
@@ -227,10 +255,15 @@ export default function LivestreamInterface({
       }
     };
 
-    initLivestream();
+    // Only run this if user is authenticated
+    if (isAuthenticated && user) {
+      initLivestream();
+    } else {
+      setIsLoading(false);
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streamInfo]);
+  }, [streamInfo, isAuthenticated, user]);
 
   // Handle any errors from Agora
   useEffect(() => {
