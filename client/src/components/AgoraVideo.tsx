@@ -1211,18 +1211,25 @@ export function AgoraVideo({
     }
   }, [appId, channelName, token, uid, role]);
   
-  // Auto-join for audience role
+  // Auto-join for both audience and host roles
   useEffect(() => {
-    if (role === 'audience' && clientRef.current && !isJoined && !isLoading) {
-      console.log('Audience auto-joining stream');
+    if (clientRef.current && !isJoined && !isLoading) {
+      console.log(`${role} auto-joining stream`);
+      
+      // For host, make sure we have audio and video tracks
+      if (role === 'host' && (!audioTrackRef.current || !videoTrackRef.current)) {
+        console.log('Host tracks not ready yet, waiting...');
+        return;
+      }
+      
       // Small delay to ensure client is ready
       const timer = setTimeout(() => {
-        console.log('Executing audience auto-join now...');
+        console.log(`Executing ${role} auto-join now...`);
         joinChannel();
-      }, 800); // Increased delay for client readiness
+      }, 1000); // Increased delay for client readiness
       return () => clearTimeout(timer);
     }
-  }, [role, isJoined, isLoading, joinChannel]);
+  }, [role, isJoined, isLoading, joinChannel, audioTrackRef.current, videoTrackRef.current]);
 
   // Toggle audio
   const toggleAudio = async () => {

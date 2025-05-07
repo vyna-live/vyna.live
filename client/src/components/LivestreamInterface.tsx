@@ -209,8 +209,12 @@ export default function LivestreamInterface({
           console.log("Available channel name:", channelName);
           
           // Try to fetch host token
-          const token = await fetchHostToken(channelName);
-          console.log("Fetched host token:", token ? "Success" : "Failed");
+          try {
+            await fetchHostToken(channelName);
+            console.log("Fetched host token successfully");
+          } catch (error) {
+            console.error("Failed to fetch host token:", error);
+          }
           
           // Set loading to false when everything is ready
           // In a production app, this would happen automatically in the hook
