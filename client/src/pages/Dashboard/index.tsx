@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import Logo from '@/components/Logo';
-import { ChevronRight, LogIn, LogOut, Settings, User, UserPlus } from 'lucide-react';
+import { ChevronRight, LogIn, LogOut, Settings, User, UserPlus, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateStreamDialog, { StreamFormData } from '@/components/CreateStreamDialog';
@@ -125,9 +125,21 @@ export default function Dashboard() {
       
       {/* Header */}
       <header className="px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="transition-opacity hover:opacity-80">
-          <Logo variant="light" size="sm" className="h-6" />
-        </Link>
+        <div className="flex items-center">
+          <Link href="/" className="transition-opacity hover:opacity-80">
+            <Logo variant="light" size="sm" className="h-6" />
+          </Link>
+          
+          {/* Navigation links */}
+          <div className="ml-8 flex items-center space-x-6">
+            <Button asChild variant="ghost" size="sm" className="text-white hover:text-white hover:bg-zinc-800/40">
+              <Link href="/livestream">
+                <Video className="w-4 h-4 mr-2" />
+                Livestream
+              </Link>
+            </Button>
+          </div>
+        </div>
         
         <div className="flex items-center">
           {isLoading ? (
@@ -216,10 +228,7 @@ export default function Dashboard() {
               onClick={handleStartStreamingClick}
               className="flex items-center space-x-2 px-6 py-3 bg-[#D8C6AF] text-black font-medium hover:opacity-90 transition-opacity rounded-sm"
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 7l-7 5 7 5V7z" />
-                <rect x="1" y="5" width="15" height="14" />
-              </svg>
+              <Video className="w-6 h-6" />
               <span>Start streaming</span>
             </button>
             
