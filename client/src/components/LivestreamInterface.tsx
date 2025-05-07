@@ -198,72 +198,27 @@ export default function LivestreamInterface({
 
           // Set loading to false
           setIsLoading(false);
-          
-          console.log("Stream initialized successfully with data from database");
         } else {
           // No stream info provided, need to create a new session
           console.log("No stream info provided, creating new session");
-          
-          // Immediately try to go live
-          console.log("Auto-starting livestream...");
-          try {
-            // Create a new livestream with default values
-            const result = await createLivestream(
-              "Vyna.live Stream", 
-              isAuthenticated && user ? user.displayName || user.username : "Anonymous"
-            );
-            
-            if (result) {
-              console.log("Successfully created new livestream:", result);
-              setIsStreamActive(true);
-              
-              // Generate unique stream ID
-              const generatedStreamId = result.id || `stream_${Date.now()}`;
-              setStreamId(generatedStreamId);
-              
-              // Generate shareable link
-              const hostUrl = window.location.origin;
-              const link = `${hostUrl}/view-stream/${generatedStreamId}`;
-              setShareableLink(link);
-              setShowShareLink(true);
-              
-              toast({
-                title: "You're Live!",
-                description: "Your stream is now available to viewers",
-              });
-            } else {
-              throw new Error("Failed to create livestream");
-            }
-          } catch (error) {
-            console.error("Failed to auto-start livestream:", error);
-            // Since auto-start failed, try to fetch a token at least
-            try {
-              await fetchHostToken(channelName);
-              console.log("Fetched host token as fallback");
-            } catch (tokenError) {
-              console.error("Failed to fetch host token:", tokenError);
-            }
-          }
-          
+          await fetchHostToken(channelName);
+
           // Set loading to false when everything is ready
-          setIsLoading(false);
+          // In a production app, this would happen automatically in the hook
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 1000);
         }
       } catch (err) {
         console.error("Error initializing Agora stream:", err);
         showErrorToast("Failed to initialize streaming service");
-        setIsLoading(false);
       }
     };
 
-    // Only run this if user is authenticated
-    if (isAuthenticated && user) {
-      initLivestream();
-    } else {
-      setIsLoading(false);
-    }
+    initLivestream();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streamInfo, isAuthenticated, user]);
+  }, [streamInfo]);
 
   // Handle any errors from Agora
   useEffect(() => {
