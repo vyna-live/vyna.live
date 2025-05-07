@@ -198,20 +198,28 @@ export default function LivestreamInterface({
 
           // Set loading to false
           setIsLoading(false);
+          
+          console.log("Stream initialized successfully with data from database");
         } else {
           // No stream info provided, need to create a new session
           console.log("No stream info provided, creating new session");
-          await fetchHostToken(channelName);
-
+          
+          // This actually doesn't create a session, it just fetches a token
+          // Let's log out what info we have
+          console.log("Available channel name:", channelName);
+          
+          // Try to fetch host token
+          const token = await fetchHostToken(channelName);
+          console.log("Fetched host token:", token ? "Success" : "Failed");
+          
           // Set loading to false when everything is ready
           // In a production app, this would happen automatically in the hook
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 1000);
+          setIsLoading(false);
         }
       } catch (err) {
         console.error("Error initializing Agora stream:", err);
         showErrorToast("Failed to initialize streaming service");
+        setIsLoading(false);
       }
     };
 

@@ -71,6 +71,9 @@ export default function Dashboard() {
     } else {
       // Open stream dialog if authenticated
       setIsStreamDialogOpen(true);
+      
+      // Log that we're opening the dialog
+      console.log('Opening stream dialog to create a new stream session');
     }
   };
   
