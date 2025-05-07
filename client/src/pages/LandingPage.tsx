@@ -59,26 +59,26 @@ export default function LandingPage() {
         </button>
 
         {/* AI Chat Panel */}
-        <div className="w-[758px] max-w-full mx-auto z-10 animate-fadeInUp delay-200">
-          <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm" style={{height: '204px'}}>
+        <div className="max-w-2xl w-[95%] md:w-[85%] lg:w-[75%] xl:w-[65%] mx-auto z-10 animate-fadeInUp delay-200">
+          <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm">
             {/* Tabs */}
-            <div className="flex items-center h-[26px] px-3 bg-[#252525] border-b border-[#333333]">
+            <div className="flex items-center px-4 py-3 bg-[#252525] border-b border-[#333333]">
               <button 
-                className={`flex items-center gap-1 px-3 h-full text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                className={`flex items-center gap-1.5 mr-2 px-4 py-1.5 text-sm rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                 onClick={() => switchTab('vynaai')}
               >
-                <Sparkles size={10} />
+                <Sparkles size={14} />
                 <span>VynaAI</span>
               </button>
               <button 
-                className={`flex items-center gap-1 px-3 h-full text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                 onClick={() => switchTab('notepad')}
               >
                 <span>Notepad</span>
               </button>
               <div className="flex-1"></div>
-              <button className="text-[#999999] hover:text-white p-0.5" aria-label="Expand">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <button className="text-[#999999] hover:text-white p-1" aria-label="Expand">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 3 21 3 21 9"></polyline>
                   <polyline points="9 21 3 21 3 15"></polyline>
                   <line x1="21" y1="3" x2="14" y2="10"></line>
@@ -89,33 +89,33 @@ export default function LandingPage() {
             
             {/* Content area - VynaAI */}
             {activeTab === 'vynaai' && (
-              <div className="px-3 py-1 flex flex-col h-[178px]">
-                <div className="flex-grow">
+              <div className="p-4 input-area">
+                <div className="mb-4">
                   <textarea
                     placeholder="Ask your question"
-                    className="w-full h-[130px] px-3 py-2 text-xs bg-[#1A1A1A] border-none focus:ring-0 resize-none rounded-lg text-[#CCCCCC]"
+                    className="w-full h-24 px-4 py-3 text-sm"
                   />
                 </div>
                 
                 {/* Input controls */}
-                <div className="flex items-center justify-between mt-auto py-1">
-                  <div className="flex items-center gap-5 text-white opacity-70">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6 text-white opacity-70">
                     <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
-                      <Paperclip size={14} />
+                      <Paperclip size={18} />
                     </button>
                     <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
-                      <Mic size={14} />
+                      <Mic size={18} />
                     </button>
                     <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
-                      <Image size={14} />
+                      <Image size={18} />
                     </button>
                   </div>
                   <button 
-                    className="rounded-lg px-4 py-1 bg-[#DCC5A2] text-[#121212] text-xs font-medium flex items-center gap-1 hover:bg-[#C6B190] transition-all"
+                    className="button-hover-effect rounded-full px-6 py-2 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all"
                     aria-label="Send message"
                   >
                     <span>Send</span>
-                    <Upload size={12} className="transform rotate-90" />
+                    <Upload size={14} className="transform rotate-90" />
                   </button>
                 </div>
               </div>
@@ -123,33 +123,33 @@ export default function LandingPage() {
             
             {/* Content area - Notepad */}
             {activeTab === 'notepad' && (
-              <div className="px-3 py-1 flex flex-col h-[178px]">
-                <div className="flex-grow">
+              <div className="p-4 input-area">
+                <div className="mb-4">
                   <textarea
                     placeholder="Type a note"
-                    className="w-full h-[130px] px-3 py-2 text-xs bg-[#1A1A1A] border-none focus:ring-0 resize-none rounded-lg text-[#CCCCCC]"
+                    className="w-full h-24 px-4 py-3 text-sm"
                   />
                 </div>
                 
                 {/* Input controls */}
-                <div className="flex items-center justify-between mt-auto py-1">
-                  <div className="flex items-center gap-5 text-white opacity-70">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-6 text-white opacity-70">
                     <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
-                      <Paperclip size={14} />
+                      <Paperclip size={18} />
                     </button>
                     <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
-                      <Mic size={14} />
+                      <Mic size={18} />
                     </button>
                     <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
-                      <Image size={14} />
+                      <Image size={18} />
                     </button>
                   </div>
                   <button 
-                    className="rounded-lg px-4 py-1 bg-[#DCC5A2] text-[#121212] text-xs font-medium flex items-center gap-1 hover:bg-[#C6B190] transition-all"
+                    className="button-hover-effect rounded-full px-6 py-2 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all"
                     aria-label="Add note"
                   >
                     <span>Add note</span>
-                    <Plus size={12} />
+                    <Plus size={14} />
                   </button>
                 </div>
               </div>
