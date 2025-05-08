@@ -312,67 +312,53 @@ export default function VynaAIChat() {
           </div>
           
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black grid-background custom-scrollbar">
-            {messages.length > 0 ? (
-              // Show messages when there are any
-              <>
-                {messages.map((message) => (
-                  <div 
-                    key={message.id} 
-                    className={`flex message-appear ${message.sender === 'user' ? 'justify-end' : 'items-start'}`}
-                  >
-                    {message.sender === 'ai' && (
-                      <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
-                        <Sparkles size={16} color="#121212" />
-                      </div>
-                    )}
-                    
-                    <div 
-                      className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
-                        message.sender === 'user' 
-                          ? 'bg-[#2A2A2A] text-white' 
-                          : 'bg-[#232323] text-[#DDDDDD]'
-                      }`}
-                    >
-                      {message.loading ? (
-                        <LoadingIndicator />
-                      ) : (
-                        <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
-                      )}
-                      
-                      {message.sender === 'ai' && !message.loading && (
-                        <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
-                          <button className="hover:text-[#DCC5A2] p-1">
-                            <RefreshCw size={14} />
-                          </button>
-                          <button className="hover:text-[#DCC5A2] p-1">
-                            <ThumbsUp size={14} />
-                          </button>
-                          <button className="hover:text-[#DCC5A2] p-1">
-                            <ThumbsDown size={14} />
-                          </button>
-                          <button className="hover:text-[#DCC5A2] p-1">
-                            <Info size={14} />
-                          </button>
-                          <button className="hover:text-[#DCC5A2] p-1">
-                            <MoreVertical size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black custom-scrollbar">
+            {messages.map((message) => (
+              <div 
+                key={message.id} 
+                className={`flex message-appear ${message.sender === 'user' ? 'justify-end' : 'items-start'}`}
+              >
+                {message.sender === 'ai' && (
+                  <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
+                    <Sparkles size={16} color="#121212" />
                   </div>
-                ))}
-              </>
-            ) : (
-              // Empty state with centered text
-              <div className="empty-state">
-                <h1 className="text-3xl font-bold text-white mb-2">VynaAI</h1>
-                <p className="text-[#999999] text-center text-sm">
-                  Ask questions to quickly research<br />
-                  topics while streaming
-                </p>
+                )}
+                
+                <div 
+                  className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
+                    message.sender === 'user' 
+                      ? 'bg-[#2A2A2A] text-white' 
+                      : 'bg-[#232323] text-[#DDDDDD]'
+                  }`}
+                >
+                  {message.loading ? (
+                    <LoadingIndicator />
+                  ) : (
+                    <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                  )}
+                  
+                  {message.sender === 'ai' && !message.loading && (
+                    <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <RefreshCw size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <ThumbsUp size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <ThumbsDown size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <Info size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <MoreVertical size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            ))}
             <div ref={messagesEndRef} />
           </div>
           
