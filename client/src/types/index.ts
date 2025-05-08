@@ -41,6 +41,8 @@ export interface AiChatMessage {
   content: string;
   isDeleted: boolean;
   createdAt: string;
+  visualizations?: any[]; // For storing charts, graphs, and other rich content
+  updatedAt?: string;
 }
 
 // UI interface types

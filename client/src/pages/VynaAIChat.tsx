@@ -166,10 +166,16 @@ export default function VynaAIChat() {
     if (!user) return;
     
     try {
-      const response = await fetch(`/api/notes/${user.id}`);
+      // Update to use notepads endpoint instead of notes
+      const response = await fetch(`/api/notepads/${user.id}`);
       if (response.ok) {
-        const notesData = await response.json();
-        setNotes(notesData);
+        const notesData: Note[] = await response.json();
+        // Ensure all notes have a visualizations property
+        const notesWithVisualizations = notesData.map(note => ({
+          ...note,
+          visualizations: note.visualizations || []
+        }));
+        setNotes(notesWithVisualizations);
       }
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -487,12 +493,16 @@ export default function VynaAIChat() {
     }
   };
   
-  // Create a new note with AI content
+  // Create a new note with AI content and visualizations
   const handleCreateNewNote = async (content: string) => {
     if (!user) return;
     
     try {
-      // Create a new note
+      // Find the message to get visualizations
+      const message = messages.find(m => m.id === showNoteDropdown);
+      const visualizations = message?.visualizations || [];
+      
+      // Create a new note on the server
       const response = await fetch('/api/notepads', {
         method: 'POST',
         headers: {
@@ -501,7 +511,8 @@ export default function VynaAIChat() {
         body: JSON.stringify({
           hostId: user.id,
           title: newNoteTitle || 'AI Generated Note',
-          content
+          content,
+          visualizations: visualizations // Include visualizations in the new note
         })
       });
       
@@ -521,7 +532,7 @@ export default function VynaAIChat() {
       
       toast({
         title: 'Note created',
-        description: 'Content has been saved to a new note',
+        description: 'Content has been saved to a new note with visualizations',
       });
       
       // Store the note ID in session storage for Notepad view to open it
@@ -539,7 +550,7 @@ export default function VynaAIChat() {
     }
   };
   
-  // Add content to an existing note
+  // Add content to an existing note with visualizations
   const handleAddToExistingNote = async (noteId: number, content: string) => {
     if (!user) return;
     
@@ -550,8 +561,16 @@ export default function VynaAIChat() {
         throw new Error('Note not found');
       }
       
+      // Find the message to get visualizations
+      const message = messages.find(m => m.id === showNoteDropdown);
+      const messageVisualizations = message?.visualizations || [];
+      
       // Update the note with appended content
       const updatedContent = note.content ? `${note.content}\n\n${content}` : content;
+      
+      // Combine existing visualizations with new ones
+      const existingVisualizations = note.visualizations || [];
+      const updatedVisualizations = [...existingVisualizations, ...messageVisualizations];
       
       const response = await fetch(`/api/notepads/${noteId}`, {
         method: 'PUT',
@@ -561,7 +580,8 @@ export default function VynaAIChat() {
         body: JSON.stringify({
           hostId: user.id,
           title: note.title,
-          content: updatedContent
+          content: updatedContent,
+          visualizations: updatedVisualizations // Include combined visualizations
         })
       });
       
@@ -576,7 +596,7 @@ export default function VynaAIChat() {
       
       toast({
         title: 'Note updated',
-        description: `Content has been added to "${note.title}"`,
+        description: `Content with visualizations has been added to "${note.title}"`,
       });
       
       // Store the note ID in session storage for Notepad view to open it
