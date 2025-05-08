@@ -2,9 +2,11 @@ import React, { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { EChartsOption } from 'echarts';
 
+type ChartType = 'bar' | 'line' | 'pie' | 'area' | 'scatter';
+
 type ChartData = {
   type: 'chart';
-  chartType: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
+  chartType: ChartType;
   data: any[];
   xKey: string;
   yKeys: string[];
@@ -169,9 +171,13 @@ const EnhancedChartRenderer: React.FC<EnhancedChartRendererProps> = ({
                 shadowColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'
               }
             },
-            areaStyle: (chartType === 'area' || chartType === 'line') ? {
-              opacity: 0.2
-            } : undefined,
+            areaStyle: (() => {
+              // Using a function to avoid the TypeScript error
+              if (chartData.chartType === 'area') {
+                return { opacity: 0.2 };
+              }
+              return undefined;
+            })(),
             lineStyle: {
               width: 3
             }

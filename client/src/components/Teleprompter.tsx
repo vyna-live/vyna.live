@@ -37,27 +37,13 @@ export default function Teleprompter({ text, onClose, visualizations = [] }: Tel
           className="h-full p-6 pb-16 overflow-y-auto"
           style={{ fontSize: `${textSize}px` }}
         >
-          {/* Text content */}
-          {text.split('\n').map((line, i) => (
-            <p 
-              key={i} 
-              className="mb-4 text-white/90 leading-normal"
-            >
-              {line.trim() ? line : <br />}
-            </p>
-          ))}
-          
-          {/* Rich visualizations */}
-          {visualizations && visualizations.length > 0 && (
-            <div className="mt-4 space-y-4">
-              <RichContentRenderer 
-                content=""
-                visualizations={visualizations}
-                darkMode={true}
-                size="small"
-              />
-            </div>
-          )}
+          {/* Use the RichContentRenderer for all content, including text */}
+          <RichContentRenderer 
+            content={text}
+            visualizations={visualizations}
+            darkMode={true}
+            size="small"
+          />
         </div>
 
         {/* Bottom control bar */}

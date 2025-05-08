@@ -1644,15 +1644,35 @@ export default function LivestreamInterface({
                                         {/* Teleprompter button */}
                                         <button 
                                           onClick={() => {
-                                            // Set the teleprompter text to the AI message content
-                                            setTeleprompterText(msg.content);
+                                            // Parse JSON in content if it exists
+                                            const jsonRegex = /```json\s*([\s\S]*?)\s*```/g;
+                                            let cleanContent = msg.content;
+                                            let extractedVisualizations = [...(msg.visualizations || [])];
                                             
-                                            // Check if this message has visualizations
-                                            if (msg.visualizations) {
-                                              setTeleprompterVisualizations(msg.visualizations);
-                                            } else {
-                                              setTeleprompterVisualizations([]);
+                                            // Use regex exec to find and extract JSON blocks
+                                            let match;
+                                            while ((match = jsonRegex.exec(msg.content)) !== null) {
+                                              try {
+                                                const jsonContent = match[1].trim();
+                                                const parsed = JSON.parse(jsonContent);
+                                                
+                                                if (parsed.type === 'chart') {
+                                                  // Add to visualizations if it's chart data
+                                                  extractedVisualizations.push(parsed);
+                                                  
+                                                  // Remove the JSON block from the content
+                                                  cleanContent = cleanContent.replace(match[0], `[Visualization: ${parsed.chartType} chart]`);
+                                                }
+                                              } catch (error) {
+                                                console.error('Failed to parse JSON in message:', error);
+                                              }
                                             }
+                                            
+                                            // Set the teleprompter text to the cleaned AI message content
+                                            setTeleprompterText(cleanContent);
+                                            
+                                            // Set visualizations with both direct visualizations and extracted ones
+                                            setTeleprompterVisualizations(extractedVisualizations);
                                             
                                             // Show the teleprompter
                                             setShowTeleprompter(true);
