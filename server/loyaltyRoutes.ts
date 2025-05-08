@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { insertLoyaltyPassSchema, LoyaltyTier } from "../shared/loyaltySchema";
 import { createLoyaltyPass, getLoyaltyPassById, getLoyaltyPassesByAudienceId, getLoyaltyPassesByStreamerId, upgradeLoyaltyPass, hasLoyaltyPass, getTierBenefits } from "./services/loyaltyService";
-import { initVerxioProvider } from "./services/verxioService";
+import { initVerxioContext } from "./services/verxioService";
 import { ensureAuthenticated } from "./auth";
 
 // Initialize Verxio Provider at startup

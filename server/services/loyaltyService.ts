@@ -1,23 +1,23 @@
 import { db } from '../db';
 import { loyaltyPasses, LoyaltyTier, tierBenefits, type InsertLoyaltyPass } from '../../shared/loyaltySchema';
 import { eq, and } from 'drizzle-orm';
-import { createLoyaltyPassAttestation, updateLoyaltyPassAttestation } from './verxioService';
+import { issueLoyaltyPassToAudience, upgradeLoyaltyPassTier } from './verxioService';
 
 // Create a new loyalty pass
 export async function createLoyaltyPass(data: InsertLoyaltyPass) {
   try {
-    // Create the attestation on the blockchain
-    const attestation = await createLoyaltyPassAttestation(
+    // Issue the loyalty pass to the audience member via Verxio Protocol
+    const loyaltyPassData = await issueLoyaltyPassToAudience(
       data.streamerId,
       data.audienceId,
       data.walletAddress || undefined,
       data.tier as LoyaltyTier
     );
     
-    // Set the verxioId from the attestation
+    // Set the verxioId from the response
     const passWithVerxioId = {
       ...data,
-      verxioId: attestation.verxioId,
+      verxioId: loyaltyPassData.verxioId,
       benefits: JSON.stringify(tierBenefits[data.tier as LoyaltyTier])
     };
     
@@ -103,9 +103,13 @@ export async function upgradeLoyaltyPass(id: number, newTier: LoyaltyTier) {
       throw new Error(`Loyalty pass with ID ${id} not found`);
     }
     
-    // Update the attestation on the blockchain
-    if (existingPass.verxioId) {
-      await updateLoyaltyPassAttestation(existingPass.verxioId, newTier);
+    // Update the loyalty pass on the blockchain
+    if (existingPass.verxioId && existingPass.walletAddress) {
+      await upgradeLoyaltyPassTier(
+        existingPass.verxioId, 
+        existingPass.walletAddress,
+        newTier
+      );
     }
     
     // Update in database

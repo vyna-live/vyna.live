@@ -16,6 +16,7 @@ import { getStreamToken, createLivestream, getStreamApiKey } from "./getstream";
 import { getAgoraAppId, getHostToken, getAudienceToken, createLivestream as createAgoraLivestream } from "./agora";
 import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
+import { registerLoyaltyRoutes } from "./loyaltyRoutes";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -1768,6 +1769,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // End of stream-related API routes
+
+  // Register loyalty pass routes
+  registerLoyaltyRoutes(app);
 
   const httpServer = createServer(app);
 
