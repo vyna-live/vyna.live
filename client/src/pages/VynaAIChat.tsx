@@ -23,6 +23,7 @@ import {
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import Teleprompter from "@/components/Teleprompter";
 import "./VynaAIChat.css";
 
@@ -59,6 +60,7 @@ interface AiChat {
 export default function VynaAIChat() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [chatSessions, setChatSessions] = useState<AiChatSession[]>([]);
   const [aiChats, setAiChats] = useState<AiChat[]>([]); // For legacy support
@@ -685,6 +687,40 @@ export default function VynaAIChat() {
               </div>
             </div>
           </div>
+          
+          {/* Hidden file inputs */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            style={{ display: 'none' }} 
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                processFileUpload(e.target.files[0]);
+              }
+            }}
+          />
+          <input 
+            type="file" 
+            accept="image/*" 
+            ref={imageInputRef} 
+            style={{ display: 'none' }} 
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                processFileUpload(e.target.files[0]);
+              }
+            }}
+          />
+          <input 
+            type="file" 
+            accept="audio/*" 
+            ref={audioInputRef} 
+            style={{ display: 'none' }} 
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                processFileUpload(e.target.files[0]);
+              }
+            }}
+          />
         </main>
       </div>
     </div>

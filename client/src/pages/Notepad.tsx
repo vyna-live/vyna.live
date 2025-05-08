@@ -240,16 +240,53 @@ export default function Notepad() {
     }
     
     if (!currentNote) {
-      // Create new note if none is selected
-      await handleNewNote();
-      // We'll need to wait for the currentNote to be set
-      setTimeout(() => {
-        if (currentNote) {
-          const newContent = inputValue;
-          const newTitle = inputValue.length > 30 ? inputValue.substring(0, 30) + "..." : inputValue;
-          updateNote(currentNote.id, newTitle, newContent);
+      try {
+        // Create a new note on the server
+        const response = await fetch('/api/notepads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            hostId: user.id,
+            title: inputValue.length > 30 ? inputValue.substring(0, 30) + "..." : inputValue,
+            content: inputValue
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to create note');
         }
-      }, 500);
+        
+        const newNote = await response.json();
+        
+        // Add the new note to the local state with active state
+        const newNoteWithActive = {
+          ...newNote,
+          active: true
+        };
+        
+        // Mark all other notes as inactive
+        const updatedNotes = notes.map(note => ({
+          ...note,
+          active: false
+        }));
+        
+        setNotes([newNoteWithActive, ...updatedNotes]);
+        setCurrentNote(newNoteWithActive);
+        
+        toast({
+          title: 'Note created',
+          description: 'Your note has been created successfully.',
+        });
+      } catch (error) {
+        console.error('Error creating new note:', error);
+        toast({
+          title: 'Error creating note',
+          description: 'Failed to create a new note. Please try again.',
+          variant: 'destructive'
+        });
+      }
     } else {
       // Update the current note
       const newContent = currentNote.content 
