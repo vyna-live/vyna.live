@@ -14,47 +14,108 @@ import {
   Paperclip,
   Mic,
   Image as ImageIcon,
-  Upload
+  Upload,
+  Loader2
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import "./VynaAIChat.css";
 
-// Mock conversation data - would be fetched from API in a real implementation
-const mockConversations = [
-  { id: 1, title: "Who is the best CODM gamer in Nigeria as of...", active: true },
-  { id: 2, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 3, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 4, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 5, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 6, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 7, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 8, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 9, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-  { id: 10, title: "Who is the best CODM gamer in Nigeria as of...", active: false },
-];
+// Types
+interface Conversation {
+  id: number;
+  title: string;
+  active: boolean;
+}
 
-// Mock conversation messages
-const mockMessages = [
-  { 
-    id: 1, 
-    sender: "user", 
-    content: "Tell me about solana like I am a two year old"
-  },
-  { 
-    id: 2, 
-    sender: "ai", 
-    content: "Solana is like a super-fast playground where people build fun digital toys! Imagine you have special digital blocks that everyone can see and nobody can break. People use these blocks to make games, share pictures, and trade special toys.\n\nWhen you want to play with someone else's blocks, you just ask the playground, and zoom! It happens really fast, faster than saying \"one-two-three!\"\n\nThe playground has special helpers called SOL that help you play with all the toys. Everyone takes turns being nice and making sure all the blocks stay in the right places.\n\nThat's Solana - a speedy digital playground where people build cool things together!" 
-  }
+interface Message {
+  id: number;
+  sender: 'user' | 'ai';
+  content: string;
+  loading?: boolean;
+}
+
+// Conversation history - would be fetched from API in a real implementation
+const mockConversations: Conversation[] = [
+  { id: 1, title: "Who is the best CODM gamer in Nigeria as of...", active: true },
+  { id: 2, title: "Tell me about blockchain technology...", active: false },
+  { id: 3, title: "What are the best programming languages...", active: false },
+  { id: 4, title: "How do I improve my public speaking...", active: false },
+  { id: 5, title: "What's the history of the internet...", active: false },
+  { id: 6, title: "Explain quantum computing to a 5 year old...", active: false },
+  { id: 7, title: "What are the best books on leadership...", active: false },
+  { id: 8, title: "How does machine learning work...", active: false },
+  { id: 9, title: "What's the difference between React and Vue...", active: false },
+  { id: 10, title: "How can I learn photography quickly...", active: false },
 ];
 
 export default function VynaAIChat() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
-  const [conversations, setConversations] = useState(mockConversations);
-  const [messages, setMessages] = useState(mockMessages);
+  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [currentTitle, setCurrentTitle] = useState("New Chat");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Check for question in sessionStorage and initialize chat
+  useEffect(() => {
+    const initialQuestion = sessionStorage.getItem("vynaai_question");
+    if (initialQuestion) {
+      // Clear it so refreshing doesn't re-add the question
+      sessionStorage.removeItem("vynaai_question");
+      
+      // Create a shortened version for the title
+      const shortTitle = initialQuestion.length > 30 
+        ? initialQuestion.substring(0, 30) + "..." 
+        : initialQuestion;
+      
+      setCurrentTitle(shortTitle);
+      
+      // Add the user message
+      const userMessage: Message = {
+        id: 1,
+        sender: "user",
+        content: initialQuestion
+      };
+      
+      // Add AI loading message
+      const loadingMessage: Message = {
+        id: 2,
+        sender: "ai",
+        content: "Thinking...",
+        loading: true
+      };
+      
+      setMessages([userMessage, loadingMessage]);
+      
+      // Simulate API response after a delay
+      setTimeout(() => {
+        const aiResponse: Message = {
+          id: 2, // Replace the loading message
+          sender: "ai",
+          content: "I've processed your question: \"" + initialQuestion + "\".\n\nThis is a simulated response for demonstration purposes. In a real implementation, this would be an actual AI response from the backend API."
+        };
+        
+        setMessages([userMessage, aiResponse]);
+        
+        // Update conversation list
+        const updatedConversations = [
+          {
+            id: conversations.length + 1,
+            title: shortTitle,
+            active: true
+          },
+          ...conversations.map(conv => ({
+            ...conv,
+            active: false
+          }))
+        ];
+        
+        setConversations(updatedConversations);
+      }, 2000);
+    }
+  }, []);
   
   const handleLogin = () => {
     setLocation("/auth");
@@ -66,7 +127,15 @@ export default function VynaAIChat() {
   
   const handleNewChat = () => {
     // In a real implementation, this would create a new chat and redirect
-    console.log("Creating new chat...");
+    setMessages([]);
+    setCurrentTitle("New Chat");
+    
+    // Update conversation list to deselect all
+    const updatedConversations = conversations.map(conv => ({
+      ...conv,
+      active: false
+    }));
+    setConversations(updatedConversations);
   };
   
   const handleConversationClick = (id: number) => {
@@ -75,36 +144,56 @@ export default function VynaAIChat() {
       active: conv.id === id
     }));
     setConversations(updatedConversations);
+    
+    // In a real implementation, this would load the messages for this conversation
+    const selectedConversation = conversations.find(conv => conv.id === id);
+    if (selectedConversation) {
+      setCurrentTitle(selectedConversation.title);
+    }
   };
   
+  // Handle sending messages and show loading state
   const handleSendMessage = () => {
     if (inputValue.trim() === "") return;
     
-    const newMessage = {
+    const newMessage: Message = {
       id: messages.length + 1,
-      sender: "user" as const,
+      sender: "user",
       content: inputValue
     };
     
-    setMessages([...messages, newMessage]);
+    const loadingMessage: Message = {
+      id: messages.length + 2,
+      sender: "ai",
+      content: "Thinking...",
+      loading: true
+    };
+    
+    setMessages([...messages, newMessage, loadingMessage]);
     setInputValue("");
     
     // Simulate AI response after a short delay (would be a real API call in production)
     setTimeout(() => {
-      const aiResponse = {
-        id: messages.length + 2,
-        sender: "ai" as const,
+      const aiResponse: Message = {
+        id: messages.length + 2, // Replace the loading message
+        sender: "ai",
         content: "I'll need to think about that. This is a simulated response for demonstration purposes."
       };
       
-      setMessages(prevMessages => [...prevMessages, aiResponse]);
+      setMessages(prev => {
+        // Remove the loading message and add the real response
+        const filtered = prev.filter(m => m.id !== loadingMessage.id);
+        return [...filtered, aiResponse];
+      });
       
       // Update the conversation title based on the first user message
-      if (messages.length === 1) {
-        const title = inputValue.length > 30 
-          ? inputValue.substring(0, 30) + "..." 
-          : inputValue;
+      if (messages.length === 0) {
+        const title = newMessage.content.length > 30 
+          ? newMessage.content.substring(0, 30) + "..." 
+          : newMessage.content;
           
+        setCurrentTitle(title);
+        
         const updatedConversations = [
           {
             id: conversations.length + 1,
@@ -119,7 +208,7 @@ export default function VynaAIChat() {
         
         setConversations(updatedConversations);
       }
-    }, 1000);
+    }, 2000);
   };
   
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
@@ -133,6 +222,14 @@ export default function VynaAIChat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Loading indicator component
+  const LoadingIndicator = () => (
+    <div className="flex items-center gap-2">
+      <Loader2 size={14} className="animate-spin text-[#DCC5A2]" />
+      <span>Thinking...</span>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-screen bg-black">
@@ -184,7 +281,7 @@ export default function VynaAIChat() {
           
           <div className="px-3 py-2">
             <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
-            <div className="overflow-y-auto h-full max-h-[calc(100vh-180px)]">
+            <div className="overflow-y-auto h-full max-h-[calc(100vh-180px)] custom-scrollbar">
               {conversations.map((conv) => (
                 <div 
                   key={conv.id}
@@ -208,7 +305,7 @@ export default function VynaAIChat() {
             <button className="p-1 mr-4 text-[#999999] hover:text-white">
               <ArrowLeft size={18} />
             </button>
-            <h2 className="flex-1 text-center text-white font-medium">About solana</h2>
+            <h2 className="flex-1 text-center text-white font-medium">{currentTitle}</h2>
             <button className="p-1 ml-4 text-[#999999] hover:text-white">
               <ChevronDown size={18} />
             </button>
@@ -234,9 +331,13 @@ export default function VynaAIChat() {
                       : 'bg-[#232323] text-[#DDDDDD]'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                  {message.loading ? (
+                    <LoadingIndicator />
+                  ) : (
+                    <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                  )}
                   
-                  {message.sender === 'ai' && (
+                  {message.sender === 'ai' && !message.loading && (
                     <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
                       <button className="hover:text-[#DCC5A2] p-1">
                         <RefreshCw size={14} />

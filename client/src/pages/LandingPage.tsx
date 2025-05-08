@@ -7,6 +7,7 @@ import "./landing.css";
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
+  const [inputValue, setInputValue] = useState("");
 
   const handleLogin = () => {
     setLocation("/auth");
@@ -19,6 +20,23 @@ export default function LandingPage() {
   
   const switchTab = (tab: 'vynaai' | 'notepad') => {
     setActiveTab(tab);
+  };
+
+  const handleSendMessage = () => {
+    if (inputValue.trim() === "") return;
+    
+    // Store the question in sessionStorage
+    sessionStorage.setItem("vynaai_question", inputValue);
+    
+    // Redirect to AI chat page
+    setLocation("/ai-chat");
+  };
+  
+  const handleInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   return (
@@ -92,6 +110,9 @@ export default function LandingPage() {
               <div className="px-4 pt-3 pb-4 input-area flex flex-col">
                 <div className="flex-grow mb-2">
                   <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleInputKeyDown}
                     placeholder="Ask your question"
                     className="w-full h-[100px] px-4 py-2.5 text-sm"
                   />
@@ -111,6 +132,7 @@ export default function LandingPage() {
                     </button>
                   </div>
                   <button 
+                    onClick={handleSendMessage}
                     className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                     aria-label="Send message"
                   >
