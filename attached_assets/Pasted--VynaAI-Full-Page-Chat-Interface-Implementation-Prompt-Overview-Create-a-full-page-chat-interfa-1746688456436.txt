@@ -1,0 +1,72 @@
+# VynaAI Full Page Chat Interface Implementation Prompt
+
+## Overview
+Create a full-page chat interface for VynaAI that exactly matches the provided reference image. This is the expanded view that appears after a user sends a question, showing both the conversation history and allowing continued interaction.
+
+## Core Layout Requirements
+
+### Navigation and Header
+- Implement a dark header bar with the Vyna logo on the left (semi-circle with text "Vyna") and a "Login" button on the right
+- Below the main header, create a secondary navigation bar with:
+  - A document/page icon on the far left
+  - Two tab buttons: "VynaAI" (active, with star icon) and "Notepad" (with document icon)
+  - A back arrow and conversation title "About solana" in the center
+  - A dropdown/expand button on the far right
+
+### Sidebar
+- Create a left sidebar with:
+  - A "New chat" button at the top with a plus (+) icon (beige/tan colored)
+  - "RECENTS" section header in gray uppercase text
+  - A scrollable list of recent conversation items (all showing "Who is the best CODM gamer in Nigeria as of..." in the example)
+  - Each conversation item should have an options menu (three dots) on the right
+  - Active/selected conversation should be subtly highlighted
+
+### Main Chat Area
+- The main content area should display:
+  - User messages right-aligned in dark gray rounded boxes
+  - AI responses left-aligned in lighter gray rounded boxes with a small avatar circle
+  - Each AI message should include reaction buttons below (regenerate, thumbs up, thumbs down, info, options)
+  - A clear visual distinction between user and AI messages
+
+### Input Area
+- At the bottom of the screen, implement an input box with:
+  - Placeholder text "Ask a question"
+  - Utility buttons on the left (paperclip, microphone, camera)
+  - "Send" button on the right with upward arrow icon and tan/beige background
+  - The input area should be slightly separated from the chat content above
+
+## Visual Design Specifications
+- Use a pure black (#000000) background for the entire page
+- Dark gray (#1A1A1A) for the sidebar
+- Slightly lighter gray (#232323) for input boxes and AI message backgrounds
+- Dark gray (#2A2A2A) for user message backgrounds
+- Light gray text for messages and white for important text
+- Maintain the exact styling of all buttons and interactive elements
+- Ensure all rounded corners match the reference (moderately rounded)
+- Use the exact same iconography as shown in the reference image
+
+## Content Example
+- User message example: "Tell me about solana like I am a two year old"
+- AI response should match the format of the example explaining Solana in simple terms
+- The response style should be conversational and formatted with proper paragraph breaks
+
+## Technical Implementation
+- Ensure the interface is responsive but optimized for desktop view
+- Implement proper scrolling behavior for both sidebar and main chat area
+- Ensure all interactive elements have appropriate hover states
+- The input field should expand appropriately based on content
+- Implement the tab switching functionality between VynaAI and Notepad
+
+## Critical Interaction Details
+- When a user types a question and clicks send:
+  - The question should appear in the chat history
+  - The AI response should appear with a subtle animation
+  - The input field should clear and remain focused for the next question
+  - The conversation should be added to the recents list in the sidebar
+  - The URL/page title should update to reflect the conversation topic
+
+## Important
+- Match the EXACT layout, spacing, and styling of the reference image
+- Do not add features or elements not visible in the reference
+- Ensure the color scheme precisely matches the dark theme shown
+- Maintain the exact same look and feel of all components
