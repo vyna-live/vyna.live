@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useLocation } from 'wouter';
 
 // Import the logo variants
 import logoDefault from '../assets/vp.png'; // Dark logo (dark outline)
@@ -23,6 +24,7 @@ export default function Logo({
   const [customLogo, setCustomLogo] = useState<string | null>(null);
   const { theme, resolvedTheme } = useTheme();
   const isDarkMode = resolvedTheme === 'dark';
+  const [, setLocation] = useLocation();
   
   useEffect(() => {
     // Check if a custom logo has been uploaded through API
@@ -86,10 +88,18 @@ export default function Logo({
     lg: 'text-lg'
   };
   
+  // Handle click on logo to navigate to home page
+  const handleClick = () => {
+    setLocation('/');
+  };
+
   // If showing the full logo variant, we don't need to add the text separately
   if (variant === 'full') {
     return (
-      <div className={`flex items-center ${className}`}>
+      <div 
+        className={`flex items-center ${className} cursor-pointer`}
+        onClick={handleClick}
+      >
         <img 
           src={getLogoSrc()} 
           alt="vyna.live" 
@@ -100,7 +110,10 @@ export default function Logo({
   }
   
   return (
-    <div className={`flex items-center ${className}`}>
+    <div 
+      className={`flex items-center ${className} cursor-pointer`}
+      onClick={handleClick}
+    >
       <img 
         src={getLogoSrc()} 
         alt="vyna.live" 
