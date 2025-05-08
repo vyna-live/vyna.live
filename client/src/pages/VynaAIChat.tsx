@@ -18,6 +18,8 @@ import {
   Loader2
 } from "lucide-react";
 import Logo from "@/components/Logo";
+import UserAvatar from "@/components/UserAvatar";
+import { useAuth } from "@/contexts/AuthContext";
 import "./VynaAIChat.css";
 
 // Types
@@ -50,6 +52,7 @@ const mockConversations: Conversation[] = [
 
 export default function VynaAIChat() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -243,12 +246,18 @@ export default function VynaAIChat() {
         <div className="flex items-center">
           <Logo size="sm" />
         </div>
-        <button 
-          onClick={handleLogin}
-          className="rounded-full px-4 py-1.5 text-white bg-[#252525] hover:bg-[#303030] transition-all text-sm font-medium"
-        >
-          Login
-        </button>
+        {isLoading ? (
+          <div className="w-24 h-8 bg-[#252525] rounded-full animate-pulse"></div>
+        ) : isAuthenticated ? (
+          <UserAvatar />
+        ) : (
+          <button 
+            onClick={handleLogin}
+            className="rounded-full px-4 py-1.5 text-white bg-[#252525] hover:bg-[#303030] transition-all text-sm font-medium"
+          >
+            Login
+          </button>
+        )}
       </header>
 
       {/* Main content with spacing from navbar */}
