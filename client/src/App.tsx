@@ -15,6 +15,7 @@ import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/LandingPage";
 import VynaAIChat from "@/pages/VynaAIChat";
 import Notepad from "@/pages/Notepad";
+import ProfilePage from "@/pages/ProfilePage";
 
 function Router() {
   return (
@@ -25,6 +26,11 @@ function Router() {
       <Route path="/livestream">
         <ProtectedRoute>
           <Livestream />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <ProfilePage />
         </ProtectedRoute>
       </Route>
       <Route path="/chat" component={Home} />
