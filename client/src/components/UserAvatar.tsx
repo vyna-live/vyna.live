@@ -46,7 +46,7 @@ export default function UserAvatar() {
   };
   
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[9999]" ref={dropdownRef}>
       <button 
         className="flex items-center space-x-2 py-1.5 px-3 rounded-full bg-[#252525] hover:bg-[#303030] transition-all"
         onClick={() => setIsOpen(!isOpen)}
@@ -61,7 +61,14 @@ export default function UserAvatar() {
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-60 rounded-lg shadow-lg py-1 bg-[#1a1a1a] border border-[#333] z-[9999] backdrop-blur-none">
+        <div 
+          className="fixed right-0 mt-8 mr-4 w-60 rounded-lg shadow-xl py-1 bg-[#1a1a1a] border border-[#333] z-[9999]"
+          style={{
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.8)',
+            isolation: 'isolate',
+            backgroundColor: '#1a1a1a'
+          }}
+        >
           <div className="px-4 py-3 border-b border-[#333] bg-[#1a1a1a]">
             <p className="text-sm font-medium text-white">{user?.displayName || user?.username}</p>
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>

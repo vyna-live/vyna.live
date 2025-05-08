@@ -1,0 +1,30 @@
+.dropdown-menu {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+  isolation: isolate;
+  position: fixed;
+  margin-top: 8px !important;
+}
+
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #1a1a1a;
+  z-index: -1;
+}
+
+.dropdown-menu > * {
+  position: relative;
+  z-index: 2;
+}
+
+.dropdown-menu button {
+  background-color: #1a1a1a !important;
+}
+
+.dropdown-menu button:hover {
+  background-color: #252525 !important;
+}
