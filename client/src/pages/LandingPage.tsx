@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Download, Sparkles, Paperclip, Mic, Image, Upload, Plus } from "lucide-react";
 import Logo from "@/components/Logo";
+import UserAvatar from "@/components/UserAvatar";
+import { useAuth } from "@/contexts/AuthContext";
 import "./landing.css";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [inputValue, setInputValue] = useState("");
 
@@ -57,12 +60,18 @@ export default function LandingPage() {
         <div className="flex items-center">
           <Logo size="md" />
         </div>
-        <button 
-          onClick={handleLogin}
-          className="rounded-full px-4 py-1.5 text-white bg-[#252525] hover:bg-[#303030] transition-all text-sm font-medium"
-        >
-          Login
-        </button>
+        {isLoading ? (
+          <div className="w-24 h-8 bg-[#252525] rounded-full animate-pulse"></div>
+        ) : isAuthenticated ? (
+          <UserAvatar />
+        ) : (
+          <button 
+            onClick={handleLogin}
+            className="rounded-full px-4 py-1.5 text-white bg-[#252525] hover:bg-[#303030] transition-all text-sm font-medium"
+          >
+            Login
+          </button>
+        )}
       </header>
 
       {/* Hero Section */}
