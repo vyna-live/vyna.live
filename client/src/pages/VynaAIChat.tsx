@@ -58,62 +58,86 @@ export default function VynaAIChat() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Function to fetch AI response (simulated here)
+  const fetchAIResponse = async (questionText: string): Promise<string> => {
+    // In a real app, this would make an API call to your backend
+    // For now, we'll return a simulated response after a delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Generate a more natural-looking response based on the question
+        const responses = [
+          `Based on my research, "${questionText}" is an interesting question. Here's what I found:\n\nIn the digital age, this topic has gained significant attention across various platforms. Experts suggest that this area will continue to evolve rapidly in the coming years, potentially disrupting traditional approaches.`,
+          `I've looked into "${questionText}" and found several viewpoints:\n\n1. Some experts believe this is still an emerging field with lots of potential\n2. Others argue that the fundamentals have been established for decades\n3. Recent innovations have changed how we understand this topic entirely`,
+          `Great question about "${questionText}"! Here's what you should know:\n\nThis is a multifaceted topic with implications across various domains. The most current research suggests a paradigm shift is occurring, with new methodologies being developed to address longstanding challenges.`
+        ];
+        
+        // Select a random response from the array
+        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+        resolve(randomResponse);
+      }, 2000);
+    });
+  };
+  
+  // Function to process a new chat question
+  const processNewQuestion = async (questionText: string) => {
+    // Create a shortened version for the title
+    const shortTitle = questionText.length > 30 
+      ? questionText.substring(0, 30) + "..." 
+      : questionText;
+    
+    setCurrentTitle(shortTitle);
+    
+    // Add the user message
+    const userMessage: Message = {
+      id: 1,
+      sender: "user",
+      content: questionText
+    };
+    
+    // Add AI loading message
+    const loadingMessage: Message = {
+      id: 2,
+      sender: "ai",
+      content: "Thinking...",
+      loading: true
+    };
+    
+    setMessages([userMessage, loadingMessage]);
+    
+    // Get AI response
+    const responseText = await fetchAIResponse(questionText);
+    
+    const aiResponse: Message = {
+      id: 2, // Replace the loading message
+      sender: "ai",
+      content: responseText
+    };
+    
+    setMessages([userMessage, aiResponse]);
+    
+    // Update conversation list
+    const updatedConversations = [
+      {
+        id: conversations.length + 1,
+        title: shortTitle,
+        active: true
+      },
+      ...conversations.map(conv => ({
+        ...conv,
+        active: false
+      }))
+    ];
+    
+    setConversations(updatedConversations);
+  };
+  
   // Check for question in sessionStorage and initialize chat
   useEffect(() => {
     const initialQuestion = sessionStorage.getItem("vynaai_question");
     if (initialQuestion) {
       // Clear it so refreshing doesn't re-add the question
       sessionStorage.removeItem("vynaai_question");
-      
-      // Create a shortened version for the title
-      const shortTitle = initialQuestion.length > 30 
-        ? initialQuestion.substring(0, 30) + "..." 
-        : initialQuestion;
-      
-      setCurrentTitle(shortTitle);
-      
-      // Add the user message
-      const userMessage: Message = {
-        id: 1,
-        sender: "user",
-        content: initialQuestion
-      };
-      
-      // Add AI loading message
-      const loadingMessage: Message = {
-        id: 2,
-        sender: "ai",
-        content: "Thinking...",
-        loading: true
-      };
-      
-      setMessages([userMessage, loadingMessage]);
-      
-      // Simulate API response after a delay
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: 2, // Replace the loading message
-          sender: "ai",
-          content: "I've processed your question: \"" + initialQuestion + "\".\n\nThis is a simulated response for demonstration purposes. In a real implementation, this would be an actual AI response from the backend API."
-        };
-        
-        setMessages([userMessage, aiResponse]);
-        
-        // Update conversation list
-        const updatedConversations = [
-          {
-            id: conversations.length + 1,
-            title: shortTitle,
-            active: true
-          },
-          ...conversations.map(conv => ({
-            ...conv,
-            active: false
-          }))
-        ];
-        
-        setConversations(updatedConversations);
-      }, 2000);
+      processNewQuestion(initialQuestion);
     }
   }, []);
   
@@ -152,10 +176,18 @@ export default function VynaAIChat() {
     }
   };
   
-  // Handle sending messages and show loading state
+  // Handle sending messages
   const handleSendMessage = () => {
     if (inputValue.trim() === "") return;
     
+    // If there are no existing messages, start a new chat
+    if (messages.length === 0) {
+      processNewQuestion(inputValue);
+      setInputValue("");
+      return;
+    }
+    
+    // Otherwise, add to the existing conversation
     const newMessage: Message = {
       id: messages.length + 1,
       sender: "user",
@@ -172,12 +204,12 @@ export default function VynaAIChat() {
     setMessages([...messages, newMessage, loadingMessage]);
     setInputValue("");
     
-    // Simulate AI response after a short delay (would be a real API call in production)
-    setTimeout(() => {
+    // Get AI response (simulated)
+    fetchAIResponse(inputValue).then(responseText => {
       const aiResponse: Message = {
-        id: messages.length + 2, // Replace the loading message
+        id: messages.length + 2,
         sender: "ai",
-        content: "I'll need to think about that. This is a simulated response for demonstration purposes."
+        content: responseText
       };
       
       setMessages(prev => {
@@ -185,30 +217,7 @@ export default function VynaAIChat() {
         const filtered = prev.filter(m => m.id !== loadingMessage.id);
         return [...filtered, aiResponse];
       });
-      
-      // Update the conversation title based on the first user message
-      if (messages.length === 0) {
-        const title = newMessage.content.length > 30 
-          ? newMessage.content.substring(0, 30) + "..." 
-          : newMessage.content;
-          
-        setCurrentTitle(title);
-        
-        const updatedConversations = [
-          {
-            id: conversations.length + 1,
-            title,
-            active: true
-          },
-          ...conversations.map(conv => ({
-            ...conv,
-            active: false
-          }))
-        ];
-        
-        setConversations(updatedConversations);
-      }
-    }, 2000);
+    });
   };
   
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
