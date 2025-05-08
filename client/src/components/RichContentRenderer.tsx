@@ -7,20 +7,21 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // @ts-ignore
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar,
-  ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts';
+// Import the enhanced chart renderer
+import EnhancedChartRenderer from './EnhancedChartRenderer';
 
 // Define a type for rendering charts
 type ChartData = {
-  type: 'bar' | 'line' | 'pie';
+  type: 'chart';
+  chartType: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
   data: any[];
   colors?: string[];
-  xKey?: string;
-  yKeys?: string[];
+  xKey: string;
+  yKeys: string[];
   width?: number;
   height?: number;
+  title?: string;
+  subtitle?: string;
 }
 
 // Function to extract and parse JSON blocks from text
@@ -53,89 +54,25 @@ function extractJSONBlocks(text: string): { parsedBlocks: any[], cleanText: stri
 }
 
 // Component to render a chart based on data
-const ChartRenderer: React.FC<{ chartData: ChartData }> = ({ chartData }) => {
+const ChartRenderer: React.FC<{ chartData: any }> = ({ chartData }) => {
   if (!chartData.data || chartData.data.length === 0) return null;
   
-  const colors = chartData.colors || ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c'];
-  const width = chartData.width || 500;
-  const height = chartData.height || 300;
+  // Ensure the chart data has the required structure for EnhancedChartRenderer
+  const enhancedChartData: ChartData = {
+    type: 'chart',
+    chartType: chartData.chartType || 'bar',
+    data: chartData.data,
+    xKey: chartData.xKey || 'name',
+    yKeys: chartData.yKeys || ['value'],
+    colors: chartData.colors,
+    width: chartData.width,
+    height: chartData.height,
+    title: chartData.title,
+    subtitle: chartData.subtitle
+  };
   
-  switch (chartData.type) {
-    case 'bar':
-      return (
-        <ResponsiveContainer width="100%" height={height}>
-          <BarChart data={chartData.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis dataKey={chartData.xKey} stroke="#DCC5A2" />
-            <YAxis stroke="#DCC5A2" />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#eee' }} 
-              labelStyle={{ color: '#DCC5A2' }}
-            />
-            <Legend wrapperStyle={{ color: '#eee' }} />
-            {chartData.yKeys?.map((key, index) => (
-              <Bar key={key} dataKey={key} fill={colors[index % colors.length]} />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
-      );
-      
-    case 'line':
-      return (
-        <ResponsiveContainer width="100%" height={height}>
-          <LineChart data={chartData.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis dataKey={chartData.xKey} stroke="#DCC5A2" />
-            <YAxis stroke="#DCC5A2" />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#eee' }} 
-              labelStyle={{ color: '#DCC5A2' }}
-            />
-            <Legend wrapperStyle={{ color: '#eee' }} />
-            {chartData.yKeys?.map((key, index) => (
-              <Line 
-                key={key} 
-                type="monotone" 
-                dataKey={key} 
-                stroke={colors[index % colors.length]} 
-                activeDot={{ r: 8 }} 
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      );
-      
-    case 'pie':
-      return (
-        <ResponsiveContainer width="100%" height={height}>
-          <PieChart>
-            <Pie
-              data={chartData.data}
-              cx="50%"
-              cy="50%"
-              labelLine={true}
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey={chartData.yKeys?.[0] || 'value'}
-              nameKey={chartData.xKey || 'name'}
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-            >
-              {chartData.data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-              ))}
-            </Pie>
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#eee' }} 
-              formatter={(value: any) => [`${value}`, chartData.yKeys?.[0] || 'Value']}
-            />
-            <Legend wrapperStyle={{ color: '#eee' }} />
-          </PieChart>
-        </ResponsiveContainer>
-      );
-      
-    default:
-      return null;
-  }
+  // Use our advanced chart renderer that uses ECharts
+  return <EnhancedChartRenderer chartData={enhancedChartData} darkMode={true} />;
 };
 
 // Component to render a data table
