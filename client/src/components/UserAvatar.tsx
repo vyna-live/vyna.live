@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronsUpDown, LogOut, Settings, Star } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Settings, Star, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'wouter';
 
@@ -43,6 +43,11 @@ export default function UserAvatar() {
   const handleUpgrade = () => {
     setIsOpen(false);
     setLocation('/upgrade');
+  };
+  
+  const handleProfile = () => {
+    setIsOpen(false);
+    setLocation('/profile');
   };
   
   return (
