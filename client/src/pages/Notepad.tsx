@@ -58,12 +58,62 @@ export default function Notepad() {
     }
   }, [isAuthenticated, user]);
   
-  // Check for initial note from landing page
+  // Check for initial note from landing page or from "Add to Note" in AI chat
   useEffect(() => {
     // Check if we have a note from the landing page
     const initialNoteContent = sessionStorage.getItem("notepad_content");
     
-    if (initialNoteContent && isAuthenticated && user) {
+    // Check if we have a specific note to open from AI chat "Add to Note" feature
+    const openNoteId = sessionStorage.getItem("open_note_id");
+    
+    // Function to handle opening a specific note by ID
+    const openSpecificNote = async (noteId: string) => {
+      try {
+        // Find note in current notes list
+        const noteToOpen = notes.find(note => note.id === parseInt(noteId));
+        
+        if (noteToOpen) {
+          // Note is already loaded, just make it active
+          handleNoteClick(noteToOpen.id);
+        } else {
+          // Need to refresh notes and find the one to open
+          await fetchNotes();
+          
+          // Find the note in the refreshed list
+          const refreshedNotes = await fetch(`/api/notepads/${user.id}`);
+          const fetchedNotes = await refreshedNotes.json();
+          
+          const note = fetchedNotes.find((n: Note) => n.id === parseInt(noteId));
+          if (note) {
+            // Update active state in notes array
+            const updatedNotes = fetchedNotes.map((n: Note) => ({
+              ...n,
+              active: n.id === parseInt(noteId)
+            }));
+            
+            setNotes(updatedNotes);
+            setCurrentNote({...note, active: true});
+          }
+        }
+        
+        // Clear the session storage
+        sessionStorage.removeItem("open_note_id");
+      } catch (error) {
+        console.error('Error opening note:', error);
+        toast({
+          title: 'Error opening note',
+          description: 'Failed to open the note. Please try again.',
+          variant: 'destructive'
+        });
+      }
+    };
+    
+    // Handle opening a note from AI chat "Add to Note" feature
+    if (openNoteId && isAuthenticated && user) {
+      openSpecificNote(openNoteId);
+    }
+    // Handle creating a new note from landing page
+    else if (initialNoteContent && isAuthenticated && user) {
       // Remove it from session storage so we don't create duplicate notes on refresh
       sessionStorage.removeItem("notepad_content");
       

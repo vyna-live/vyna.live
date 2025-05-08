@@ -462,7 +462,7 @@ export default function VynaAIChat() {
   };
   
   // Add to note functionality
-  const handleAddToNote = (messageId: number) => {
+  const handleAddToNote = async (messageId: number) => {
     if (!isAuthenticated) {
       toast({
         title: 'Authentication required',
@@ -472,7 +472,18 @@ export default function VynaAIChat() {
       return;
     }
     
-    setShowNoteDropdown(messageId);
+    // Make sure we have the latest notes before showing dropdown
+    try {
+      await fetchNotes();
+      setShowNoteDropdown(messageId);
+    } catch (error) {
+      console.error("Error loading notes:", error);
+      toast({
+        title: 'Error loading notes',
+        description: 'Failed to load your notes. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
   
   // Create a new note with AI content
@@ -497,17 +508,26 @@ export default function VynaAIChat() {
         throw new Error('Failed to create note');
       }
       
+      // Get the created note data
+      const noteData = await response.json();
+      
       setShowNoteDropdown(null);
       setIsAddingNote(false);
       setNewNoteTitle('');
       
       // Refresh notes list
-      fetchNotes();
+      await fetchNotes();
       
       toast({
         title: 'Note created',
         description: 'Content has been saved to a new note',
       });
+      
+      // Store the note ID in session storage for Notepad view to open it
+      sessionStorage.setItem("open_note_id", noteData.id.toString());
+      
+      // Redirect to notepad view to see the newly created note
+      setLocation("/notepad");
     } catch (error) {
       console.error('Error creating note:', error);
       toast({
@@ -549,12 +569,18 @@ export default function VynaAIChat() {
       setShowNoteDropdown(null);
       
       // Refresh notes list
-      fetchNotes();
+      await fetchNotes();
       
       toast({
         title: 'Note updated',
         description: `Content has been added to "${note.title}"`,
       });
+      
+      // Store the note ID in session storage for Notepad view to open it
+      sessionStorage.setItem("open_note_id", noteId.toString());
+      
+      // Redirect to notepad view to see the updated note
+      setLocation("/notepad");
     } catch (error) {
       console.error('Error updating note:', error);
       toast({
