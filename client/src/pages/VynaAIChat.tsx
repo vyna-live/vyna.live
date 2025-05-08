@@ -313,52 +313,63 @@ export default function VynaAIChat() {
           
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black custom-scrollbar">
-            {messages.map((message) => (
-              <div 
-                key={message.id} 
-                className={`flex message-appear ${message.sender === 'user' ? 'justify-end' : 'items-start'}`}
-              >
-                {message.sender === 'ai' && (
-                  <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
-                    <Sparkles size={16} color="#121212" />
-                  </div>
-                )}
-                
+            {messages.length > 0 ? (
+              // Display messages when available
+              messages.map((message) => (
                 <div 
-                  className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
-                    message.sender === 'user' 
-                      ? 'bg-[#2A2A2A] text-white' 
-                      : 'bg-[#232323] text-[#DDDDDD]'
-                  }`}
+                  key={message.id} 
+                  className={`flex message-appear ${message.sender === 'user' ? 'justify-end' : 'items-start'}`}
                 >
-                  {message.loading ? (
-                    <LoadingIndicator />
-                  ) : (
-                    <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
-                  )}
-                  
-                  {message.sender === 'ai' && !message.loading && (
-                    <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
-                      <button className="hover:text-[#DCC5A2] p-1">
-                        <RefreshCw size={14} />
-                      </button>
-                      <button className="hover:text-[#DCC5A2] p-1">
-                        <ThumbsUp size={14} />
-                      </button>
-                      <button className="hover:text-[#DCC5A2] p-1">
-                        <ThumbsDown size={14} />
-                      </button>
-                      <button className="hover:text-[#DCC5A2] p-1">
-                        <Info size={14} />
-                      </button>
-                      <button className="hover:text-[#DCC5A2] p-1">
-                        <MoreVertical size={14} />
-                      </button>
+                  {message.sender === 'ai' && (
+                    <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
+                      <Sparkles size={16} color="#121212" />
                     </div>
                   )}
+                  
+                  <div 
+                    className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
+                      message.sender === 'user' 
+                        ? 'bg-[#2A2A2A] text-white' 
+                        : 'bg-[#232323] text-[#DDDDDD]'
+                    }`}
+                  >
+                    {message.loading ? (
+                      <LoadingIndicator />
+                    ) : (
+                      <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                    )}
+                    
+                    {message.sender === 'ai' && !message.loading && (
+                      <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
+                        <button className="hover:text-[#DCC5A2] p-1">
+                          <RefreshCw size={14} />
+                        </button>
+                        <button className="hover:text-[#DCC5A2] p-1">
+                          <ThumbsUp size={14} />
+                        </button>
+                        <button className="hover:text-[#DCC5A2] p-1">
+                          <ThumbsDown size={14} />
+                        </button>
+                        <button className="hover:text-[#DCC5A2] p-1">
+                          <Info size={14} />
+                        </button>
+                        <button className="hover:text-[#DCC5A2] p-1">
+                          <MoreVertical size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              ))
+            ) : (
+              // Empty state when no messages
+              <div className="h-full flex flex-col items-center justify-center text-center px-4 empty-state-animation">
+                <h2 className="text-3xl font-bold text-white mb-3">VynaAI</h2>
+                <p className="text-[#BBBBBB] text-sm max-w-[400px]">
+                  Ask questions to quickly research topics while streaming
+                </p>
               </div>
-            ))}
+            )}
             <div ref={messagesEndRef} />
           </div>
           
