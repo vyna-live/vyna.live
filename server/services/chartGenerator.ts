@@ -3,13 +3,13 @@
  * Analyzes data and generates appropriate chart configurations
  */
 
-interface ChartData {
+export interface ChartData {
   headers: string[];
   rows: any[][];
   type?: 'numerical' | 'categorical' | 'time-series';
 }
 
-interface ChartConfig {
+export interface ChartConfig {
   type: 'chart';
   chartType: 'bar' | 'line' | 'pie' | 'area';
   data: any[];
@@ -18,6 +18,8 @@ interface ChartConfig {
   colors?: string[];
   width?: number;
   height?: number;
+  title?: string;
+  subtitle?: string;
 }
 
 /**
@@ -155,6 +157,15 @@ export function generateChart(chartData: ChartData): ChartConfig | null {
       '#d0ed57', '#83a6ed', '#8dd1e1', '#a4506c', '#6a5ec9'
     ];
     
+    // Create title based on data characteristics
+    let title = '';
+    
+    if (type === 'time-series') {
+      title = `${yKeys.join(', ')} Over Time`;
+    } else {
+      title = `${yKeys.join(', ')} by ${xKey}`;
+    }
+    
     return {
       type: 'chart',
       chartType,
@@ -163,7 +174,8 @@ export function generateChart(chartData: ChartData): ChartConfig | null {
       yKeys,
       colors,
       width: 600,
-      height: 400
+      height: 400,
+      title
     };
     
   } catch (error) {
@@ -203,53 +215,4 @@ export function analyzeTextForVisualizationPatterns(text: string): {
     hasTimeData: timeMatches.length >= 3,
     hasTrends: trendMatches.length >= 2
   };
-}
-
-/**
- * Determine if a table contains data suitable for visualization
- */
-export function isTableVisualizationWorthy(tableData: ChartData): boolean {
-  const { headers, rows, type } = tableData;
-  
-  // Tables with too many columns or rows might not visualize well
-  if (headers.length > 10 || rows.length > 20) {
-    return false;
-  }
-  
-  // Need at least one numeric column for visualization
-  const hasNumericColumn = headers.some((_, colIndex) => 
-    rows.some(row => typeof row[colIndex] === 'number')
-  );
-  
-  if (!hasNumericColumn) {
-    return false;
-  }
-  
-  // Check if the data varies enough to be interesting as a visualization
-  if (type === 'numerical' || type === 'time-series') {
-    // Find numeric columns
-    const numericColumnIndices = headers.map((_, colIndex) => 
-      rows.some(row => typeof row[colIndex] === 'number') ? colIndex : -1
-    ).filter(index => index !== -1);
-    
-    // For each numeric column, check if there's enough variation
-    return numericColumnIndices.some(colIndex => {
-      const values = rows.map(row => 
-        typeof row[colIndex] === 'number' ? row[colIndex] : 0
-      );
-      
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      
-      // If all values are the same, not worthy of visualization
-      if (min === max) {
-        return false;
-      }
-      
-      // If there's significant variation, visualization might be helpful
-      return (max - min) / max > 0.1; // At least 10% variation
-    });
-  }
-  
-  return true;
 }

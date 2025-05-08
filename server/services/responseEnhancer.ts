@@ -2,14 +2,20 @@
  * Response Enhancer Service
  * Processes AI responses to enhance them with rich visualizations and content
  */
-import { extractChartData, generateChart } from './chartGenerator';
+import { 
+  extractChartData, 
+  generateChart,
+  analyzeTextForVisualizationPatterns 
+} from './chartGenerator';
+
+interface Visualization {
+  type: string;
+  data: any;
+}
 
 interface EnhancerResult {
   enhancedText: string;
-  visualizations: {
-    type: string;
-    data: any;
-  }[];
+  visualizations: Visualization[];
 }
 
 /**
@@ -18,7 +24,7 @@ interface EnhancerResult {
  */
 export function enhanceResponse(text: string): EnhancerResult {
   let enhancedText = text;
-  const visualizations = [];
+  const visualizations: Visualization[] = [];
 
   // Check if the response already has chart JSON blocks
   if (text.includes('```json') && 
@@ -88,7 +94,7 @@ function extractTables(text: string): string[] {
 /**
  * Enhance numeric data in the text
  */
-function enhanceNumericData(text: string, visualizations: any[]): string {
+function enhanceNumericData(text: string, visualizations: Visualization[]): string {
   // Look for patterns like "X% of users..." or "The top 5 reasons are..."
   const percentagePattern = /(\d+)%\s+(?:of|for|in)\s+([^,.]+)/g;
   const rankingPattern = /(?:top|bottom)\s+(\d+)\s+([^,.]+)(?:\s+are|:)/gi;
@@ -154,7 +160,7 @@ function enhanceNumericData(text: string, visualizations: any[]): string {
 /**
  * Add information cards for key insights
  */
-function enhanceWithInfoCards(text: string, visualizations: any[]): string {
+function enhanceWithInfoCards(text: string, visualizations: Visualization[]): string {
   // Look for sections that might benefit from info cards
   const infoSectionPatterns = [
     { pattern: /(?:^|\n)(?:note|important|tip|warning|key insight)[:\s](.+?)(?:\n\n|$)/gi, type: 'info' },

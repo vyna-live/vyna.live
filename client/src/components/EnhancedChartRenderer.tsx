@@ -169,7 +169,7 @@ const EnhancedChartRenderer: React.FC<EnhancedChartRendererProps> = ({
                 shadowColor: darkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)'
               }
             },
-            areaStyle: chartType === 'area' ? {
+            areaStyle: (chartType === 'area' || chartType === 'line') ? {
               opacity: 0.2
             } : undefined,
             lineStyle: {
@@ -238,9 +238,7 @@ const EnhancedChartRenderer: React.FC<EnhancedChartRendererProps> = ({
                 y2: 1,
                 colorStops: [{
                   offset: 0, 
-                  color: darkMode 
-                    ? colors[index % colors.length] 
-                    : colors[index % colors.length]
+                  color: colors[index % colors.length]
                 }, {
                   offset: 1, 
                   color: darkMode 
