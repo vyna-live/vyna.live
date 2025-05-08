@@ -127,7 +127,7 @@ export default function Notepad() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              hostId: user.id,
+              hostId: user!.id,
               title: initialNoteContent.length > 30 ? initialNoteContent.substring(0, 30) + "..." : initialNoteContent,
               content: initialNoteContent
             })
@@ -239,7 +239,7 @@ export default function Notepad() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          hostId: user.id,
+          hostId: user!.id,
           title: 'New note',
           content: ''
         })
@@ -304,7 +304,7 @@ export default function Notepad() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          hostId: user.id,
+          hostId: user!.id,
           title,
           content
         })
@@ -360,7 +360,7 @@ export default function Notepad() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            hostId: user.id,
+            hostId: user!.id,
             title: inputValue.length > 30 ? inputValue.substring(0, 30) + "..." : inputValue,
             content: inputValue
           })

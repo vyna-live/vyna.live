@@ -492,7 +492,7 @@ export default function VynaAIChat() {
     
     try {
       // Create a new note
-      const response = await fetch('/api/notes', {
+      const response = await fetch('/api/notepads', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -552,12 +552,14 @@ export default function VynaAIChat() {
       // Update the note with appended content
       const updatedContent = note.content ? `${note.content}\n\n${content}` : content;
       
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/notepads/${noteId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          hostId: user.id,
+          title: note.title,
           content: updatedContent
         })
       });
