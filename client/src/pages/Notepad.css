@@ -1,0 +1,101 @@
+/* Custom scrollbar styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Chat input styling */
+.chat-input {
+  resize: none;
+  outline: none;
+  color: white;
+  line-height: 1.5;
+}
+
+.chat-input::placeholder {
+  color: #797979;
+}
+
+/* Button hover effect */
+.button-hover-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.button-hover-effect::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%) scale(0);
+  border-radius: 50%;
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: -1;
+}
+
+.button-hover-effect:hover::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* Input area specific styling */
+.input-area {
+  border-radius: 10px;
+  border: 1px solid #2a2a2a;
+}
+
+/* Empty state animation */
+.empty-state-animation {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Message appear animation */
+.message-appear {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide message controls until hover */
+.message-controls {
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.message-appear:hover .message-controls {
+  opacity: 1;
+}

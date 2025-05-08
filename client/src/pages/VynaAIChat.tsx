@@ -123,6 +123,11 @@ export default function VynaAIChat() {
   
   const handleTabChange = (tab: 'vynaai' | 'notepad') => {
     setActiveTab(tab);
+    
+    // If switching to Notepad tab, redirect to the Notepad page
+    if (tab === 'notepad') {
+      setLocation("/notepad");
+    }
   };
   
   const handleNewChat = () => {

@@ -14,6 +14,7 @@ import Auth from "@/pages/Auth";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/LandingPage";
 import VynaAIChat from "@/pages/VynaAIChat";
+import Notepad from "@/pages/Notepad";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       </Route>
       <Route path="/chat" component={Home} />
       <Route path="/ai-chat" component={VynaAIChat} />
+      <Route path="/notepad" component={Notepad} />
       <Route path="/join-stream" component={JoinStream} />
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />

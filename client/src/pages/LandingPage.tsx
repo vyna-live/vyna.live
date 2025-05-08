@@ -20,6 +20,14 @@ export default function LandingPage() {
   
   const switchTab = (tab: 'vynaai' | 'notepad') => {
     setActiveTab(tab);
+    
+    // If the user clicks on the notepad tab, we'll store an empty note in sessionStorage
+    // and redirect to the notepad page when they submit
+    if (tab === 'notepad') {
+      sessionStorage.setItem("redirect_to_notepad", "true");
+    } else {
+      sessionStorage.removeItem("redirect_to_notepad");
+    }
   };
 
   const handleSendMessage = () => {
@@ -169,6 +177,7 @@ export default function LandingPage() {
                   <button 
                     className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                     aria-label="Add note"
+                    onClick={() => setLocation("/notepad")}
                   >
                     <span>Add note</span>
                     <Plus size={12} />
