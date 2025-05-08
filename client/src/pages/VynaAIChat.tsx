@@ -18,7 +18,11 @@ import {
   Loader2,
   Book,
   FileUp,
-  X
+  X,
+  PenLine,
+  FilePlus,
+  CirclePlus,
+  MessageCirclePlus
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -57,6 +61,16 @@ interface AiChat {
   updatedAt: string;
 }
 
+interface Note {
+  id: number;
+  hostId: number;
+  title: string;
+  content: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function VynaAIChat() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -83,6 +97,13 @@ export default function VynaAIChat() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  
+  // Notes state for the add-to-note feature
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [showNoteDropdown, setShowNoteDropdown] = useState<number | null>(null);
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const noteDropdownRef = useRef<HTMLDivElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -139,10 +160,26 @@ export default function VynaAIChat() {
     }
   }, [currentSessionId]);
 
+  // Fetch user notes
+  const fetchNotes = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/notes/${user.id}`);
+      if (response.ok) {
+        const notesData = await response.json();
+        setNotes(notesData);
+      }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+    }
+  }, [user]);
+  
   // Load chat sessions when user logs in
   useEffect(() => {
     fetchChatData();
-  }, [fetchChatData, user]);
+    fetchNotes(); // Fetch notes when the component loads
+  }, [fetchChatData, fetchNotes, user]);
 
   // Load messages when session changes
   useEffect(() => {
@@ -424,6 +461,125 @@ export default function VynaAIChat() {
     }
   };
   
+  // Add to note functionality
+  const handleAddToNote = (messageId: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please login to add content to notes',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setShowNoteDropdown(messageId);
+  };
+  
+  // Create a new note with AI content
+  const handleCreateNewNote = async (content: string) => {
+    if (!user) return;
+    
+    try {
+      // Create a new note
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          hostId: user.id,
+          title: newNoteTitle || 'AI Generated Note',
+          content
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create note');
+      }
+      
+      setShowNoteDropdown(null);
+      setIsAddingNote(false);
+      setNewNoteTitle('');
+      
+      // Refresh notes list
+      fetchNotes();
+      
+      toast({
+        title: 'Note created',
+        description: 'Content has been saved to a new note',
+      });
+    } catch (error) {
+      console.error('Error creating note:', error);
+      toast({
+        title: 'Error creating note',
+        description: 'Failed to create note. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Add content to an existing note
+  const handleAddToExistingNote = async (noteId: number, content: string) => {
+    if (!user) return;
+    
+    try {
+      // Find the note
+      const note = notes.find(n => n.id === noteId);
+      if (!note) {
+        throw new Error('Note not found');
+      }
+      
+      // Update the note with appended content
+      const updatedContent = note.content ? `${note.content}\n\n${content}` : content;
+      
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: updatedContent
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update note');
+      }
+      
+      setShowNoteDropdown(null);
+      
+      // Refresh notes list
+      fetchNotes();
+      
+      toast({
+        title: 'Note updated',
+        description: `Content has been added to "${note.title}"`,
+      });
+    } catch (error) {
+      console.error('Error updating note:', error);
+      toast({
+        title: 'Error updating note',
+        description: 'Failed to update note. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (noteDropdownRef.current && !noteDropdownRef.current.contains(event.target as Node)) {
+        setShowNoteDropdown(null);
+        setIsAddingNote(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -586,12 +742,83 @@ export default function VynaAIChat() {
                         <button className="hover:text-[#DCC5A2] p-1">
                           <ThumbsDown size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
-                          <Info size={14} />
+                        <button
+                          className="hover:text-[#DCC5A2] p-1 relative"
+                          onClick={() => handleAddToNote(message.id)}
+                          aria-label="Add to note"
+                        >
+                          <MessageCirclePlus size={14} />
                         </button>
                         <button className="hover:text-[#DCC5A2] p-1">
                           <MoreVertical size={14} />
                         </button>
+                        
+                        {/* Note dropdown */}
+                        {showNoteDropdown === message.id && (
+                          <div 
+                            ref={noteDropdownRef}
+                            className="absolute right-0 mt-2 z-50 bg-[#282828] border border-[#333] rounded-lg shadow-xl py-2 w-[240px]"
+                            style={{ top: '25px' }}
+                          >
+                            <div className="px-3 py-1 text-xs font-semibold text-[#999]">
+                              ADD TO NOTE
+                            </div>
+                            
+                            {/* Note list */}
+                            <div className="max-h-[200px] overflow-y-auto">
+                              {notes.length > 0 ? (
+                                notes.map(note => (
+                                  <button 
+                                    key={note.id}
+                                    className="w-full text-left px-3 py-2 text-xs text-white hover:bg-[#333] truncate"
+                                    onClick={() => handleAddToExistingNote(note.id, message.content)}
+                                  >
+                                    {note.title}
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="px-3 py-2 text-xs text-[#999]">
+                                  No notes found
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Create new note */}
+                            {isAddingNote ? (
+                              <div className="px-3 py-2 border-t border-[#444]">
+                                <input
+                                  type="text"
+                                  value={newNoteTitle}
+                                  onChange={(e) => setNewNoteTitle(e.target.value)}
+                                  placeholder="Note title"
+                                  className="w-full px-2 py-1.5 bg-[#333] border border-[#444] rounded text-white text-xs focus:outline-none focus:border-[#DCC5A2]"
+                                />
+                                <div className="flex justify-end mt-2 gap-2">
+                                  <button 
+                                    className="px-2 py-1 text-xs text-[#999] hover:text-white"
+                                    onClick={() => setIsAddingNote(false)}
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button 
+                                    className="px-2 py-1 text-xs bg-[#DCC5A2] text-[#121212] rounded hover:bg-[#C6B190]"
+                                    onClick={() => handleCreateNewNote(message.content)}
+                                  >
+                                    Create
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button 
+                                className="w-full flex items-center px-3 py-2 text-xs text-[#DCC5A2] hover:bg-[#333] border-t border-[#444]"
+                                onClick={() => setIsAddingNote(true)}
+                              >
+                                <FilePlus size={14} className="mr-2" />
+                                Create new note
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
