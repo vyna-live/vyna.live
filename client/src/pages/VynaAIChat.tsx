@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, Link } from "wouter";
 import { 
   ArrowLeft, 
@@ -15,110 +15,129 @@ import {
   Mic,
   Image as ImageIcon,
   Upload,
-  Loader2
+  Loader2,
+  Book,
+  FileUp,
+  X
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
+import Teleprompter from "@/components/Teleprompter";
 import "./VynaAIChat.css";
 
 // Types
-interface Conversation {
+interface AiChatSession {
   id: number;
+  hostId: number;
   title: string;
-  active: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface Message {
+interface AiChatMessage {
   id: number;
-  sender: 'user' | 'ai';
+  sessionId: number;
+  role: 'user' | 'assistant';
   content: string;
-  loading?: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Conversation history - would be fetched from API in a real implementation
-const mockConversations: Conversation[] = [
-  { id: 1, title: "Who is the best CODM gamer in Nigeria as of...", active: true },
-  { id: 2, title: "Tell me about blockchain technology...", active: false },
-  { id: 3, title: "What are the best programming languages...", active: false },
-  { id: 4, title: "How do I improve my public speaking...", active: false },
-  { id: 5, title: "What's the history of the internet...", active: false },
-  { id: 6, title: "Explain quantum computing to a 5 year old...", active: false },
-  { id: 7, title: "What are the best books on leadership...", active: false },
-  { id: 8, title: "How does machine learning work...", active: false },
-  { id: 9, title: "What's the difference between React and Vue...", active: false },
-  { id: 10, title: "How can I learn photography quickly...", active: false },
-];
+interface AiChat {
+  id: number;
+  hostId: number;
+  message: string;
+  response: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export default function VynaAIChat() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [chatSessions, setChatSessions] = useState<AiChatSession[]>([]);
+  const [aiChats, setAiChats] = useState<AiChat[]>([]); // For legacy support
+  const [messages, setMessages] = useState<AiChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [currentTitle, setCurrentTitle] = useState("New Chat");
-  
+  const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
+  const [isLoading3Dots, setIsLoading3Dots] = useState(false);
+  const [showTeleprompter, setShowTeleprompter] = useState(false);
+  const [teleprompterText, setTeleprompterText] = useState("");
+  const [commentaryStyle, setCommentaryStyle] = useState<'color' | 'play-by-play'>('color');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch chat sessions when user logs in
+  const fetchChatData = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Fetch AI chat sessions
+      const sessionsResponse = await fetch(`/api/ai-chat-sessions/${user.id}`);
+      if (sessionsResponse.ok) {
+        const sessionsData = await sessionsResponse.json();
+        setChatSessions(sessionsData);
+
+        // If there are sessions, select the most recent one
+        if (sessionsData.length > 0) {
+          setCurrentSessionId(sessionsData[0].id);
+          setCurrentTitle(sessionsData[0].title);
+        }
+      }
+      
+      // Fetch legacy AI chats for backward compatibility
+      const chatResponse = await fetch(`/api/ai-chats/${user.id}`);
+      if (chatResponse.ok) {
+        const chatData = await chatResponse.json();
+        setAiChats(chatData);
+      }
+    } catch (error) {
+      console.error("Error fetching chat sessions:", error);
+    }
+  }, [user]);
+
+  // Fetch messages for the current session
+  const fetchMessages = useCallback(async () => {
+    if (!currentSessionId) return;
+    
+    try {
+      const response = await fetch(`/api/ai-chat-messages/${currentSessionId}`);
+      if (response.ok) {
+        const messages: AiChatMessage[] = await response.json();
+        setMessages(messages);
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  }, [currentSessionId]);
+
+  // Load chat sessions when user logs in
+  useEffect(() => {
+    fetchChatData();
+  }, [fetchChatData, user]);
+
+  // Load messages when session changes
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages, currentSessionId]);
   
   // Check for question in sessionStorage and initialize chat
   useEffect(() => {
     const initialQuestion = sessionStorage.getItem("vynaai_question");
-    if (initialQuestion) {
+    if (initialQuestion && user) {
       // Clear it so refreshing doesn't re-add the question
       sessionStorage.removeItem("vynaai_question");
       
-      // Create a shortened version for the title
-      const shortTitle = initialQuestion.length > 30 
-        ? initialQuestion.substring(0, 30) + "..." 
-        : initialQuestion;
-      
-      setCurrentTitle(shortTitle);
-      
-      // Add the user message
-      const userMessage: Message = {
-        id: 1,
-        sender: "user",
-        content: initialQuestion
-      };
-      
-      // Add AI loading message
-      const loadingMessage: Message = {
-        id: 2,
-        sender: "ai",
-        content: "Thinking...",
-        loading: true
-      };
-      
-      setMessages([userMessage, loadingMessage]);
-      
-      // Simulate API response after a delay
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: 2, // Replace the loading message
-          sender: "ai",
-          content: "I've processed your question: \"" + initialQuestion + "\".\n\nThis is a simulated response for demonstration purposes. In a real implementation, this would be an actual AI response from the backend API."
-        };
-        
-        setMessages([userMessage, aiResponse]);
-        
-        // Update conversation list
-        const updatedConversations = [
-          {
-            id: conversations.length + 1,
-            title: shortTitle,
-            active: true
-          },
-          ...conversations.map(conv => ({
-            ...conv,
-            active: false
-          }))
-        ];
-        
-        setConversations(updatedConversations);
-      }, 2000);
+      // Send message to AI API
+      handleSendMessage(initialQuestion);
     }
-  }, []);
+  }, [user]);
   
   const handleLogin = () => {
     setLocation("/auth");
@@ -134,89 +153,114 @@ export default function VynaAIChat() {
   };
   
   const handleNewChat = () => {
-    // In a real implementation, this would create a new chat and redirect
+    setCurrentSessionId(null);
     setMessages([]);
     setCurrentTitle("New Chat");
-    
-    // Update conversation list to deselect all
-    const updatedConversations = conversations.map(conv => ({
-      ...conv,
-      active: false
-    }));
-    setConversations(updatedConversations);
   };
   
-  const handleConversationClick = (id: number) => {
-    const updatedConversations = conversations.map(conv => ({
-      ...conv,
-      active: conv.id === id
-    }));
-    setConversations(updatedConversations);
-    
-    // In a real implementation, this would load the messages for this conversation
-    const selectedConversation = conversations.find(conv => conv.id === id);
-    if (selectedConversation) {
-      setCurrentTitle(selectedConversation.title);
+  const handleSessionClick = (sessionId: number) => {
+    setCurrentSessionId(sessionId);
+    const selectedSession = chatSessions.find(session => session.id === sessionId);
+    if (selectedSession) {
+      setCurrentTitle(selectedSession.title);
     }
   };
   
-  // Handle sending messages and show loading state
-  const handleSendMessage = () => {
-    if (inputValue.trim() === "") return;
+  // Add to teleprompter functionality
+  const addToTeleprompter = (text: string) => {
+    setTeleprompterText(text);
+    setShowTeleprompter(true);
+  };
+  
+  // Handle sending messages to AI
+  const handleSendMessage = async (message?: string) => {
+    const messageToSend = message || inputValue;
+    if (messageToSend.trim() === "") return;
     
-    const newMessage: Message = {
-      id: messages.length + 1,
-      sender: "user",
-      content: inputValue
+    // Create temporary message objects for UI
+    const userMessage: AiChatMessage = {
+      id: Date.now(),
+      sessionId: currentSessionId || 0,
+      role: 'user',
+      content: messageToSend,
+      isDeleted: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
-    const loadingMessage: Message = {
-      id: messages.length + 2,
-      sender: "ai",
-      content: "Thinking...",
-      loading: true
-    };
-    
-    setMessages([...messages, newMessage, loadingMessage]);
+    // Add messages to UI immediately
+    setMessages(prev => [...prev, userMessage]);
     setInputValue("");
+    setIsLoading3Dots(true);
     
-    // Simulate AI response after a short delay (would be a real API call in production)
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: messages.length + 2, // Replace the loading message
-        sender: "ai",
-        content: "I'll need to think about that. This is a simulated response for demonstration purposes."
-      };
-      
-      setMessages(prev => {
-        // Remove the loading message and add the real response
-        const filtered = prev.filter(m => m.id !== loadingMessage.id);
-        return [...filtered, aiResponse];
+    try {
+      // Call the API to get a response with session support
+      const response = await fetch("/api/ai-chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          hostId: user?.id,
+          message: messageToSend,
+          sessionId: currentSessionId,
+          commentaryStyle
+        })
       });
       
-      // Update the conversation title based on the first user message
-      if (messages.length === 0) {
-        const title = newMessage.content.length > 30 
-          ? newMessage.content.substring(0, 30) + "..." 
-          : newMessage.content;
-          
-        setCurrentTitle(title);
-        
-        const updatedConversations = [
-          {
-            id: conversations.length + 1,
-            title,
-            active: true
-          },
-          ...conversations.map(conv => ({
-            ...conv,
-            active: false
-          }))
-        ];
-        
-        setConversations(updatedConversations);
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
       }
-    }, 2000);
+      
+      const data = await response.json();
+      
+      // Update messages with the real response
+      setIsLoading3Dots(false);
+      
+      // If this created a new session, update our state
+      if (data.isNewSession && data.sessionId) {
+        // Fetch the updated session list
+        const sessionsResponse = await fetch(`/api/ai-chat-sessions/${user?.id}`);
+        if (sessionsResponse.ok) {
+          const sessionsData = await sessionsResponse.json();
+          setChatSessions(sessionsData);
+          
+          // Update current session ID and title
+          setCurrentSessionId(data.sessionId);
+          
+          // Find the session to get its title
+          const newSession = sessionsData.find((s: AiChatSession) => s.id === data.sessionId);
+          if (newSession) {
+            setCurrentTitle(newSession.title);
+          }
+        }
+      }
+      
+      // Refresh the messages to get the official ones from the database
+      fetchMessages();
+      
+      // Update commentary style if provided
+      if (data.commentaryStyle) {
+        setCommentaryStyle(data.commentaryStyle);
+      }
+      
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setIsLoading3Dots(false);
+      
+      // Add error message
+      const errorMessage: AiChatMessage = {
+        id: Date.now() + 1,
+        sessionId: currentSessionId || 0,
+        role: 'assistant',
+        content: "Sorry, there was an error processing your request. Please try again.",
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
   
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
@@ -297,24 +341,45 @@ export default function VynaAIChat() {
           <div className="px-3 py-2">
             <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
             <div className="overflow-y-auto h-full max-h-[calc(100vh-220px)] custom-scrollbar pb-3">
-              {conversations.map((conv) => (
-                <div 
-                  key={conv.id}
-                  className={`flex items-center justify-between px-2 py-2.5 rounded-md text-sm cursor-pointer ${conv.active ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
-                  onClick={() => handleConversationClick(conv.id)}
-                >
-                  <div className="truncate">{conv.title}</div>
-                  <button className="text-[#777777] hover:text-white p-1">
-                    <MoreVertical size={16} />
-                  </button>
+              {chatSessions.length > 0 ? (
+                chatSessions.map((session) => (
+                  <div 
+                    key={session.id}
+                    className={`flex items-center justify-between px-2 py-2.5 rounded-md text-sm cursor-pointer ${session.id === currentSessionId ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
+                    onClick={() => handleSessionClick(session.id)}
+                  >
+                    <div className="truncate">{session.title}</div>
+                    <button className="text-[#777777] hover:text-white p-1">
+                      <MoreVertical size={16} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-[#777777] text-center p-3">
+                  No conversations yet
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </aside>
 
         {/* Main Chat Area with spacing */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg">
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative">
+          {/* Teleprompter overlay */}
+          {showTeleprompter && (
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40">
+              <div className="relative">
+                <Teleprompter text={teleprompterText} />
+                <button 
+                  className="absolute top-[-40px] right-[-15px] bg-black/70 text-white rounded-full p-1.5 hover:bg-black transition-colors"
+                  onClick={() => setShowTeleprompter(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+          
           {/* Chat Header */}
           <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
             <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
@@ -332,9 +397,9 @@ export default function VynaAIChat() {
               messages.map((message) => (
                 <div 
                   key={message.id} 
-                  className={`flex message-appear ${message.sender === 'user' ? 'justify-end' : 'items-start'}`}
+                  className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
-                  {message.sender === 'ai' && (
+                  {message.role === 'assistant' && (
                     <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
                       <Sparkles size={16} color="#121212" />
                     </div>
@@ -342,19 +407,22 @@ export default function VynaAIChat() {
                   
                   <div 
                     className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
-                      message.sender === 'user' 
+                      message.role === 'user' 
                         ? 'bg-[#2A2A2A] text-white' 
                         : 'bg-[#232323] text-[#DDDDDD]'
                     }`}
                   >
-                    {message.loading ? (
-                      <LoadingIndicator />
-                    ) : (
-                      <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
-                    )}
+                    <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
                     
-                    {message.sender === 'ai' && !message.loading && (
+                    {message.role === 'assistant' && (
                       <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
+                        <button 
+                          className="hover:text-[#DCC5A2] p-1" 
+                          aria-label="Add to teleprompter"
+                          onClick={() => addToTeleprompter(message.content)}
+                        >
+                          <Book size={14} />
+                        </button>
                         <button className="hover:text-[#DCC5A2] p-1">
                           <RefreshCw size={14} />
                         </button>
@@ -384,6 +452,19 @@ export default function VynaAIChat() {
                 </p>
               </div>
             )}
+            
+            {/* Loading indicator */}
+            {isLoading3Dots && (
+              <div className="flex items-start message-appear">
+                <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
+                  <Sparkles size={16} color="#121212" />
+                </div>
+                <div className="rounded-xl px-4 py-3.5 bg-[#232323] text-[#DDDDDD]">
+                  <LoadingIndicator />
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
           
@@ -397,7 +478,27 @@ export default function VynaAIChat() {
                   onKeyDown={handleInputKeyDown}
                   placeholder="Ask a question"
                   className="chat-input w-full h-[60px] px-3 py-2 text-sm bg-transparent"
+                  disabled={!isAuthenticated || isLoading3Dots}
                 />
+              </div>
+              
+              {/* Commentary style selector */}
+              <div className="mb-3 flex items-center">
+                <span className="text-xs text-[#999999] mr-2">Commentary style:</span>
+                <div className="flex bg-[#232323] rounded-md p-1">
+                  <button
+                    className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                    onClick={() => setCommentaryStyle('color')}
+                  >
+                    Color
+                  </button>
+                  <button
+                    className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                    onClick={() => setCommentaryStyle('play-by-play')}
+                  >
+                    Play-by-play
+                  </button>
+                </div>
               </div>
               
               {/* Input controls */}
@@ -416,7 +517,8 @@ export default function VynaAIChat() {
                 <button 
                   className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                   aria-label="Send message"
-                  onClick={handleSendMessage}
+                  onClick={() => handleSendMessage(inputValue)}
+                  disabled={!isAuthenticated || isLoading3Dots || inputValue.trim() === ""}
                 >
                   <span>Send</span>
                   <Upload size={12} className="transform rotate-90" />
