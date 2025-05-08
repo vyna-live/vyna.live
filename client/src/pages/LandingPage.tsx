@@ -28,10 +28,18 @@ export default function LandingPage() {
     
     // If the user clicks on the notepad tab, we'll store an empty note in sessionStorage
     // and redirect to the notepad page when they submit
-    if (tab === 'notepad') {
-      sessionStorage.setItem("redirect_to_notepad", "true");
+  };
+  
+  const handleExpandView = () => {
+    // Navigate to the appropriate expanded view based on the active tab
+    if (activeTab === 'vynaai') {
+      setLocation('/ai-chat');
     } else {
-      sessionStorage.removeItem("redirect_to_notepad");
+      // For notepad, store the current input if any
+      if (inputValue.trim() !== "") {
+        sessionStorage.setItem("notepad_content", inputValue);
+      }
+      setLocation('/notepad');
     }
   };
 
@@ -131,7 +139,11 @@ export default function LandingPage() {
                 <span>Notepad</span>
               </button>
               <div className="flex-1"></div>
-              <button className="text-[#999999] hover:text-white p-1" aria-label="Expand">
+              <button 
+                onClick={handleExpandView}
+                className="text-[#999999] hover:text-white p-1" 
+                aria-label="Expand"
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 3 21 3 21 9"></polyline>
                   <polyline points="9 21 3 21 3 15"></polyline>
