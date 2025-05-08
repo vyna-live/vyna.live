@@ -61,7 +61,7 @@ export default function UserAvatar() {
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-60 rounded-lg shadow-lg py-1 bg-[#1a1a1a] border border-[#333] z-50 backdrop-blur-none">
+        <div className="absolute right-0 mt-2 w-60 rounded-lg shadow-lg py-1 bg-[#1a1a1a] border border-[#333] z-[9999] backdrop-blur-none">
           <div className="px-4 py-3 border-b border-[#333] bg-[#1a1a1a]">
             <p className="text-sm font-medium text-white">{user?.displayName || user?.username}</p>
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>

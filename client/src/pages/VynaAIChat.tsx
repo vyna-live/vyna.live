@@ -367,11 +367,11 @@ export default function VynaAIChat() {
         <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative">
           {/* Teleprompter overlay */}
           {showTeleprompter && (
-            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40">
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
               <div className="relative">
                 <Teleprompter text={teleprompterText} />
                 <button 
-                  className="absolute top-[-40px] right-[-15px] bg-black/70 text-white rounded-full p-1.5 hover:bg-black transition-colors"
+                  className="absolute top-[-40px] right-[-15px] bg-black text-white rounded-full p-1.5 hover:bg-[#252525] transition-colors"
                   onClick={() => setShowTeleprompter(false)}
                 >
                   <X size={18} />
