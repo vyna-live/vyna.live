@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
+import RichContentRenderer from "@/components/RichContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import "../pages/VynaAIChat.css";
@@ -299,6 +300,9 @@ export default function Notepad() {
     
     setIsSaving(true);
     try {
+      // Preserve existing visualizations when updating the note
+      const existingVisualizations = currentNote?.visualizations || [];
+      
       const response = await fetch(`/api/notepads/${noteId}`, {
         method: 'PUT',
         headers: {
@@ -307,7 +311,8 @@ export default function Notepad() {
         body: JSON.stringify({
           hostId: user!.id,
           title,
-          content
+          content,
+          visualizations: existingVisualizations
         })
       });
       
@@ -317,15 +322,21 @@ export default function Notepad() {
       
       const updatedNote: Note = await response.json();
       
+      // Ensure visualizations are preserved in the updated note
+      const noteWithVisualizations = {
+        ...updatedNote,
+        visualizations: updatedNote.visualizations || existingVisualizations
+      };
+      
       // Update both the current note and the notes list
       const updatedWithActive: NoteWithActive = {
-        ...updatedNote,
+        ...noteWithVisualizations,
         active: true
       };
       
       setCurrentNote(updatedWithActive);
       setNotes(notes.map(note => note.id === updatedNote.id 
-        ? { ...updatedNote, active: true } 
+        ? { ...noteWithVisualizations, active: true } 
         : { ...note, active: false }
       ));
       
@@ -682,9 +693,14 @@ export default function Notepad() {
             ) : currentNote ? (
               <div 
                 ref={contentRef}
-                className="text-[#DDDDDD] text-sm leading-relaxed whitespace-pre-line"
+                className="text-[#DDDDDD] text-sm leading-relaxed"
               >
-                {currentNote.content}
+                <RichContentRenderer 
+                  content={currentNote.content} 
+                  visualizations={currentNote.visualizations || []}
+                  darkMode={true}
+                  size="medium"
+                />
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 empty-state-animation">
