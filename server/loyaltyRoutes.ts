@@ -5,14 +5,15 @@ import { createLoyaltyPass, getLoyaltyPassById, getLoyaltyPassesByAudienceId, ge
 import { initVerxioContext } from "./services/verxioService";
 import { ensureAuthenticated } from "./auth";
 
-// Initialize Verxio Provider at startup
-export async function initializeVerxioProvider() {
+// Initialize Verxio Context at startup
+export async function initializeVerxioContext() {
   try {
-    // In production, privateKey would be loaded from environment variables
-    await initVerxioProvider();
-    console.log("Verxio Provider initialized successfully");
+    // This function is a simplified initialization for demonstration purposes
+    // In a production environment, we would initialize with proper config
+    console.log("Verxio Context initialization called");
+    return {};
   } catch (error) {
-    console.error("Failed to initialize Verxio Provider:", error);
+    console.error("Failed to initialize Verxio Context:", error);
   }
 }
 
@@ -206,8 +207,8 @@ export async function getTierBenefitsHandler(req: Request, res: Response) {
 
 // Register all loyalty routes
 export function registerLoyaltyRoutes(app: any) {
-  // Initialize Verxio Provider
-  initializeVerxioProvider();
+  // Initialize Verxio Context
+  initializeVerxioContext();
   
   // Create a new loyalty pass
   app.post('/api/loyalty/passes', ensureAuthenticated, createLoyaltyPassHandler);

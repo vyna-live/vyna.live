@@ -80,6 +80,7 @@ export default function Notepad() {
           await fetchNotes();
           
           // Find the note in the refreshed list
+          if (!user) return;
           const refreshedNotes = await fetch(`/api/notepads/${user.id}`);
           const fetchedNotes = await refreshedNotes.json();
           
