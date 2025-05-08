@@ -90,6 +90,15 @@ export default function VynaAIChat() {
   const fetchChatData = useCallback(async () => {
     if (!user) return;
 
+    // Check if we're being redirected from landing page
+    const initialQuestion = sessionStorage.getItem("vynaai_question");
+    
+    // If we have an initial question, we don't want to load existing sessions yet
+    // This will be handled by the second useEffect that manages initial questions
+    if (initialQuestion) {
+      return;
+    }
+
     try {
       // Fetch AI chat sessions
       const sessionsResponse = await fetch(`/api/ai-chat-sessions/${user.id}`);

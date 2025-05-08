@@ -4,11 +4,13 @@ import { Download, Sparkles, Paperclip, Mic, Image, Upload, Plus } from "lucide-
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import "./landing.css";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [inputValue, setInputValue] = useState("");
 
@@ -155,13 +157,60 @@ export default function LandingPage() {
                 {/* Input controls */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-5 text-white opacity-70">
-                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
+                    <input 
+                      type="file"
+                      id="vynaai-file-upload"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setInputValue(prev => `${prev}\n\n[File: ${file.name}]`);
+                          // Reset input so the same file can be selected again
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <button 
+                      className="hover:text-[#DCC5A2] transition-colors" 
+                      aria-label="Upload file"
+                      onClick={() => document.getElementById('vynaai-file-upload')?.click()}
+                    >
                       <Paperclip size={16} />
                     </button>
-                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
+                    
+                    <button 
+                      className="hover:text-[#DCC5A2] transition-colors" 
+                      aria-label="Record audio"
+                      onClick={() => {
+                        setInputValue(prev => `${prev}\n\n[Audio Recording]`);
+                        toast({
+                          title: 'Audio recording',
+                          description: 'Audio recording is available in the full chat view.',
+                        });
+                      }}
+                    >
                       <Mic size={16} />
                     </button>
-                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
+                    
+                    <input 
+                      type="file"
+                      id="vynaai-image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setInputValue(prev => `${prev}\n\n[Image: ${file.name}]`);
+                          // Reset input so the same file can be selected again
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <button 
+                      className="hover:text-[#DCC5A2] transition-colors" 
+                      aria-label="Take photo"
+                      onClick={() => document.getElementById('vynaai-image-upload')?.click()}
+                    >
                       <Image size={16} />
                     </button>
                   </div>
@@ -193,13 +242,60 @@ export default function LandingPage() {
                 {/* Input controls */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-5 text-white opacity-70">
-                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
+                    <input 
+                      type="file"
+                      id="notepad-file-upload"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setInputValue(prev => `${prev}\n\n[File: ${file.name}]`);
+                          // Reset input so the same file can be selected again
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <button 
+                      className="hover:text-[#DCC5A2] transition-colors" 
+                      aria-label="Upload file"
+                      onClick={() => document.getElementById('notepad-file-upload')?.click()}
+                    >
                       <Paperclip size={16} />
                     </button>
-                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
+                    
+                    <button 
+                      className="hover:text-[#DCC5A2] transition-colors" 
+                      aria-label="Record audio"
+                      onClick={() => {
+                        setInputValue(prev => `${prev}\n\n[Audio Recording]`);
+                        toast({
+                          title: 'Audio recording',
+                          description: 'Audio recording is available in the full notepad view.',
+                        });
+                      }}
+                    >
                       <Mic size={16} />
                     </button>
-                    <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
+                    
+                    <input 
+                      type="file"
+                      id="notepad-image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setInputValue(prev => `${prev}\n\n[Image: ${file.name}]`);
+                          // Reset input so the same file can be selected again
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <button 
+                      className="hover:text-[#DCC5A2] transition-colors" 
+                      aria-label="Take photo"
+                      onClick={() => document.getElementById('notepad-image-upload')?.click()}
+                    >
                       <Image size={16} />
                     </button>
                   </div>
