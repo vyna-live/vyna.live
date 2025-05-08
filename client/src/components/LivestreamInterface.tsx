@@ -562,6 +562,7 @@ export default function LivestreamInterface({
         id: Date.now().toString(),
         content: data.aiMessage?.content || data.response, // Support both new and old response formats
         role: "assistant" as const,
+        visualizations: data.aiMessage?.visualizations || data.visualizations || [], // Support both new and old formats
       };
 
       setMessages((prev) => [...prev, aiMessage]);
@@ -596,6 +597,7 @@ export default function LivestreamInterface({
         content:
           "Sorry, I couldn't process your request at the moment. Please try again later.",
         role: "assistant" as const,
+        visualizations: [], // Empty visualizations for error messages
       };
 
       setMessages((prev) => [...prev, errorMessage]);
@@ -1023,7 +1025,10 @@ export default function LivestreamInterface({
               {/* Teleprompter overlay - centered in view */}
               {showTeleprompter && role === 'host' && (
                 <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40">
-                  <Teleprompter text={teleprompterText} />
+                  <Teleprompter 
+                    text={teleprompterText} 
+                    visualizations={teleprompterVisualizations} 
+                  />
                 </div>
               )}
 
