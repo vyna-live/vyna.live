@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { enhanceResponse } from './services/responseEnhancer';
 
 // The newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
 const anthropic = new Anthropic({
@@ -145,6 +146,7 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
         text: "I need an Anthropic Claude API key to function. Please provide one in the environment variables.",
         hasInfoGraphic: false,
         infoGraphicData: null,
+        visualizations: [],
         error: "NO_API_KEY"
       };
     }
@@ -158,6 +160,7 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
         text: "I apologize, but I'm currently handling a lot of requests. To prevent hitting rate limits, I'm taking a short break. Please try again in a little while.",
         hasInfoGraphic: false,
         infoGraphicData: null,
+        visualizations: [],
         error: "RATE_LIMITED"
       };
     }
@@ -266,13 +269,19 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
       responseText = response.content[0].text;
     }
     
+    // Enhance the response with visualizations using our response enhancer service
+    console.log("Enhancing Claude response with visualizations...");
+    const { enhancedText, visualizations } = enhanceResponse(responseText);
+    console.log(`Enhanced response: ${visualizations.length} visualizations added`);
+    
     const hasInfoGraphic = shouldHaveInfoGraphic(message);
     
     return {
-      text: responseText,
+      text: enhancedText, // Return the enhanced text instead of original
       hasInfoGraphic,
       infoGraphicData: hasInfoGraphic ? generateInfoGraphicData(message, responseText) : null,
-      commentaryStyle: style  // Include the commentary style in the response
+      commentaryStyle: style, // Include the commentary style in the response
+      visualizations // Include any visualizations for debugging
     };
   } catch (error: any) {
     console.error("Error generating AI response with Claude:", error);
@@ -282,6 +291,7 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
         text: "There's an issue with the Claude API key. It might be invalid or might not have the necessary permissions.",
         hasInfoGraphic: false,
         infoGraphicData: null,
+        visualizations: [],
         error: "API_AUTHENTICATION_ERROR"
       };
     }
@@ -291,6 +301,7 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
         text: "The Claude API rate limit has been exceeded. Please try again later when the quota resets.",
         hasInfoGraphic: false,
         infoGraphicData: null,
+        visualizations: [],
         error: "API_RATE_LIMIT_EXCEEDED"
       };
     }
@@ -299,6 +310,7 @@ export async function getAIResponse(message: string, commentaryStyle?: 'play-by-
       text: "I apologize, but I'm having trouble connecting to my knowledge base right now. Please try again in a moment.",
       hasInfoGraphic: false,
       infoGraphicData: null,
+      visualizations: [],
       error: "API_ERROR"
     };
   }
