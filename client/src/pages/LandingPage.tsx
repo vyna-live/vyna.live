@@ -43,10 +43,27 @@ export default function LandingPage() {
     setLocation("/ai-chat");
   };
   
+  const handleAddNote = () => {
+    if (inputValue.trim() === "") return;
+    
+    // Store the note in sessionStorage
+    sessionStorage.setItem("notepad_content", inputValue);
+    
+    // Redirect to notepad page
+    setLocation("/notepad");
+  };
+  
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+  
+  const handleNoteKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAddNote();
     }
   };
 
@@ -165,6 +182,9 @@ export default function LandingPage() {
               <div className="px-4 pt-3 pb-4 input-area flex flex-col">
                 <div className="flex-grow mb-2">
                   <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleNoteKeyDown}
                     placeholder="Type a note"
                     className="w-full h-[100px] px-4 py-2.5 text-sm"
                   />
@@ -186,7 +206,7 @@ export default function LandingPage() {
                   <button 
                     className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                     aria-label="Add note"
-                    onClick={() => setLocation("/notepad")}
+                    onClick={handleAddNote}
                   >
                     <span>Add note</span>
                     <Plus size={12} />

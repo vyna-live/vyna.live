@@ -147,6 +147,11 @@ export default function VynaAIChat() {
       // Clear it so refreshing doesn't re-add the question
       sessionStorage.removeItem("vynaai_question");
       
+      // Reset messages and current session before sending the new question
+      setMessages([]);
+      setCurrentSessionId(null);
+      setCurrentTitle("New Chat");
+      
       // Send message to AI API
       handleSendMessage(initialQuestion);
     }

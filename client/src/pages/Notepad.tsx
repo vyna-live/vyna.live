@@ -58,6 +58,68 @@ export default function Notepad() {
     }
   }, [isAuthenticated, user]);
   
+  // Check for initial note from landing page
+  useEffect(() => {
+    // Check if we have a note from the landing page
+    const initialNoteContent = sessionStorage.getItem("notepad_content");
+    
+    if (initialNoteContent && isAuthenticated && user) {
+      // Remove it from session storage so we don't create duplicate notes on refresh
+      sessionStorage.removeItem("notepad_content");
+      
+      // Create a new note with this content
+      (async () => {
+        try {
+          // Create a new note on the server
+          const response = await fetch('/api/notepads', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              hostId: user.id,
+              title: initialNoteContent.length > 30 ? initialNoteContent.substring(0, 30) + "..." : initialNoteContent,
+              content: initialNoteContent
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to create note');
+          }
+          
+          const newNote = await response.json();
+          
+          // Add the new note to the local state with active state
+          const newNoteWithActive = {
+            ...newNote,
+            active: true
+          };
+          
+          // Mark all other notes as inactive
+          const updatedNotes = notes.map(note => ({
+            ...note,
+            active: false
+          }));
+          
+          setNotes([newNoteWithActive, ...updatedNotes]);
+          setCurrentNote(newNoteWithActive);
+          
+          toast({
+            title: 'Note created',
+            description: 'Your note has been created successfully.',
+          });
+        } catch (error) {
+          console.error('Error creating new note:', error);
+          toast({
+            title: 'Error creating note',
+            description: 'Failed to create a new note. Please try again.',
+            variant: 'destructive'
+          });
+        }
+      })();
+    }
+  }, [isAuthenticated, user, notes, toast]);
+  
   // Fetch notes from the server
   const fetchNotes = async () => {
     if (!user) return;
