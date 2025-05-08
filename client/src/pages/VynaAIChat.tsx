@@ -311,8 +311,8 @@ export default function VynaAIChat() {
             </h2>
           </div>
           
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black custom-scrollbar">
+          {/* Messages Area - Conditional overflow based on whether there are messages */}
+          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-6 space-y-6 bg-black`}>
             {messages.length > 0 ? (
               // Display messages when available
               messages.map((message) => (
@@ -373,8 +373,8 @@ export default function VynaAIChat() {
             <div ref={messagesEndRef} />
           </div>
           
-          {/* Input Area */}
-          <div className="p-4 border-t border-[#202020] bg-black rounded-b-lg">
+          {/* Input Area - No border */}
+          <div className="p-4 bg-black rounded-b-lg">
             <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-3">
               <div className="flex-grow mb-2">
                 <textarea
