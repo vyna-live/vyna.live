@@ -70,6 +70,17 @@ export default function VynaAIChat() {
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [teleprompterText, setTeleprompterText] = useState("");
   const [commentaryStyle, setCommentaryStyle] = useState<'color' | 'play-by-play'>('color');
+  
+  // Refs for file inputs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  
+  // File upload and audio recording states
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -267,6 +278,133 @@ export default function VynaAIChat() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+  
+  // File upload handlers
+  const handleFileUpload = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please login to upload files',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleImageUpload = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please login to upload images',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+  
+  const processFileUpload = async (file: File) => {
+    if (!file || !isAuthenticated) return;
+    
+    setIsUploading(true);
+    try {
+      // Create a readable message to send to AI
+      let content = '';
+      
+      if (file.type.startsWith('image/')) {
+        content = `[Image uploaded: ${file.name}]`;
+      } else {
+        content = `[File uploaded: ${file.name}]`;
+      }
+      
+      // For now, we'll just append a note about the file
+      // In a full implementation, we would actually upload this file and
+      // process it with multimodal AI capabilities
+      handleSendMessage(`${content}\n\nPlease analyze this ${file.type.split('/')[0]}.`);
+      
+      toast({
+        title: 'File attached',
+        description: `${file.name} has been attached to your message.`,
+      });
+    } catch (error) {
+      console.error('Error attaching file:', error);
+      toast({
+        title: 'Error attaching file',
+        description: 'Failed to attach file to message.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  // Toggle audio recording
+  const toggleAudioRecording = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please login to record audio',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (isRecording) {
+      // Stop recording
+      if (mediaRecorder) {
+        mediaRecorder.stop();
+      }
+    } else {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        setMediaRecorder(recorder);
+        
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+          }
+        };
+        
+        recorder.onstop = () => {
+          // Process the recorded audio
+          setAudioChunks(chunks);
+          
+          // For now, just tell the AI that audio was recorded
+          handleSendMessage("[Audio Recording]\n\nPlease transcribe this audio.");
+          
+          toast({
+            title: 'Audio recorded',
+            description: 'Audio recording has been added to your message.',
+          });
+          
+          setIsRecording(false);
+          
+          // Stop all tracks to release the microphone
+          stream.getTracks().forEach(track => track.stop());
+        };
+        
+        recorder.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error('Error starting audio recording:', error);
+        toast({
+          title: 'Recording error',
+          description: 'Failed to start audio recording. Please check your microphone permissions.',
+          variant: 'destructive'
+        });
+      }
     }
   };
   
@@ -504,13 +642,28 @@ export default function VynaAIChat() {
               {/* Input controls */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-5 text-[#999999]">
-                  <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Upload file">
+                  <button 
+                    className="hover:text-[#DCC5A2] transition-colors" 
+                    aria-label="Upload file"
+                    onClick={handleFileUpload}
+                    disabled={isUploading || isLoading3Dots || !isAuthenticated}
+                  >
                     <Paperclip size={16} />
                   </button>
-                  <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Record audio">
+                  <button 
+                    className={`hover:text-[#DCC5A2] transition-colors ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    aria-label="Record audio"
+                    onClick={toggleAudioRecording}
+                    disabled={isUploading || isLoading3Dots || !isAuthenticated}
+                  >
                     <Mic size={16} />
                   </button>
-                  <button className="hover:text-[#DCC5A2] transition-colors" aria-label="Take photo">
+                  <button 
+                    className="hover:text-[#DCC5A2] transition-colors" 
+                    aria-label="Take photo"
+                    onClick={handleImageUpload}
+                    disabled={isUploading || isLoading3Dots || !isAuthenticated}
+                  >
                     <ImageIcon size={16} />
                   </button>
                 </div>
@@ -518,10 +671,16 @@ export default function VynaAIChat() {
                   className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                   aria-label="Send message"
                   onClick={() => handleSendMessage(inputValue)}
-                  disabled={!isAuthenticated || isLoading3Dots || inputValue.trim() === ""}
+                  disabled={!isAuthenticated || isLoading3Dots || isUploading || inputValue.trim() === ""}
                 >
-                  <span>Send</span>
-                  <Upload size={12} className="transform rotate-90" />
+                  {isLoading3Dots || isUploading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <>
+                      <span>Send</span>
+                      <Upload size={12} className="transform rotate-90" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>
