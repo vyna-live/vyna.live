@@ -300,8 +300,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid host ID" });
       }
       
-      // Get notepads for the specified host
-      const notes = await db.select()
+      // Get notepads for the specified host - using specific column selection to avoid schema issues
+      const notes = await db.select({
+          id: notepads.id,
+          hostId: notepads.hostId,
+          content: notepads.content,
+          title: notepads.title,
+          isDeleted: notepads.isDeleted,
+          createdAt: notepads.createdAt,
+          updatedAt: notepads.updatedAt
+        })
         .from(notepads)
         .where(and(
           eq(notepads.hostId, hostId),
@@ -309,7 +317,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ))
         .orderBy(desc(notepads.createdAt));
       
-      return res.status(200).json(notes);
+      // Add empty visualizations array to each note to match the updated interface
+      const notesWithVisualizations = notes.map(note => ({
+        ...note,
+        visualizations: []
+      }));
+      
+      return res.status(200).json(notesWithVisualizations);
     } catch (error) {
       console.error("Error fetching notepads:", error);
       return res.status(500).json({ error: "Failed to fetch notepads" });

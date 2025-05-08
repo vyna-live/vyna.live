@@ -9,6 +9,7 @@ export interface Note {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  visualizations?: any[]; // For storing charts, graphs, and other rich content
 }
 
 // Legacy AI Chat type
