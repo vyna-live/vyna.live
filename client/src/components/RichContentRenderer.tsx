@@ -3,7 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
+// @ts-ignore
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// @ts-ignore
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar,
@@ -24,12 +26,15 @@ type ChartData = {
 // Function to extract and parse JSON blocks from text
 function extractJSONBlocks(text: string): { parsedBlocks: any[], cleanText: string } {
   const jsonRegex = /```json\s*([\s\S]*?)\s*```/g;
-  const matches = [...text.matchAll(jsonRegex)];
   
   let cleanText = text;
   const parsedBlocks: any[] = [];
   
-  matches.forEach((match, index) => {
+  // Use a different approach to avoid TypeScript issues with matchAll
+  let match;
+  let index = 0;
+  
+  while ((match = jsonRegex.exec(text)) !== null) {
     try {
       const jsonContent = match[1].trim();
       const parsed = JSON.parse(jsonContent);
@@ -38,10 +43,11 @@ function extractJSONBlocks(text: string): { parsedBlocks: any[], cleanText: stri
       cleanText = cleanText.replace(match[0], `[RICH_CONTENT_${index}]`);
       
       parsedBlocks.push(parsed);
+      index++;
     } catch (error) {
       console.error('Failed to parse JSON block:', error);
     }
-  });
+  }
   
   return { parsedBlocks, cleanText };
 }
@@ -251,34 +257,35 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({ content }) =>
         // Even indices are regular text
         if (index % 2 === 0) {
           return part ? (
-            <ReactMarkdown
-              key={`text-${index}`}
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw, rehypeSanitize]}
-              className="markdown-content"
-              components={{
-                code({ node, inline, className, children, ...props }) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus}
-                      language={match[1]}
-                      PreTag="div"
-                      wrapLines={true}
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  );
-                }
-              }}
-            >
-              {part}
-            </ReactMarkdown>
+            <div className="markdown-content" key={`text-${index}`}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                components={{
+                  // @ts-ignore
+                  code: ({node, inline, className, children, ...props}) => {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        // @ts-ignore
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+                }}
+              >
+                {part}
+              </ReactMarkdown>
+            </div>
           ) : null;
         }
         

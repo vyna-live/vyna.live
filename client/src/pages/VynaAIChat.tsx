@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
+import RichContentRenderer from "@/components/RichContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Teleprompter from "@/components/Teleprompter";
@@ -750,7 +751,7 @@ export default function VynaAIChat() {
                         : 'bg-[#232323] text-[#DDDDDD]'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
+                    <RichContentRenderer content={message.content} />
                     
                     {message.role === 'assistant' && (
                       <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
