@@ -302,14 +302,13 @@ export default function VynaAIChat() {
         {/* Main Chat Area with spacing */}
         <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg">
           {/* Chat Header */}
-          <div className="h-[50px] border-b border-[#202020] bg-[#151515] flex items-center px-6 rounded-t-lg">
-            <button className="p-1 mr-4 text-[#999999] hover:text-white">
-              <ArrowLeft size={18} />
-            </button>
-            <h2 className="flex-1 text-center text-white font-medium">{currentTitle}</h2>
-            <button className="p-1 ml-4 text-[#999999] hover:text-white">
-              <ChevronDown size={18} />
-            </button>
+          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
+            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
+              {currentTitle}
+              <button className="p-1 ml-2 text-[#999999] hover:text-white">
+                <ChevronDown size={16} />
+              </button>
+            </h2>
           </div>
           
           {/* Messages Area */}
@@ -364,15 +363,15 @@ export default function VynaAIChat() {
           </div>
           
           {/* Input Area */}
-          <div className="p-4 border-t border-[#202020] bg-[#141414] rounded-b-lg">
-            <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-4">
+          <div className="p-4 border-t border-[#202020] bg-black rounded-b-lg">
+            <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-3">
               <div className="flex-grow mb-2">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleInputKeyDown}
                   placeholder="Ask a question"
-                  className="chat-input w-full h-[80px] px-4 py-3 text-sm bg-transparent"
+                  className="chat-input w-full h-[60px] px-3 py-2 text-sm bg-transparent"
                 />
               </div>
               
