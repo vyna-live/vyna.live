@@ -97,6 +97,14 @@ export default function UserAvatar() {
             </button>
             
             <button
+              onClick={handleProfile}
+              className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors bg-[#1a1a1a]"
+            >
+              <User size={16} className="text-gray-400 mr-2" />
+              Profile & Passes
+            </button>
+            
+            <button
               onClick={handleSettings}
               className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors bg-[#1a1a1a]"
             >
