@@ -61,15 +61,15 @@ export default function UserAvatar() {
       </button>
       
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-60 rounded-lg shadow-lg py-1 bg-[#1a1a1a] border border-[#333] z-50">
-          <div className="px-4 py-3 border-b border-[#333]">
+        <div className="absolute right-0 mt-2 w-60 rounded-lg shadow-lg py-1 bg-[#1a1a1a] border border-[#333] z-50 backdrop-blur-none">
+          <div className="px-4 py-3 border-b border-[#333] bg-[#1a1a1a]">
             <p className="text-sm font-medium text-white">{user?.displayName || user?.username}</p>
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>
           </div>
           
           <button
             onClick={handleUpgrade}
-            className="flex items-center w-full px-4 py-2.5 text-left hover:bg-[#252525] transition-colors"
+            className="flex items-center w-full px-4 py-2.5 text-left hover:bg-[#252525] transition-colors bg-[#1a1a1a]"
           >
             <Star size={18} className="text-[#DCC5A2] mr-2" />
             <div>
@@ -80,7 +80,7 @@ export default function UserAvatar() {
           
           <button
             onClick={handleSettings}
-            className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors"
+            className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors bg-[#1a1a1a]"
           >
             <Settings size={16} className="text-gray-400 mr-2" />
             Settings
@@ -88,7 +88,7 @@ export default function UserAvatar() {
           
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors"
+            className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors bg-[#1a1a1a]"
           >
             <LogOut size={16} className="text-gray-400 mr-2" />
             Logout
