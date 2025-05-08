@@ -114,6 +114,7 @@ export default function LivestreamInterface({
     initialText || 
     "Welcome to my Vyna.live stream!\n\nToday we'll be discussing the latest advancements in AI technology and how it's transforming content creation.\n\nI'll cover three main topics:\n1. The evolution of AI models\n2. How AI is helping content creators\n3. Practical applications for livestreamers\n\nFeel free to ask questions in the chat as we go along!"
   );
+  const [teleprompterVisualizations, setTeleprompterVisualizations] = useState<any[]>([]);
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [viewerCount, setViewerCount] = useState("123.5k");
   const [inputValue, setInputValue] = useState("");

@@ -1,13 +1,15 @@
 import React from "react";
 import { Copy, Play, Pause, Sliders } from "lucide-react";
 import useTeleprompter from "@/hooks/useTeleprompter";
+import RichContentRenderer from "./RichContentRenderer";
 
 interface TeleprompterProps {
   text: string;
   onClose?: () => void;
+  visualizations?: any[];
 }
 
-export default function Teleprompter({ text, onClose }: TeleprompterProps) {
+export default function Teleprompter({ text, onClose, visualizations = [] }: TeleprompterProps) {
   const {
     teleprompterTextRef,
     containerRef,
@@ -35,6 +37,7 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
           className="h-full p-6 pb-16 overflow-y-auto"
           style={{ fontSize: `${textSize}px` }}
         >
+          {/* Text content */}
           {text.split('\n').map((line, i) => (
             <p 
               key={i} 
@@ -43,6 +46,18 @@ export default function Teleprompter({ text, onClose }: TeleprompterProps) {
               {line.trim() ? line : <br />}
             </p>
           ))}
+          
+          {/* Rich visualizations */}
+          {visualizations && visualizations.length > 0 && (
+            <div className="mt-4 space-y-4">
+              <RichContentRenderer 
+                content=""
+                visualizations={visualizations}
+                darkMode={true}
+                size="small"
+              />
+            </div>
+          )}
         </div>
 
         {/* Bottom control bar */}
