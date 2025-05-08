@@ -243,7 +243,8 @@ export default function Notepad() {
         body: JSON.stringify({
           hostId: user!.id,
           title: 'New note',
-          content: ''
+          content: '',
+          visualizations: [] // Initialize with empty visualizations array
         })
       });
       
@@ -253,9 +254,15 @@ export default function Notepad() {
       
       const newNote: Note = await response.json();
       
+      // Ensure visualizations property exists even if not returned from the server
+      const noteWithVisualizations = {
+        ...newNote,
+        visualizations: newNote.visualizations || []
+      };
+      
       // Add the new note to the local state with active state
       const newNoteWithActive: NoteWithActive = {
-        ...newNote,
+        ...noteWithVisualizations,
         active: true
       };
       
@@ -374,7 +381,8 @@ export default function Notepad() {
           body: JSON.stringify({
             hostId: user!.id,
             title: inputValue.length > 30 ? inputValue.substring(0, 30) + "..." : inputValue,
-            content: inputValue
+            content: inputValue,
+            visualizations: [] // Initialize with empty visualizations array
           })
         });
         
@@ -384,9 +392,15 @@ export default function Notepad() {
         
         const newNote = await response.json();
         
+        // Ensure visualizations property exists even if not returned from the server
+        const noteWithVisualizations = {
+          ...newNote,
+          visualizations: newNote.visualizations || []
+        };
+        
         // Add the new note to the local state with active state
         const newNoteWithActive = {
-          ...newNote,
+          ...noteWithVisualizations,
           active: true
         };
         
