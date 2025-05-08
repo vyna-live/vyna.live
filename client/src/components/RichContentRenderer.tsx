@@ -179,9 +179,17 @@ const ImageRenderer: React.FC<{ src: string; alt: string }> = ({ src, alt }) => 
 
 interface RichContentRendererProps {
   content: string;
+  visualizations?: any[];
+  darkMode?: boolean;
+  size?: 'small' | 'medium' | 'large';
 }
 
-const RichContentRenderer: React.FC<RichContentRendererProps> = ({ content }) => {
+const RichContentRenderer: React.FC<RichContentRendererProps> = ({ 
+  content, 
+  visualizations = [], 
+  darkMode = true,
+  size = 'medium'
+}) => {
   // Extract any JSON blocks that might contain rich content data
   const { parsedBlocks, cleanText } = extractJSONBlocks(content);
   
@@ -189,7 +197,23 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({ content }) =>
   const textParts = cleanText.split(/\[RICH_CONTENT_(\d+)\]/);
   
   return (
-    <div className="rich-content">
+    <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'}`}>
+      {/* Render direct visualizations if provided */}
+      {visualizations && visualizations.length > 0 && (
+        <div className="visualizations-container mb-4">
+          {visualizations.map((visualization, idx) => {
+            if (visualization.type === 'chart') {
+              return <ChartRenderer key={`viz-chart-${idx}`} chartData={visualization} />;
+            }
+            if (visualization.type === 'table') {
+              return <TableRenderer key={`viz-table-${idx}`} data={visualization.data} />;
+            }
+            return null;
+          })}
+        </div>
+      )}
+      
+      {/* Render content from markdown */}
       {textParts.map((part, index) => {
         // Even indices are regular text
         if (index % 2 === 0) {

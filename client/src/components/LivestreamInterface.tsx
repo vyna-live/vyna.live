@@ -85,12 +85,14 @@ interface AiChatMessage {
   content: string;
   isDeleted: boolean;
   createdAt: string;
+  visualizations?: any[];
 }
 
 interface UIMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
+  visualizations?: any[];
 }
 
 // Empty initial arrays - we'll fetch from API
@@ -118,9 +120,7 @@ export default function LivestreamInterface({
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [viewerCount, setViewerCount] = useState("123.5k");
   const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<
-    Array<{ id: string; content: string; role: "user" | "assistant" }>
-  >([]);
+  const [messages, setMessages] = useState<UIMessage[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const isMobile = useIsMobile();
   const { user, isAuthenticated, logout } = useAuth();
@@ -334,7 +334,8 @@ export default function LivestreamInterface({
             messages.map((msg: AiChatMessage) => ({
               id: `${msg.id}`,
               content: msg.content,
-              role: msg.role
+              role: msg.role,
+              visualizations: msg.visualizations || []
             }))
           );
         }
@@ -1627,6 +1628,14 @@ export default function LivestreamInterface({
                                           onClick={() => {
                                             // Set the teleprompter text to the AI message content
                                             setTeleprompterText(msg.content);
+                                            
+                                            // Check if this message has visualizations
+                                            if (msg.visualizations) {
+                                              setTeleprompterVisualizations(msg.visualizations);
+                                            } else {
+                                              setTeleprompterVisualizations([]);
+                                            }
+                                            
                                             // Show the teleprompter
                                             setShowTeleprompter(true);
                                             toast({
