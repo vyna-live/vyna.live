@@ -52,6 +52,7 @@
     "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^1.4.12",
+    "@verxioprotocol/core": "^0.0.9",
     "agora-access-token": "^2.0.4",
     "agora-rtc-react": "^2.4.0",
     "agora-rtc-sdk-ng": "^4.23.2",
