@@ -507,6 +507,7 @@ export const notepads = pgTable("notepads", {
   content: text("content").notNull(),
   title: varchar("title", { length: 255 }).default(""),
   isDeleted: boolean("is_deleted").default(false),
+  visualizations: jsonb("visualizations").default([]), // For storing charts, graphs, and other rich content
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -537,6 +538,7 @@ export const insertNotepadSchema = createInsertSchema(notepads).pick({
   content: true,
   title: true,
   isDeleted: true,
+  visualizations: true,
 });
 
 // Create types for new tables
