@@ -56,7 +56,7 @@ export default function LandingPage() {
       <div className="absolute inset-0 bg-[#121212] z-0 grid-background" />
 
       {/* Top Navigation Bar */}
-      <header className="flex items-center justify-between h-[70px] px-6 md:px-8 z-10 relative">
+      <header className="flex items-center justify-between h-[70px] px-6 md:px-8 z-[2] relative">
         <div className="flex items-center">
           <Logo size="md" />
         </div>
@@ -75,7 +75,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex flex-col items-center justify-center px-4 py-6 md:py-10 text-center z-10 relative">
+      <main className="flex flex-col items-center justify-center px-4 py-6 md:py-10 text-center z-[1] relative">
         <h1 className="hero-heading text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 max-w-4xl animate-fadeInUp">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#E5E5E5] to-[#FFFFFF]">Research first,</span>{" "}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#DCC5A2] via-[#E5D5C2] to-[#FFFFFF]">go live next!</span>
@@ -94,7 +94,7 @@ export default function LandingPage() {
         </button>
 
         {/* AI Chat Panel */}
-        <div className="w-[758px] max-w-full mx-auto z-10 animate-fadeInUp delay-200">
+        <div className="w-[758px] max-w-full mx-auto z-[1] animate-fadeInUp delay-200">
           <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm h-[204px]">
             {/* Tabs */}
             <div className="flex items-center px-4 py-2 bg-[#252525] border-b border-[#333333]">

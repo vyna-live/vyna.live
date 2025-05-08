@@ -364,7 +364,7 @@ export default function VynaAIChat() {
         </aside>
 
         {/* Main Chat Area with spacing */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative">
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1]">
           {/* Teleprompter overlay */}
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
