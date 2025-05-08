@@ -12,70 +12,69 @@ import {
   Upload
 } from "lucide-react";
 import Logo from "@/components/Logo";
-import "./Notepad.css";
+import "../pages/VynaAIChat.css";
 
-// Types
 interface Note {
   id: number;
   title: string;
   content: string;
   active: boolean;
-  preview: string;
+  createdAt: Date;
 }
 
-// Mock notes for demonstration
-const mockNotes: Note[] = [
+// Sample notes data
+const sampleNotes: Note[] = [
   { 
     id: 1, 
-    title: "About solana", 
-    content: "Solana is like a super-fast playground where people build fun digital toys!\nImagine you have special digital blocks that everyone can see and nobody can break. People use these blocks to make games, share pictures, and trade special toys.\nWhen you want to play with someone else's blocks, you just ask the playground, and zoom! It happens really fast, faster than saying \"one-two-three!\"\nThe playground has special helpers called SOL that help you play with all the toys. Everyone takes turns being nice and making sure all the blocks stay in the right places.\nThat's Solana - a speedy digital playground where people build cool things together!",
+    title: "About solana",
+    content: "Solana is like a super-fast playground where people build fun digital toys! Imagine you have special digital blocks that everyone can see and nobody can break. People use these blocks to make games, share pictures, and trade special toys.\n\nWhen you want to play with someone else's blocks, you just ask the playground, and zoom! It happens really fast, faster than saying \"one-two-three!\"\n\nThe playground has special helpers called SOL that help you play with all the toys. Everyone takes turns being nice and making sure all the blocks stay in the right places.\n\nThat's Solana - a speedy digital playground where people build cool things together!",
     active: true,
-    preview: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my..."
+    createdAt: new Date()
   },
-  {
-    id: 2,
+  { 
+    id: 2, 
     title: "Who is the best CODM gamer in Nigeria as of...",
-    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff is earlier than that date. To find the most current information, I recommend checking:\n\n1. Official Call of Duty Mobile tournament results for Nigeria\n2. Nigerian esports organizations and their player rankings\n3. Social media accounts of prominent Nigerian CODM players\n4. Gaming news sites that cover the Nigerian esports scene",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff date is before this time. To find the most accurate and up-to-date information, I would recommend checking official CODM tournament results, leaderboards specific to Nigeria, or gaming community forums where Nigerian players are active.",
     active: false,
-    preview: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my..."
+    createdAt: new Date(Date.now() - 1000 * 60 * 60)
   },
-  {
-    id: 3,
+  { 
+    id: 3, 
     title: "Who is the best CODM gamer in Nigeria as of...",
-    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff is earlier than that date.",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff date is before this time. To find the most accurate and up-to-date information, I would recommend checking official CODM tournament results, leaderboards specific to Nigeria, or gaming community forums where Nigerian players are active.",
     active: false,
-    preview: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my..."
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
   },
-  {
-    id: 4,
+  { 
+    id: 4, 
     title: "Who is the best CODM gamer in Nigeria as of...",
-    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff is earlier than that date.",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff date is before this time. To find the most accurate and up-to-date information, I would recommend checking official CODM tournament results, leaderboards specific to Nigeria, or gaming community forums where Nigerian players are active.",
     active: false,
-    preview: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my..."
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3)
   },
-  {
-    id: 5,
+  { 
+    id: 5, 
     title: "Who is the best CODM gamer in Nigeria as of...",
-    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff is earlier than that date.",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff date is before this time. To find the most accurate and up-to-date information, I would recommend checking official CODM tournament results, leaderboards specific to Nigeria, or gaming community forums where Nigerian players are active.",
     active: false,
-    preview: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my..."
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4)
   },
-  {
-    id: 6,
+  { 
+    id: 6, 
     title: "Who is the best CODM gamer in Nigeria as of...",
-    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff is earlier than that date.",
+    content: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my knowledge cutoff date is before this time. To find the most accurate and up-to-date information, I would recommend checking official CODM tournament results, leaderboards specific to Nigeria, or gaming community forums where Nigerian players are active.",
     active: false,
-    preview: "I don't have information about who was the best Call of Duty Mobile player in Nigeria as of March 2025, as my..."
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5)
   }
 ];
 
 export default function Notepad() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('notepad');
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
+  const [notes, setNotes] = useState<Note[]>(sampleNotes);
   const [inputValue, setInputValue] = useState("");
   const [currentTitle, setCurrentTitle] = useState("About solana");
-  const [currentContent, setCurrentContent] = useState(mockNotes[0].content);
+  const [currentNoteContent, setCurrentNoteContent] = useState(sampleNotes[0].content);
   
   const contentRef = useRef<HTMLDivElement>(null);
   
@@ -85,8 +84,6 @@ export default function Notepad() {
   
   const handleTabChange = (tab: 'vynaai' | 'notepad') => {
     setActiveTab(tab);
-    
-    // If switching to VynaAI tab, redirect to the AI chat page
     if (tab === 'vynaai') {
       setLocation("/ai-chat");
     }
@@ -94,16 +91,15 @@ export default function Notepad() {
   
   const handleNewNote = () => {
     // Create a new blank note
-    const newNoteId = notes.length + 1;
     const newNote: Note = {
-      id: newNoteId,
+      id: notes.length + 1,
       title: "New note",
       content: "",
       active: true,
-      preview: ""
+      createdAt: new Date()
     };
     
-    // Update the notes list and set all others as inactive
+    // Update notes list
     const updatedNotes = notes.map(note => ({
       ...note,
       active: false
@@ -111,11 +107,10 @@ export default function Notepad() {
     
     setNotes([newNote, ...updatedNotes]);
     setCurrentTitle("New note");
-    setCurrentContent("");
+    setCurrentNoteContent("");
   };
   
   const handleNoteClick = (id: number) => {
-    // Update the active note and display its content
     const updatedNotes = notes.map(note => ({
       ...note,
       active: note.id === id
@@ -123,51 +118,55 @@ export default function Notepad() {
     
     setNotes(updatedNotes);
     
-    // Find the selected note and update the content area
+    // Update current note content
     const selectedNote = notes.find(note => note.id === id);
     if (selectedNote) {
       setCurrentTitle(selectedNote.title);
-      setCurrentContent(selectedNote.content);
+      setCurrentNoteContent(selectedNote.content);
     }
   };
   
   const handleAddNote = () => {
     if (inputValue.trim() === "") return;
     
-    // Get the active note
+    // Find the active note
     const activeNote = notes.find(note => note.active);
     
     if (activeNote) {
-      // Update the existing note by appending the new content
-      const updatedContent = activeNote.content 
-        ? `${activeNote.content}\n\n${inputValue}`
-        : inputValue;
-      
-      // Create a preview from the input text
-      const preview = inputValue.length > 85
-        ? `${inputValue.substring(0, 85)}...`
-        : inputValue;
-      
-      // Update the notes array
+      // Update its content
       const updatedNotes = notes.map(note => {
         if (note.id === activeNote.id) {
+          const updatedContent = note.content 
+            ? `${note.content}\n\n${inputValue}` 
+            : inputValue;
+          
+          // Set the title if it's a new note
+          const updatedTitle = note.title === "New note" && !note.content
+            ? (inputValue.length > 30 ? inputValue.substring(0, 30) + "..." : inputValue)
+            : note.title;
+            
           return {
             ...note,
             content: updatedContent,
-            preview: preview
+            title: updatedTitle
           };
         }
         return note;
       });
       
       setNotes(updatedNotes);
-      setCurrentContent(updatedContent);
+      
+      // Update the current note content
+      const updatedNote = updatedNotes.find(note => note.active);
+      if (updatedNote) {
+        setCurrentNoteContent(updatedNote.content);
+        setCurrentTitle(updatedNote.title);
+      }
     } else {
-      // If somehow no note is active, create a new one
+      // No active note, create one
       handleNewNote();
     }
     
-    // Clear the input field
     setInputValue("");
   };
   
@@ -178,10 +177,12 @@ export default function Notepad() {
     }
   };
   
-  // Scroll to bottom when content changes
-  useEffect(() => {
-    contentRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentContent]);
+  // Get a preview of the note content (first 60 characters)
+  const getNotePreview = (content: string) => {
+    return content.length > 60 
+      ? content.substring(0, 60) + "..." 
+      : content;
+  };
 
   return (
     <div className="flex flex-col h-screen bg-black">
@@ -238,10 +239,10 @@ export default function Notepad() {
               {notes.map((note) => (
                 <div 
                   key={note.id}
-                  className={`flex flex-col py-2.5 px-2 rounded-md text-sm cursor-pointer mb-1 ${note.active ? 'bg-[#252525]' : 'hover:bg-[#232323]'}`}
+                  className={`flex flex-col px-2 py-2.5 rounded-md text-sm cursor-pointer mb-1 ${note.active ? 'bg-[#252525]' : 'hover:bg-[#232323]'}`}
                   onClick={() => handleNoteClick(note.id)}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex justify-between items-start">
                     <div className={`truncate font-medium ${note.active ? 'text-white' : 'text-[#BBBBBB]'}`}>
                       {note.title}
                     </div>
@@ -249,11 +250,9 @@ export default function Notepad() {
                       <MoreVertical size={16} />
                     </button>
                   </div>
-                  {note.preview && (
-                    <div className="text-[#777777] text-xs mt-1 truncate">
-                      {note.preview}
-                    </div>
-                  )}
+                  <div className="text-[#777777] text-xs mt-1 line-clamp-2">
+                    {getNotePreview(note.content)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -273,20 +272,22 @@ export default function Notepad() {
           </div>
           
           {/* Note Content Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-black custom-scrollbar">
-            {currentContent ? (
-              <div className="text-[#DDDDDD] text-sm leading-relaxed whitespace-pre-line">
-                {currentContent}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-black">
+            {currentNoteContent ? (
+              <div 
+                ref={contentRef}
+                className="text-[#DDDDDD] text-sm leading-relaxed whitespace-pre-line"
+              >
+                {currentNoteContent}
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 empty-state-animation">
                 <h2 className="text-3xl font-bold text-white mb-3">Notepad</h2>
                 <p className="text-[#BBBBBB] text-sm max-w-[400px]">
-                  Type notes and save your thoughts for later
+                  Take notes while streaming or researching
                 </p>
               </div>
             )}
-            <div ref={contentRef} />
           </div>
           
           {/* Input Area */}
