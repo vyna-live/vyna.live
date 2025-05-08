@@ -246,9 +246,10 @@ export default function VynaAIChat() {
         </button>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-[270px] bg-[#1A1A1A] border-r border-[#212121] flex flex-col h-full">
+      {/* Main content with spacing from navbar */}
+      <div className="flex flex-1 p-4 pt-4 overflow-hidden">
+        {/* Sidebar with spacing */}
+        <aside className="w-[270px] bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden">
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
@@ -281,7 +282,7 @@ export default function VynaAIChat() {
           
           <div className="px-3 py-2">
             <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
-            <div className="overflow-y-auto h-full max-h-[calc(100vh-180px)] custom-scrollbar">
+            <div className="overflow-y-auto h-full max-h-[calc(100vh-220px)] custom-scrollbar pb-3">
               {conversations.map((conv) => (
                 <div 
                   key={conv.id}
@@ -298,10 +299,10 @@ export default function VynaAIChat() {
           </div>
         </aside>
 
-        {/* Main Chat Area */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black">
+        {/* Main Chat Area with spacing */}
+        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg">
           {/* Chat Header */}
-          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6">
+          <div className="h-[50px] border-b border-[#202020] bg-[#151515] flex items-center px-6 rounded-t-lg">
             <button className="p-1 mr-4 text-[#999999] hover:text-white">
               <ArrowLeft size={18} />
             </button>
@@ -363,15 +364,15 @@ export default function VynaAIChat() {
           </div>
           
           {/* Input Area */}
-          <div className="px-6 py-4 border-t border-[#202020] bg-[#141414]">
-            <div className="input-area flex flex-col">
+          <div className="p-4 border-t border-[#202020] bg-[#141414] rounded-b-lg">
+            <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-4">
               <div className="flex-grow mb-2">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleInputKeyDown}
                   placeholder="Ask a question"
-                  className="chat-input w-full h-[80px] px-4 py-3 text-sm"
+                  className="chat-input w-full h-[80px] px-4 py-3 text-sm bg-transparent"
                 />
               </div>
               
