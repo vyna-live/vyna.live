@@ -108,6 +108,9 @@ export default function VynaAIChat() {
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const noteDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Sidebar state for responsive design
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -636,6 +639,31 @@ export default function VynaAIChat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  
+  // Toggle sidebar collapse
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => !prev);
+  };
+  
+  // Check window size to auto-collapse sidebar on small screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+    
+    // Initial check
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Loading indicator component
   const LoadingIndicator = () => (
@@ -669,56 +697,81 @@ export default function VynaAIChat() {
       {/* Main content with spacing from navbar */}
       <div className="flex flex-1 p-4 pt-4 overflow-hidden">
         {/* Sidebar with spacing */}
-        <aside className="w-[270px] bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden">
+        <aside className={`${sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
+              {/* Drawer/hamburger menu icon */}
               <div className="p-1 mr-1">
-                <FileText size={18} className="text-gray-400" />
-              </div>
-              <div className="flex p-1 bg-[#202020] rounded-lg">
                 <button 
-                  className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
-                  onClick={() => handleTabChange('vynaai')}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  onClick={toggleSidebar}
                 >
-                  <Sparkles size={12} />
-                  <span>VynaAI</span>
-                </button>
-                <button 
-                  className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
-                  onClick={() => handleTabChange('notepad')}
-                >
-                  <span>Notepad</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                    <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </button>
               </div>
+              
+              {/* Tabs - hidden when sidebar is collapsed */}
+              {!sidebarCollapsed && (
+                <div className="flex p-1 bg-[#202020] rounded-lg">
+                  <button 
+                    className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => handleTabChange('vynaai')}
+                  >
+                    <Sparkles size={12} />
+                    <span>VynaAI</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => handleTabChange('notepad')}
+                  >
+                    <FileText size={12} className="mr-1" />
+                    <span>Notepad</span>
+                  </button>
+                </div>
+              )}
             </div>
+            
+            {/* New chat button - adaptive to sidebar state */}
             <button 
-              className="w-full mb-3 flex items-center justify-center gap-1.5 py-2 bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all"
+              className={`w-full mb-3 flex items-center justify-center gap-1.5 py-2 bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all ${sidebarCollapsed ? 'px-0' : ''}`}
               onClick={handleNewChat}
             >
               <Plus size={16} />
-              <span className="text-sm">New chat</span>
+              {!sidebarCollapsed && <span className="text-sm">New chat</span>}
             </button>
           </div>
           
           <div className="px-3 py-2">
-            <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
+            {!sidebarCollapsed && <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>}
             <div className="overflow-y-auto h-full max-h-[calc(100vh-220px)] custom-scrollbar pb-3">
               {chatSessions.length > 0 ? (
                 chatSessions.map((session) => (
                   <div 
                     key={session.id}
-                    className={`flex items-center justify-between px-2 py-2.5 rounded-md text-sm cursor-pointer ${session.id === currentSessionId ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
+                    className={`flex items-center justify-between ${sidebarCollapsed ? 'px-1 py-3' : 'px-2 py-2.5'} rounded-md text-sm cursor-pointer ${session.id === currentSessionId ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
                     onClick={() => handleSessionClick(session.id)}
+                    title={sidebarCollapsed ? session.title : ''}
                   >
-                    <div className="truncate">{session.title}</div>
-                    <button className="text-[#777777] hover:text-white p-1">
-                      <MoreVertical size={16} />
-                    </button>
+                    <div className={sidebarCollapsed ? 'w-full text-center' : 'truncate'}>
+                      {sidebarCollapsed ? (
+                        <Sparkles size={sidebarCollapsed ? 16 : 14} className="mx-auto" />
+                      ) : (
+                        session.title
+                      )}
+                    </div>
+                    {!sidebarCollapsed && (
+                      <button className="text-[#777777] hover:text-white p-1">
+                        <MoreVertical size={16} />
+                      </button>
+                    )}
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-[#777777] text-center p-3">
-                  No conversations yet
+                <div className={`text-xs text-[#777777] text-center ${sidebarCollapsed ? 'p-1' : 'p-3'}`}>
+                  {!sidebarCollapsed && "No conversations yet"}
                 </div>
               )}
             </div>
