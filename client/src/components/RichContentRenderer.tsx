@@ -1,295 +1,332 @@
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import rehypeRaw from 'rehype-raw';
-import rehypeSanitize from 'rehype-sanitize';
-import remarkGfm from 'remark-gfm';
-// @ts-ignore
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-// @ts-ignore
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-// Import the enhanced chart renderer
-import EnhancedChartRenderer from './EnhancedChartRenderer';
+import React, { useMemo } from 'react';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { MessageCirclePlus } from 'lucide-react';
+import { 
+  Chart as ChartJS, 
+  CategoryScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  BarElement,
+  Title, 
+  Tooltip, 
+  Legend, 
+  ArcElement
+} from 'chart.js';
+import { Line, Bar, Pie } from 'react-chartjs-2';
 
-// Define a type for rendering charts
-type ChartData = {
-  type: 'chart';
-  chartType: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
-  data: any[];
-  colors?: string[];
-  xKey: string;
-  yKeys: string[];
-  width?: number;
-  height?: number;
-  title?: string;
-  subtitle?: string;
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+export interface Visualization {
+  type: 'chart' | 'graph' | 'table' | 'image' | 'card';
+  subType?: 'line' | 'bar' | 'pie' | 'scatter';
+  data: any;
+  options?: any;
+  caption?: string;
 }
 
-// Function to extract and parse JSON blocks from text
-function extractJSONBlocks(text: string): { parsedBlocks: any[], cleanText: string } {
-  const jsonRegex = /```json\s*([\s\S]*?)\s*```/g;
-  
-  let cleanText = text;
-  const parsedBlocks: any[] = [];
-  
-  // Use a different approach to avoid TypeScript issues with matchAll
-  let match;
-  let index = 0;
-  
-  while ((match = jsonRegex.exec(text)) !== null) {
-    try {
-      const jsonContent = match[1].trim();
-      const parsed = JSON.parse(jsonContent);
-      
-      // Replace the JSON block with a placeholder
-      cleanText = cleanText.replace(match[0], `[RICH_CONTENT_${index}]`);
-      
-      parsedBlocks.push(parsed);
-      index++;
-    } catch (error) {
-      console.error('Failed to parse JSON block:', error);
-    }
-  }
-  
-  return { parsedBlocks, cleanText };
+export interface RichContent {
+  text: string;
+  visualizations?: Visualization[];
 }
-
-// Component to render a chart based on data
-const ChartRenderer: React.FC<{ chartData: any }> = ({ chartData }) => {
-  if (!chartData.data || chartData.data.length === 0) return null;
-  
-  // Ensure the chart data has the required structure for EnhancedChartRenderer
-  const enhancedChartData: ChartData = {
-    type: 'chart',
-    chartType: chartData.chartType || 'bar',
-    data: chartData.data,
-    xKey: chartData.xKey || 'name',
-    yKeys: chartData.yKeys || ['value'],
-    colors: chartData.colors,
-    width: chartData.width,
-    height: chartData.height,
-    title: chartData.title,
-    subtitle: chartData.subtitle
-  };
-  
-  // Use our advanced chart renderer that uses ECharts
-  return <EnhancedChartRenderer chartData={enhancedChartData} darkMode={true} />;
-};
-
-// Component to render a data table
-const TableRenderer: React.FC<{ data: any[] }> = ({ data }) => {
-  if (!data || data.length === 0) return null;
-  
-  // Extract headers from the first item
-  const headers = Object.keys(data[0]);
-  
-  return (
-    <div className="overflow-x-auto my-4">
-      <table className="min-w-full bg-[#1E1E1E] border border-[#444] text-white">
-        <thead className="bg-[#252525]">
-          <tr>
-            {headers.map((header) => (
-              <th key={header} className="px-4 py-2 text-left text-[#DCC5A2] border-b border-[#444]">
-                {header.charAt(0).toUpperCase() + header.slice(1)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, rowIndex) => (
-            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-[#1E1E1E]' : 'bg-[#252525]'}>
-              {headers.map((header) => (
-                <td key={`${rowIndex}-${header}`} className="px-4 py-2 border-b border-[#444]">
-                  {row[header]}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-// Component to render an info card
-const InfoCardRenderer: React.FC<{ 
-  title: string;
-  content: string;
-  icon?: string; 
-  type?: 'info' | 'warning' | 'success' | 'error';
-}> = ({ title, content, icon, type = 'info' }) => {
-  const bgColors = {
-    info: 'bg-[#1E3A53]',
-    warning: 'bg-[#513923]',
-    success: 'bg-[#1E4D2B]',
-    error: 'bg-[#572A2A]'
-  };
-  
-  const borderColors = {
-    info: 'border-[#3E6B99]',
-    warning: 'border-[#9B7846]',
-    success: 'border-[#3A9D55]',
-    error: 'border-[#AA5555]'
-  };
-  
-  return (
-    <div className={`p-4 rounded-lg border ${borderColors[type]} ${bgColors[type]} my-4`}>
-      <div className="flex items-start">
-        {icon && <div className="mr-3">{icon}</div>}
-        <div>
-          <h4 className="font-semibold mb-1 text-white">{title}</h4>
-          <div className="text-[#DDDDDD]">{content}</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Audio player component
-const AudioRenderer: React.FC<{ src: string }> = ({ src }) => {
-  return (
-    <div className="my-4">
-      <audio controls className="w-full">
-        <source src={src} />
-        Your browser does not support the audio element.
-      </audio>
-    </div>
-  );
-};
-
-// Image renderer with lazy loading
-const ImageRenderer: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  return (
-    <div className="my-4 relative">
-      {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1A] animate-pulse">
-          <span className="text-[#DCC5A2]">Loading image...</span>
-        </div>
-      )}
-      <img 
-        src={src} 
-        alt={alt} 
-        onLoad={() => setIsLoaded(true)}
-        className="max-w-full rounded-lg"
-      />
-    </div>
-  );
-};
 
 interface RichContentRendererProps {
-  content: string;
-  visualizations?: any[];
-  darkMode?: boolean;
-  size?: 'small' | 'medium' | 'large';
+  content: string | RichContent;
+  className?: string;
+  isPrompt?: boolean;
+  isLoading?: boolean;
+  showCardBackground?: boolean;
+  onAddToNote?: () => void;
+  showAddToNote?: boolean;
+  isTeleprompter?: boolean;
 }
 
-const RichContentRenderer: React.FC<RichContentRendererProps> = ({ 
-  content, 
-  visualizations = [], 
-  darkMode = true,
-  size = 'medium'
+/**
+ * Function to detect if content contains code blocks
+ */
+function containsCodeBlock(text: string): boolean {
+  return text.includes('```');
+}
+
+/**
+ * Function to parse code blocks from Markdown text
+ */
+function parseCodeBlocks(text: string) {
+  const codeBlockRegex = /```(?:(\w+)\n)?([\s\S]*?)```/g;
+  let match;
+  const blocks = [];
+  let lastIndex = 0;
+  
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    // Add text before code block
+    if (match.index > lastIndex) {
+      blocks.push({
+        type: 'text',
+        content: text.substring(lastIndex, match.index)
+      });
+    }
+    
+    // Add code block
+    blocks.push({
+      type: 'code',
+      language: match[1] || '',
+      content: match[2]
+    });
+    
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Add remaining text after last code block
+  if (lastIndex < text.length) {
+    blocks.push({
+      type: 'text',
+      content: text.substring(lastIndex)
+    });
+  }
+  
+  return blocks;
+}
+
+/**
+ * Function to determine if a string contains chart/visualization indicators
+ */
+function containsVisualContent(text: string): boolean {
+  const visualIndicators = [
+    'chart', 'graph', 'plot', 'diagram', 'visualization',
+    'table', 'statistics', 'data visualization', 'infographic',
+    'figure', 'bar chart', 'pie chart', 'line graph'
+  ];
+  
+  return visualIndicators.some(indicator => 
+    text.toLowerCase().includes(indicator)
+  );
+}
+
+/**
+ * Function to determine if content is suitable for teleprompter format
+ */
+function isTeleprompterContent(text: string): boolean {
+  // Look for patterns that suggest it's meant for a teleprompter
+  return text.includes('SCRIPT') || 
+         text.includes('TELEPROMPTER') ||
+         text.includes('READ THIS:') ||
+         text.includes('[Read aloud]') ||
+         (text.includes('Introduction') && text.includes('Conclusion')) ||
+         text.includes('TALKING POINTS');
+}
+
+/**
+ * Function to convert markdown text to HTML
+ */
+function markdownToHtml(markdown: string): string {
+  // Simple MD to HTML conversion
+  let html = markdown
+    // Headers
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.*)\*/gim, '<em>$1</em>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    // Lists
+    .replace(/^\s*\n\* (.*)/gim, '<ul>\n<li>$1</li>')
+    .replace(/^\* (.*)/gim, '<li>$1</li>')
+    .replace(/^\s*\n- (.*)/gim, '<ul>\n<li>$1</li>')
+    .replace(/^- (.*)/gim, '<li>$1</li>')
+    // Line breaks
+    .replace(/\n$/gim, '<br />')
+    
+  // Replace code blocks
+  const blocks = parseCodeBlocks(markdown);
+  if (blocks.length > 1) {
+    html = blocks.map(block => {
+      if (block.type === 'code') {
+        return `<pre><code class="language-${block.language}">${block.content}</code></pre>`;
+      } else {
+        return block.content;
+      }
+    }).join('');
+  }
+  
+  return html;
+}
+
+/**
+ * Renders rich content with auto-detection of content type
+ */
+export const RichContentRenderer: React.FC<RichContentRendererProps> = ({
+  content,
+  className,
+  isPrompt = false,
+  isLoading = false,
+  showCardBackground = false,
+  onAddToNote,
+  showAddToNote = false,
+  isTeleprompter = false
 }) => {
-  // Extract any JSON blocks that might contain rich content data
-  const { parsedBlocks, cleanText } = extractJSONBlocks(content);
+  // Parse the content if it's a string
+  const parsedContent = useMemo(() => {
+    if (typeof content === 'string') {
+      const hasVisualIndicators = containsVisualContent(content);
+      const isTeleprompterFormat = isTeleprompterContent(content);
+      
+      // Determine if we should force card background
+      const forceCardBackground = hasVisualIndicators || isTeleprompterFormat || isTeleprompter;
+      
+      return {
+        text: content,
+        visualizations: [],
+        useCardBackground: showCardBackground || forceCardBackground,
+        isTeleprompterFormat: isTeleprompterFormat || isTeleprompter
+      };
+    } else {
+      return {
+        text: content.text,
+        visualizations: content.visualizations || [],
+        useCardBackground: showCardBackground || content.visualizations?.length > 0,
+        isTeleprompterFormat: isTeleprompter
+      };
+    }
+  }, [content, showCardBackground, isTeleprompter]);
   
-  // Split the text by placeholders
-  const textParts = cleanText.split(/\[RICH_CONTENT_(\d+)\]/);
+  // Create HTML content
+  const htmlContent = useMemo(() => {
+    return markdownToHtml(parsedContent.text);
+  }, [parsedContent.text]);
   
+  // Render the content based on the detected content type
   return (
-    <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'}`}>
-      {/* Render direct visualizations if provided */}
-      {visualizations && visualizations.length > 0 && (
-        <div className="visualizations-container mb-4">
-          {visualizations.map((visualization, idx) => {
-            if (visualization.type === 'chart') {
-              return <ChartRenderer key={`viz-chart-${idx}`} chartData={visualization} />;
-            }
-            if (visualization.type === 'table') {
-              return <TableRenderer key={`viz-table-${idx}`} data={visualization.data} />;
-            }
-            return null;
-          })}
+    <div className={cn("relative", className)}>
+      {parsedContent.useCardBackground ? (
+        <Card className={cn(
+          "relative p-4 overflow-hidden",
+          parsedContent.isTeleprompterFormat ? "bg-[#f5eee5]" : "bg-[#f9f5f0]",
+          "border border-[#e0d5c5] shadow-sm"
+        )}>
+          {/* Branding element for teleprompter format */}
+          {parsedContent.isTeleprompterFormat && (
+            <div className="absolute top-2 right-2 text-xs font-bold text-[#A67D44] opacity-50">
+              JUST GO LIVE
+            </div>
+          )}
+          
+          {/* Text content */}
+          <div 
+            className={cn(
+              "prose prose-neutral max-w-none",
+              parsedContent.isTeleprompterFormat ? "text-lg leading-relaxed" : ""
+            )}
+            dangerouslySetInnerHTML={{ __html: htmlContent }} 
+          />
+          
+          {/* Visualizations */}
+          {parsedContent.visualizations && parsedContent.visualizations.length > 0 && (
+            <div className="mt-4 space-y-4">
+              {parsedContent.visualizations.map((viz, index) => (
+                <div key={index} className="visualization-container">
+                  {viz.type === 'chart' && viz.subType === 'line' && (
+                    <Line data={viz.data} options={viz.options} />
+                  )}
+                  {viz.type === 'chart' && viz.subType === 'bar' && (
+                    <Bar data={viz.data} options={viz.options} />
+                  )}
+                  {viz.type === 'chart' && viz.subType === 'pie' && (
+                    <Pie data={viz.data} options={viz.options} />
+                  )}
+                  {viz.type === 'image' && (
+                    <img 
+                      src={viz.data}
+                      alt={viz.caption || "Visualization"} 
+                      className="max-w-full rounded-lg" 
+                    />
+                  )}
+                  {viz.type === 'table' && (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-collapse border border-[#e0d5c5]">
+                        <thead>
+                          <tr className="bg-[#f0e6da]">
+                            {viz.data.headers.map((header: string, i: number) => (
+                              <th key={i} className="px-4 py-2 text-left border border-[#e0d5c5]">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {viz.data.rows.map((row: any[], i: number) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-[#f9f5f0]' : 'bg-[#f5eee5]'}>
+                              {row.map((cell, j) => (
+                                <td key={j} className="px-4 py-2 border border-[#e0d5c5]">
+                                  {cell}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {viz.caption && (
+                    <p className="text-sm text-center text-gray-600 mt-2">{viz.caption}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Add to note button */}
+          {showAddToNote && onAddToNote && (
+            <button 
+              onClick={onAddToNote}
+              className="absolute bottom-2 right-2 p-1.5 text-[#A67D44] hover:text-[#8A6838] bg-white rounded-full shadow-sm border border-[#e0d5c5]"
+              title="Add to note"
+            >
+              <MessageCirclePlus size={18} />
+            </button>
+          )}
+        </Card>
+      ) : (
+        // Regular text content without card background
+        <div className="relative">
+          <div 
+            className="prose prose-neutral max-w-none"
+            dangerouslySetInnerHTML={{ __html: htmlContent }} 
+          />
+          
+          {/* Add to note button */}
+          {showAddToNote && onAddToNote && (
+            <button 
+              onClick={onAddToNote}
+              className="absolute bottom-2 right-2 p-1.5 text-[#A67D44] hover:text-[#8A6838] bg-white rounded-full shadow-sm border border-[#e0d5c5]"
+              title="Add to note"
+            >
+              <MessageCirclePlus size={18} />
+            </button>
+          )}
         </div>
       )}
       
-      {/* Render content from markdown */}
-      {textParts.map((part, index) => {
-        // Even indices are regular text
-        if (index % 2 === 0) {
-          return part ? (
-            <div className="markdown-content" key={`text-${index}`}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                components={{
-                  // @ts-ignore
-                  code: ({node, inline, className, children, ...props}) => {
-                    const match = /language-(\w+)/.exec(className || '');
-                    return !inline && match ? (
-                      <SyntaxHighlighter
-                        // @ts-ignore
-                        style={vscDarkPlus}
-                        language={match[1]}
-                        PreTag="div"
-                        {...props}
-                      >
-                        {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
-                    ) : (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    );
-                  }
-                }}
-              >
-                {part}
-              </ReactMarkdown>
-            </div>
-          ) : null;
-        }
-        
-        // Odd indices correspond to rich content blocks
-        const blockIndex = parseInt(part, 10);
-        const richContentBlock = parsedBlocks[blockIndex];
-        
-        if (!richContentBlock) return null;
-        
-        switch (richContentBlock.type) {
-          case 'chart':
-            return <ChartRenderer key={`chart-${index}`} chartData={richContentBlock} />;
-          
-          case 'table':
-            return <TableRenderer key={`table-${index}`} data={richContentBlock.data} />;
-          
-          case 'card':
-            return (
-              <InfoCardRenderer
-                key={`card-${index}`}
-                title={richContentBlock.title}
-                content={richContentBlock.content}
-                icon={richContentBlock.icon}
-                type={richContentBlock.cardType}
-              />
-            );
-          
-          case 'audio':
-            return <AudioRenderer key={`audio-${index}`} src={richContentBlock.src} />;
-          
-          case 'image':
-            return (
-              <ImageRenderer
-                key={`image-${index}`}
-                src={richContentBlock.src}
-                alt={richContentBlock.alt || 'Image'}
-              />
-            );
-          
-          default:
-            return null;
-        }
-      })}
+      {/* Loading state */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-lg">
+          <div className="text-sm font-medium text-gray-600">Thinking...</div>
+        </div>
+      )}
     </div>
   );
 };
