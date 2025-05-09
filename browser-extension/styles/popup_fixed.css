@@ -2,37 +2,27 @@
 
 :root {
   --primary-bg: #121212;
-  --secondary-bg: #1E1E1E;
-  --drawer-bg: #1A1A1A;
-  --input-bg: #2A2A2D;
-  --accent: #CDBCAB;
-  --accent-maroon: #5D1C34;
-  --accent-golden: #A67D44;
-  --accent-sage: #899481;
-  --accent-taupe: #CDBCAB;
-  --accent-cream: #EFE9E1;
-  --vynaai-accent: #5D1C34;
-  --notepad-accent: #899481;
+  --secondary-bg: #1e1e1e;
+  --input-bg: #2a2a2d;
+  --accent: #cdbcab;
   --tab-active: #323232;
   --tab-inactive: #252525;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A0A0A0;
-  --text-disabled: #666666;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
   --border-radius: 14px;
   --border-color: #333333;
-  --button-bg: #CDBCAB;
-  --button-text: #1A1A1A;
-  --google-blue: #4285F4;
-  --google-red: #EA4335;
-  --google-yellow: #FBBC05;
-  --google-green: #34A853;
+  --google-blue: #4285f4;
+  --google-red: #ea4335;
+  --google-yellow: #fbbc05;
+  --google-green: #34a853;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
 /* Layout */
@@ -68,9 +58,9 @@ body {
   max-width: 100%;
 }
 
-.auth-logo {
-  margin-bottom: 16px;
-}
+/* .auth-logo {
+  margin-bottom: 8px;
+} */
 
 .auth-logo img {
   width: 120px;
@@ -78,7 +68,7 @@ body {
 }
 
 .auth-header {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .auth-header h2 {
@@ -101,12 +91,6 @@ body {
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 16px;
-}
-
-.auth-error.info {
-  background-color: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #60a5fa;
 }
 
 .auth-error svg {
@@ -413,7 +397,7 @@ body {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #2D2D30;
+  background-color: #2d2d30;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -499,7 +483,7 @@ body {
 }
 
 .input-action-btn.recording {
-  color: #E53935;
+  color: #e53935;
 }
 
 .input-action-btn svg {
@@ -748,7 +732,7 @@ body {
 
 .note-item-action.delete-note:hover {
   background-color: rgba(255, 65, 54, 0.2);
-  color: #FF4136;
+  color: #ff4136;
 }
 
 .note-item-action svg {
@@ -999,9 +983,9 @@ body {
 }
 
 .dialog-btn.danger {
-  background-color: #DC2626;
+  background-color: #dc2626;
   border: none;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .dialog-btn.danger:hover {
@@ -1054,8 +1038,12 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .slide-in {
@@ -1063,8 +1051,14 @@ body {
 }
 
 @keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* User profile */
@@ -1140,7 +1134,7 @@ body {
 }
 
 .dropdown-item.danger {
-  color: #DC2626;
+  color: #dc2626;
 }
 
 .dropdown-divider {
@@ -1168,7 +1162,7 @@ body {
 }
 
 .recording-animation::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 100%;
   height: 100%;

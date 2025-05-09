@@ -63,3 +63,8 @@ This extension is built using standard web technologies:
 
 - HTML, CSS, and JavaScript
 - Web Extension API (compatible with Chrome, Firefox, and Edge)
+
+<!-- 
+"optional_permissions": [
+    "microphone"
+  ], -->

@@ -2,39 +2,40 @@
 
 :root {
   --primary-bg: #121212;
-  --secondary-bg: #1E1E1E;
-  --drawer-bg: #1A1A1A;
-  --input-bg: #2A2A2D;
-  --accent: #CDBCAB;
-  --accent-maroon: #5D1C34;
-  --accent-golden: #A67D44;
+  --secondary-bg: #1e1e1e;
+  --drawer-bg: #1a1a1a;
+  --input-bg: #2a2a2d;
+  --accent: #cdbcab;
+  --accent-maroon: #5d1c34;
+  --accent-golden: #a67d44;
   --accent-sage: #899481;
-  --accent-taupe: #CDBCAB;
-  --accent-cream: #EFE9E1;
-  --vynaai-accent: #5D1C34;
+  --accent-taupe: #cdbcab;
+  --accent-cream: #efe9e1;
+  --vynaai-accent: #5d1c34;
   --notepad-accent: #899481;
   --tab-active: #323232;
   --tab-inactive: #252525;
-  --text-primary: #FFFFFF;
-  --text-secondary: #A0A0A0;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
   --text-disabled: #666666;
   --border-radius: 14px;
   --border-color: #333333;
-  --button-bg: #CDBCAB;
-  --button-text: #1A1A1A;
+  --button-bg: #cdbcab;
+  --button-text: #1a1a1a;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
 /* Layout */
 body {
-  width: 380px;
-  height: 550px;
+  width: 350px;
+  height: 600px;
   background-color: var(--primary-bg);
   color: var(--text-primary);
   overflow: hidden;
@@ -60,12 +61,35 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow-y: auto;
   max-width: 100%;
+
+  overflow-y: auto;
+  /* Smooth modern scrolling behavior */
+  scroll-behavior: smooth;
+}
+
+/* WebKit Browsers (Chrome, Edge, Safari) */
+.auth-form-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auth-form-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auth-form-container::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-bg); /* black scrollbar thumb */
+  border-radius: 3px;
+}
+
+/* Firefox */
+.auth-form-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary-bg) transparent;
 }
 
 .auth-logo {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .auth-logo img {
@@ -145,12 +169,35 @@ body {
 
 .tab-content.active {
   display: block;
+  overflow-y: auto;
+  /* Smooth modern scrolling behavior */
+  scroll-behavior: smooth;
+}
+
+/* WebKit Browsers (Chrome, Edge, Safari) */
+.tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-bg); /* black scrollbar thumb */
+  border-radius: 3px;
+}
+
+/* Firefox */
+.tab-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary-bg) transparent;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  /* gap: 8px; */
 }
 
 .form-field {
@@ -311,9 +358,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 12px 14px;
   background-color: var(--primary-bg);
   border-bottom: 1px solid var(--border-color);
+  margin: 0 2px;
 }
 
 .logo-container {
@@ -342,7 +390,7 @@ body {
   height: 24px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #5D1C34;
+  background-color: #5d1c34;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -405,8 +453,8 @@ body {
   padding: 8px;
   background-color: rgba(42, 42, 45, 0.4);
   backdrop-filter: blur(10px);
-  border-radius: 10px;
-  margin: 8px;
+  /* border-radius: 10px; */
+  margin: 4px 2px;
   gap: 4px;
 }
 
@@ -448,7 +496,30 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+
+  overflow-y: auto;
+  /* Smooth modern scrolling behavior */
+  scroll-behavior: smooth;
+}
+
+/* WebKit Browsers (Chrome, Edge, Safari) */
+.sessions-list-view::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sessions-list-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sessions-list-view::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-bg); /* black scrollbar thumb */
+  border-radius: 3px;
+}
+
+/* Firefox */
+.sessions-list-view {
+  scrollbar-width: thin;
+  scrollbar-color: var(--secondary-bg) transparent;
 }
 
 /* Notes list view */
@@ -457,7 +528,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #161616;
+  background-color: var(--primary-bg);
 }
 
 .section-header {
@@ -473,7 +544,7 @@ body {
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--primary-bg);
 }
 
 .nav-tab {
@@ -483,7 +554,7 @@ body {
   padding: 8px 12px;
   background: transparent;
   border: none;
-  color: #9B9B9B;
+  color: #9b9b9b;
   font-size: 14px;
   font-weight: 500;
   border-radius: 8px;
@@ -497,7 +568,7 @@ body {
 
 .nav-tab.active {
   background-color: rgba(211, 192, 169, 0.1);
-  color: #D3C0A9;
+  color: #d3c0a9;
 }
 
 .nav-tab:hover:not(.active) {
@@ -508,7 +579,7 @@ body {
   padding: 16px 16px 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #9B9B9B;
+  color: #9b9b9b;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -516,6 +587,7 @@ body {
 .notes-list-container {
   flex: 1;
   overflow-y: auto;
+  padding: 0 16px;
 }
 
 .notes-list {
@@ -524,20 +596,23 @@ body {
 }
 
 .note-item {
-  background-color: rgba(45, 45, 48, 0.4);
-  padding: 14px 16px;
+  /* background-color: rgba(45, 45, 48, 0.4); */
+  padding: 4px 0;
   cursor: pointer;
-  transition: background-color 0.2s;
-  border-radius: 10px;
+  /* transition: background-color 0.2s; */
+  /* border-radius: 10px; */
   position: relative;
-  margin: 8px 16px;
+  margin: 4px 8px;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* border: 1px solid rgba(255, 255, 255, 0.05); */
+  opacity: 1;
 }
 
 .note-item:hover {
-  background-color: rgba(55, 55, 58, 0.6);
+  /* background-color: rgba(55, 55, 58, 0.6); */
+  opacity: 0.8;
 }
 
 .note-item-title {
@@ -560,7 +635,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  color: #9B9B9B;
+  color: #9b9b9b;
   padding: 4px;
   border-radius: 50%;
   display: flex;
@@ -582,7 +657,7 @@ body {
 
 .note-item-preview {
   font-size: 13px;
-  color: #9B9B9B;
+  color: #9b9b9b;
   margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -596,7 +671,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #161616;
+  background-color: var(--primary-bg);
 }
 
 .note-editor-header {
@@ -604,7 +679,7 @@ body {
   align-items: center;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--primary-bg);
 }
 
 .note-title-input {
@@ -619,11 +694,11 @@ body {
 }
 
 .note-title-input::placeholder {
-  color: #9B9B9B;
+  color: #9b9b9b;
 }
 
 .save-note-button {
-  background-color: #D3C0A9;
+  background-color: #d3c0a9;
   color: #161616;
   border: none;
   border-radius: 6px;
@@ -635,7 +710,7 @@ body {
 }
 
 .save-note-button:hover {
-  background-color: #C1AF97;
+  background-color: #c1af97;
 }
 
 .note-editor-content {
@@ -648,7 +723,7 @@ body {
   width: 100%;
   height: 100%;
   min-height: 200px;
-  background: transparent;
+  background-color: var(--primary-bg);
   border: none;
   outline: none;
   color: var(--text-primary);
@@ -660,7 +735,7 @@ body {
 }
 
 .note-editor-textarea::placeholder {
-  color: #9B9B9B;
+  color: #9b9b9b;
 }
 
 .note-tags-container {
@@ -677,7 +752,7 @@ body {
 
 .note-tag {
   background-color: rgba(211, 192, 169, 0.15);
-  color: #D3C0A9;
+  color: #d3c0a9;
   border-radius: 12px;
   padding: 4px 10px;
   font-size: 12px;
@@ -695,13 +770,13 @@ body {
 }
 
 .add-tag-input::placeholder {
-  color: #9B9B9B;
+  color: #9b9b9b;
 }
 
 /* Note options menu */
 .note-options-menu {
   position: absolute;
-  background-color: #2A2A2D;
+  background-color: #2a2a2d;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: hidden;
@@ -741,8 +816,6 @@ body {
   color: #e5534b;
 }
 
-
-
 .chat-sessions-list {
   flex: 1;
   overflow-y: auto;
@@ -753,20 +826,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 10px;
-  background-color: rgba(42, 42, 45, 0.3);
-  margin-bottom: 8px;
+  padding: 5px 2px;
+  /* border-radius: 10px; */
+  /* background-color: rgba(42, 42, 45, 0.3); */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 10px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  opacity: 1;
 }
 
 .chat-session-item:hover {
-  background-color: rgba(42, 42, 45, 0.6);
+  opacity: 0.8;
 }
 
 .chat-session-title {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text-primary);
   font-weight: 400;
   white-space: nowrap;
@@ -805,15 +879,18 @@ body {
   gap: 8px;
   margin: 16px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  /* transition: opacity 0.2s; */
+  position: fixed;
+  bottom: 10px;
+  right: 5%;
 }
 
-.new-chat-button:hover {
+/* .new-chat-button:hover {
   opacity: 0.9;
-}
+} */
 
 .new-note-button {
-  background-color: #D3C0A9;
+  background-color: #d3c0a9;
   color: #161616;
   border: none;
   padding: 12px;
@@ -826,12 +903,15 @@ body {
   justify-content: center;
   gap: 8px;
   margin: 16px;
-  transition: background-color 0.2s;
+  /* transition: background-color 0.2s; */
+  position: fixed;
+  bottom: 10px;
+  right: 5%;
 }
 
-.new-note-button:hover {
-  background-color: #C1AF97;
-}
+/* .new-note-button:hover {
+  background-color: #c1af97;
+} */
 
 .plus-icon {
   font-size: 18px;
@@ -849,7 +929,7 @@ body {
 .conversation-header {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -863,12 +943,12 @@ body {
 }
 
 .back-button svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .conversation-title {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
   flex: 1;
@@ -916,7 +996,7 @@ body {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background-color: #2D2D30;
+  background-color: #2d2d30;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -974,7 +1054,7 @@ body {
 }
 
 .assistant-message .message-content {
-  background-color: #2D2D30;
+  background-color: #2d2d30;
   color: var(--text-primary);
   border-top-left-radius: 4px;
 }
@@ -1035,8 +1115,16 @@ body {
 }
 
 .chat-input-wrapper {
+  position: fixed;
+  /* width: 90%; */
+  bottom: 2%;
+  right: 5%;
+  /* margin-right: 10px; */
+  left: 5%;
   display: flex;
-  align-items: center;
+  /* width: 100%; */
+  flex-direction: column;
+  align-items: start;
   background-color: #292929;
   border-radius: 12px;
   padding: 8px 12px;
@@ -1048,6 +1136,7 @@ body {
   background: transparent;
   border: none;
   outline: none;
+  width: 100%;
   color: var(--text-primary);
   font-size: 14px;
   resize: none;
@@ -1058,20 +1147,21 @@ body {
 }
 
 .chat-input::placeholder {
-  color: #8A8A8A;
+  color: #8a8a8a;
 }
 
 .chat-input-actions {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 8px;
+  width: 100%;
 }
 
 .input-action-btn {
   background: transparent;
   border: none;
   padding: 4px;
-  color: #8A8A8A;
+  color: #8a8a8a;
   cursor: pointer;
   width: 28px;
   height: 28px;
@@ -1140,7 +1230,7 @@ body {
 .typing-indicator {
   align-self: flex-start;
   padding: 12px 16px;
-  background-color: #2D2D30;
+  background-color: #2d2d30;
   border-radius: 18px;
   border-top-left-radius: 4px;
   margin-top: 12px;
@@ -1156,7 +1246,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: #8A8A8A;
+  background-color: #8a8a8a;
   animation: typing-dot 1.4s infinite ease-in-out both;
 }
 
@@ -1169,8 +1259,16 @@ body {
 }
 
 @keyframes typing-dot {
-  0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* App footer */
@@ -1230,11 +1328,11 @@ body {
 }
 
 .toast.error {
-  border-left: 4px solid #E53935;
+  border-left: 4px solid #e53935;
 }
 
 .toast.success {
-  border-left: 4px solid #43A047;
+  border-left: 4px solid #43a047;
 }
 
 .toast svg {
@@ -1244,11 +1342,11 @@ body {
 }
 
 .toast.error svg {
-  color: #E53935;
+  color: #e53935;
 }
 
 .toast.success svg {
-  color: #43A047;
+  color: #43a047;
 }
 
 .toast.fadeout {
@@ -1256,13 +1354,25 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
 }
 
 /* Note options menu */
@@ -1325,7 +1435,7 @@ body {
   line-height: 1.4;
 }
 
-.notes-list-container {
+/* .notes-list-container {
   flex: 1;
   overflow-y: auto;
   padding: 0 16px;
@@ -1357,18 +1467,19 @@ body {
   color: var(--text-primary);
   margin-bottom: 6px;
   padding-right: 28px;
-}
+} */
 
 /* Notepad input area */
 .notepad-input-container {
   padding: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  /* border-top: 1px solid rgba(255, 255, 255, 0.08); */
 }
 
 .notepad-input-wrapper {
   display: flex;
-  align-items: center;
-  background-color: rgba(42, 42, 45, 0.5);
+  flex-direction: column;
+  /* align-items: start; */
+  background-color: var(--primary-bg);
   border-radius: 14px;
   padding: 8px 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1383,22 +1494,29 @@ body {
   color: var(--text-primary);
   font-size: 14px;
   padding: 8px 0;
-  height: 40px;
+  width: 100%;
+  height: 60px;
+  resize: none;
 }
 
 .notepad-input::placeholder {
-  color: #9B9B9B;
+  color: #9b9b9b;
 }
 
 .notepad-input-actions {
   display: flex;
-  align-items: center;
+  /* align-self: flex-end; */
+  width: 100%;
+  /* justify-self: flex-end; */
+  align-items: end;
+  justify-content: end;
   gap: 12px;
   padding-right: 8px;
+  /* align-content: end; */
 }
 
 .add-note-button {
-  background-color: #D3C0A9;
+  background-color: #d3c0a9;
   color: #161616;
   border: none;
   border-radius: 8px;
@@ -1411,7 +1529,7 @@ body {
 }
 
 .add-note-button:hover {
-  background-color: #C1AF97;
+  background-color: #c1af97;
 }
 
 /* Note editor view */
@@ -1425,7 +1543,7 @@ body {
 .note-editor-header {
   display: flex;
   align-items: center;
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background-color: rgba(0, 0, 0, 0.2);
 }
@@ -1438,17 +1556,17 @@ body {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .back-button svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .note-title-display {
   flex: 1;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   text-align: center;
@@ -1467,8 +1585,8 @@ body {
 }
 
 .note-action-button svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .note-editor-content {
@@ -1480,7 +1598,7 @@ body {
 .note-editor-textarea {
   width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 250px;
   background: transparent;
   border: none;
   outline: none;
@@ -1493,12 +1611,12 @@ body {
 }
 
 .note-editor-textarea::placeholder {
-  color: #9B9B9B;
+  color: #9b9b9b;
 }
-
+/* 
 .teleprompt-button {
   margin: 16px;
-  background-color: #D3C0A9;
+  background-color: #d3c0a9;
   color: #161616;
   border: none;
   border-radius: 12px;
@@ -1511,5 +1629,5 @@ body {
 }
 
 .teleprompt-button:hover {
-  background-color: #C1AF97;
-}
+  background-color: #c1af97;
+} */
