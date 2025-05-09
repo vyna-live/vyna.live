@@ -26,10 +26,12 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
-import RichContentRenderer from "@/components/RichContentRenderer";
+import RichContentCard, { VisualData } from "@/components/RichContentCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Teleprompter from "@/components/Teleprompter";
+import useRichAIResponse from "@/hooks/useRichAIResponse";
+import processAIContent from "@/services/visualizationProcessor";
 import "./VynaAIChat.css";
 
 // Types
@@ -50,6 +52,7 @@ interface AiChatMessage {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  visualizations?: VisualData[]; // Add visualizations
 }
 
 interface AiChat {
@@ -70,6 +73,7 @@ interface Note {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  visualizations?: VisualData[]; // Add visualizations
 }
 
 export default function VynaAIChat() {
@@ -86,6 +90,7 @@ export default function VynaAIChat() {
   const [isLoading3Dots, setIsLoading3Dots] = useState(false);
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [teleprompterText, setTeleprompterText] = useState("");
+  const [teleprompterVisualizations, setTeleprompterVisualizations] = useState<VisualData[]>([]);
   const [commentaryStyle, setCommentaryStyle] = useState<'color' | 'play-by-play'>('color');
   
   // Refs for file inputs
@@ -154,7 +159,20 @@ export default function VynaAIChat() {
       const response = await fetch(`/api/ai-chat-messages/${currentSessionId}`);
       if (response.ok) {
         const messages: AiChatMessage[] = await response.json();
-        setMessages(messages);
+        
+        // Process messages to extract visualizations
+        const processedMessages = messages.map(message => {
+          if (message.role === 'assistant') {
+            const processed = processAIContent(message.content);
+            return {
+              ...message,
+              visualizations: processed.visualizations
+            };
+          }
+          return message;
+        });
+        
+        setMessages(processedMessages);
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -239,7 +257,10 @@ export default function VynaAIChat() {
   
   // Add to teleprompter functionality
   const addToTeleprompter = (text: string) => {
-    setTeleprompterText(text);
+    // Process content for visualizations
+    const processedContent = processAIContent(text);
+    setTeleprompterText(processedContent.cleanText);
+    setTeleprompterVisualizations(processedContent.visualizations);
     setShowTeleprompter(true);
   };
   
@@ -398,8 +419,8 @@ export default function VynaAIChat() {
     } catch (error) {
       console.error('Error attaching file:', error);
       toast({
-        title: 'Error attaching file',
-        description: 'Failed to attach file to message.',
+        title: 'Error',
+        description: 'Failed to attach file. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -407,8 +428,8 @@ export default function VynaAIChat() {
     }
   };
   
-  // Toggle audio recording
-  const toggleAudioRecording = async () => {
+  // Audio recording handlers
+  const toggleAudioRecording = () => {
     if (!isAuthenticated) {
       toast({
         title: 'Authentication required',
@@ -419,90 +440,108 @@ export default function VynaAIChat() {
     }
     
     if (isRecording) {
-      // Stop recording
-      if (mediaRecorder) {
-        mediaRecorder.stop();
-      }
+      stopRecording();
     } else {
-      // Start recording
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
-        setMediaRecorder(recorder);
-        
-        const chunks: Blob[] = [];
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            chunks.push(e.data);
-          }
-        };
-        
-        recorder.onstop = () => {
-          // Process the recorded audio
-          setAudioChunks(chunks);
-          
-          // For now, just tell the AI that audio was recorded
-          handleSendMessage("[Audio Recording]\n\nPlease transcribe this audio.");
-          
-          toast({
-            title: 'Audio recorded',
-            description: 'Audio recording has been added to your message.',
-          });
-          
-          setIsRecording(false);
-          
-          // Stop all tracks to release the microphone
-          stream.getTracks().forEach(track => track.stop());
-        };
-        
-        recorder.start();
-        setIsRecording(true);
-      } catch (error) {
-        console.error('Error starting audio recording:', error);
-        toast({
-          title: 'Recording error',
-          description: 'Failed to start audio recording. Please check your microphone permissions.',
-          variant: 'destructive'
-        });
-      }
+      startRecording();
     }
   };
   
-  // Add to note functionality
-  const handleAddToNote = async (messageId: number) => {
-    if (!isAuthenticated) {
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      
+      setAudioChunks([]);
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          setAudioChunks(prev => [...prev, e.data]);
+        }
+      };
+      
+      recorder.onstop = processAudioRecording;
+      
+      recorder.start();
+      
+      toast({
+        title: 'Recording started',
+        description: 'Speak clearly into your microphone...',
+      });
+    } catch (error) {
+      console.error('Error starting audio recording:', error);
+      toast({
+        title: 'Recording failed',
+        description: 'Could not access your microphone. Please check permissions.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      
+      // Stop all audio tracks
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      
+      setIsRecording(false);
+    }
+  };
+  
+  const processAudioRecording = () => {
+    try {
+      if (audioChunks.length === 0) return;
+      
+      // In a full implementation, we'd send this to a speech-to-text service
+      // For now, just add a placeholder message
+      handleSendMessage("[Audio recording submitted]\n\nPlease transcribe this audio recording.");
+      
+      toast({
+        title: 'Audio submitted',
+        description: 'Your audio recording has been submitted for processing.',
+      });
+    } catch (error) {
+      console.error('Error processing audio recording:', error);
+      toast({
+        title: 'Processing failed',
+        description: 'Failed to process your audio. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+  
+  // Handle adding message to note
+  const handleAddToNote = (messageId: number) => {
+    setShowNoteDropdown(messageId);
+    fetchNotes();  // Refresh notes list when dropdown is opened
+  };
+  
+  // Handle creating a new note from a message
+  const handleCreateNewNote = async (content: string) => {
+    if (!user || !isAuthenticated) {
       toast({
         title: 'Authentication required',
-        description: 'Please login to add content to notes',
+        description: 'Please login to create notes',
         variant: 'destructive'
       });
       return;
     }
     
-    // Make sure we have the latest notes before showing dropdown
-    try {
-      await fetchNotes();
-      setShowNoteDropdown(messageId);
-    } catch (error) {
-      console.error("Error loading notes:", error);
+    if (!newNoteTitle.trim()) {
       toast({
-        title: 'Error loading notes',
-        description: 'Failed to load your notes. Please try again.',
+        title: 'Title required',
+        description: 'Please enter a title for your note',
         variant: 'destructive'
       });
+      return;
     }
-  };
-  
-  // Create a new note with AI content and visualizations
-  const handleCreateNewNote = async (content: string) => {
-    if (!user) return;
     
     try {
-      // Find the message to get visualizations
-      const message = messages.find(m => m.id === showNoteDropdown);
-      const visualizations = message?.visualizations || [];
+      // Process content to extract visualizations
+      const processedContent = processAIContent(content);
       
-      // Create a new note on the server
       const response = await fetch('/api/notepads', {
         method: 'POST',
         headers: {
@@ -510,9 +549,9 @@ export default function VynaAIChat() {
         },
         body: JSON.stringify({
           hostId: user.id,
-          title: newNoteTitle || 'AI Generated Note',
-          content,
-          visualizations: visualizations // Include visualizations in the new note
+          title: newNoteTitle,
+          content: content,
+          visualizations: processedContent.visualizations
         })
       });
       
@@ -520,25 +559,22 @@ export default function VynaAIChat() {
         throw new Error('Failed to create note');
       }
       
-      // Get the created note data
-      const noteData = await response.json();
-      
-      setShowNoteDropdown(null);
-      setIsAddingNote(false);
-      setNewNoteTitle('');
-      
-      // Refresh notes list
-      await fetchNotes();
+      const newNote = await response.json();
       
       toast({
         title: 'Note created',
-        description: 'Content has been saved to a new note with visualizations',
+        description: 'Your note has been created successfully',
       });
       
-      // Store the note ID in session storage for Notepad view to open it
-      sessionStorage.setItem("open_note_id", noteData.id.toString());
+      // Reset add note form
+      setNewNoteTitle('');
+      setIsAddingNote(false);
+      setShowNoteDropdown(null);
       
-      // Redirect to notepad view to see the newly created note
+      // Store the note ID in session storage for Notepad view to open it
+      sessionStorage.setItem("open_note_id", newNote.id.toString());
+      
+      // Redirect to notepad view to see the new note
       setLocation("/notepad");
     } catch (error) {
       console.error('Error creating note:', error);
@@ -550,38 +586,35 @@ export default function VynaAIChat() {
     }
   };
   
-  // Add content to an existing note with visualizations
+  // Handle adding content to an existing note
   const handleAddToExistingNote = async (noteId: number, content: string) => {
-    if (!user) return;
+    if (!user || !isAuthenticated) return;
     
     try {
-      // Find the note
-      const note = notes.find(n => n.id === noteId);
-      if (!note) {
-        throw new Error('Note not found');
-      }
+      // Find the note to update
+      const noteToUpdate = notes.find(note => note.id === noteId);
+      if (!noteToUpdate) throw new Error('Note not found');
       
-      // Find the message to get visualizations
-      const message = messages.find(m => m.id === showNoteDropdown);
-      const messageVisualizations = message?.visualizations || [];
+      // Process content for visualizations and merge them
+      const processedContent = processAIContent(content);
+      const existingVisualizations = noteToUpdate.visualizations || [];
+      const combinedVisualizations = [
+        ...existingVisualizations,
+        ...processedContent.visualizations
+      ];
       
-      // Update the note with appended content
-      const updatedContent = note.content ? `${note.content}\n\n${content}` : content;
+      // Combine the content
+      const combinedContent = `${noteToUpdate.content.trim()}\n\n${content.trim()}`;
       
-      // Combine existing visualizations with new ones
-      const existingVisualizations = note.visualizations || [];
-      const updatedVisualizations = [...existingVisualizations, ...messageVisualizations];
-      
+      // Update the note with PUT request
       const response = await fetch(`/api/notepads/${noteId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          hostId: user.id,
-          title: note.title,
-          content: updatedContent,
-          visualizations: updatedVisualizations // Include combined visualizations
+          content: combinedContent,
+          visualizations: combinedVisualizations
         })
       });
       
@@ -589,15 +622,13 @@ export default function VynaAIChat() {
         throw new Error('Failed to update note');
       }
       
-      setShowNoteDropdown(null);
-      
-      // Refresh notes list
-      await fetchNotes();
-      
       toast({
         title: 'Note updated',
-        description: `Content with visualizations has been added to "${note.title}"`,
+        description: `Content added to "${noteToUpdate.title}"`,
       });
+      
+      // Reset dropdown
+      setShowNoteDropdown(null);
       
       // Store the note ID in session storage for Notepad view to open it
       sessionStorage.setItem("open_note_id", noteId.toString());
@@ -634,6 +665,49 @@ export default function VynaAIChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Message with visualization component
+  const MessageWithVisualization = ({ message }: { message: AiChatMessage }) => {
+    // Check if message already has visualizations, or process it
+    const visualizations = message.visualizations || [];
+    const hasVisualizations = visualizations.length > 0;
+    
+    // If we have pre-processed visualizations, use them
+    if (hasVisualizations) {
+      return (
+        <RichContentCard 
+          content={message.content}
+          visualizations={visualizations}
+          className="max-w-[80%] bg-[#232323] text-[#DDDDDD]"
+        />
+      );
+    }
+    
+    // Otherwise process on the fly
+    const { cleanText, visualizations: extractedVisualizations } = processAIContent(message.content);
+    
+    // If we found visualizations by processing
+    if (extractedVisualizations.length > 0) {
+      return (
+        <RichContentCard 
+          content={cleanText}
+          visualizations={extractedVisualizations}
+          className="max-w-[80%] bg-[#232323] text-[#DDDDDD]"
+        />
+      );
+    }
+    
+    // Standard message container for text-only responses
+    return (
+      <div className="rounded-xl px-4 py-3.5 max-w-[80%] bg-[#232323] text-[#DDDDDD]">
+        <div className="prose prose-invert max-w-none">
+          {message.content.split('\n').map((line: string, i: number) => (
+            <p key={i} className="m-0 mb-2 last:mb-0">{line}</p>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  
   // Loading indicator component
   const LoadingIndicator = () => (
     <div className="flex items-center gap-2">
@@ -728,7 +802,11 @@ export default function VynaAIChat() {
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
               <div className="relative">
-                <Teleprompter text={teleprompterText} />
+                <Teleprompter 
+                  text={teleprompterText} 
+                  visualizations={teleprompterVisualizations}
+                  onClose={() => setShowTeleprompter(false)}
+                />
                 <button 
                   className="absolute top-[-40px] right-[-15px] bg-black text-white rounded-full p-1.5 hover:bg-[#252525] transition-colors"
                   onClick={() => setShowTeleprompter(false)}
@@ -764,113 +842,117 @@ export default function VynaAIChat() {
                     </div>
                   )}
                   
-                  <div 
-                    className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
-                      message.role === 'user' 
-                        ? 'bg-[#2A2A2A] text-white' 
-                        : 'bg-[#232323] text-[#DDDDDD]'
-                    }`}
-                  >
-                    <RichContentRenderer content={message.content} />
-                    
-                    {message.role === 'assistant' && (
-                      <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
-                        <button 
-                          className="hover:text-[#DCC5A2] p-1" 
-                          aria-label="Add to teleprompter"
-                          onClick={() => addToTeleprompter(message.content)}
+                  {message.role === 'user' ? (
+                    // User messages - simple container
+                    <div className="rounded-xl px-4 py-3.5 max-w-[80%] bg-[#2A2A2A] text-white">
+                      <div className="prose prose-invert max-w-none">
+                        {message.content.split('\n').map((line: string, i: number) => (
+                          <p key={i} className="m-0 mb-2 last:mb-0">{line}</p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    // AI messages - with rich content card
+                    <MessageWithVisualization message={message} />
+                  )}
+                  
+                  {message.role === 'assistant' && (
+                    <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
+                      <button 
+                        className="hover:text-[#DCC5A2] p-1" 
+                        aria-label="Add to teleprompter"
+                        onClick={() => addToTeleprompter(message.content)}
+                      >
+                        <Book size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <RefreshCw size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <ThumbsUp size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <ThumbsDown size={14} />
+                      </button>
+                      <button
+                        className="hover:text-[#DCC5A2] p-1 relative"
+                        onClick={() => handleAddToNote(message.id)}
+                        aria-label="Add to note"
+                      >
+                        <MessageCirclePlus size={14} />
+                      </button>
+                      <button className="hover:text-[#DCC5A2] p-1">
+                        <MoreVertical size={14} />
+                      </button>
+                      
+                      {/* Note dropdown */}
+                      {showNoteDropdown === message.id && (
+                        <div 
+                          ref={noteDropdownRef}
+                          className="absolute right-0 mt-2 z-50 bg-[#282828] border border-[#333] rounded-lg shadow-xl py-2 w-[240px]"
+                          style={{ top: '25px' }}
                         >
-                          <Book size={14} />
-                        </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
-                          <RefreshCw size={14} />
-                        </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
-                          <ThumbsUp size={14} />
-                        </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
-                          <ThumbsDown size={14} />
-                        </button>
-                        <button
-                          className="hover:text-[#DCC5A2] p-1 relative"
-                          onClick={() => handleAddToNote(message.id)}
-                          aria-label="Add to note"
-                        >
-                          <MessageCirclePlus size={14} />
-                        </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
-                          <MoreVertical size={14} />
-                        </button>
-                        
-                        {/* Note dropdown */}
-                        {showNoteDropdown === message.id && (
-                          <div 
-                            ref={noteDropdownRef}
-                            className="absolute right-0 mt-2 z-50 bg-[#282828] border border-[#333] rounded-lg shadow-xl py-2 w-[240px]"
-                            style={{ top: '25px' }}
-                          >
-                            <div className="px-3 py-1 text-xs font-semibold text-[#999]">
-                              ADD TO NOTE
-                            </div>
-                            
-                            {/* Note list */}
-                            <div className="max-h-[200px] overflow-y-auto">
-                              {notes.length > 0 ? (
-                                notes.map(note => (
-                                  <button 
-                                    key={note.id}
-                                    className="w-full text-left px-3 py-2 text-xs text-white hover:bg-[#333] truncate"
-                                    onClick={() => handleAddToExistingNote(note.id, message.content)}
-                                  >
-                                    {note.title}
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-3 py-2 text-xs text-[#999]">
-                                  No notes found
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Create new note */}
-                            {isAddingNote ? (
-                              <div className="px-3 py-2 border-t border-[#444]">
-                                <input
-                                  type="text"
-                                  value={newNoteTitle}
-                                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                                  placeholder="Note title"
-                                  className="w-full px-2 py-1.5 bg-[#333] border border-[#444] rounded text-white text-xs focus:outline-none focus:border-[#DCC5A2]"
-                                />
-                                <div className="flex justify-end mt-2 gap-2">
-                                  <button 
-                                    className="px-2 py-1 text-xs text-[#999] hover:text-white"
-                                    onClick={() => setIsAddingNote(false)}
-                                  >
-                                    Cancel
-                                  </button>
-                                  <button 
-                                    className="px-2 py-1 text-xs bg-[#DCC5A2] text-[#121212] rounded hover:bg-[#C6B190]"
-                                    onClick={() => handleCreateNewNote(message.content)}
-                                  >
-                                    Create
-                                  </button>
-                                </div>
-                              </div>
+                          <div className="px-3 py-1 text-xs font-semibold text-[#999]">
+                            ADD TO NOTE
+                          </div>
+                          
+                          {/* Note list */}
+                          <div className="max-h-[200px] overflow-y-auto">
+                            {notes.length > 0 ? (
+                              notes.map(note => (
+                                <button 
+                                  key={note.id}
+                                  className="w-full text-left px-3 py-2 text-xs text-white hover:bg-[#333] truncate"
+                                  onClick={() => handleAddToExistingNote(note.id, message.content)}
+                                >
+                                  {note.title}
+                                </button>
+                              ))
                             ) : (
-                              <button 
-                                className="w-full flex items-center px-3 py-2 text-xs text-[#DCC5A2] hover:bg-[#333] border-t border-[#444]"
-                                onClick={() => setIsAddingNote(true)}
-                              >
-                                <FilePlus size={14} className="mr-2" />
-                                Create new note
-                              </button>
+                              <div className="px-3 py-2 text-xs text-[#999]">
+                                No notes found
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          
+                          {/* Create new note */}
+                          {isAddingNote ? (
+                            <div className="px-3 py-2 border-t border-[#444]">
+                              <input
+                                type="text"
+                                value={newNoteTitle}
+                                onChange={(e) => setNewNoteTitle(e.target.value)}
+                                placeholder="Note title"
+                                className="w-full px-2 py-1.5 bg-[#333] border border-[#444] rounded text-white text-xs focus:outline-none focus:border-[#DCC5A2]"
+                              />
+                              <div className="flex justify-end mt-2 gap-2">
+                                <button 
+                                  className="px-2 py-1 text-xs text-[#999] hover:text-white"
+                                  onClick={() => setIsAddingNote(false)}
+                                >
+                                  Cancel
+                                </button>
+                                <button 
+                                  className="px-2 py-1 text-xs bg-[#DCC5A2] text-[#121212] rounded hover:bg-[#C6B190]"
+                                  onClick={() => handleCreateNewNote(message.content)}
+                                >
+                                  Create
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button 
+                              className="w-full flex items-center px-3 py-2 text-xs text-[#DCC5A2] hover:bg-[#333] border-t border-[#444]"
+                              onClick={() => setIsAddingNote(true)}
+                            >
+                              <FilePlus size={14} className="mr-2" />
+                              Create new note
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             ) : (
