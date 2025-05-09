@@ -51,6 +51,7 @@ interface AiChatMessage {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  visualizations?: any[];
 }
 
 interface AiChat {
@@ -71,6 +72,7 @@ interface Note {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
+  visualizations?: any[];
 }
 
 export default function VynaAIChat() {
@@ -772,7 +774,15 @@ export default function VynaAIChat() {
                         : 'bg-[#232323] text-[#DDDDDD]'
                     }`}
                   >
-                    <RichContentRenderer content={message.content} />
+                    {message.role === 'user' ? (
+                      <RichContentRenderer content={message.content} />
+                    ) : (
+                      <AdaptiveContentRenderer 
+                        content={message.content}
+                        showAddToNote={true}
+                        onAddToNote={() => setShowNoteDropdown(message.id)} 
+                      />
+                    )}
                     
                     {message.role === 'assistant' && (
                       <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
