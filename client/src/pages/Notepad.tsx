@@ -12,7 +12,8 @@ import {
   Upload,
   Loader2,
   X,
-  Trash2
+  Trash2,
+  Menu
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -789,7 +790,7 @@ export default function Notepad() {
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
-                <FileText size={18} className="text-gray-400" />
+                <Menu size={18} className="text-gray-400" />
               </div>
               <div className="flex p-1 bg-[#202020] rounded-lg">
                 <button 
@@ -803,6 +804,7 @@ export default function Notepad() {
                   className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                   onClick={() => handleTabChange('notepad')}
                 >
+                  <FileText size={12} />
                   <span>Notepad</span>
                 </button>
               </div>
