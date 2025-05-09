@@ -43,13 +43,6 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const { isAuthenticated, isLoading, login, register } = useAuth();
-  const { 
-    connectWallet, 
-    createEmbeddedWallet,
-    connectWithEmail,
-    isPrivyInitializing,
-    isAuthenticated: isPrivyAuthenticated
-  } = usePrivyAuthContext();
   const [location, navigate] = useLocation();
 
   // Get referrer from URL to redirect after login
@@ -80,8 +73,8 @@ export default function Auth() {
     try {
       setError(null);
       setWalletLoading(true);
-      await connectWallet();
-      // The Privy hook will handle the redirect after successful authentication
+      // Temporary placeholder - we'll implement this functionality later
+      setError("Web3 wallet connection is not available yet. Please use email/password login.");
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect wallet');
     } finally {
@@ -94,8 +87,8 @@ export default function Auth() {
     try {
       setError(null);
       setWalletLoading(true);
-      await createEmbeddedWallet();
-      // The Privy hook will handle the redirect after successful authentication
+      // Temporary placeholder - we'll implement this functionality later
+      setError("Web3 wallet creation is not available yet. Please use email/password login.");
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create wallet');
     } finally {
@@ -103,13 +96,13 @@ export default function Auth() {
     }
   };
 
-  // Handle email connection
+  // Handle email connection - simplified version
   const handleConnectEmail = async (email: string) => {
     try {
       setError(null);
       setWalletLoading(true);
-      await connectWithEmail(email);
-      // The Privy hook will handle the redirect after successful authentication
+      // For now, show a message about using traditional login
+      setError("Please use the regular login form with your email and password.");
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect with email');
     } finally {
@@ -119,10 +112,10 @@ export default function Auth() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if ((isAuthenticated && !isLoading) || (isPrivyAuthenticated && !isPrivyInitializing)) {
+    if (isAuthenticated && !isLoading) {
       navigate(referrer);
     }
-  }, [isAuthenticated, isLoading, isPrivyAuthenticated, isPrivyInitializing, navigate, referrer]);
+  }, [isAuthenticated, isLoading, navigate, referrer]);
 
   // Login form submission
   const handleLoginSubmit = async (data: LoginFormData) => {
