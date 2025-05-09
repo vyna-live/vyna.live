@@ -96,11 +96,7 @@ const DraggableParagraph = ({ id, content, index, moveParagraph }: {
         <AdaptiveContentRenderer 
           content={content}
           darkMode={true}
-          renderingMetadata={{
-            isNotepad: true,
-            isTeleprompter: false,
-            showAddToNote: false,
-          }}
+          showAddToNote={false}
         />
       ) : (
         content
@@ -945,14 +941,14 @@ export default function Notepad() {
                 className="text-[#DDDDDD] text-sm"
                 style={{ lineHeight: '1.7' }}
               >
-                {/* Render visualizations at the top using the RichContentRenderer */}
+                {/* Render visualizations at the top using the AdaptiveContentRenderer */}
                 {currentNote.visualizations && currentNote.visualizations.length > 0 && (
                   <div className="mb-4">
-                    <RichContentRenderer 
-                      content="" 
+                    <AdaptiveContentRenderer 
+                      content=""
                       visualizations={currentNote.visualizations || []}
                       darkMode={true}
-                      size="medium"
+                      showAddToNote={false}
                     />
                   </div>
                 )}
