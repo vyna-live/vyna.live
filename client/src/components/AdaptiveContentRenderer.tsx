@@ -130,7 +130,7 @@ const AdaptiveContentRenderer: React.FC<AdaptiveContentRendererProps> = ({
         <RichContentRenderer
           content={content}
           visualizations={visualizations}
-          darkMode={false} // Always use light mode inside the card
+          darkMode={false} // Always use light mode inside the card for better readability
           size={renderingMetadata.isTeleprompter ? "large" : "medium"}
         />
       </VynaCard>

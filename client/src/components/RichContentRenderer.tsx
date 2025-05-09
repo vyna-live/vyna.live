@@ -54,7 +54,10 @@ function extractJSONBlocks(text: string): { parsedBlocks: any[], cleanText: stri
 }
 
 // Component to render a chart based on data
-const ChartRenderer: React.FC<{ chartData: any }> = ({ chartData }) => {
+const ChartRenderer: React.FC<{ chartData: any, darkMode?: boolean }> = ({ 
+  chartData,
+  darkMode = true
+}) => {
   if (!chartData.data || chartData.data.length === 0) return null;
   
   // Ensure the chart data has the required structure for EnhancedChartRenderer
@@ -72,23 +75,40 @@ const ChartRenderer: React.FC<{ chartData: any }> = ({ chartData }) => {
   };
   
   // Use our advanced chart renderer that uses ECharts
-  return <EnhancedChartRenderer chartData={enhancedChartData} darkMode={true} />;
+  return <EnhancedChartRenderer chartData={enhancedChartData} darkMode={darkMode} />;
 };
 
 // Component to render a data table
-const TableRenderer: React.FC<{ data: any[] }> = ({ data }) => {
+const TableRenderer: React.FC<{ data: any[], darkMode?: boolean }> = ({ data, darkMode = true }) => {
   if (!data || data.length === 0) return null;
   
   // Extract headers from the first item
   const headers = Object.keys(data[0]);
   
+  // Define styles based on dark or light mode
+  const tableStyles = darkMode ? {
+    table: "min-w-full bg-[#1E1E1E] border border-[#444] text-white",
+    header: "bg-[#252525]",
+    headerCell: "px-4 py-2 text-left text-[#DCC5A2] border-b border-[#444]",
+    rowEven: "bg-[#1E1E1E]",
+    rowOdd: "bg-[#252525]",
+    cell: "px-4 py-2 border-b border-[#444]"
+  } : {
+    table: "min-w-full bg-white border border-[#E0D5C5] text-[#333333]",
+    header: "bg-[#F7F2EB]",
+    headerCell: "px-4 py-2 text-left text-[#8A1538] border-b border-[#E0D5C5] font-medium",
+    rowEven: "bg-white",
+    rowOdd: "bg-[#F7F2EB]",
+    cell: "px-4 py-2 border-b border-[#E0D5C5]"
+  };
+  
   return (
     <div className="overflow-x-auto my-4">
-      <table className="min-w-full bg-[#1E1E1E] border border-[#444] text-white">
-        <thead className="bg-[#252525]">
+      <table className={tableStyles.table}>
+        <thead className={tableStyles.header}>
           <tr>
             {headers.map((header) => (
-              <th key={header} className="px-4 py-2 text-left text-[#DCC5A2] border-b border-[#444]">
+              <th key={header} className={tableStyles.headerCell}>
                 {header.charAt(0).toUpperCase() + header.slice(1)}
               </th>
             ))}
@@ -96,9 +116,9 @@ const TableRenderer: React.FC<{ data: any[] }> = ({ data }) => {
         </thead>
         <tbody>
           {data.map((row, rowIndex) => (
-            <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-[#1E1E1E]' : 'bg-[#252525]'}>
+            <tr key={rowIndex} className={rowIndex % 2 === 0 ? tableStyles.rowEven : tableStyles.rowOdd}>
               {headers.map((header) => (
-                <td key={`${rowIndex}-${header}`} className="px-4 py-2 border-b border-[#444]">
+                <td key={`${rowIndex}-${header}`} className={tableStyles.cell}>
                   {row[header]}
                 </td>
               ))}
@@ -116,28 +136,53 @@ const InfoCardRenderer: React.FC<{
   content: string;
   icon?: string; 
   type?: 'info' | 'warning' | 'success' | 'error';
-}> = ({ title, content, icon, type = 'info' }) => {
-  const bgColors = {
-    info: 'bg-[#1E3A53]',
-    warning: 'bg-[#513923]',
-    success: 'bg-[#1E4D2B]',
-    error: 'bg-[#572A2A]'
+  darkMode?: boolean;
+}> = ({ title, content, icon, type = 'info', darkMode = true }) => {
+  // Define color schemes for dark and light modes
+  const colorSchemes = {
+    dark: {
+      bg: {
+        info: 'bg-[#1E3A53]',
+        warning: 'bg-[#513923]',
+        success: 'bg-[#1E4D2B]',
+        error: 'bg-[#572A2A]'
+      },
+      border: {
+        info: 'border-[#3E6B99]',
+        warning: 'border-[#9B7846]',
+        success: 'border-[#3A9D55]',
+        error: 'border-[#AA5555]'
+      },
+      title: 'text-white',
+      content: 'text-[#DDDDDD]'
+    },
+    light: {
+      bg: {
+        info: 'bg-[#EBF5FF]',
+        warning: 'bg-[#FFF8E6]',
+        success: 'bg-[#EDFCF2]',
+        error: 'bg-[#FFF1F1]'
+      },
+      border: {
+        info: 'border-[#A3D0FF]',
+        warning: 'border-[#FFE8B2]',
+        success: 'border-[#B3F0C4]',
+        error: 'border-[#FFCCCC]'
+      },
+      title: 'text-[#333333]',
+      content: 'text-[#555555]'
+    }
   };
   
-  const borderColors = {
-    info: 'border-[#3E6B99]',
-    warning: 'border-[#9B7846]',
-    success: 'border-[#3A9D55]',
-    error: 'border-[#AA5555]'
-  };
+  const scheme = darkMode ? colorSchemes.dark : colorSchemes.light;
   
   return (
-    <div className={`p-4 rounded-lg border ${borderColors[type]} ${bgColors[type]} my-4`}>
+    <div className={`p-4 rounded-lg border ${scheme.border[type]} ${scheme.bg[type]} my-4`}>
       <div className="flex items-start">
         {icon && <div className="mr-3">{icon}</div>}
         <div>
-          <h4 className="font-semibold mb-1 text-white">{title}</h4>
-          <div className="text-[#DDDDDD]">{content}</div>
+          <h4 className={`font-semibold mb-1 ${scheme.title}`}>{title}</h4>
+          <div className={scheme.content}>{content}</div>
         </div>
       </div>
     </div>
@@ -157,21 +202,29 @@ const AudioRenderer: React.FC<{ src: string }> = ({ src }) => {
 };
 
 // Image renderer with lazy loading
-const ImageRenderer: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
+const ImageRenderer: React.FC<{ src: string; alt: string; darkMode?: boolean }> = ({ 
+  src, 
+  alt,
+  darkMode = true 
+}) => {
   const [isLoaded, setIsLoaded] = useState(false);
   
   return (
     <div className="my-4 relative">
       {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#1A1A1A] animate-pulse">
-          <span className="text-[#DCC5A2]">Loading image...</span>
+        <div className={`absolute inset-0 flex items-center justify-center ${
+          darkMode ? 'bg-[#1A1A1A]' : 'bg-[#F7F2EB]'
+        } animate-pulse rounded-lg`}>
+          <span className={darkMode ? 'text-[#DCC5A2]' : 'text-[#8A1538]'}>
+            Loading image...
+          </span>
         </div>
       )}
       <img 
         src={src} 
         alt={alt} 
         onLoad={() => setIsLoaded(true)}
-        className="max-w-full rounded-lg"
+        className="max-w-full rounded-lg shadow-sm"
       />
     </div>
   );
@@ -197,16 +250,16 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
   const textParts = cleanText.split(/\[RICH_CONTENT_(\d+)\]/);
   
   return (
-    <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'}`}>
+    <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
       {/* Render direct visualizations if provided */}
       {visualizations && visualizations.length > 0 && (
         <div className="visualizations-container mb-4">
           {visualizations.map((visualization, idx) => {
             if (visualization.type === 'chart') {
-              return <ChartRenderer key={`viz-chart-${idx}`} chartData={visualization} />;
+              return <ChartRenderer key={`viz-chart-${idx}`} chartData={visualization} darkMode={darkMode} />;
             }
             if (visualization.type === 'table') {
-              return <TableRenderer key={`viz-table-${idx}`} data={visualization.data} />;
+              return <TableRenderer key={`viz-table-${idx}`} data={visualization.data} darkMode={darkMode} />;
             }
             return null;
           })}
@@ -258,10 +311,10 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
         
         switch (richContentBlock.type) {
           case 'chart':
-            return <ChartRenderer key={`chart-${index}`} chartData={richContentBlock} />;
+            return <ChartRenderer key={`chart-${index}`} chartData={richContentBlock} darkMode={darkMode} />;
           
           case 'table':
-            return <TableRenderer key={`table-${index}`} data={richContentBlock.data} />;
+            return <TableRenderer key={`table-${index}`} data={richContentBlock.data} darkMode={darkMode} />;
           
           case 'card':
             return (
@@ -271,6 +324,7 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                 content={richContentBlock.content}
                 icon={richContentBlock.icon}
                 type={richContentBlock.cardType}
+                darkMode={darkMode}
               />
             );
           
@@ -283,6 +337,7 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                 key={`image-${index}`}
                 src={richContentBlock.src}
                 alt={richContentBlock.alt || 'Image'}
+                darkMode={darkMode}
               />
             );
           
