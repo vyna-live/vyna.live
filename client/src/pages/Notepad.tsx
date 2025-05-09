@@ -18,6 +18,7 @@ import {
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import RichContentRenderer from "@/components/RichContentRenderer";
+import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import "../pages/VynaAIChat.css";
@@ -79,13 +80,31 @@ const DraggableParagraph = ({ id, content, index, moveParagraph }: {
   // Apply both drag and drop refs
   drag(drop(ref));
   
+  // Check if the content might contain visualizations or rich content
+  const shouldUseAdaptiveRenderer = content.includes('[RICH_CONTENT') 
+    || content.includes('```') 
+    || content.includes('|---|') 
+    || content.includes('![');
+  
   return (
     <div 
       ref={ref} 
       className={`p-2 mb-3 rounded ${isDragging ? 'opacity-50 bg-[#333333]' : ''} cursor-move`}
       style={{ lineHeight: '1.7', margin: '10px 0' }}
     >
-      {content}
+      {shouldUseAdaptiveRenderer ? (
+        <AdaptiveContentRenderer 
+          content={content}
+          darkMode={true}
+          renderingMetadata={{
+            isNotepad: true,
+            isTeleprompter: false,
+            showAddToNote: false,
+          }}
+        />
+      ) : (
+        content
+      )}
     </div>
   );
 };
