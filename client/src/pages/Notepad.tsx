@@ -11,7 +11,8 @@ import {
   Image as ImageIcon,
   Upload,
   Loader2,
-  X
+  X,
+  Trash2
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -20,11 +21,25 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import "../pages/VynaAIChat.css";
 import { Note } from "@/types";
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Used to track which notes are currently active in the UI
 interface NoteWithActive extends Note {
   active: boolean;
 }
+
+// Define types for draggable paragraphs
+type ParagraphItem = {
+  id: string;
+  content: string;
+  index: number;
+}
+
+// Type for our dropdowns
+type DropdownState = {
+  noteOptionsDropdown: { [key: number]: boolean };
+};
 
 export default function Notepad() {
   const [, setLocation] = useLocation();

@@ -976,6 +976,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete a notepad
+  app.delete('/api/notepads/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const hostId = req.query.hostId as string;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ error: 'Invalid notepad ID' });
+      }
+      
+      if (!hostId) {
+        return res.status(400).json({ error: 'Host ID is required' });
+      }
+
+      // Soft delete by setting isDeleted to true
+      const [deletedNotepad] = await db.update(notepads)
+        .set({
+          isDeleted: true,
+          updatedAt: new Date(),
+        })
+        .where(and(
+          eq(notepads.id, id),
+          eq(notepads.hostId, parseInt(hostId))
+        ))
+        .returning();
+
+      if (!deletedNotepad) {
+        return res.status(404).json({ error: 'Notepad not found or you don\'t have permission to delete it' });
+      }
+
+      return res.json({ success: true, message: 'Notepad deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting notepad:', error);
+      return res.status(500).json({ error: 'Failed to delete notepad' });
+    }
+  });
+  
   // Agora API endpoints for livestreaming
   app.get("/api/agora/app-id", getAgoraAppId);
   
