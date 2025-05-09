@@ -30,10 +30,10 @@ const EnhancedChartRenderer: React.FC<EnhancedChartRendererProps> = ({
   const options: EChartsOption = useMemo(() => {
     const { chartType, data, xKey, yKeys, title, subtitle } = chartData;
     
-    // Define colors for dark/light modes
+    // Define colors for dark/light modes with special Vyna palette for light mode
     const colors = chartData.colors || (darkMode 
       ? ['#67e8f9', '#7dd3fc', '#c4b5fd', '#f0abfc', '#fda4af', '#fcd34d', '#86efac', '#d1d5db']
-      : ['#0891b2', '#0284c7', '#7c3aed', '#c026d3', '#e11d48', '#eab308', '#16a34a', '#9ca3af']
+      : ['#A67D44', '#8A1538', '#744634', '#354F52', '#5E6472', '#9A7C60', '#63503C', '#D9A05B']
     );
     
     // Common options for all chart types

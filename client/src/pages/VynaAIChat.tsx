@@ -27,6 +27,7 @@ import {
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import RichContentRenderer from "@/components/RichContentRenderer";
+import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import Teleprompter from "@/components/Teleprompter";
