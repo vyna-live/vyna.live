@@ -47,7 +47,7 @@ export default function Teleprompter({ text, onClose, visualizations = [] }: Tel
         minConstraints={[300, 150]}
         maxConstraints={[800, 500]}
         resizeHandles={['se']}
-        handle={<div style={resizeHandleStyles} />}
+        handle={<div className={resizeHandleClassName} />}
         className="relative"
       >
         <div 

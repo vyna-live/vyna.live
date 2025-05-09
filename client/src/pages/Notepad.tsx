@@ -838,7 +838,7 @@ export default function Notepad() {
             </button>
           </div>
           
-          {!sidebarCollapsed ? (
+          {!sidebarCollapsed && (
             <div className="px-3 py-2">
               <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
               <div className="overflow-y-auto h-full max-h-[calc(100vh-220px)] custom-scrollbar pb-3">
@@ -897,7 +897,8 @@ export default function Notepad() {
               )}
             </div>
           </div>
-          ) : null}
+        )}
+        
         </aside>
 
         {/* Main Note Area */}
