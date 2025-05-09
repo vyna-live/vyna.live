@@ -12,6 +12,10 @@ export const users = pgTable("users", {
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
   googleId: text("google_id").unique(),
+  // Privy integration fields
+  privyId: text("privy_id").unique(),
+  privyWallets: jsonb("privy_wallets"),
+  // Legacy wallet fields
   walletAddress: text("wallet_address").unique(),
   walletProvider: varchar("wallet_provider", { length: 50 }),
   walletConnectedAt: timestamp("wallet_connected_at"),
@@ -186,6 +190,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
   avatarUrl: true,
   googleId: true,
+  // Privy fields
+  privyId: true,
+  privyWallets: true,
+  // Legacy wallet fields
   walletAddress: true,
   walletProvider: true,
   role: true,
