@@ -41,6 +41,54 @@ type DropdownState = {
   noteOptionsDropdown: { [key: number]: boolean };
 };
 
+// Draggable paragraph component
+const DraggableParagraph = ({ id, content, index, moveParagraph }: {
+  id: string;
+  content: string;
+  index: number;
+  moveParagraph: (dragIndex: number, hoverIndex: number) => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const [{ isDragging }, drag] = useDrag({
+    type: 'paragraph',
+    item: { id, index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+  
+  const [, drop] = useDrop({
+    accept: 'paragraph',
+    hover(item: { id: string; index: number }, monitor) {
+      if (!ref.current) return;
+      const dragIndex = item.index;
+      const hoverIndex = index;
+      
+      // Don't replace items with themselves
+      if (dragIndex === hoverIndex) return;
+      
+      moveParagraph(dragIndex, hoverIndex);
+      
+      // Update the index for the dragged item
+      item.index = hoverIndex;
+    },
+  });
+  
+  // Apply both drag and drop refs
+  drag(drop(ref));
+  
+  return (
+    <div 
+      ref={ref} 
+      className={`p-2 mb-3 rounded ${isDragging ? 'opacity-50 bg-[#333333]' : ''} cursor-move`}
+      style={{ lineHeight: '1.7', margin: '10px 0' }}
+    >
+      {content}
+    </div>
+  );
+};
+
 export default function Notepad() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
@@ -51,6 +99,9 @@ export default function Notepad() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [currentNote, setCurrentNote] = useState<NoteWithActive | null>(null);
+  const [paragraphs, setParagraphs] = useState<ParagraphItem[]>([]);
+  const [dropdowns, setDropdowns] = useState<DropdownState>({ noteOptionsDropdown: {} });
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -458,6 +509,114 @@ export default function Notepad() {
     setInputValue("");
   };
   
+  // Split content into paragraphs for draggable UI
+  useEffect(() => {
+    if (currentNote?.content) {
+      // Split by double newlines to get paragraphs
+      const contentParagraphs = currentNote.content.split(/\n\n+/);
+      
+      // Create paragraphs array with IDs
+      const newParagraphs: ParagraphItem[] = contentParagraphs.map((content, index) => ({
+        id: `p-${index}`,
+        content: content,
+        index
+      }));
+      
+      setParagraphs(newParagraphs);
+    } else {
+      setParagraphs([]);
+    }
+  }, [currentNote?.content]);
+  
+  // Function to handle moving paragraphs (drag and drop)
+  const moveParagraph = (dragIndex: number, hoverIndex: number) => {
+    const draggedParagraph = paragraphs[dragIndex];
+    if (!draggedParagraph) return;
+    
+    // Create new paragraphs array with the updated order
+    const updatedParagraphs = [...paragraphs];
+    updatedParagraphs.splice(dragIndex, 1);
+    updatedParagraphs.splice(hoverIndex, 0, draggedParagraph);
+    
+    // Update indices
+    const reindexedParagraphs = updatedParagraphs.map((p, idx) => ({
+      ...p,
+      index: idx
+    }));
+    
+    setParagraphs(reindexedParagraphs);
+    
+    // When paragraphs are reordered, update the note content
+    if (currentNote) {
+      const newContent = reindexedParagraphs.map(p => p.content).join('\n\n');
+      updateNote(currentNote.id, currentNote.title, newContent);
+    }
+  };
+
+  // Handle dropdown toggles
+  const toggleNoteOptionsDropdown = (noteId: number) => {
+    setDropdowns(prev => ({
+      ...prev,
+      noteOptionsDropdown: {
+        ...prev.noteOptionsDropdown,
+        [noteId]: !prev.noteOptionsDropdown[noteId]
+      }
+    }));
+  };
+  
+  // Delete note function
+  const deleteNote = async (noteId: number) => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/notepads/${noteId}?hostId=${user.id}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete note');
+      }
+      
+      // Remove the note from the local state
+      const updatedNotes = notes.filter(note => note.id !== noteId);
+      setNotes(updatedNotes);
+      
+      // If the deleted note was the current note, select another note
+      if (currentNote && currentNote.id === noteId) {
+        if (updatedNotes.length > 0) {
+          const newCurrentNote = { ...updatedNotes[0], active: true };
+          setCurrentNote(newCurrentNote);
+          
+          // Update active state in notes array
+          setNotes(updatedNotes.map((note, index) => ({
+            ...note,
+            active: index === 0
+          })));
+        } else {
+          setCurrentNote(null);
+        }
+      }
+      
+      toast({
+        title: 'Note deleted',
+        description: 'Your note has been deleted successfully.',
+      });
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: 'Error deleting note',
+        description: 'Failed to delete the note. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsDeleting(false);
+      
+      // Close any open dropdowns
+      setDropdowns({ noteOptionsDropdown: {} });
+    }
+  };
+  
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -682,9 +841,33 @@ export default function Notepad() {
                       <div className={`truncate font-medium ${note.active ? 'text-white' : 'text-[#BBBBBB]'}`}>
                         {note.title}
                       </div>
-                      <button className="text-[#777777] hover:text-white p-1">
-                        <MoreVertical size={16} />
-                      </button>
+                      <div className="relative">
+                        <button 
+                          className="text-[#777777] hover:text-white p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleNoteOptionsDropdown(note.id);
+                          }}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        
+                        {dropdowns.noteOptionsDropdown[note.id] && (
+                          <div 
+                            className="absolute right-0 top-8 z-50 bg-[#252525] border border-[#333333] rounded-md shadow-xl w-32 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button 
+                              className="w-full text-left px-3 py-2 text-sm text-[#FF6B6B] hover:bg-[#303030] flex items-center gap-2"
+                              onClick={() => deleteNote(note.id)}
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-[#777777] text-xs mt-1 line-clamp-2">
                       {getNotePreview(note.content)}
@@ -722,14 +905,35 @@ export default function Notepad() {
             ) : currentNote ? (
               <div 
                 ref={contentRef}
-                className="text-[#DDDDDD] text-sm leading-relaxed"
+                className="text-[#DDDDDD] text-sm"
+                style={{ lineHeight: '1.7' }}
               >
-                <RichContentRenderer 
-                  content={currentNote.content} 
-                  visualizations={currentNote.visualizations || []}
-                  darkMode={true}
-                  size="medium"
-                />
+                {/* Render visualizations at the top using the RichContentRenderer */}
+                {currentNote.visualizations && currentNote.visualizations.length > 0 && (
+                  <div className="mb-4">
+                    <RichContentRenderer 
+                      content="" 
+                      visualizations={currentNote.visualizations || []}
+                      darkMode={true}
+                      size="medium"
+                    />
+                  </div>
+                )}
+                
+                {/* Render draggable paragraphs */}
+                <DndProvider backend={HTML5Backend}>
+                  <div className="space-y-2">
+                    {paragraphs.map((paragraph, index) => (
+                      <DraggableParagraph
+                        key={paragraph.id}
+                        id={paragraph.id}
+                        content={paragraph.content}
+                        index={index}
+                        moveParagraph={moveParagraph}
+                      />
+                    ))}
+                  </div>
+                </DndProvider>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center px-4 empty-state-animation">
