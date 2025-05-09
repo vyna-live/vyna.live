@@ -821,10 +821,10 @@ export default function VynaAIChat() {
                   )}
                   
                   <div 
-                    className={`rounded-xl px-4 py-3.5 max-w-[80%] ${
+                    className={`rounded-xl px-4 py-3.5 ${
                       message.role === 'user' 
-                        ? 'bg-[#2A2A2A] text-white' 
-                        : 'bg-[#232323] text-[#DDDDDD]'
+                        ? 'bg-[#2A2A2A] text-white max-w-[85%] sm:max-w-[80%]' 
+                        : 'bg-[#232323] text-[#DDDDDD] max-w-[90%] sm:max-w-[80%]'
                     }`}
                   >
                     {message.role === 'user' ? (
@@ -838,7 +838,7 @@ export default function VynaAIChat() {
                     )}
                     
                     {message.role === 'assistant' && (
-                      <div className="flex items-center gap-3 mt-3 text-[#777777] message-controls">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3 text-[#777777] message-controls">
                         <button 
                           className="hover:text-[#DCC5A2] p-1" 
                           aria-label="Add to teleprompter"
@@ -846,13 +846,13 @@ export default function VynaAIChat() {
                         >
                           <Book size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
+                        <button className="hover:text-[#DCC5A2] p-1" aria-label="Regenerate response">
                           <RefreshCw size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
+                        <button className="hover:text-[#DCC5A2] p-1" aria-label="Like response">
                           <ThumbsUp size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
+                        <button className="hover:text-[#DCC5A2] p-1" aria-label="Dislike response">
                           <ThumbsDown size={14} />
                         </button>
                         <button
@@ -862,7 +862,7 @@ export default function VynaAIChat() {
                         >
                           <MessageCirclePlus size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1">
+                        <button className="hover:text-[#DCC5A2] p-1" aria-label="More options">
                           <MoreVertical size={14} />
                         </button>
                         
@@ -977,8 +977,8 @@ export default function VynaAIChat() {
               </div>
               
               {/* Commentary style selector */}
-              <div className="mb-3 flex items-center">
-                <span className="text-xs text-[#999999] mr-2">Commentary style:</span>
+              <div className="mb-3 flex items-center flex-wrap">
+                <span className="text-xs text-[#999999] mr-2 mb-1">Commentary style:</span>
                 <div className="flex bg-[#232323] rounded-md p-1">
                   <button
                     className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
@@ -997,9 +997,9 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-5 text-[#999999]">
+                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1007,7 +1007,7 @@ export default function VynaAIChat() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1015,7 +1015,7 @@ export default function VynaAIChat() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1024,7 +1024,7 @@ export default function VynaAIChat() {
                   </button>
                 </div>
                 <button 
-                  className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
+                  className="button-hover-effect rounded-lg px-4 sm:px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
                   aria-label="Send message"
                   onClick={() => handleSendMessage(inputValue)}
                   disabled={!isAuthenticated || isLoading3Dots || isUploading || inputValue.trim() === ""}
