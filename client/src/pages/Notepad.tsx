@@ -103,6 +103,7 @@ export default function Notepad() {
   const [paragraphs, setParagraphs] = useState<ParagraphItem[]>([]);
   const [dropdowns, setDropdowns] = useState<DropdownState>({ noteOptionsDropdown: {} });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -116,6 +117,11 @@ export default function Notepad() {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   
   const contentRef = useRef<HTMLDivElement>(null);
+  
+  // Toggle sidebar collapse
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => !prev);
+  };
   
   // Load notes when component mounts
   useEffect(() => {
@@ -786,31 +792,38 @@ export default function Notepad() {
       {/* Main content with spacing from navbar */}
       <div className="flex flex-1 p-4 pt-4 overflow-hidden z-[1]">
         {/* Sidebar with spacing */}
-        <aside className="w-[270px] bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1]">
+        <aside className={`${sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
-                <Menu size={18} className="text-gray-400" />
-              </div>
-              <div className="flex p-1 bg-[#202020] rounded-lg">
                 <button 
-                  className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
-                  onClick={() => handleTabChange('vynaai')}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  onClick={toggleSidebar}
                 >
-                  <Sparkles size={12} />
-                  <span>VynaAI</span>
-                </button>
-                <button 
-                  className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
-                  onClick={() => handleTabChange('notepad')}
-                >
-                  <FileText size={12} />
-                  <span>Notepad</span>
+                  <Menu size={18} />
                 </button>
               </div>
+              {!sidebarCollapsed && (
+                <div className="flex p-1 bg-[#202020] rounded-lg">
+                  <button 
+                    className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => handleTabChange('vynaai')}
+                  >
+                    <Sparkles size={12} />
+                    <span>VynaAI</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => handleTabChange('notepad')}
+                  >
+                    <FileText size={12} />
+                    <span>Notepad</span>
+                  </button>
+                </div>
+              )}
             </div>
             <button 
-              className="w-full mb-3 flex items-center justify-center gap-1.5 py-2 bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all"
+              className={`${sidebarCollapsed ? 'w-10 p-2' : 'w-full gap-1.5 py-2'} mb-3 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all`}
               onClick={handleNewNote}
               disabled={isSaving || !isAuthenticated}
             >
@@ -819,21 +832,22 @@ export default function Notepad() {
               ) : (
                 <>
                   <Plus size={16} />
-                  <span className="text-sm">New note</span>
+                  {!sidebarCollapsed && <span className="text-sm">New note</span>}
                 </>
               )}
             </button>
           </div>
           
-          <div className="px-3 py-2">
-            <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
-            <div className="overflow-y-auto h-full max-h-[calc(100vh-220px)] custom-scrollbar pb-3">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#DCC5A2]" />
-                </div>
-              ) : notes.length > 0 ? (
-                notes.map((note) => (
+          {!sidebarCollapsed ? (
+            <div className="px-3 py-2">
+              <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
+              <div className="overflow-y-auto h-full max-h-[calc(100vh-220px)] custom-scrollbar pb-3">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#DCC5A2]" />
+                  </div>
+                ) : notes.length > 0 ? (
+                  notes.map((note) => (
                   <div 
                     key={note.id}
                     className={`flex flex-col px-2 py-2.5 rounded-md text-sm cursor-pointer mb-1 ${note.active ? 'bg-[#252525]' : 'hover:bg-[#232323]'}`}
@@ -883,6 +897,7 @@ export default function Notepad() {
               )}
             </div>
           </div>
+          ) : null}
         </aside>
 
         {/* Main Note Area */}
