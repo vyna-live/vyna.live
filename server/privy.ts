@@ -15,12 +15,20 @@ async function hashPassword(password: string): Promise<string> {
 
 // Get user by privyId
 export async function getUserByPrivyId(privyId: string): Promise<User | undefined> {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.privyId, privyId));
-  
-  return user;
+  try {
+    const results = await db
+      .select()
+      .from(users)
+      .where(eq(users.privyId, privyId));
+      
+    if (results && results.length > 0) {
+      return results[0];
+    }
+    return undefined;
+  } catch (error) {
+    console.error("Error getting user by privyId:", error);
+    return undefined;
+  }
 }
 
 // Create a new user based on Privy data
@@ -37,20 +45,42 @@ export async function createUserFromPrivy(privyData: {
   const username = privyData.username || `user_${randomBytes(4).toString('hex')}`;
   const email = privyData.email || null;
   
-  // Create the user
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      username,
-      email,
-      password: hashedPassword,
-      privyId: privyData.privyId,
-      role: 'user',
-      isEmailVerified: !!email,
-    })
-    .returning();
+  // Check if username already exists
+  const existingUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username));
+    
+  // If username exists, generate a unique one
+  const finalUsername = existingUser.length > 0 
+    ? `${username}_${randomBytes(4).toString('hex')}`
+    : username;
   
-  return newUser;
+  // Create the user with type-safe values
+  const newUserValues = {
+    username: finalUsername,
+    email,
+    password: hashedPassword,
+    privyId: privyData.privyId,
+    role: 'user' as const,
+    isEmailVerified: !!email,
+    privyWallets: {} as any // Empty JSON object for now
+  };
+  
+  try {
+    const results = await db
+      .insert(users)
+      .values(newUserValues)
+      .returning();
+    
+    if (results && results.length > 0) {
+      return results[0];
+    }
+    throw new Error("Failed to create user: No user returned");
+  } catch (error) {
+    console.error("Error creating user from Privy data:", error);
+    throw error;
+  }
 }
 
 // Privy login handler

@@ -139,7 +139,7 @@ export const PrivyAuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <PrivyAuthContext.Provider
       value={{
-        user,
+        user: user || null,
         privyUser,
         isLoading,
         isPrivyInitializing,
