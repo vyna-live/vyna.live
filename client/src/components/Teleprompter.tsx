@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Copy, Play, Pause, Sliders, Maximize, Minimize } from "lucide-react";
 import useTeleprompter from "@/hooks/useTeleprompter";
+import RichContentRenderer from "./RichContentRenderer";
 import { ResizableBox } from "react-resizable";
-import RichContentCard, { VisualData } from "./RichContentCard";
 
 interface TeleprompterProps {
   text: string;
   onClose?: () => void;
-  visualizations?: VisualData[];
+  visualizations?: any[];
 }
 
 export default function Teleprompter({ text, onClose, visualizations = [] }: TeleprompterProps) {
@@ -61,11 +61,12 @@ export default function Teleprompter({ text, onClose, visualizations = [] }: Tel
             className="h-full p-6 pb-16 overflow-y-auto"
             style={{ fontSize: `${textSize}px` }}
           >
-            {/* Use the RichContentCard for all content, including text */}
-            <RichContentCard
+            {/* Use the RichContentRenderer for all content, including text */}
+            <RichContentRenderer 
               content={text}
               visualizations={visualizations}
-              className="bg-transparent border-none"
+              darkMode={true}
+              size="small"
             />
           </div>
 
