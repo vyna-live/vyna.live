@@ -1,29 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Loader2, AlertCircle, Check, CreditCard, Coins } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
-import { SubscriptionTier } from '@/services/subscriptionService';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
+import { SubscriptionTier } from '@/services/subscriptionService';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedTier?: SubscriptionTier;
-  onSuccess: (
-    signature: string,
-    amount: string,
-    paymentMethod: 'sol' | 'usdc'
-  ) => void;
+  selectedTier: SubscriptionTier;
+  onSuccess: (signature: string, amount: string, paymentMethod: 'sol' | 'usdc') => void;
   isPending?: boolean;
 }
 
@@ -43,200 +38,226 @@ export function PaymentModal({
   // Reset state when modal opens
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      if (status !== 'processing') {
-        onClose();
-        // Reset state when modal closes
-        setStatus('idle');
-        setError(null);
-      }
+      onClose();
     }
   };
 
-  const handlePayment = async () => {
-    if (!wallet || !selectedTier) return;
+  // Reset state when tier changes
+  useEffect(() => {
+    if (selectedTier) {
+      setStatus('idle');
+      setError(null);
+    }
+  }, [selectedTier]);
 
-    const amount = paymentMethod === 'sol' 
-      ? selectedTier.priceSol 
-      : selectedTier.priceUsdc;
-    
-    // Mock recipient address - in a real implementation this would be your app's payment address
-    const recipient = 'VynaPaymentAddress123456789';
-    
+  // Handle payment
+  const handleSubmit = async () => {
+    if (!wallet) {
+      setError('Wallet not connected. Please connect your wallet first.');
+      return;
+    }
+
     setStatus('processing');
     setError(null);
-    
+
     try {
-      const result = await sendTransaction(amount, recipient, paymentMethod);
+      // Get amount based on payment method
+      const amount = paymentMethod === 'sol' 
+        ? selectedTier.priceSol.toString()
+        : selectedTier.priceUsdc.toString();
+
+      // Program wallet that receives the payment (would be configured in production)
+      const recipient = process.env.NODE_ENV === 'development' 
+        ? 'mock_program_wallet_address'  // Mock address for development
+        : '5FHgaHwGCEW31KNu7Xv4KhQTQXTXBkREPgzAixRjUU56'; // Example Solana address
       
-      if (result.success && result.signature) {
-        setStatus('success');
-        // Call the onSuccess callback with the transaction signature
-        onSuccess(result.signature, amount.toString(), paymentMethod);
-      } else {
-        setStatus('error');
-        setError(result.error || 'Transaction failed. Please try again.');
-      }
+      // Create and send transaction
+      const result = await sendTransaction({
+        amount,
+        recipient,
+        paymentMethod,
+      });
+
+      // Show success and call the onSuccess callback
+      setStatus('success');
+      onSuccess(result.signature, amount, paymentMethod);
     } catch (err) {
-      console.error('Payment error:', err);
       setStatus('error');
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred during payment.'
-      );
+      setError(err instanceof Error ? err.message : 'Failed to process payment');
     }
   };
 
-  if (!selectedTier) return null;
+  // Get content based on status
+  const renderContent = () => {
+    // Processing state
+    if (status === 'processing') {
+      return (
+        <div className="flex flex-col items-center justify-center py-8">
+          <Loader2 className="h-16 w-16 animate-spin text-[#E6E2DA] mb-4" />
+          <h3 className="text-xl font-medium mb-2">Processing Payment</h3>
+          <p className="text-neutral-400 text-center">
+            Please confirm the transaction in your {wallet?.name} wallet.
+            <br />
+            Do not close this window.
+          </p>
+        </div>
+      );
+    }
+
+    // Error state
+    if (status === 'error') {
+      return (
+        <div className="flex flex-col items-center justify-center py-6">
+          <div className="rounded-full bg-red-900/20 p-3 mb-4">
+            <AlertCircle className="h-10 w-10 text-red-500" />
+          </div>
+          <h3 className="text-xl font-medium mb-2">Transaction Failed</h3>
+          <p className="text-neutral-400 text-center mb-4">
+            {error || 'There was an error processing your payment. Please try again.'}
+          </p>
+          <Button onClick={() => setStatus('idle')} className="mt-2">
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+
+    // Success state
+    if (status === 'success') {
+      return (
+        <div className="flex flex-col items-center justify-center py-6">
+          <div className="rounded-full bg-green-900/20 p-3 mb-4">
+            <Check className="h-10 w-10 text-green-500" />
+          </div>
+          <h3 className="text-xl font-medium mb-2">Payment Successful</h3>
+          <p className="text-neutral-400 text-center">
+            Thank you for subscribing to VynaAI {selectedTier.name}!
+            <br />
+            Your subscription is being activated.
+          </p>
+        </div>
+      );
+    }
+
+    // Default/idle state - payment form
+    return (
+      <>
+        <div className="space-y-4 py-2">
+          <div className="bg-neutral-900 rounded-lg p-4 mb-4">
+            <div className="flex justify-between mb-2">
+              <span className="text-neutral-400">Plan</span>
+              <span className="font-medium">{selectedTier.name}</span>
+            </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-neutral-400">Billing</span>
+              <span>Monthly</span>
+            </div>
+            <div className="flex justify-between font-medium text-lg pt-2 border-t border-neutral-800">
+              <span>Total</span>
+              <span>{paymentMethod === 'sol' ? `${selectedTier.priceSol} SOL` : `${selectedTier.priceUsdc} USDC`}</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 font-medium">Payment Method</div>
+            <RadioGroup 
+              defaultValue="sol" 
+              value={paymentMethod} 
+              onValueChange={(value) => setPaymentMethod(value as 'sol' | 'usdc')}
+              className="grid grid-cols-2 gap-4"
+            >
+              <div>
+                <RadioGroupItem 
+                  value="sol" 
+                  id="sol" 
+                  className="peer sr-only" 
+                />
+                <Label
+                  htmlFor="sol"
+                  className="flex flex-col items-center justify-between rounded-lg border-2 border-neutral-800 bg-neutral-900 p-4 hover:bg-neutral-800/50 hover:text-accent-foreground peer-data-[state=checked]:border-[#E6E2DA] [&:has([data-state=checked])]:border-[#E6E2DA]"
+                >
+                  <Coins className="mb-3 h-6 w-6 text-[#E6E2DA]" />
+                  <div className="text-center">
+                    <p className="font-medium">SOL</p>
+                    <p className="text-sm text-neutral-400">Solana</p>
+                  </div>
+                </Label>
+              </div>
+
+              <div>
+                <RadioGroupItem 
+                  value="usdc" 
+                  id="usdc" 
+                  className="peer sr-only" 
+                />
+                <Label
+                  htmlFor="usdc"
+                  className="flex flex-col items-center justify-between rounded-lg border-2 border-neutral-800 bg-neutral-900 p-4 hover:bg-neutral-800/50 hover:text-accent-foreground peer-data-[state=checked]:border-[#E6E2DA] [&:has([data-state=checked])]:border-[#E6E2DA]"
+                >
+                  <CreditCard className="mb-3 h-6 w-6 text-[#27a0f2]" />
+                  <div className="text-center">
+                    <p className="font-medium">USDC</p>
+                    <p className="text-sm text-neutral-400">USD Coin</p>
+                  </div>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {error && (
+            <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
+            disabled={isPending || status === 'processing'}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSubmit}
+            disabled={isPending || status === 'processing'}
+            className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
+          >
+            {isPending || status === ('processing' as PaymentStatus) ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              `Pay ${paymentMethod === 'sol' ? selectedTier.priceSol + ' SOL' : selectedTier.priceUsdc + ' USDC'}`
+            )}
+          </Button>
+        </DialogFooter>
+      </>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-neutral-900 border-neutral-700 text-white">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Subscribe to {selectedTier.name}
+          <DialogTitle>
+            {status === 'processing' ? 'Processing Payment' : 
+             status === 'success' ? 'Payment Successful' : 
+             status === 'error' ? 'Payment Failed' : 
+             'Complete Your Purchase'}
           </DialogTitle>
-          <DialogDescription className="text-neutral-400">
-            {selectedTier.headline}
-          </DialogDescription>
+          {status === 'idle' && (
+            <DialogDescription>
+              Subscribe to VynaAI {selectedTier.name} using your connected wallet
+            </DialogDescription>
+          )}
         </DialogHeader>
 
-        {status === 'idle' && (
-          <>
-            <div className="py-4 space-y-6">
-              <div className="bg-black rounded-lg p-4 border border-neutral-800">
-                <h3 className="font-semibold mb-2">Subscription Details</h3>
-                <p className="text-sm text-neutral-400 mb-2">{selectedTier.description}</p>
-                
-                <div className="mt-3 pt-3 border-t border-neutral-800">
-                  <h4 className="text-sm font-medium mb-2">Includes:</h4>
-                  <ul className="space-y-1 text-sm text-neutral-400">
-                    {selectedTier.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <Tabs defaultValue="sol" className="w-full" onValueChange={(v) => setPaymentMethod(v as 'sol' | 'usdc')}>
-                <TabsList className="grid w-full grid-cols-2 bg-neutral-800">
-                  <TabsTrigger value="sol">Pay with SOL</TabsTrigger>
-                  <TabsTrigger value="usdc">Pay with USDC</TabsTrigger>
-                </TabsList>
-                <TabsContent value="sol" className="mt-4">
-                  <div className="p-4 rounded-lg border border-neutral-800 text-center">
-                    <div className="mb-2 text-sm text-neutral-400">Price</div>
-                    <div className="text-2xl font-bold">{selectedTier.priceSol} SOL</div>
-                    {wallet && (
-                      <div className="mt-2 text-xs text-neutral-500">
-                        Your balance: {wallet.balance.toFixed(4)} SOL
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="usdc" className="mt-4">
-                  <div className="p-4 rounded-lg border border-neutral-800 text-center">
-                    <div className="mb-2 text-sm text-neutral-400">Price</div>
-                    <div className="text-2xl font-bold">{selectedTier.priceUsdc} USDC</div>
-                    {wallet && (
-                      <div className="mt-2 text-xs text-neutral-500">
-                        USDC balance not available in mock wallet
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              {error && (
-                <div className="bg-red-900/20 border border-red-700 rounded-md p-3 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-            </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
-                disabled={status === 'processing'}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePayment}
-                disabled={status === 'processing' || !wallet || isPending}
-                className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
-              >
-                {isPending || status === 'processing' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  `Pay ${paymentMethod === 'sol' ? selectedTier.priceSol + ' SOL' : selectedTier.priceUsdc + ' USDC'}`
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-
-        {status === 'processing' && (
-          <div className="py-8 flex flex-col items-center justify-center">
-            <Loader2 className="h-12 w-12 animate-spin text-neutral-400 mb-4" />
-            <h3 className="text-lg font-medium">Processing Payment</h3>
-            <p className="text-neutral-400 text-center mt-2">
-              Please wait while we process your transaction...
-            </p>
-          </div>
-        )}
-
-        {status === 'success' && (
-          <div className="py-8 flex flex-col items-center justify-center">
-            <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-lg font-medium">Payment Successful!</h3>
-            <p className="text-neutral-400 text-center mt-2">
-              Your subscription to {selectedTier.name} has been activated.
-            </p>
-            <Button
-              onClick={onClose}
-              className="mt-6 bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
-            >
-              Done
-            </Button>
-          </div>
-        )}
-
-        {status === 'error' && (
-          <div className="py-8 flex flex-col items-center justify-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-            <h3 className="text-lg font-medium">Payment Failed</h3>
-            <p className="text-red-400 text-center mt-2">
-              {error || 'There was an error processing your payment.'}
-            </p>
-            <div className="flex gap-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  setStatus('idle');
-                  setError(null);
-                }}
-                className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
-              >
-                Try Again
-              </Button>
-            </div>
-          </div>
-        )}
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
