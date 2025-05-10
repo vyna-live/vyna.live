@@ -17,8 +17,7 @@ import VynaAIChat from "@/pages/VynaAIChat";
 import Notepad from "@/pages/Notepad";
 import ProfilePage from "@/pages/ProfilePage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
-// Temporarily skip wallet provider due to dependency issues
-// import SolanaWalletProvider from "@/contexts/SolanaWalletProvider";
+import SolanaWalletProvider from "@/contexts/SolanaWalletProvider";
 
 function Router() {
   return (
@@ -52,11 +51,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {/* Temporarily removed SolanaWalletProvider due to dependency issues */}
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <SolanaWalletProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </SolanaWalletProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

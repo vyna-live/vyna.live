@@ -82,10 +82,7 @@ export default function Header({ username }: HeaderProps) {
               <span className="text-[#A67D44]">Pricing</span>
             </button>
           </div>
-          <SolanaWalletButton 
-            onWalletConnect={handleWalletConnect}
-            onWalletDisconnect={handleWalletDisconnect}
-          />
+          <SolanaWalletButton />
         </div>
       </div>
       

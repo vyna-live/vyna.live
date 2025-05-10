@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import React, { useState } from 'react';
+import { useWallet } from '@/contexts/SolanaWalletProvider';
 import { 
   Dialog, 
   DialogContent, 
@@ -9,7 +8,35 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Wallet, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Wallet, ArrowRight, Check, X } from 'lucide-react';
+
+// Wallet providers with their logos/icons
+const walletProviders = [
+  { 
+    id: 'phantom', 
+    name: 'Phantom', 
+    icon: '/phantom-icon.png',
+    description: 'Connect with Phantom, a popular Solana wallet extension'
+  },
+  { 
+    id: 'solflare', 
+    name: 'Solflare', 
+    icon: '/solflare-icon.png',
+    description: 'Connect with Solflare, a secure Solana wallet'
+  },
+  { 
+    id: 'slope', 
+    name: 'Slope', 
+    icon: '/slope-icon.png',
+    description: 'Connect with Slope Wallet'
+  },
+  { 
+    id: 'other', 
+    name: 'Other Solana Wallet', 
+    icon: '/wallet-icon.png',
+    description: 'Connect with another Solana-compatible wallet'
+  }
+];
 
 interface WalletConnectionModalProps {
   isOpen: boolean;
@@ -17,26 +44,39 @@ interface WalletConnectionModalProps {
   onSuccess: () => void;
 }
 
-export default function WalletConnectionModal({ 
-  isOpen, 
+const WalletConnectionModal: React.FC<WalletConnectionModalProps> = ({
+  isOpen,
   onClose,
-  onSuccess 
-}: WalletConnectionModalProps) {
-  const { connected, connecting, publicKey } = useWallet();
-  const { setVisible } = useWalletModal();
-  const [connectionAttempted, setConnectionAttempted] = useState(false);
+  onSuccess
+}) => {
+  const { connectWallet, connecting } = useWallet();
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connectionStep, setConnectionStep] = useState<'select' | 'connecting' | 'error'>('select');
 
-  // Open the Solana wallet adapter modal when user clicks "Connect Wallet"
-  const handleConnectWallet = () => {
-    setConnectionAttempted(true);
-    setVisible(true);
+  const handleSelectWallet = async (providerId: string) => {
+    setSelectedProvider(providerId);
+    setConnectionStep('connecting');
+    setConnectionError(null);
+    
+    try {
+      const success = await connectWallet(providerId as any);
+      if (success) {
+        onSuccess();
+      } else {
+        setConnectionStep('error');
+        setConnectionError('Failed to connect to wallet. Please try again.');
+      }
+    } catch (error) {
+      console.error('Wallet connection error', error);
+      setConnectionStep('error');
+      setConnectionError('An unexpected error occurred. Please try again.');
+    }
   };
 
-  // Check if connected and call success callback
-  const handleContinue = () => {
-    if (connected && publicKey) {
-      onSuccess();
-    }
+  const handleTryAgain = () => {
+    setConnectionStep('select');
+    setConnectionError(null);
   };
 
   return (
@@ -45,66 +85,87 @@ export default function WalletConnectionModal({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Connect Your Wallet</DialogTitle>
           <DialogDescription className="text-gray-400">
-            Connect your Solana wallet to continue with the subscription process.
+            Connect your Solana wallet to access premium features.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col items-center py-4">
-          <div className="mb-6 w-16 h-16 bg-[#1f1f1f] rounded-full flex items-center justify-center">
-            <Wallet className="h-8 w-8 text-[#A67D44]" />
-          </div>
-
-          {!connected ? (
-            <div className="flex flex-col items-center space-y-4 w-full">
-              <p className="text-center text-sm">
-                You'll need a Solana wallet to make payments. 
-                This will allow you to securely pay for your subscription using SOL.
-              </p>
-              
-              {connectionAttempted && !connecting && (
-                <div className="w-full p-3 border border-amber-600/30 bg-amber-950/20 rounded-md flex items-start space-x-2 mb-2">
-                  <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-400">
-                    <p className="font-medium">Connection not completed</p>
-                    <p>Please complete the connection process in your wallet.</p>
+        {connectionStep === 'select' && (
+          <div className="grid gap-4 py-4">
+            <div className="mb-4 w-16 h-16 mx-auto bg-[#1f1f1f] rounded-full flex items-center justify-center">
+              <Wallet className="h-8 w-8 text-[#A67D44]" />
+            </div>
+            
+            <p className="text-center text-sm mb-4">
+              Select a wallet to connect. This will allow you to securely make payments 
+              and access premium features.
+            </p>
+            
+            <div className="space-y-2">
+              {walletProviders.map(provider => (
+                <Button
+                  key={provider.id}
+                  onClick={() => handleSelectWallet(provider.id)}
+                  className="w-full bg-[#1c1c1c] hover:bg-[#262626] text-white border border-[#333] justify-between"
+                  variant="outline"
+                  disabled={connecting}
+                >
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 mr-3 flex items-center justify-center">
+                      {/* If icons are not available, use a fallback */}
+                      <Wallet className="h-5 w-5" />
+                    </div>
+                    <span>{provider.name}</span>
                   </div>
-                </div>
-              )}
-              
+                  <ArrowRight className="h-4 w-4 opacity-50" />
+                </Button>
+              ))}
+            </div>
+            
+            <p className="text-xs text-gray-500 text-center mt-4">
+              We never store your private keys. All transactions are signed locally in your wallet.
+            </p>
+          </div>
+        )}
+
+        {connectionStep === 'connecting' && (
+          <div className="flex flex-col items-center py-6">
+            <Loader2 className="h-12 w-12 animate-spin text-[#A67D44] mb-4" />
+            <h3 className="text-lg font-medium mb-2">Connecting...</h3>
+            <p className="text-sm text-gray-400 text-center">
+              Please approve the connection request in your wallet.
+            </p>
+          </div>
+        )}
+
+        {connectionStep === 'error' && (
+          <div className="flex flex-col items-center py-6">
+            <div className="w-12 h-12 rounded-full bg-red-900/20 flex items-center justify-center mb-4">
+              <X className="h-6 w-6 text-red-500" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Connection Failed</h3>
+            <p className="text-sm text-gray-400 text-center mb-6">
+              {connectionError || 'Failed to connect to wallet. Please try again.'}
+            </p>
+            <div className="flex gap-3 w-full">
               <Button 
-                onClick={handleConnectWallet}
-                className="w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
-                disabled={connecting}
+                onClick={onClose}
+                className="flex-1 bg-transparent hover:bg-[#1a1a1a] border border-[#333]"
+                variant="outline"
               >
-                {connecting ? "Connecting..." : "Connect Wallet"}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleTryAgain}
+                className="flex-1 bg-[#A67D44] hover:bg-[#8A6836] text-black"
+              >
+                Try Again
               </Button>
             </div>
-          ) : (
-            <div className="flex flex-col items-center space-y-4 w-full">
-              <div className="w-full p-3 border border-green-600/30 bg-green-950/20 rounded-md flex items-start space-x-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-green-400">Wallet connected successfully</p>
-                  <p className="text-gray-400 break-all">{publicKey?.toString()}</p>
-                </div>
-              </div>
-              
-              <Button 
-                onClick={handleContinue}
-                className="w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
-              >
-                Continue to Payment
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-2 pt-4 border-t border-[#333] text-xs text-gray-500">
-          Your wallet will only be used for payment processing and won't have access to any other permissions.
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default WalletConnectionModal;

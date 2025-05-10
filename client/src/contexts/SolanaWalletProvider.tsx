@@ -1,42 +1,140 @@
-import React, { useMemo } from 'react';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
-import { 
-  PhantomWalletAdapter,
-  SolflareWalletAdapter
-} from '@solana/wallet-adapter-wallets';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { clusterApiUrl } from '@solana/web3.js';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-// Import the styles
-import '@solana/wallet-adapter-react-ui/styles.css';
+// Simplified wallet types
+type WalletProvider = 'phantom' | 'solflare' | 'slope' | 'sollet' | 'ledger' | 'other';
+
+interface WalletInfo {
+  address: string;
+  provider: WalletProvider;
+  connectedAt: Date;
+}
+
+interface WalletContextType {
+  wallet: WalletInfo | null;
+  connecting: boolean;
+  connected: boolean;
+  connectWallet: (provider: WalletProvider) => Promise<boolean>;
+  disconnectWallet: () => void;
+  simulateTransaction: (amount: number, currency: 'sol' | 'usdc') => Promise<string>;
+}
+
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+export const useWallet = (): WalletContextType => {
+  const context = useContext(WalletContext);
+  if (!context) {
+    throw new Error('useWallet must be used within a SolanaWalletProvider');
+  }
+  return context;
+};
 
 interface SolanaWalletProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const SolanaWalletProvider: React.FC<SolanaWalletProviderProps> = ({ children }) => {
-  // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'
-  const network = WalletAdapterNetwork.Devnet;
+  const [wallet, setWallet] = useState<WalletInfo | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const { toast } = useToast();
 
-  // You can also provide a custom RPC endpoint
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  // Load wallet from localStorage on mount if available
+  useEffect(() => {
+    const savedWallet = localStorage.getItem('wallet');
+    if (savedWallet) {
+      try {
+        const parsedWallet = JSON.parse(savedWallet) as WalletInfo;
+        setWallet(parsedWallet);
+      } catch (error) {
+        console.error('Failed to parse wallet from localStorage', error);
+        localStorage.removeItem('wallet');
+      }
+    }
+  }, []);
 
-  // Initialize the wallets
-  const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter()
-    ],
-    []
-  );
+  // For development purposes, simulate wallet connection
+  const connectWallet = async (provider: WalletProvider): Promise<boolean> => {
+    try {
+      setConnecting(true);
+      
+      // In a real implementation, we would:
+      // 1. Check if the wallet extension is installed
+      // 2. Request connection to the wallet
+      // 3. Get the wallet public key
+      
+      // Simulate connection process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock successful connection
+      const mockAddress = `vyna${Math.random().toString(36).substring(2, 10)}`;
+      const walletInfo: WalletInfo = {
+        address: mockAddress,
+        provider,
+        connectedAt: new Date(),
+      };
+      
+      // Save wallet info to localStorage
+      localStorage.setItem('wallet', JSON.stringify(walletInfo));
+      setWallet(walletInfo);
+      
+      toast({
+        title: "Wallet connected!",
+        description: `Connected to ${provider} wallet`,
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to connect wallet', error);
+      toast({
+        title: "Connection failed",
+        description: "Could not connect to wallet. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const disconnectWallet = () => {
+    setWallet(null);
+    localStorage.removeItem('wallet');
+    toast({
+      title: "Wallet disconnected",
+      description: "Your wallet has been disconnected",
+    });
+  };
+
+  // Simulate a blockchain transaction
+  const simulateTransaction = async (amount: number, currency: 'sol' | 'usdc'): Promise<string> => {
+    // In a real implementation, we would:
+    // 1. Create a transaction with the appropriate instructions
+    // 2. Request the user to sign the transaction
+    // 3. Send the transaction to the network
+    // 4. Return the transaction signature
+    
+    // Simulate transaction process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Generate a mock transaction signature
+    const mockSignature = `${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    
+    return mockSignature;
+  };
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <WalletContext.Provider
+      value={{
+        wallet,
+        connecting,
+        connected: !!wallet,
+        connectWallet,
+        disconnectWallet,
+        simulateTransaction,
+      }}
+    >
+      {children}
+    </WalletContext.Provider>
   );
 };
 

@@ -1,148 +1,140 @@
-import { useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import React, { useState } from 'react';
+import { useWallet } from '@/contexts/SolanaWalletProvider';
 import { Button } from '@/components/ui/button';
-import { Wallet, ChevronDown, LogOut, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { 
+  Wallet, 
+  ChevronDown, 
+  LogOut, 
+  CreditCard, 
+  User, 
+  Shield, 
+  Crown
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
+import WalletConnectionModal from '@/components/wallet/WalletConnectionModal';
 
-interface SolanaWalletButtonProps {
-  onWalletConnect?: (publicKey: string) => void;
-  onWalletDisconnect?: () => void;
-}
-
-export default function SolanaWalletButton({ 
-  onWalletConnect, 
-  onWalletDisconnect 
-}: SolanaWalletButtonProps) {
-  const { connected, publicKey, disconnect } = useWallet();
-  const { setVisible } = useWalletModal();
-  const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
-
-  // Handle wallet connect button click
-  const handleConnectClick = () => {
-    setVisible(true);
+const SolanaWalletButton: React.FC = () => {
+  const { wallet, disconnectWallet, connected } = useWallet();
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [, navigate] = useLocation();
+  
+  const handleConnectWallet = () => {
+    setIsWalletModalOpen(true);
   };
-
-  // Handle wallet disconnect
-  const handleDisconnect = async () => {
-    try {
-      await disconnect();
-      
-      if (onWalletDisconnect) {
-        onWalletDisconnect();
-      }
-      
-      toast({
-        title: "Wallet disconnected",
-        description: "Your wallet has been disconnected successfully."
-      });
-    } catch (error) {
-      console.error('Error disconnecting wallet:', error);
-      
-      toast({
-        title: "Disconnect failed",
-        description: "Failed to disconnect your wallet.",
-        variant: "destructive"
-      });
-    }
+  
+  const handleWalletConnected = () => {
+    setIsWalletModalOpen(false);
   };
-
-  // Handle address copy
-  const handleCopyAddress = () => {
-    if (publicKey) {
-      navigator.clipboard.writeText(publicKey.toString());
-      setCopied(true);
-      
-      toast({
-        title: "Address copied",
-        description: "Wallet address copied to clipboard."
-      });
-      
-      setTimeout(() => setCopied(false), 2000);
-    }
+  
+  const handleNavigateToSubscriptions = () => {
+    navigate('/subscription');
   };
-
-  // Handle view on explorer
-  const handleViewOnExplorer = () => {
-    if (publicKey) {
-      const url = `https://explorer.solana.com/address/${publicKey.toString()}`;
-      window.open(url, '_blank');
-    }
+  
+  const handleNavigateToProfile = () => {
+    navigate('/profile');
   };
-
-  return (
-    <>
-      {!connected ? (
+  
+  // If not connected, show connect button
+  if (!connected) {
+    return (
+      <>
         <Button 
+          onClick={handleConnectWallet}
           variant="outline" 
           size="sm"
-          className="border-[#A67D44]/70 text-[#A67D44] hover:text-[#A67D44] hover:bg-[#A67D44]/10"
-          onClick={handleConnectClick}
+          className="bg-[#A67D44] hover:bg-[#8A6836] text-black border-0"
         >
           <Wallet className="mr-2 h-4 w-4" />
           Connect Wallet
         </Button>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="border-green-600/30 bg-green-950/20 text-green-400 hover:bg-green-950/30"
+        
+        <WalletConnectionModal 
+          isOpen={isWalletModalOpen} 
+          onClose={() => setIsWalletModalOpen(false)}
+          onSuccess={handleWalletConnected}
+        />
+      </>
+    );
+  }
+  
+  // If connected, show wallet address with dropdown
+  const displayAddress = wallet?.address 
+    ? `${wallet.address.substring(0, 4)}...${wallet.address.substring(wallet.address.length - 4)}`
+    : '';
+  
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="bg-[#202020] hover:bg-[#2a2a2a] border-[#333] text-white"
+          >
+            <Wallet className="mr-2 h-4 w-4 text-[#A67D44]" />
+            {displayAddress}
+            <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          className="w-56 bg-[#0c0c0c] border-[#333] text-white"
+          align="end"
+        >
+          <DropdownMenuLabel className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-[#1f1f1f] flex items-center justify-center">
+              <Wallet className="h-4 w-4 text-[#A67D44]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">Wallet</p>
+              <p className="text-xs text-gray-500 truncate">{displayAddress}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="bg-[#333]" />
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              className="hover:bg-[#1a1a1a] cursor-pointer"
+              onClick={handleNavigateToProfile}
             >
-              <Wallet className="mr-2 h-4 w-4" />
-              {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-[#0c0c0c] border-[#333] text-white">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-xs font-medium text-gray-400">Connected Wallet</p>
-                <p className="font-medium truncate">
-                  {publicKey?.toString().slice(0, 6)}...{publicKey?.toString().slice(-6)}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-[#333]" />
-            <DropdownMenuItem 
-              className="cursor-pointer flex items-center text-sm"
-              onClick={handleCopyAddress}
-            >
-              {copied ? (
-                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-              ) : (
-                <Copy className="mr-2 h-4 w-4" />
-              )}
-              <span>Copy Address</span>
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="cursor-pointer flex items-center text-sm"
-              onClick={handleViewOnExplorer}
+            <DropdownMenuItem
+              className="hover:bg-[#1a1a1a] cursor-pointer"
+              onClick={handleNavigateToSubscriptions}
             >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              <span>View on Explorer</span>
+              <Crown className="mr-2 h-4 w-4" />
+              <span>Upgrade to Pro</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-[#333]" />
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator className="bg-[#333]" />
+          <DropdownMenuGroup>
             <DropdownMenuItem 
-              className="cursor-pointer flex items-center text-sm text-red-400 focus:text-red-400"
-              onClick={handleDisconnect}
+              className="hover:bg-[#1a1a1a] cursor-pointer text-red-500"
+              onClick={disconnectWallet}
             >
               <LogOut className="mr-2 h-4 w-4" />
               <span>Disconnect</span>
             </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <WalletConnectionModal 
+        isOpen={isWalletModalOpen} 
+        onClose={() => setIsWalletModalOpen(false)}
+        onSuccess={handleWalletConnected}
+      />
     </>
   );
-}
+};
+
+export default SolanaWalletButton;
