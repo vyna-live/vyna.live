@@ -210,12 +210,67 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
           let signature = '';
           
           if (wallet.provider === 'phantom' && window.phantom?.solana) {
-            // This is simplified and would need more work in a production app
-            // to handle wallet adapter properly
-            throw new Error('Phantom transaction signing not fully implemented');
+            // Get recent blockhash
+            const blockhash = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash.blockhash;
+            transaction.feePayer = new PublicKey(wallet.publicKey);
+            
+            // Send the transaction to the network
+            try {
+              // Sign the transaction with Phantom
+              const signedTransaction = await window.phantom.solana.signTransaction?.(transaction);
+              
+              if (!signedTransaction) {
+                throw new Error('Failed to sign transaction with Phantom wallet');
+              }
+              
+              // Send the signed transaction
+              const txSignature = await connection.sendRawTransaction(signedTransaction.serialize());
+              signature = txSignature;
+              
+              // Wait for confirmation
+              await connection.confirmTransaction({
+                blockhash: blockhash.blockhash,
+                lastValidBlockHeight: blockhash.lastValidBlockHeight,
+                signature: txSignature
+              });
+              
+              console.log('Transaction confirmed:', txSignature);
+            } catch (error) {
+              console.error('Transaction error:', error);
+              throw new Error('Transaction failed: ' + (error instanceof Error ? error.message : String(error)));
+            }
           } else if (wallet.provider === 'solflare' && window.solflare) {
-            // This is simplified and would need more work in a production app
-            throw new Error('Solflare transaction signing not fully implemented');
+            // Get recent blockhash
+            const blockhash = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash.blockhash;
+            transaction.feePayer = new PublicKey(wallet.publicKey);
+            
+            // Send the transaction to the network
+            try {
+              // Sign the transaction with Solflare
+              const signedTransaction = await window.solflare.signTransaction?.(transaction);
+              
+              if (!signedTransaction) {
+                throw new Error('Failed to sign transaction with Solflare wallet');
+              }
+              
+              // Send the signed transaction
+              const txSignature = await connection.sendRawTransaction(signedTransaction.serialize());
+              signature = txSignature;
+              
+              // Wait for confirmation
+              await connection.confirmTransaction({
+                blockhash: blockhash.blockhash,
+                lastValidBlockHeight: blockhash.lastValidBlockHeight,
+                signature: txSignature
+              });
+              
+              console.log('Transaction confirmed:', txSignature);
+            } catch (error) {
+              console.error('Transaction error:', error);
+              throw new Error('Transaction failed: ' + (error instanceof Error ? error.message : String(error)));
+            }
           } else {
             throw new Error('Unsupported wallet provider');
           }

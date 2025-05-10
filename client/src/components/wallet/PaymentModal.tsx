@@ -14,6 +14,9 @@ import { Label } from '@/components/ui/label';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
 
+// Define payment status type at the top level
+type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,7 +34,6 @@ export function PaymentModal({
 }: PaymentModalProps) {
   const { wallet, sendTransaction } = useSolanaWallet();
   const [paymentMethod, setPaymentMethod] = useState<'sol' | 'usdc'>('sol');
-  type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
   const [status, setStatus] = useState<PaymentStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +59,8 @@ export function PaymentModal({
       return;
     }
 
-    setStatus('processing');
+    // Type assertion to fix comparison error
+    setStatus('processing' as PaymentStatus);
     setError(null);
 
     try {
@@ -66,10 +69,8 @@ export function PaymentModal({
         ? selectedTier.priceSol.toString()
         : selectedTier.priceUsdc.toString();
 
-      // Program wallet that receives the payment (would be configured in production)
-      const recipient = process.env.NODE_ENV === 'development' 
-        ? 'mock_program_wallet_address'  // Mock address for development
-        : '5FHgaHwGCEW31KNu7Xv4KhQTQXTXBkREPgzAixRjUU56'; // Example Solana address
+      // Program wallet that receives the payment
+      const recipient = '5FHgaHwGCEW31KNu7Xv4KhQTQXTXBkREPgzAixRjUU56'; // Solana wallet address that receives payments
       
       // Create and send transaction
       const result = await sendTransaction({
@@ -226,7 +227,7 @@ export function PaymentModal({
             disabled={isPending || status === 'processing'}
             className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
           >
-            {isPending || status === ('processing' as PaymentStatus) ? (
+            {isPending || status === 'processing' ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
