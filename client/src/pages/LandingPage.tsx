@@ -87,18 +87,29 @@ export default function LandingPage() {
         <div className="flex items-center">
           <Logo size="md" />
         </div>
-        {isLoading ? (
-          <div className="w-24 h-8 bg-[#252525] rounded-full animate-pulse"></div>
-        ) : isAuthenticated ? (
-          <UserAvatar />
-        ) : (
+        <div className="flex items-center gap-4">
           <button 
-            onClick={handleLogin}
-            className="rounded-full px-4 py-1.5 text-white bg-[#252525] hover:bg-[#303030] transition-all text-sm font-medium"
+            onClick={() => setLocation('/subscription')}
+            className="flex items-center gap-1 px-3 py-2 rounded-md border border-[#A67D44]/40 hover:bg-[#A67D44]/10 transition-all"
           >
-            Login
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#A67D44]">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+            <span className="text-[#A67D44]">Pricing</span>
           </button>
-        )}
+          {isLoading ? (
+            <div className="w-24 h-8 bg-[#252525] rounded-full animate-pulse"></div>
+          ) : isAuthenticated ? (
+            <UserAvatar />
+          ) : (
+            <button 
+              onClick={handleLogin}
+              className="rounded-full px-4 py-1.5 text-white bg-[#252525] hover:bg-[#303030] transition-all text-sm font-medium"
+            >
+              Login
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Hero Section */}
