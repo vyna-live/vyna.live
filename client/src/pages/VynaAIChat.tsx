@@ -976,25 +976,6 @@ export default function VynaAIChat() {
                 />
               </div>
               
-              {/* Commentary style selector */}
-              <div className="mb-3 flex items-center flex-wrap">
-                <span className="text-xs text-[#999999] mr-2 mb-1">Commentary style:</span>
-                <div className="flex bg-[#232323] rounded-md p-1">
-                  <button
-                    className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
-                    onClick={() => setCommentaryStyle('color')}
-                  >
-                    Color
-                  </button>
-                  <button
-                    className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
-                    onClick={() => setCommentaryStyle('play-by-play')}
-                  >
-                    Play-by-play
-                  </button>
-                </div>
-              </div>
-              
               {/* Input controls */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
@@ -1022,6 +1003,25 @@ export default function VynaAIChat() {
                   >
                     <ImageIcon size={16} />
                   </button>
+                  
+                  {/* Commentary style selector - moved here */}
+                  <div className="flex items-center">
+                    <span className="text-xs text-[#999999] mx-2">Style:</span>
+                    <div className="flex bg-[#232323] rounded-md p-1">
+                      <button
+                        className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                        onClick={() => setCommentaryStyle('color')}
+                      >
+                        Color
+                      </button>
+                      <button
+                        className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                        onClick={() => setCommentaryStyle('play-by-play')}
+                      >
+                        Play-by-play
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <button 
                   className="button-hover-effect rounded-lg px-4 sm:px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
