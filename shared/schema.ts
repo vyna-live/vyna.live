@@ -156,14 +156,16 @@ export const walletTransactions = pgTable("wallet_transactions", {
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  tierId: varchar("tier_id", { length: 50 }).notNull(), // basic, pro, enterprise
-  transactionSignature: text("transaction_signature").unique(),
-  status: varchar("status", { length: 20 }).default("active").notNull(), // active, cancelled, expired
-  amount: text("amount"), // Amount paid in SOL
+  tierId: varchar("tier_id", { length: 50 }).notNull(), // free, pro, enterprise
+  status: varchar("status", { length: 20 }).default("active").notNull(), // active, cancelled, expired, grace_period
+  paymentMethod: varchar("payment_method", { length: 10 }), // sol, usdc
+  amount: text("amount"), // Amount paid in SOL or USDC
   activatedAt: timestamp("activated_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   cancelledAt: timestamp("cancelled_at"),
-  autoRenew: boolean("auto_renew").default(false),
+  renewalEnabled: boolean("renewal_enabled").default(false),
+  lastRenewalReminderSent: timestamp("last_renewal_reminder_sent"),
+  gracePeriodEnds: timestamp("grace_period_ends"),
   metadata: jsonb("metadata"), // Additional subscription data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
