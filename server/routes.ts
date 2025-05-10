@@ -333,26 +333,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new notepad
   app.post("/api/notepads", async (req, res) => {
     try {
-      const { hostId, title, content } = req.body;
+      const { hostId, title, content, visualizations } = req.body;
       
-      if (!hostId || !content) {
+      if (!hostId || content === undefined) {
         return res.status(400).json({ error: "Host ID and content are required" });
       }
       
+      // Allow empty content for new notes
+      const finalContent = content || '';
+      
       // Set default title if not provided
-      const noteTitle = title || content.substring(0, 50) + (content.length > 50 ? "..." : "");
+      const noteTitle = title || 
+        (finalContent.length > 0 
+          ? finalContent.substring(0, 50) + (finalContent.length > 50 ? "..." : "") 
+          : "New Note");
       
       // Insert the new notepad into the database
       const [newNote] = await db.insert(notepads)
         .values({
           hostId,
           title: noteTitle,
-          content,
+          content: finalContent,
           isDeleted: false,
         })
         .returning();
       
-      return res.status(201).json(newNote);
+      // Add visualizations property to match client expectations
+      const responseNote = {
+        ...newNote,
+        visualizations: visualizations || []
+      };
+      
+      return res.status(201).json(responseNote);
     } catch (error) {
       console.error("Error creating notepad:", error);
       return res.status(500).json({ error: "Failed to create notepad" });
@@ -882,58 +894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notepad endpoints
-  app.get('/api/notepads/:hostId', async (req, res) => {
-    try {
-      const hostId = parseInt(req.params.hostId);
-      if (isNaN(hostId)) {
-        return res.status(400).json({ error: 'Invalid host ID' });
-      }
-
-      // Fetch notepads for the specified host
-      const notes = await db.select()
-        .from(notepads)
-        .where(and(
-          eq(notepads.hostId, hostId),
-          eq(notepads.isDeleted, false)
-        ))
-        .orderBy(desc(notepads.updatedAt));
-
-      return res.json(notes);
-    } catch (error) {
-      console.error('Error fetching notepads:', error);
-      return res.status(500).json({ error: 'Failed to fetch notepads' });
-    }
-  });
-
-  app.post('/api/notepads', async (req, res) => {
-    try {
-      const { title, content, hostId } = req.body;
-
-      if (!content) {
-        return res.status(400).json({ error: 'Content is required' });
-      }
-
-      if (!hostId) {
-        return res.status(400).json({ error: 'Host ID is required' });
-      }
-
-      // Insert new notepad
-      const [newNotepad] = await db.insert(notepads)
-        .values({
-          hostId,
-          title: title || '',
-          content,
-          isDeleted: false,
-        })
-        .returning();
-
-      return res.status(201).json(newNotepad);
-    } catch (error) {
-      console.error('Error creating notepad:', error);
-      return res.status(500).json({ error: 'Failed to create notepad' });
-    }
-  });
+  // Notepad endpoints are defined earlier in the file
 
   app.put('/api/notepads/:id', async (req, res) => {
     try {
