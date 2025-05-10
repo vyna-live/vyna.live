@@ -228,55 +228,7 @@ export default function Auth() {
                   </Button>
                 </form>
 
-                {/* Web3 Authentication Options */}
-                <div className="mt-6 space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-zinc-700" />
-                    </div>
-                    <div className="relative flex justify-center text-xs">
-                      <span className="bg-black px-2 text-zinc-400">Or continue with</span>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      className="border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
-                      onClick={handleConnectWallet}
-                      disabled={walletLoading}
-                    >
-                      {walletLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wallet className="mr-2 h-4 w-4" />
-                      )}
-                      Connect Wallet
-                    </Button>
-                    
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      className="border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
-                      onClick={handleCreateEmbeddedWallet}
-                      disabled={walletLoading}
-                    >
-                      {walletLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <svg 
-                          className="mr-2 h-4 w-4" 
-                          fill="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15C10 13.9 10.9 13 12 13C13.1 13 14 13.9 14 15C14 16.1 13.1 17 12 17ZM15 8H9V6C9 4.34 10.34 3 12 3C13.66 3 15 4.34 15 6V8Z" />
-                        </svg>
-                      )}
-                      Create Embedded Wallet
-                    </Button>
-                  </div>
-                </div>
               </TabsContent>
               
               {/* Registration form */}
@@ -351,55 +303,7 @@ export default function Auth() {
                   </Button>
                 </form>
 
-                {/* Web3 Authentication Options */}
-                <div className="mt-6 space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-zinc-700" />
-                    </div>
-                    <div className="relative flex justify-center text-xs">
-                      <span className="bg-black px-2 text-zinc-400">Or register with</span>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      className="border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
-                      onClick={handleConnectWallet}
-                      disabled={walletLoading}
-                    >
-                      {walletLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wallet className="mr-2 h-4 w-4" />
-                      )}
-                      Connect Existing Wallet
-                    </Button>
-                    
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      className="border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
-                      onClick={handleCreateEmbeddedWallet}
-                      disabled={walletLoading}
-                    >
-                      {walletLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <svg 
-                          className="mr-2 h-4 w-4" 
-                          fill="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15C10 13.9 10.9 13 12 13C13.1 13 14 13.9 14 15C14 16.1 13.1 17 12 17ZM15 8H9V6C9 4.34 10.34 3 12 3C13.66 3 15 4.34 15 6V8Z" />
-                        </svg>
-                      )}
-                      Create New Wallet
-                    </Button>
-                  </div>
-                </div>
               </TabsContent>
             </Tabs>
           </div>
