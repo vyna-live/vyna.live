@@ -1,161 +1,176 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { toast } from '@/hooks/use-toast';
+import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-// Wallet interface
-export interface Wallet {
-  address: string;
-  balance: number;
-  isConnected: boolean;
+// Define wallet object interface
+interface Wallet {
+  publicKey: string;
+  name: string;
+  provider: 'phantom' | 'solflare' | 'other';
 }
 
-// Wallet context type
-interface WalletContextType {
+// Define context interface
+interface SolanaWalletContextType {
   wallet: Wallet | null;
   isConnecting: boolean;
-  connectWallet: () => Promise<boolean>;
+  connectWallet: (provider?: 'phantom' | 'solflare') => Promise<boolean>;
   disconnectWallet: () => void;
-  sendTransaction: (amount: number, recipient: string, currency: 'sol' | 'usdc') => Promise<{
-    success: boolean;
-    signature?: string;
-    error?: string;
-  }>;
+  sendTransaction: (
+    transaction: { amount: string; recipient: string; paymentMethod: 'sol' | 'usdc' }
+  ) => Promise<{ signature: string }>;
 }
 
-// Create context
-const WalletContext = createContext<WalletContextType | undefined>(undefined);
+// Create context with default values
+export const SolanaWalletContext = createContext<SolanaWalletContextType>({
+  wallet: null,
+  isConnecting: false,
+  connectWallet: async () => false,
+  disconnectWallet: () => {},
+  sendTransaction: async () => ({ signature: '' }),
+});
 
-// Custom hook to use the wallet context
-export function useSolanaWallet() {
-  const context = useContext(WalletContext);
-  if (context === undefined) {
-    throw new Error('useSolanaWallet must be used within a SolanaWalletProvider');
-  }
-  return context;
-}
-
-// Props type for provider component
-interface SolanaWalletProviderProps {
-  children: ReactNode;
-}
+// Custom hook for accessing wallet context
+export const useSolanaWallet = () => useContext(SolanaWalletContext);
 
 // Provider component
-export function SolanaWalletProvider({ children }: SolanaWalletProviderProps) {
-  // State for wallet
+export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const { toast } = useToast();
 
-  // Check for existing wallet connection on mount
+  // Load saved wallet on mount
   useEffect(() => {
-    const storedWallet = localStorage.getItem('solanaWallet');
-    if (storedWallet) {
+    const savedWallet = localStorage.getItem('solanaWallet');
+    if (savedWallet) {
       try {
-        const parsedWallet = JSON.parse(storedWallet);
-        setWallet(parsedWallet);
+        setWallet(JSON.parse(savedWallet));
       } catch (error) {
-        console.error('Failed to parse stored wallet:', error);
+        console.error('Failed to load saved wallet', error);
         localStorage.removeItem('solanaWallet');
       }
     }
   }, []);
 
-  // Connect wallet function
-  const connectWallet = async (): Promise<boolean> => {
+  // Check if the browser has a Solana wallet extension
+  const hasPhantomWallet = useCallback(() => {
+    return typeof window !== 'undefined' && 'phantom' in window;
+  }, []);
+
+  const hasSolflareWallet = useCallback(() => {
+    return typeof window !== 'undefined' && 'solflare' in window;
+  }, []);
+
+  // Connect to wallet
+  const connectWallet = useCallback(async (provider: 'phantom' | 'solflare' = 'phantom'): Promise<boolean> => {
     try {
       setIsConnecting(true);
-      
-      // In a real implementation, this would use the Solana wallet adapter
-      // For now, we'll mock the connection with a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock wallet data for development
-      const mockWallet = {
-        address: 'Fak3Addr355' + Math.floor(Math.random() * 10000),
-        balance: Math.random() * 10,
-        isConnected: true
-      };
-      
-      setWallet(mockWallet);
-      localStorage.setItem('solanaWallet', JSON.stringify(mockWallet));
-      
-      toast({
-        title: 'Wallet connected',
-        description: `Connected to ${mockWallet.address.slice(0, 6)}...${mockWallet.address.slice(-4)}`,
-      });
-      
-      return true;
+
+      // For development/testing - create a mock wallet connection
+      if (process.env.NODE_ENV === 'development') {
+        // Using a setTimeout to simulate wallet connection delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const mockWallet = {
+          publicKey: `mock_${Math.random().toString(36).substring(2, 10)}`,
+          name: provider === 'phantom' ? 'Phantom' : 'Solflare',
+          provider
+        };
+        
+        setWallet(mockWallet);
+        localStorage.setItem('solanaWallet', JSON.stringify(mockWallet));
+        
+        toast({
+          title: 'Wallet connected',
+          description: `Connected to mock ${mockWallet.name} wallet`,
+        });
+        
+        return true;
+      }
+
+      // Actual wallet connection logic would go here
+      // This would use the Solana wallet adapter in a real implementation
+      if (provider === 'phantom' && hasPhantomWallet()) {
+        // Phantom wallet connection
+        const response = await window.phantom?.solana.connect();
+        const newWallet = {
+          publicKey: response.publicKey.toString(),
+          name: 'Phantom',
+          provider: 'phantom' as const
+        };
+        setWallet(newWallet);
+        localStorage.setItem('solanaWallet', JSON.stringify(newWallet));
+        return true;
+      } else if (provider === 'solflare' && hasSolflareWallet()) {
+        // Solflare wallet connection
+        const response = await window.solflare.connect();
+        const newWallet = {
+          publicKey: response.publicKey.toString(),
+          name: 'Solflare',
+          provider: 'solflare' as const
+        };
+        setWallet(newWallet);
+        localStorage.setItem('solanaWallet', JSON.stringify(newWallet));
+        return true;
+      } else {
+        toast({
+          title: 'Wallet not found',
+          description: `${provider === 'phantom' ? 'Phantom' : 'Solflare'} wallet extension is not installed`,
+          variant: 'destructive',
+        });
+        return false;
+      }
     } catch (error) {
       console.error('Error connecting wallet:', error);
       toast({
-        title: 'Connection failed',
-        description: 'Could not connect to wallet. Please try again.',
+        title: 'Connection error',
+        description: 'Failed to connect to wallet. Please try again.',
         variant: 'destructive',
       });
       return false;
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [hasPhantomWallet, hasSolflareWallet, toast]);
 
-  // Disconnect wallet function
-  const disconnectWallet = () => {
+  // Disconnect wallet
+  const disconnectWallet = useCallback(() => {
+    // In real implementation, we would also call the disconnect method on the wallet
     setWallet(null);
     localStorage.removeItem('solanaWallet');
     toast({
       title: 'Wallet disconnected',
-      description: 'Your wallet has been disconnected.',
+      description: 'Your wallet has been disconnected',
     });
-  };
+  }, [toast]);
 
-  // Send transaction function
-  const sendTransaction = async (
-    amount: number,
-    recipient: string,
-    currency: 'sol' | 'usdc'
-  ): Promise<{ success: boolean; signature?: string; error?: string }> => {
-    if (!wallet || !wallet.isConnected) {
-      return { success: false, error: 'Wallet not connected' };
-    }
-
-    try {
-      // In a real implementation, this would use the Solana web3.js library
-      // For now, we'll mock the transaction with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock a transaction signature
-      const signature = 'txsig_' + Math.random().toString(36).substring(2, 15);
-      
-      // Update wallet balance
-      if (wallet.balance >= amount) {
-        setWallet(prev => prev ? {
-          ...prev,
-          balance: prev.balance - amount
-        } : null);
-
-        // Update localStorage
-        if (wallet) {
-          localStorage.setItem('solanaWallet', JSON.stringify({
-            ...wallet,
-            balance: wallet.balance - amount
-          }));
-        }
-        
-        toast({
-          title: 'Transaction successful',
-          description: `Sent ${amount} ${currency.toUpperCase()} to ${recipient.slice(0, 6)}...`,
-        });
-        
-        return { success: true, signature };
-      } else {
-        return { success: false, error: 'Insufficient funds' };
+  // Send transaction
+  const sendTransaction = useCallback(
+    async ({ amount, recipient, paymentMethod }: { amount: string; recipient: string; paymentMethod: 'sol' | 'usdc' }) => {
+      if (!wallet) {
+        throw new Error('Wallet not connected');
       }
-    } catch (error) {
-      console.error('Error sending transaction:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Transaction failed'
-      };
-    }
-  };
+
+      try {
+        // For development/testing - simulate transaction process
+        if (process.env.NODE_ENV === 'development') {
+          // Simulate network delay
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Return mock transaction signature
+          return {
+            signature: `mock_tx_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`
+          };
+        }
+
+        // Actual transaction logic would go here depending on the wallet provider
+        // This would use the Solana web3.js library in a real implementation
+        throw new Error('Real transaction sending not implemented');
+      } catch (error) {
+        console.error('Error sending transaction:', error);
+        throw new Error(error instanceof Error ? error.message : 'Failed to send transaction');
+      }
+    },
+    [wallet]
+  );
 
   // Context value
   const value = {
@@ -163,8 +178,28 @@ export function SolanaWalletProvider({ children }: SolanaWalletProviderProps) {
     isConnecting,
     connectWallet,
     disconnectWallet,
-    sendTransaction
+    sendTransaction,
   };
 
-  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
+  return (
+    <SolanaWalletContext.Provider value={value}>
+      {children}
+    </SolanaWalletContext.Provider>
+  );
+};
+
+// Add mock types for wallet extensions to avoid TypeScript errors
+declare global {
+  interface Window {
+    phantom?: {
+      solana: {
+        connect: () => Promise<{ publicKey: { toString: () => string } }>;
+        disconnect: () => Promise<void>;
+      };
+    };
+    solflare?: {
+      connect: () => Promise<{ publicKey: { toString: () => string } }>;
+      disconnect: () => Promise<void>;
+    };
+  }
 }

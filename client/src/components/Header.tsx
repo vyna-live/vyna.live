@@ -1,6 +1,6 @@
 import { Sparkles, Zap, DollarSign } from "lucide-react";
 import Logo from "./Logo";
-import SolanaWalletButton from "./SolanaWalletButton";
+import { SolanaWalletButton } from "./SolanaWalletButton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 

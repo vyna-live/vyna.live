@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Wallet as WalletIcon, ChevronDown, LogOut } from 'lucide-react';
-import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
-import { WalletConnectionModal } from '@/components/wallet/WalletConnectionModal';
+import { 
+  ChevronDown, 
+  Loader2, 
+  LogOut, 
+  Wallet,
+  Copy,
+  Star,
+  ExternalLink 
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,88 +17,124 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
+import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
+import { WalletConnectionModal } from '@/components/wallet/WalletConnectionModal';
+import { useLocation } from 'wouter';
 
 export function SolanaWalletButton() {
   const { wallet, isConnecting, connectWallet, disconnectWallet } = useSolanaWallet();
-  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const { toast } = useToast();
+  const [, navigate] = useLocation();
 
-  // Format wallet address
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  // Handle wallet connection click
+  const handleConnectClick = () => {
+    if (!wallet) {
+      setShowModal(true);
+    }
   };
 
-  // Format balance
-  const formatBalance = (balance: number) => {
-    return balance.toFixed(4);
+  // Handle copy address click
+  const handleCopyAddress = () => {
+    if (wallet?.publicKey) {
+      navigator.clipboard.writeText(wallet.publicKey);
+      toast({
+        title: 'Address copied',
+        description: 'Wallet address copied to clipboard',
+      });
+    }
   };
 
-  if (isConnecting) {
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        className="border-neutral-700 text-neutral-300 gap-2"
-      >
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Connecting...</span>
-      </Button>
-    );
-  }
+  // Navigate to subscription page
+  const handleManageSubscription = () => {
+    navigate('/subscription');
+  };
 
-  if (wallet && wallet.isConnected) {
+  // Helper function to truncate wallet address
+  const truncateAddress = (address: string): string => {
+    if (!address) return '';
+    return address.slice(0, 4) + '...' + address.slice(-4);
+  };
+
+  // Render the button
+  if (!wallet) {
     return (
       <>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-neutral-700 text-neutral-300 gap-2"
-            >
-              <WalletIcon className="h-4 w-4" />
-              <span>{formatAddress(wallet.address)}</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-neutral-900 border-neutral-700 text-white">
-            <DropdownMenuLabel className="text-neutral-400">Your Wallet</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-neutral-800" />
-            <div className="px-2 py-2">
-              <div className="text-xs text-neutral-500 mb-1">Address</div>
-              <div className="text-neutral-300 text-sm break-all">{wallet.address}</div>
-              <div className="text-xs text-neutral-500 mb-1 mt-3">Balance</div>
-              <div className="text-neutral-300 text-sm">{formatBalance(wallet.balance)} SOL</div>
-            </div>
-            <DropdownMenuSeparator className="bg-neutral-800" />
-            <DropdownMenuItem
-              className="text-red-400 cursor-pointer flex gap-2 items-center"
-              onClick={disconnectWallet}
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Disconnect</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button 
+          size="sm"
+          variant="outline" 
+          className="border-[#E6E2DA] text-[#E6E2DA] hover:bg-[#E6E2DA]/10 px-4"
+          onClick={handleConnectClick}
+          disabled={isConnecting}
+        >
+          {isConnecting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              <Wallet className="mr-2 h-4 w-4" />
+              Connect Wallet
+            </>
+          )}
+        </Button>
+
+        {/* Wallet Connection Modal */}
+        <WalletConnectionModal 
+          isOpen={showModal} 
+          onClose={() => setShowModal(false)}
+          onSuccess={() => setShowModal(false)}
+        />
       </>
     );
   }
 
   return (
-    <>
-      <Button
-        onClick={() => setShowConnectModal(true)}
-        variant="outline"
-        size="sm"
-        className="border-neutral-700 text-neutral-300 gap-2"
-      >
-        <WalletIcon className="h-4 w-4" />
-        <span>Connect Wallet</span>
-      </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          size="sm"
+          variant="outline" 
+          className="border-[#E6E2DA] text-[#E6E2DA] hover:bg-[#E6E2DA]/10"
+        >
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            <span className="hidden sm:inline">{truncateAddress(wallet.publicKey)}</span>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
 
-      <WalletConnectionModal
-        isOpen={showConnectModal}
-        onClose={() => setShowConnectModal(false)}
-      />
-    </>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="flex flex-col gap-1">
+          <span>Connected to {wallet.name}</span>
+          <span className="text-xs text-muted-foreground break-all">{wallet.publicKey}</span>
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={handleCopyAddress}>
+          <Copy className="mr-2 h-4 w-4" />
+          Copy address
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onClick={handleManageSubscription}>
+          <Star className="mr-2 h-4 w-4" />
+          <div className="flex flex-col">
+            <span>VynaAI Plus</span>
+            <span className="text-xs text-muted-foreground">(Upgrade your subscription)</span>
+          </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={() => disconnectWallet()}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Disconnect
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
