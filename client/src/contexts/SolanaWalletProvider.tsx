@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 // Define wallet object interface
 interface Wallet {
@@ -63,28 +64,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
   const connectWallet = useCallback(async (provider: 'phantom' | 'solflare' = 'phantom'): Promise<boolean> => {
     try {
       setIsConnecting(true);
-
-      // For development/testing - create a mock wallet connection
-      if (process.env.NODE_ENV === 'development') {
-        // Using a setTimeout to simulate wallet connection delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const mockWallet = {
-          publicKey: `mock_${Math.random().toString(36).substring(2, 10)}`,
-          name: provider === 'phantom' ? 'Phantom' : 'Solflare',
-          provider
-        };
-        
-        setWallet(mockWallet);
-        localStorage.setItem('solanaWallet', JSON.stringify(mockWallet));
-        
-        toast({
-          title: 'Wallet connected',
-          description: `Connected to mock ${mockWallet.name} wallet`,
-        });
-        
-        return true;
-      }
 
       // Actual wallet connection logic would go here
       // This would use the Solana wallet adapter in a real implementation
@@ -150,16 +129,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
       }
 
       try {
-        // For development/testing - simulate transaction process
-        if (process.env.NODE_ENV === 'development') {
-          // Simulate network delay
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-          // Return mock transaction signature
-          return {
-            signature: `mock_tx_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`
-          };
-        }
 
         // Actual transaction logic would go here depending on the wallet provider
         // This would use the Solana web3.js library in a real implementation
