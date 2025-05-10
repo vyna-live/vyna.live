@@ -12,10 +12,7 @@ export const users = pgTable("users", {
   displayName: text("display_name"),
   avatarUrl: text("avatar_url"),
   googleId: text("google_id").unique(),
-  // Privy integration fields
-  privyId: text("privy_id").unique(),
-  privyWallets: jsonb("privy_wallets"),
-  // Legacy wallet fields
+  // Wallet fields
   walletAddress: text("wallet_address").unique(),
   walletProvider: varchar("wallet_provider", { length: 50 }),
   walletConnectedAt: timestamp("wallet_connected_at"),
