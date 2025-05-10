@@ -1,7 +1,8 @@
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles, Zap, DollarSign } from "lucide-react";
 import Logo from "./Logo";
 import SolanaWalletButton from "./SolanaWalletButton";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface HeaderProps {
   username: string;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export default function Header({ username }: HeaderProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const handleWalletConnect = async (publicKey: string) => {
     try {
       const response = await fetch('/api/users/wallet', {
@@ -67,9 +69,18 @@ export default function Header({ username }: HeaderProps) {
       <div className="flex items-center justify-between mb-3">
         <Logo variant="full" size="lg" className="max-w-[140px]" />
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="h-5 w-5 text-[#5D1C34]" />
-            <span className="text-sm font-medium text-[#5D1C34]">STREAMCAST AI</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="h-5 w-5 text-[#5D1C34]" />
+              <span className="text-sm font-medium text-[#5D1C34]">STREAMCAST AI</span>
+            </div>
+            <button
+              onClick={() => setLocation('/subscription')}
+              className="flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-[#efe9e1]/20"
+            >
+              <DollarSign className="h-4 w-4 text-[#A67D44]" />
+              <span className="text-[#A67D44]">Pricing</span>
+            </button>
           </div>
           <SolanaWalletButton 
             onWalletConnect={handleWalletConnect}
