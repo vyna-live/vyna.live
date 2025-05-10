@@ -21,9 +21,6 @@ export const users = pgTable("users", {
   role: varchar("role", { length: 20 }).default("user").notNull(), // user, admin
   isEmailVerified: boolean("is_email_verified").default(false),
   lastLoginAt: timestamp("last_login_at"),
-  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("inactive"),
-  subscriptionTier: varchar("subscription_tier", { length: 20 }),
-  subscriptionExpiresAt: timestamp("subscription_expires_at"),
 });
 
 export const researchSessions = pgTable("research_sessions", {
@@ -310,16 +307,7 @@ export const insertWalletTransactionSchema = createInsertSchema(walletTransactio
   metadata: true,
 });
 
-export const insertSubscriptionSchema = createInsertSchema(subscriptions).pick({
-  userId: true,
-  tierId: true,
-  transactionSignature: true,
-  status: true,
-  amount: true,
-  expiresAt: true,
-  autoRenew: true,
-  metadata: true,
-});
+export const insertSubscriptionSchema = createInsertSchema(subscriptions);
 
 export const insertStreamSessionSchema = createInsertSchema(streamSessions).pick({
   userId: true,
