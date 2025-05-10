@@ -59,8 +59,7 @@ export function PaymentModal({
       return;
     }
 
-    // Type assertion to fix comparison error
-    setStatus('processing' as PaymentStatus);
+    setStatus('processing');
     setError(null);
 
     try {

@@ -205,15 +205,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
   avatarUrl: true,
   googleId: true,
-  // No longer using Privy
-  // Legacy wallet fields
+  // Wallet fields
   walletAddress: true,
   walletProvider: true,
   role: true,
   isEmailVerified: true,
-  subscriptionStatus: true,
-  subscriptionTier: true,
-  subscriptionExpiresAt: true,
 });
 
 export const insertResearchSessionSchema = createInsertSchema(researchSessions).pick({
