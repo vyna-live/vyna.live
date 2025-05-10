@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Download, Sparkles, Paperclip, Mic, Image, Upload, Plus } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import "./landing.css";
@@ -339,6 +340,9 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
