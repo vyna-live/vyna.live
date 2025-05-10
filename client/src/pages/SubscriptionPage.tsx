@@ -1,43 +1,114 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useLocation } from 'wouter';
 import { 
   Check, 
   X, 
   ArrowRight, 
   Crown, 
-  ChevronRight 
+  ChevronRight,
+  Wallet,
+  CreditCard 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import WalletConnectionModal from '@/components/wallet/WalletConnectionModal';
-import PaymentModal from '@/components/wallet/PaymentModal';
-import { subscriptionTiers, type SubscriptionTier } from '@/services/subscriptionService';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/Header';
+
+// Mock subscription tiers
+const subscriptionTiers = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    headline: 'For casual streamers',
+    description: 'Get started with the essential features to enhance your streams',
+    priceSol: 0.05,
+    priceUsdc: 5,
+    features: [
+      'AI Assistant with Standard Models',
+      'Up to 5 saved sessions per month',
+      'Basic streaming features',
+      'Standard quality video'
+    ]
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    headline: 'For growing creators',
+    description: 'Take your content to the next level with advanced features',
+    priceSol: 0.25, 
+    priceUsdc: 25,
+    features: [
+      'Advanced AI with premium models',
+      'Unlimited saved sessions',
+      'Priority streaming slots',
+      'HD quality video',
+      'Custom stream branding',
+      'Priority customer support'
+    ],
+    mostPopular: true
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    headline: 'For professional content creators',
+    description: 'Unlock the full potential with our premium offering',
+    priceSol: 1,
+    priceUsdc: 100,
+    features: [
+      'Exclusive AI models access',
+      'Unlimited everything',
+      '4K video quality',
+      'Advanced analytics dashboard',
+      'White-labeled solution',
+      'Dedicated account manager',
+      'Custom integration support'
+    ]
+  }
+];
+
+interface SubscriptionTier {
+  id: string;
+  name: string;
+  headline: string;
+  description: string;
+  priceSol: number;
+  priceUsdc: number;
+  features: string[];
+  mostPopular?: boolean;
+}
 
 export default function SubscriptionPage() {
   const { toast } = useToast();
-  const { connected } = useWallet();
+  const [, setLocation] = useLocation();
   
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   const handleSubscribe = (tier: SubscriptionTier) => {
-    if (!connected) {
-      setSelectedTier(tier);
-      setIsWalletModalOpen(true);
-    } else {
-      setSelectedTier(tier);
+    setSelectedTier(tier);
+    setIsConnectModalOpen(true);
+  };
+
+  const handleConnectWallet = () => {
+    setIsConnectModalOpen(false);
+    if (selectedTier) {
       setIsPaymentModalOpen(true);
     }
   };
 
-  const handleWalletConnected = () => {
-    setIsWalletModalOpen(false);
-    if (selectedTier) {
-      setIsPaymentModalOpen(true);
-    }
+  const handleInitiatePayment = () => {
+    setIsProcessingPayment(true);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      setIsPaymentComplete(true);
+    }, 2000);
   };
 
   const handlePaymentSuccess = () => {
@@ -46,6 +117,11 @@ export default function SubscriptionPage() {
       title: "Subscription activated!",
       description: `Your ${selectedTier?.name} plan is now active.`,
     });
+    
+    // Navigate back to home after successful subscription
+    setTimeout(() => {
+      setLocation('/');
+    }, 2000);
   };
 
   return (
@@ -152,19 +228,121 @@ export default function SubscriptionPage() {
       </div>
       
       {/* Wallet Connection Modal */}
-      <WalletConnectionModal 
-        isOpen={isWalletModalOpen} 
-        onClose={() => setIsWalletModalOpen(false)}
-        onSuccess={handleWalletConnected}
-      />
+      <Dialog open={isConnectModalOpen} onOpenChange={(open) => !open && setIsConnectModalOpen(false)}>
+        <DialogContent className="sm:max-w-md bg-[#0c0c0c] border-[#cdbcab]/30 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Connect Your Wallet</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Connect your Solana wallet to continue with the subscription process.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center py-4">
+            <div className="mb-6 w-16 h-16 bg-[#1f1f1f] rounded-full flex items-center justify-center">
+              <Wallet className="h-8 w-8 text-[#A67D44]" />
+            </div>
+
+            <div className="flex flex-col items-center space-y-4 w-full">
+              <p className="text-center text-sm">
+                You'll need a Solana wallet to make payments. 
+                This will allow you to securely pay for your subscription using SOL.
+              </p>
+              
+              <Button 
+                onClick={handleConnectWallet}
+                className="w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
+              >
+                Connect Wallet
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       {/* Payment Modal */}
-      <PaymentModal 
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        onSuccess={handlePaymentSuccess}
-        subscriptionTier={selectedTier}
-      />
+      <Dialog open={isPaymentModalOpen} onOpenChange={(open) => !open && setIsPaymentModalOpen(false)}>
+        <DialogContent className="sm:max-w-md bg-[#0c0c0c] border-[#cdbcab]/30 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Complete Your Subscription</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {selectedTier && `You're subscribing to the ${selectedTier.name} plan.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col py-4">
+            {isProcessingPayment ? (
+              <div className="flex flex-col items-center">
+                <div className="mb-8 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A67D44] mx-auto mb-4"></div>
+                  <h3 className="text-lg font-medium mb-1">Processing Payment</h3>
+                  <p className="text-sm text-gray-400">Please wait while we process your transaction...</p>
+                </div>
+                
+                <div className="w-full bg-[#222] rounded-full h-2.5">
+                  <div className="bg-[#A67D44] h-2.5 rounded-full" style={{ width: '45%' }}></div>
+                </div>
+              </div>
+            ) : isPaymentComplete ? (
+              <div className="flex flex-col items-center text-center">
+                <Check className="mx-auto h-10 w-10 text-green-500 mb-4" />
+                <h3 className="text-lg font-medium mb-1">Payment Successful!</h3>
+                <p className="text-sm text-gray-400">Your subscription has been activated</p>
+                
+                <Button 
+                  onClick={handlePaymentSuccess}
+                  className="mt-6 w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
+                >
+                  Continue
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-center mb-6">
+                  <div className="w-16 h-16 bg-[#1f1f1f] rounded-full flex items-center justify-center">
+                    <CreditCard className="h-8 w-8 text-[#A67D44]" />
+                  </div>
+                </div>
+                
+                <div className="mb-6">
+                  <div className="bg-[#121212] p-4 rounded-md">
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span className="text-gray-400">Subscription</span>
+                      <span>{selectedTier?.name} Plan</span>
+                    </div>
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span className="text-gray-400">Duration</span>
+                      <span>1 Month</span>
+                    </div>
+                    <div className="flex justify-between mb-2 text-sm">
+                      <span className="text-gray-400">Wallet</span>
+                      <span className="truncate max-w-[180px]">vyna...wallet</span>
+                    </div>
+                    <div className="pt-3 mt-3 border-t border-[#333] flex justify-between items-center">
+                      <span className="font-medium">Total</span>
+                      <div className="text-right">
+                        <div className="font-bold text-lg">{selectedTier?.priceSol} SOL</div>
+                        <div className="text-xs text-gray-400">≈ ${selectedTier?.priceUsdc} USD</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleInitiatePayment}
+                  className="w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
+                >
+                  Confirm Payment
+                </Button>
+                
+                <div className="mt-4 text-xs text-gray-500 text-center">
+                  By confirming, you agree to make a payment of {selectedTier?.priceSol} SOL from your connected wallet.
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
