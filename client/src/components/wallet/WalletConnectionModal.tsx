@@ -1,10 +1,15 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-
-// Don't forget to import styles in your app
-// import '@solana/wallet-adapter-react-ui/styles.css';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Wallet, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface WalletConnectionModalProps {
   isOpen: boolean;
@@ -12,71 +17,94 @@ interface WalletConnectionModalProps {
   onSuccess: () => void;
 }
 
-const WalletConnectionModal: React.FC<WalletConnectionModalProps> = ({
-  isOpen,
+export default function WalletConnectionModal({ 
+  isOpen, 
   onClose,
-  onSuccess
-}) => {
-  const { connected } = useWallet();
+  onSuccess 
+}: WalletConnectionModalProps) {
+  const { connected, connecting, publicKey } = useWallet();
+  const { setVisible } = useWalletModal();
+  const [connectionAttempted, setConnectionAttempted] = useState(false);
 
-  // Check if wallet got connected
-  React.useEffect(() => {
-    if (connected) {
+  // Open the Solana wallet adapter modal when user clicks "Connect Wallet"
+  const handleConnectWallet = () => {
+    setConnectionAttempted(true);
+    setVisible(true);
+  };
+
+  // Check if connected and call success callback
+  const handleContinue = () => {
+    if (connected && publicKey) {
       onSuccess();
     }
-  }, [connected, onSuccess]);
-
-  if (!isOpen) return null;
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fadeIn">
-      <div 
-        className="absolute inset-0" 
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      
-      <div className="bg-[#1A1A1A] rounded-xl shadow-xl w-full max-w-md mx-4 z-10 overflow-hidden animate-scaleIn">
-        <div className="p-5 border-b border-[#333333] flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-white">Connect Your Wallet</h2>
-          <button
-            onClick={onClose}
-            className="text-[#999999] hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        
-        <div className="p-6">
-          <p className="text-[#DDDDDD] mb-6">
-            Connect your Solana wallet to unlock Pro features and manage your subscription.
-          </p>
-          
-          <div className="flex flex-col space-y-4">
-            {/* Solana Wallet Adapter Button */}
-            <div className="flex justify-center">
-              <WalletMultiButton className="!bg-[#DCC5A2] !text-[#121212] hover:!bg-[#C6B190] transition-colors rounded-lg py-2 px-4 font-medium" />
-            </div>
-            
-            <div className="text-center mt-4">
-              <p className="text-[#999999] text-sm">
-                New to Solana? <a href="https://solana.com/getstarted" target="_blank" rel="noopener noreferrer" className="text-[#DCC5A2] hover:underline">Learn more</a>
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="p-4 bg-[#222222] flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-[#DDDDDD] hover:bg-[#333333] rounded-lg transition-colors text-sm"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md bg-[#0c0c0c] border-[#cdbcab]/30 text-white">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">Connect Your Wallet</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            Connect your Solana wallet to continue with the subscription process.
+          </DialogDescription>
+        </DialogHeader>
 
-export default WalletConnectionModal;
+        <div className="flex flex-col items-center py-4">
+          <div className="mb-6 w-16 h-16 bg-[#1f1f1f] rounded-full flex items-center justify-center">
+            <Wallet className="h-8 w-8 text-[#A67D44]" />
+          </div>
+
+          {!connected ? (
+            <div className="flex flex-col items-center space-y-4 w-full">
+              <p className="text-center text-sm">
+                You'll need a Solana wallet to make payments. 
+                This will allow you to securely pay for your subscription using SOL.
+              </p>
+              
+              {connectionAttempted && !connecting && (
+                <div className="w-full p-3 border border-amber-600/30 bg-amber-950/20 rounded-md flex items-start space-x-2 mb-2">
+                  <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-400">
+                    <p className="font-medium">Connection not completed</p>
+                    <p>Please complete the connection process in your wallet.</p>
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                onClick={handleConnectWallet}
+                className="w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
+                disabled={connecting}
+              >
+                {connecting ? "Connecting..." : "Connect Wallet"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center space-y-4 w-full">
+              <div className="w-full p-3 border border-green-600/30 bg-green-950/20 rounded-md flex items-start space-x-2">
+                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-green-400">Wallet connected successfully</p>
+                  <p className="text-gray-400 break-all">{publicKey?.toString()}</p>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleContinue}
+                className="w-full bg-[#A67D44] hover:bg-[#8A6836] text-black"
+              >
+                Continue to Payment
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        <div className="mt-2 pt-4 border-t border-[#333] text-xs text-gray-500">
+          Your wallet will only be used for payment processing and won't have access to any other permissions.
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
