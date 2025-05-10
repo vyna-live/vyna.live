@@ -17,7 +17,7 @@ import VynaAIChat from "@/pages/VynaAIChat";
 import Notepad from "@/pages/Notepad";
 import ProfilePage from "@/pages/ProfilePage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
-import SolanaWalletProvider from "@/contexts/SolanaWalletProvider";
+import { SolanaWalletProvider } from "@/contexts/SolanaWalletProvider";
 
 function Router() {
   return (

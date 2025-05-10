@@ -1,140 +1,98 @@
-import React, { useState } from 'react';
-import { useWallet } from '@/contexts/SolanaWalletProvider';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  Wallet, 
-  ChevronDown, 
-  LogOut, 
-  CreditCard, 
-  User, 
-  Shield, 
-  Crown
-} from 'lucide-react';
+import { Loader2, Wallet as WalletIcon, ChevronDown, LogOut } from 'lucide-react';
+import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
+import { WalletConnectionModal } from '@/components/wallet/WalletConnectionModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useLocation } from 'wouter';
-import WalletConnectionModal from '@/components/wallet/WalletConnectionModal';
 
-const SolanaWalletButton: React.FC = () => {
-  const { wallet, disconnectWallet, connected } = useWallet();
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [, navigate] = useLocation();
-  
-  const handleConnectWallet = () => {
-    setIsWalletModalOpen(true);
+export function SolanaWalletButton() {
+  const { wallet, isConnecting, connectWallet, disconnectWallet } = useSolanaWallet();
+  const [showConnectModal, setShowConnectModal] = useState(false);
+
+  // Format wallet address
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
-  
-  const handleWalletConnected = () => {
-    setIsWalletModalOpen(false);
+
+  // Format balance
+  const formatBalance = (balance: number) => {
+    return balance.toFixed(4);
   };
-  
-  const handleNavigateToSubscriptions = () => {
-    navigate('/subscription');
-  };
-  
-  const handleNavigateToProfile = () => {
-    navigate('/profile');
-  };
-  
-  // If not connected, show connect button
-  if (!connected) {
+
+  if (isConnecting) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        className="border-neutral-700 text-neutral-300 gap-2"
+      >
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Connecting...</span>
+      </Button>
+    );
+  }
+
+  if (wallet && wallet.isConnected) {
     return (
       <>
-        <Button 
-          onClick={handleConnectWallet}
-          variant="outline" 
-          size="sm"
-          className="bg-[#A67D44] hover:bg-[#8A6836] text-black border-0"
-        >
-          <Wallet className="mr-2 h-4 w-4" />
-          Connect Wallet
-        </Button>
-        
-        <WalletConnectionModal 
-          isOpen={isWalletModalOpen} 
-          onClose={() => setIsWalletModalOpen(false)}
-          onSuccess={handleWalletConnected}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-neutral-700 text-neutral-300 gap-2"
+            >
+              <WalletIcon className="h-4 w-4" />
+              <span>{formatAddress(wallet.address)}</span>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-neutral-900 border-neutral-700 text-white">
+            <DropdownMenuLabel className="text-neutral-400">Your Wallet</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-neutral-800" />
+            <div className="px-2 py-2">
+              <div className="text-xs text-neutral-500 mb-1">Address</div>
+              <div className="text-neutral-300 text-sm break-all">{wallet.address}</div>
+              <div className="text-xs text-neutral-500 mb-1 mt-3">Balance</div>
+              <div className="text-neutral-300 text-sm">{formatBalance(wallet.balance)} SOL</div>
+            </div>
+            <DropdownMenuSeparator className="bg-neutral-800" />
+            <DropdownMenuItem
+              className="text-red-400 cursor-pointer flex gap-2 items-center"
+              onClick={disconnectWallet}
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Disconnect</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </>
     );
   }
-  
-  // If connected, show wallet address with dropdown
-  const displayAddress = wallet?.address 
-    ? `${wallet.address.substring(0, 4)}...${wallet.address.substring(wallet.address.length - 4)}`
-    : '';
-  
+
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="bg-[#202020] hover:bg-[#2a2a2a] border-[#333] text-white"
-          >
-            <Wallet className="mr-2 h-4 w-4 text-[#A67D44]" />
-            {displayAddress}
-            <ChevronDown className="ml-2 h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          className="w-56 bg-[#0c0c0c] border-[#333] text-white"
-          align="end"
-        >
-          <DropdownMenuLabel className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#1f1f1f] flex items-center justify-center">
-              <Wallet className="h-4 w-4 text-[#A67D44]" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Wallet</p>
-              <p className="text-xs text-gray-500 truncate">{displayAddress}</p>
-            </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-[#333]" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              className="hover:bg-[#1a1a1a] cursor-pointer"
-              onClick={handleNavigateToProfile}
-            >
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="hover:bg-[#1a1a1a] cursor-pointer"
-              onClick={handleNavigateToSubscriptions}
-            >
-              <Crown className="mr-2 h-4 w-4" />
-              <span>Upgrade to Pro</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator className="bg-[#333]" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem 
-              className="hover:bg-[#1a1a1a] cursor-pointer text-red-500"
-              onClick={disconnectWallet}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Disconnect</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      
-      <WalletConnectionModal 
-        isOpen={isWalletModalOpen} 
-        onClose={() => setIsWalletModalOpen(false)}
-        onSuccess={handleWalletConnected}
+      <Button
+        onClick={() => setShowConnectModal(true)}
+        variant="outline"
+        size="sm"
+        className="border-neutral-700 text-neutral-300 gap-2"
+      >
+        <WalletIcon className="h-4 w-4" />
+        <span>Connect Wallet</span>
+      </Button>
+
+      <WalletConnectionModal
+        isOpen={showConnectModal}
+        onClose={() => setShowConnectModal(false)}
       />
     </>
   );
-};
-
-export default SolanaWalletButton;
+}
