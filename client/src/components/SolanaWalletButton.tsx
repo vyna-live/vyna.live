@@ -64,18 +64,18 @@ export function SolanaWalletButton() {
         <Button 
           size="sm"
           variant="outline" 
-          className="border-[#E6E2DA] text-[#E6E2DA] hover:bg-[#E6E2DA]/10 px-4"
+          className="border-[#E6E2DA] text-[#E6E2DA] hover:bg-[#E6E2DA]/10 px-3 py-1 h-8 text-xs font-medium rounded-md"
           onClick={handleConnectClick}
           disabled={isConnecting}
         >
           {isConnecting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
               Connecting...
             </>
           ) : (
             <>
-              <Wallet className="mr-2 h-4 w-4" />
+              <Wallet className="mr-1 h-3 w-3" />
               Connect Wallet
             </>
           )}
@@ -97,12 +97,12 @@ export function SolanaWalletButton() {
         <Button 
           size="sm"
           variant="outline" 
-          className="border-[#E6E2DA] text-[#E6E2DA] hover:bg-[#E6E2DA]/10"
+          className="border-[#E6E2DA] text-[#E6E2DA] hover:bg-[#E6E2DA]/10 px-3 py-1 h-8 text-xs font-medium rounded-md"
         >
-          <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4" />
+          <div className="flex items-center gap-1">
+            <Wallet className="h-3 w-3" />
             <span className="hidden sm:inline">{truncateAddress(wallet.publicKey)}</span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown className="h-3 w-3 opacity-50" />
           </div>
         </Button>
       </DropdownMenuTrigger>

@@ -74,13 +74,6 @@ export default function Header({ username }: HeaderProps) {
               <Sparkles className="h-5 w-5 text-[#5D1C34]" />
               <span className="text-sm font-medium text-[#5D1C34]">STREAMCAST AI</span>
             </div>
-            <button
-              onClick={() => setLocation('/subscription')}
-              className="flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-[#efe9e1]/20"
-            >
-              <DollarSign className="h-4 w-4 text-[#A67D44]" />
-              <span className="text-[#A67D44]">Pricing</span>
-            </button>
           </div>
           <SolanaWalletButton />
         </div>

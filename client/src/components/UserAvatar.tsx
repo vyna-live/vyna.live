@@ -53,28 +53,18 @@ export default function UserAvatar() {
   
   return (
     <div className="flex items-center gap-3">
-      <button 
-        onClick={() => setLocation('/subscription')}
-        className="flex items-center gap-1 px-3 py-2 rounded-md border border-[#A67D44]/40 hover:bg-[#A67D44]/10 transition-all"
-      >
-        <DollarSign className="h-4 w-4 text-[#A67D44]" />
-        <span className="text-[#A67D44]">Pricing</span>
-      </button>
-
       <SolanaWalletButton />
         
       <div className="relative z-[9999]" ref={dropdownRef}>
         <button 
-          className="flex items-center space-x-2 py-1.5 px-3 rounded-full bg-[#252525] hover:bg-[#303030] transition-all"
+          className="flex items-center py-1.5 px-1.5 rounded-full bg-[#252525] hover:bg-[#303030] transition-all"
           onClick={() => setIsOpen(!isOpen)}
         >
           <img 
             src={avatarUrl} 
             alt={user?.username || 'User'} 
-            className="w-6 h-6 rounded-full"
+            className="w-7 h-7 rounded-full"
           />
-          <span className="text-sm font-medium text-white">{user?.username}</span>
-          <ChevronsUpDown size={16} className="text-gray-400" />
         </button>
         
         {isOpen && (

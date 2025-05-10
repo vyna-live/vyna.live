@@ -88,15 +88,6 @@ export default function LandingPage() {
           <Logo size="md" />
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setLocation('/subscription')}
-            className="flex items-center gap-1 px-3 py-2 rounded-md border border-[#A67D44]/40 hover:bg-[#A67D44]/10 transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#A67D44]">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-            <span className="text-[#A67D44]">Pricing</span>
-          </button>
           {isLoading ? (
             <div className="w-24 h-8 bg-[#252525] rounded-full animate-pulse"></div>
           ) : isAuthenticated ? (
@@ -150,18 +141,30 @@ export default function LandingPage() {
                 <span>Notepad</span>
               </button>
               <div className="flex-1"></div>
-              <button 
-                onClick={handleExpandView}
-                className="text-[#999999] hover:text-white p-1" 
-                aria-label="Expand"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <polyline points="9 21 3 21 3 15"></polyline>
-                  <line x1="21" y1="3" x2="14" y2="10"></line>
-                  <line x1="3" y1="21" x2="10" y2="14"></line>
-                </svg>
-              </button>
+              <div className="flex items-center">
+                <div className="mr-3">
+                  <a 
+                    href="/subscription" 
+                    className="inline-flex items-center h-6 px-2.5 py-0.5 rounded-md bg-[#121212] hover:bg-[#1a1a1a] transition-colors"
+                  >
+                    <span className="text-xs text-white font-normal">Free plan</span>
+                    <span className="text-xs mx-1 text-gray-400">·</span>
+                    <span className="text-xs text-[#4C9EFF] hover:underline">Upgrade</span>
+                  </a>
+                </div>
+                <button 
+                  onClick={handleExpandView}
+                  className="text-[#999999] hover:text-white p-1" 
+                  aria-label="Expand"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
             
             {/* Content area - VynaAI */}
