@@ -16,6 +16,9 @@ import LandingPage from "@/pages/LandingPage";
 import VynaAIChat from "@/pages/VynaAIChat";
 import Notepad from "@/pages/Notepad";
 import ProfilePage from "@/pages/ProfilePage";
+import SubscriptionPage from "@/pages/SubscriptionPage";
+// Temporarily skip wallet provider due to dependency issues
+// import SolanaWalletProvider from "@/contexts/SolanaWalletProvider";
 
 function Router() {
   return (
@@ -36,6 +39,7 @@ function Router() {
       <Route path="/chat" component={Home} />
       <Route path="/ai-chat" component={VynaAIChat} />
       <Route path="/notepad" component={Notepad} />
+      <Route path="/subscription" component={SubscriptionPage} />
       <Route path="/join-stream" component={JoinStream} />
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
@@ -48,6 +52,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        {/* Temporarily removed SolanaWalletProvider due to dependency issues */}
         <TooltipProvider>
           <Toaster />
           <Router />

@@ -21,6 +21,9 @@ export const users = pgTable("users", {
   role: varchar("role", { length: 20 }).default("user").notNull(), // user, admin
   isEmailVerified: boolean("is_email_verified").default(false),
   lastLoginAt: timestamp("last_login_at"),
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("inactive"),
+  subscriptionTier: varchar("subscription_tier", { length: 20 }),
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
 });
 
 export const researchSessions = pgTable("research_sessions", {
@@ -150,6 +153,22 @@ export const walletTransactions = pgTable("wallet_transactions", {
   confirmedAt: timestamp("confirmed_at"),
 });
 
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tierId: varchar("tier_id", { length: 50 }).notNull(), // basic, pro, enterprise
+  transactionSignature: text("transaction_signature").unique(),
+  status: varchar("status", { length: 20 }).default("active").notNull(), // active, cancelled, expired
+  amount: text("amount"), // Amount paid in SOL
+  activatedAt: timestamp("activated_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  cancelledAt: timestamp("cancelled_at"),
+  autoRenew: boolean("auto_renew").default(false),
+  metadata: jsonb("metadata"), // Additional subscription data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Stream Sessions model - for active and historical stream data
 export const streamSessions = pgTable("stream_sessions", {
   id: serial("id").primaryKey(),
@@ -187,14 +206,15 @@ export const insertUserSchema = createInsertSchema(users).pick({
   displayName: true,
   avatarUrl: true,
   googleId: true,
-  // Privy fields
-  privyId: true,
-  privyWallets: true,
+  // No longer using Privy
   // Legacy wallet fields
   walletAddress: true,
   walletProvider: true,
   role: true,
   isEmailVerified: true,
+  subscriptionStatus: true,
+  subscriptionTier: true,
+  subscriptionExpiresAt: true,
 });
 
 export const insertResearchSessionSchema = createInsertSchema(researchSessions).pick({
@@ -288,6 +308,17 @@ export const insertWalletTransactionSchema = createInsertSchema(walletTransactio
   metadata: true,
 });
 
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).pick({
+  userId: true,
+  tierId: true,
+  transactionSignature: true,
+  status: true,
+  amount: true,
+  expiresAt: true,
+  autoRenew: true,
+  metadata: true,
+});
+
 export const insertStreamSessionSchema = createInsertSchema(streamSessions).pick({
   userId: true,
   hostId: true,
@@ -354,6 +385,9 @@ export type LivestreamInvitation = typeof livestreamInvitations.$inferSelect;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
 
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
+
 export type InsertStreamSession = z.infer<typeof insertStreamSessionSchema>;
 export type StreamSession = typeof streamSessions.$inferSelect;
 
@@ -369,6 +403,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   receivedInvitations: many(livestreamInvitations, { relationName: "invitee" }),
   walletTransactions: many(walletTransactions),
   streamSessions: many(streamSessions),
+  subscriptions: many(subscriptions),
   aiChats: many(aiChats),
   notepads: many(notepads),
 }));

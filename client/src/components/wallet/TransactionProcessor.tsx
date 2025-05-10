@@ -1,17 +1,9 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useConnection } from '@solana/wallet-adapter-react';
-import { 
-  PublicKey, 
-  Transaction, 
-  SystemProgram, 
-  LAMPORTS_PER_SOL,
-  TransactionSignature
-} from '@solana/web3.js';
-import { Loader2, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
-
-// This would come from your environment variables in a real app
-const VYNA_WALLET_ADDRESS = 'YourCompanySolanaWalletAddressHere';
+import { Loader2, CheckCircle2, XCircle, ArrowLeftCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { createSubscriptionTransaction, confirmTransaction, activateSubscription } from '@/services/subscriptionService';
 
 interface TransactionProcessorProps {
   amount: number; // Amount in SOL
@@ -22,180 +14,170 @@ interface TransactionProcessorProps {
 
 type TransactionStatus = 'initial' | 'processing' | 'confirming' | 'success' | 'error';
 
-const TransactionProcessor: React.FC<TransactionProcessorProps> = ({
+export default function TransactionProcessor({
   amount,
   onSuccess,
   onError,
   onCancel
-}) => {
-  const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
-  
+}: TransactionProcessorProps) {
+  const { publicKey, signTransaction } = useWallet();
   const [status, setStatus] = useState<TransactionStatus>('initial');
-  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const [signature, setSignature] = useState<string | null>(null);
-  
-  // Estimated gas fees in SOL
-  const estimatedFees = 0.000005;
-  
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Function to handle the payment process
   const processPayment = async () => {
-    if (!publicKey) {
-      setError('Wallet not connected');
-      setStatus('error');
+    if (!publicKey || !signTransaction) {
+      onError(new Error('Wallet not connected or unable to sign transactions'));
       return;
     }
-    
+
     try {
+      // Update status and start progress
       setStatus('processing');
-      
-      // Calculate the amount in lamports
-      const amountInLamports = amount * LAMPORTS_PER_SOL;
-      
+      setProgress(10);
+
       // Create a transaction
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: new PublicKey(VYNA_WALLET_ADDRESS),
-          lamports: amountInLamports,
-        })
-      );
+      const transaction = await createSubscriptionTransaction(publicKey, amount);
       
-      // Setting a recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
+      // Update progress
+      setProgress(30);
+      
+      // Sign the transaction
+      const signedTransaction = await signTransaction(transaction);
+      
+      // Update progress
+      setProgress(50);
+      
+      // Get the transaction signature and confirm it
+      const connection = transaction.recentBlockhash ? 
+        transaction.feePayer?.equals(publicKey) : false;
+      
+      if (!connection) {
+        throw new Error('Transaction connection error');
+      }
       
       // Send the transaction
-      const txSignature = await sendTransaction(transaction, connection);
+      const txSignature = await window.solana.sendTransaction(signedTransaction);
       setSignature(txSignature);
+      
+      // Update status and progress
       setStatus('confirming');
+      setProgress(70);
       
       // Confirm the transaction
-      const confirmation = await connection.confirmTransaction(txSignature);
+      const confirmed = await confirmTransaction(txSignature);
       
-      if (confirmation.value.err) {
+      if (!confirmed) {
         throw new Error('Transaction failed to confirm');
       }
       
-      setStatus('success');
-      onSuccess();
+      // Update progress
+      setProgress(90);
       
-    } catch (err) {
-      console.error('Transaction error:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      // Activate the subscription
+      const activated = await activateSubscription(
+        1, // TODO: Get actual user ID
+        'pro', // Default to Pro tier
+        txSignature
+      );
+      
+      if (!activated) {
+        throw new Error('Failed to activate subscription');
+      }
+      
+      // Update status and progress
+      setStatus('success');
+      setProgress(100);
+      
+      // Call success callback after a short delay
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Payment error:', error);
       setStatus('error');
-      onError(err instanceof Error ? err : new Error('Unknown error occurred'));
+      setErrorMessage(error instanceof Error ? error.message : 'An unknown error occurred');
+      onError(error instanceof Error ? error : new Error('Payment processing failed'));
     }
   };
-  
-  const retryTransaction = () => {
-    setStatus('initial');
-    setError(null);
-    setSignature(null);
-  };
-  
+
+  // Start the payment process automatically
+  useEffect(() => {
+    processPayment();
+  }, []);
+
   return (
-    <div className="bg-[#1A1A1A] rounded-xl p-6 w-full max-w-md mx-auto">
-      <h3 className="text-xl font-semibold mb-4 text-white">Complete Your Payment</h3>
-      
-      <div className="bg-[#222222] rounded-lg p-4 mb-6">
-        <div className="flex justify-between mb-2">
-          <span className="text-[#BBBBBB]">Amount:</span>
-          <span className="text-white font-medium">{amount} SOL</span>
-        </div>
-        <div className="flex justify-between mb-2">
-          <span className="text-[#BBBBBB]">Estimated fees:</span>
-          <span className="text-[#DDDDDD]">{estimatedFees} SOL</span>
-        </div>
-        <div className="border-t border-[#333333] my-2 pt-2 flex justify-between">
-          <span className="text-[#BBBBBB]">Total:</span>
-          <span className="text-white font-semibold">{(amount + estimatedFees).toFixed(6)} SOL</span>
-        </div>
+    <div className="flex flex-col items-center">
+      <div className="mb-8 text-center">
+        {status === 'initial' && (
+          <>
+            <Loader2 className="mx-auto h-10 w-10 text-[#A67D44] animate-spin mb-4" />
+            <h3 className="text-lg font-medium mb-1">Preparing Transaction</h3>
+            <p className="text-sm text-gray-400">Please wait while we prepare your transaction...</p>
+          </>
+        )}
+        
+        {status === 'processing' && (
+          <>
+            <Loader2 className="mx-auto h-10 w-10 text-[#A67D44] animate-spin mb-4" />
+            <h3 className="text-lg font-medium mb-1">Processing Payment</h3>
+            <p className="text-sm text-gray-400">Please confirm the transaction in your wallet</p>
+          </>
+        )}
+        
+        {status === 'confirming' && (
+          <>
+            <Loader2 className="mx-auto h-10 w-10 text-[#A67D44] animate-spin mb-4" />
+            <h3 className="text-lg font-medium mb-1">Confirming Transaction</h3>
+            <p className="text-sm text-gray-400">This may take a few moments to complete</p>
+            {signature && (
+              <p className="text-xs text-gray-500 mt-2 break-all">
+                Transaction ID: {signature}
+              </p>
+            )}
+          </>
+        )}
+        
+        {status === 'success' && (
+          <>
+            <CheckCircle2 className="mx-auto h-10 w-10 text-green-500 mb-4" />
+            <h3 className="text-lg font-medium mb-1">Payment Successful!</h3>
+            <p className="text-sm text-gray-400">Your subscription has been activated</p>
+            {signature && (
+              <p className="text-xs text-gray-500 mt-2 break-all">
+                Transaction ID: {signature}
+              </p>
+            )}
+          </>
+        )}
+        
+        {status === 'error' && (
+          <>
+            <XCircle className="mx-auto h-10 w-10 text-red-500 mb-4" />
+            <h3 className="text-lg font-medium mb-1">Payment Failed</h3>
+            <p className="text-sm text-red-400">{errorMessage || 'An error occurred during the payment process'}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-4"
+              onClick={onCancel}
+            >
+              <ArrowLeftCircle className="mr-2 h-4 w-4" />
+              Try Again
+            </Button>
+          </>
+        )}
       </div>
       
-      {status === 'initial' && (
-        <div className="space-y-4">
-          <button
-            onClick={processPayment}
-            className="w-full py-3 px-4 bg-[#DCC5A2] text-[#121212] rounded-lg font-medium hover:bg-[#C6B190] transition-colors"
-          >
-            Pay Now
-          </button>
-          <button
-            onClick={onCancel}
-            className="w-full py-3 px-4 bg-transparent text-[#DDDDDD] border border-[#333333] rounded-lg font-medium hover:bg-[#222222] transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-      
-      {status === 'processing' && (
-        <div className="text-center py-4">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#DCC5A2]" />
-          <p className="text-[#DDDDDD]">Processing your payment...</p>
-          <p className="text-[#999999] text-sm mt-2">Please approve the transaction in your wallet</p>
-        </div>
-      )}
-      
-      {status === 'confirming' && (
-        <div className="text-center py-4">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-[#DCC5A2]" />
-          <p className="text-[#DDDDDD]">Confirming transaction...</p>
-          <p className="text-[#999999] text-sm mt-2">This may take a few moments</p>
-          {signature && (
-            <div className="mt-4 text-sm bg-[#222222] p-3 rounded overflow-hidden">
-              <p className="text-[#999999] mb-1">Transaction ID:</p>
-              <p className="text-[#BBBBBB] truncate">{signature}</p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      {status === 'success' && (
-        <div className="text-center py-4">
-          <CheckCircle2 className="h-10 w-10 mx-auto mb-4 text-green-500" />
-          <p className="text-white font-medium">Payment Successful!</p>
-          <p className="text-[#BBBBBB] text-sm mt-2">Your Pro subscription has been activated</p>
-          {signature && (
-            <div className="mt-4 text-sm bg-[#222222] p-3 rounded overflow-hidden">
-              <p className="text-[#999999] mb-1">Transaction ID:</p>
-              <p className="text-[#BBBBBB] truncate">{signature}</p>
-            </div>
-          )}
-        </div>
-      )}
-      
-      {status === 'error' && (
-        <div className="py-4">
-          <div className="flex items-center justify-center mb-4">
-            <AlertCircle className="h-10 w-10 text-red-500" />
-          </div>
-          <p className="text-white font-medium text-center">Transaction Failed</p>
-          <p className="text-[#BBBBBB] text-sm mt-2 text-center">
-            {error || 'An error occurred while processing your payment'}
-          </p>
-          
-          <div className="mt-6 space-y-3">
-            <button
-              onClick={retryTransaction}
-              className="w-full py-2.5 px-4 bg-[#333333] text-white rounded-lg font-medium hover:bg-[#444444] transition-colors flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Try Again</span>
-            </button>
-            
-            <button
-              onClick={onCancel}
-              className="w-full py-2.5 px-4 bg-transparent text-[#DDDDDD] border border-[#333333] rounded-lg font-medium hover:bg-[#222222] transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
+      {(status === 'initial' || status === 'processing' || status === 'confirming') && (
+        <div className="w-full">
+          <Progress value={progress} className="h-2 bg-[#222]" />
+          <p className="mt-2 text-xs text-gray-400 text-center">{progress}% complete</p>
         </div>
       )}
     </div>
   );
-};
-
-export default TransactionProcessor;
+}

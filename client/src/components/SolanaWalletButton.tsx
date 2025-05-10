@@ -1,148 +1,148 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js';
+import { useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { Button } from '@/components/ui/button';
-import { Wallet } from 'lucide-react';
+import { Wallet, ChevronDown, LogOut, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 
 interface SolanaWalletButtonProps {
-  onWalletConnect?: (publicKey: string) => Promise<void>;
-  onWalletDisconnect?: () => Promise<void>;
-  className?: string;
+  onWalletConnect?: (publicKey: string) => void;
+  onWalletDisconnect?: () => void;
 }
 
-// Define the Phantom provider interface
-interface PhantomProvider {
-  isPhantom: boolean;
-  connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
-  disconnect: () => Promise<void>;
-  on: (event: string, callback: any) => void;
-  removeAllListeners: () => void;
-}
-
-export default function SolanaWalletButton({
-  onWalletConnect,
-  onWalletDisconnect,
-  className = ''
+export default function SolanaWalletButton({ 
+  onWalletConnect, 
+  onWalletDisconnect 
 }: SolanaWalletButtonProps) {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { connected, publicKey, disconnect } = useWallet();
+  const { setVisible } = useWalletModal();
   const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
 
-  // Initialize phantom wallet
-  const getProvider = (): PhantomProvider | null => {
-    if ('solana' in window) {
-      // @ts-ignore
-      const provider = window.solana as PhantomProvider;
-      if (provider.isPhantom) return provider;
-    }
-    return null;
+  // Handle wallet connect button click
+  const handleConnectClick = () => {
+    setVisible(true);
   };
 
-  // Check if wallet is connected on component mount
-  useEffect(() => {
-    const provider = getProvider();
-    if (provider) {
-      provider.on('connect', (publicKey: { toString: () => string }) => {
-        const address = publicKey.toString();
-        console.log('Connected to wallet:', address);
-        setWalletAddress(address);
-        // If callback provided, notify parent component
-        if (onWalletConnect) onWalletConnect(address);
-      });
-
-      provider.on('disconnect', () => {
-        console.log('Disconnected from wallet');
-        setWalletAddress(null);
-        // If callback provided, notify parent component
-        if (onWalletDisconnect) onWalletDisconnect();
-      });
-
-      // Check if already connected
-      provider.connect({ onlyIfTrusted: true })
-        .catch(() => {
-          // This is normal if not yet connected, not an error
-        });
-
-      return () => {
-        provider.removeAllListeners();
-      };
-    }
-  }, [onWalletConnect, onWalletDisconnect]);
-
-  const connectWallet = useCallback(async () => {
+  // Handle wallet disconnect
+  const handleDisconnect = async () => {
     try {
-      setIsConnecting(true);
-      const provider = getProvider();
+      await disconnect();
       
-      if (!provider) {
-        toast({
-          title: 'Wallet not found',
-          description: 'Please install Phantom wallet extension',
-          variant: 'destructive'
-        });
-        window.open('https://phantom.app/', '_blank');
-        return;
+      if (onWalletDisconnect) {
+        onWalletDisconnect();
       }
-
-      await provider.connect();
-      // The actual connection is handled in the event listener
-    } catch (error) {
-      console.error('Error connecting to wallet:', error);
+      
       toast({
-        title: 'Connection Failed',
-        description: 'Failed to connect to Solana wallet',
-        variant: 'destructive'
+        title: "Wallet disconnected",
+        description: "Your wallet has been disconnected successfully."
       });
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [toast]);
-
-  const disconnectWallet = useCallback(async () => {
-    try {
-      const provider = getProvider();
-      if (provider) {
-        await provider.disconnect();
-        // The actual disconnection is handled in the event listener
-      }
     } catch (error) {
       console.error('Error disconnecting wallet:', error);
+      
       toast({
-        title: 'Disconnect Failed',
-        description: 'Failed to disconnect from Solana wallet',
-        variant: 'destructive'
+        title: "Disconnect failed",
+        description: "Failed to disconnect your wallet.",
+        variant: "destructive"
       });
     }
-  }, [toast]);
+  };
 
-  // Format wallet address for display
-  const formatWalletAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  // Handle address copy
+  const handleCopyAddress = () => {
+    if (publicKey) {
+      navigator.clipboard.writeText(publicKey.toString());
+      setCopied(true);
+      
+      toast({
+        title: "Address copied",
+        description: "Wallet address copied to clipboard."
+      });
+      
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Handle view on explorer
+  const handleViewOnExplorer = () => {
+    if (publicKey) {
+      const url = `https://explorer.solana.com/address/${publicKey.toString()}`;
+      window.open(url, '_blank');
+    }
   };
 
   return (
-    <div className={className}>
-      {walletAddress ? (
+    <>
+      {!connected ? (
         <Button 
-          onClick={disconnectWallet} 
           variant="outline" 
-          className="flex items-center gap-2 bg-[#5D1C34]/10 border-[#5D1C34]/20 text-[#5D1C34] hover:bg-[#5D1C34]/20"
+          size="sm"
+          className="border-[#A67D44]/70 text-[#A67D44] hover:text-[#A67D44] hover:bg-[#A67D44]/10"
+          onClick={handleConnectClick}
         >
-          <Wallet className="h-4 w-4" />
-          {formatWalletAddress(walletAddress)}
+          <Wallet className="mr-2 h-4 w-4" />
+          Connect Wallet
         </Button>
       ) : (
-        <Button 
-          onClick={connectWallet} 
-          variant="outline" 
-          className="flex items-center gap-2 bg-[#5D1C34]/10 border-[#5D1C34]/20 text-[#5D1C34] hover:bg-[#5D1C34]/20"
-          disabled={isConnecting}
-        >
-          <Wallet className="h-4 w-4" />
-          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="border-green-600/30 bg-green-950/20 text-green-400 hover:bg-green-950/30"
+            >
+              <Wallet className="mr-2 h-4 w-4" />
+              {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-[#0c0c0c] border-[#333] text-white">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-xs font-medium text-gray-400">Connected Wallet</p>
+                <p className="font-medium truncate">
+                  {publicKey?.toString().slice(0, 6)}...{publicKey?.toString().slice(-6)}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-[#333]" />
+            <DropdownMenuItem 
+              className="cursor-pointer flex items-center text-sm"
+              onClick={handleCopyAddress}
+            >
+              {copied ? (
+                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="mr-2 h-4 w-4" />
+              )}
+              <span>Copy Address</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className="cursor-pointer flex items-center text-sm"
+              onClick={handleViewOnExplorer}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              <span>View on Explorer</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-[#333]" />
+            <DropdownMenuItem 
+              className="cursor-pointer flex items-center text-sm text-red-400 focus:text-red-400"
+              onClick={handleDisconnect}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Disconnect</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
-    </div>
+    </>
   );
 }
