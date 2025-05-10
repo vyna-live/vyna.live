@@ -36,6 +36,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   
+  // Register subscription routes
+  registerSubscriptionRoutes(app);
+  
   // AI Chat endpoints
   // Get all chat sessions for a specific host
   app.get("/api/ai-chat-sessions/:hostId", async (req, res) => {
