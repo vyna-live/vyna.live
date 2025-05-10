@@ -64,36 +64,78 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
   const connectWallet = useCallback(async (provider: 'phantom' | 'solflare' = 'phantom'): Promise<boolean> => {
     try {
       setIsConnecting(true);
-
-      // Actual wallet connection logic would go here
-      // This would use the Solana wallet adapter in a real implementation
+      
       if (provider === 'phantom' && hasPhantomWallet()) {
-        // Phantom wallet connection
-        const response = await window.phantom?.solana.connect();
-        const newWallet = {
-          publicKey: response.publicKey.toString(),
-          name: 'Phantom',
-          provider: 'phantom' as const
-        };
-        setWallet(newWallet);
-        localStorage.setItem('solanaWallet', JSON.stringify(newWallet));
-        return true;
+        try {
+          const response = await window.phantom?.solana.connect();
+          const publicKey = response?.publicKey.toString();
+          
+          if (!publicKey) {
+            throw new Error('Failed to connect to Phantom wallet');
+          }
+          
+          const connectedWallet = {
+            publicKey,
+            name: 'Phantom',
+            provider: 'phantom' as const
+          };
+          
+          setWallet(connectedWallet);
+          localStorage.setItem('solanaWallet', JSON.stringify(connectedWallet));
+          
+          toast({
+            title: 'Wallet connected',
+            description: 'Successfully connected to Phantom wallet',
+          });
+          
+          return true;
+        } catch (error) {
+          console.error('Phantom wallet connection error:', error);
+          toast({
+            title: 'Connection Failed',
+            description: 'Failed to connect to Phantom wallet',
+            variant: 'destructive'
+          });
+          return false;
+        }
       } else if (provider === 'solflare' && hasSolflareWallet()) {
-        // Solflare wallet connection
-        const response = await window.solflare.connect();
-        const newWallet = {
-          publicKey: response.publicKey.toString(),
-          name: 'Solflare',
-          provider: 'solflare' as const
-        };
-        setWallet(newWallet);
-        localStorage.setItem('solanaWallet', JSON.stringify(newWallet));
-        return true;
+        try {
+          const response = await window.solflare?.connect();
+          const publicKey = response?.publicKey.toString();
+          
+          if (!publicKey) {
+            throw new Error('Failed to connect to Solflare wallet');
+          }
+          
+          const connectedWallet = {
+            publicKey,
+            name: 'Solflare',
+            provider: 'solflare' as const
+          };
+          
+          setWallet(connectedWallet);
+          localStorage.setItem('solanaWallet', JSON.stringify(connectedWallet));
+          
+          toast({
+            title: 'Wallet connected',
+            description: 'Successfully connected to Solflare wallet',
+          });
+          
+          return true;
+        } catch (error) {
+          console.error('Solflare wallet connection error:', error);
+          toast({
+            title: 'Connection Failed',
+            description: 'Failed to connect to Solflare wallet',
+            variant: 'destructive'
+          });
+          return false;
+        }
       } else {
         toast({
           title: 'Wallet not found',
-          description: `${provider === 'phantom' ? 'Phantom' : 'Solflare'} wallet extension is not installed`,
-          variant: 'destructive',
+          description: `${provider === 'phantom' ? 'Phantom' : 'Solflare'} wallet extension not detected. Please install it first.`,
+          variant: 'destructive'
         });
         return false;
       }
@@ -111,15 +153,30 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [hasPhantomWallet, hasSolflareWallet, toast]);
 
   // Disconnect wallet
-  const disconnectWallet = useCallback(() => {
-    // In real implementation, we would also call the disconnect method on the wallet
-    setWallet(null);
-    localStorage.removeItem('solanaWallet');
-    toast({
-      title: 'Wallet disconnected',
-      description: 'Your wallet has been disconnected',
-    });
-  }, [toast]);
+  const disconnectWallet = useCallback(async () => {
+    try {
+      if (wallet?.provider === 'phantom' && window.phantom?.solana) {
+        await window.phantom.solana.disconnect();
+      } else if (wallet?.provider === 'solflare' && window.solflare) {
+        await window.solflare.disconnect();
+      }
+      
+      setWallet(null);
+      localStorage.removeItem('solanaWallet');
+      
+      toast({
+        title: 'Wallet disconnected',
+        description: 'Your wallet has been disconnected',
+      });
+    } catch (error) {
+      console.error('Error disconnecting wallet:', error);
+      toast({
+        title: 'Disconnect error',
+        description: 'Failed to disconnect wallet properly. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [wallet, toast]);
 
   // Send transaction
   const sendTransaction = useCallback(
@@ -129,10 +186,44 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
       }
 
       try {
-
-        // Actual transaction logic would go here depending on the wallet provider
-        // This would use the Solana web3.js library in a real implementation
-        throw new Error('Real transaction sending not implemented');
+        // Only handle SOL transfers for now
+        if (paymentMethod === 'sol') {
+          // Set up connection to Solana devnet
+          const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+          
+          // Create transaction
+          const transaction = new Transaction();
+          
+          // Parse amount to lamports (SOL's smallest unit)
+          const lamports = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL);
+          
+          // Add transfer instruction
+          transaction.add(
+            SystemProgram.transfer({
+              fromPubkey: new PublicKey(wallet.publicKey),
+              toPubkey: new PublicKey(recipient),
+              lamports
+            })
+          );
+          
+          // Sign and send transaction based on wallet provider
+          let signature = '';
+          
+          if (wallet.provider === 'phantom' && window.phantom?.solana) {
+            // This is simplified and would need more work in a production app
+            // to handle wallet adapter properly
+            throw new Error('Phantom transaction signing not fully implemented');
+          } else if (wallet.provider === 'solflare' && window.solflare) {
+            // This is simplified and would need more work in a production app
+            throw new Error('Solflare transaction signing not fully implemented');
+          } else {
+            throw new Error('Unsupported wallet provider');
+          }
+          
+          return { signature };
+        } else {
+          throw new Error('Only SOL payments are supported at this time');
+        }
       } catch (error) {
         console.error('Error sending transaction:', error);
         throw new Error(error instanceof Error ? error.message : 'Failed to send transaction');
@@ -157,18 +248,22 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
   );
 };
 
-// Add mock types for wallet extensions to avoid TypeScript errors
+// Add types for wallet extensions to avoid TypeScript errors
 declare global {
   interface Window {
     phantom?: {
       solana: {
         connect: () => Promise<{ publicKey: { toString: () => string } }>;
         disconnect: () => Promise<void>;
+        signTransaction?: (transaction: Transaction) => Promise<Transaction>;
+        signAllTransactions?: (transactions: Transaction[]) => Promise<Transaction[]>;
       };
     };
     solflare?: {
       connect: () => Promise<{ publicKey: { toString: () => string } }>;
       disconnect: () => Promise<void>;
+      signTransaction?: (transaction: Transaction) => Promise<Transaction>;
+      signAllTransactions?: (transactions: Transaction[]) => Promise<Transaction[]>;
     };
   }
 }
