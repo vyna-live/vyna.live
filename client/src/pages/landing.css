@@ -75,6 +75,32 @@
   animation-delay: 0.3s;
 }
 
+/* Replit Badge customization */
+:root {
+  --replit-badge-bottom-margin: 30px;
+}
+
+/* This targets the Replit badge */
+#replit-badge {
+  bottom: var(--replit-badge-bottom-margin) !important;
+  z-index: 100 !important;
+}
+
+/* Override the default text of the badge */
+#replit-badge span[data-message] {
+  visibility: hidden;
+}
+
+#replit-badge span[data-message]:after {
+  content: 'Built with Replit';
+  visibility: visible;
+  display: block;
+  position: absolute;
+  white-space: nowrap;
+  top: 0;
+  left: 0;
+}
+
 /* Media Queries for better responsiveness */
 @media (max-width: 640px) {
   .hero-heading {
