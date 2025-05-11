@@ -343,12 +343,21 @@ export default function LandingPage() {
       </main>
       
       {/* Replit Badge - Bottom Right */}
-      <div className="replit-badge-container">
+      <div 
+        className="replit-badge-container" 
+        style={{ 
+          position: 'fixed', 
+          bottom: '10px', 
+          right: '10px',
+          zIndex: 50 
+        }}
+      >
         <a href="https://replit.com" target="_blank" rel="noopener noreferrer">
           <img
             src="https://replit.com/badge?caption=Built%20With%20Replit"
             alt="Built with Replit"
             className="replit-badge"
+            style={{ display: 'block' }}
           />
         </a>
       </div>

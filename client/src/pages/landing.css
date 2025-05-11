@@ -78,8 +78,8 @@
 /* Replit Badge customization */
 .replit-badge-container {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
+  bottom: 10px;
+  right: 10px;
   z-index: 100;
 }
 
