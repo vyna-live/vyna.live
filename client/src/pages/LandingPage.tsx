@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Download, Sparkles, Paperclip, Mic, Image, Upload, Plus } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -13,6 +13,22 @@ export default function LandingPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [inputValue, setInputValue] = useState("");
+  
+  // Add Replit badge
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://replit.com/public/js/replit-badge-v2.js';
+    script.setAttribute('theme', 'dark');
+    script.setAttribute('position', 'bottom-right');
+    document.body.appendChild(script);
+    
+    return () => {
+      // Cleanup when component unmounts
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   const handleLogin = () => {
     setLocation("/auth");
@@ -339,15 +355,6 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
-      
-      {/* Replit Badge - Bottom Right (using official script) */}
-      <div className="replit-badge-container">
-        <script
-          src="https://replit.com/public/js/replit-badge-v2.js"
-          theme="dark"
-          position="bottom-right"
-        ></script>
-      </div>
     </div>
   );
 }
