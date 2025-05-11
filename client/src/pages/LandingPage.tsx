@@ -339,6 +339,25 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
+      
+      {/* Replit Badge - Bottom Left */}
+      <div className="fixed bottom-4 left-4 z-10">
+        <a 
+          href="https://replit.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-sm transition-all duration-300 px-3 py-1.5 rounded-full group"
+        >
+          <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 5.5C7 4.67157 7.67157 4 8.5 4H15.5C16.3284 4 17 4.67157 17 5.5V12.5C17 13.3284 16.3284 14 15.5 14H8.5C7.67157 14 7 13.3284 7 12.5V5.5Z" fill="white"/>
+            <path d="M17 19.5C17 18.6716 17.6716 18 18.5 18H25.5C26.3284 18 27 18.6716 27 19.5V26.5C27 27.3284 26.3284 28 25.5 28H18.5C17.6716 28 17 27.3284 17 26.5V19.5Z" fill="white"/>
+            <path d="M7 19.5C7 18.6716 7.67157 18 8.5 18H15.5C16.3284 18 17 18.6716 17 19.5V26.5C17 27.3284 16.3284 28 15.5 28H8.5C7.67157 28 7 27.3284 7 26.5V19.5Z" fill="white"/>
+          </svg>
+          <span className="text-xs font-medium text-white opacity-80 group-hover:opacity-100">
+            Built on Replit
+          </span>
+        </a>
+      </div>
     </div>
   );
 }
