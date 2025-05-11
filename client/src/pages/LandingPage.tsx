@@ -14,21 +14,7 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [inputValue, setInputValue] = useState("");
   
-  // Add Replit badge
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://replit.com/public/js/replit-badge-v2.js';
-    script.setAttribute('theme', 'dark');
-    script.setAttribute('position', 'bottom-right');
-    document.body.appendChild(script);
-    
-    return () => {
-      // Cleanup when component unmounts
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
+  // No need for useEffect with direct image badge
 
   const handleLogin = () => {
     setLocation("/auth");
@@ -355,6 +341,17 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
+      
+      {/* Replit Badge - Bottom Right */}
+      <div className="replit-badge-container">
+        <a href="https://replit.com" target="_blank" rel="noopener noreferrer">
+          <img
+            src="https://replit.com/badge?caption=Built%20With%20Replit"
+            alt="Built with Replit"
+            className="replit-badge"
+          />
+        </a>
+      </div>
     </div>
   );
 }
