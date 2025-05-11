@@ -77,7 +77,7 @@ const ChartRenderer: React.FC<{ chartData: any, darkMode?: boolean }> = ({
     // If the specified xKey doesn't exist, try to find a suitable property
     if (!firstItem[safeXKey]) {
       const stringProps = Object.keys(firstItem).filter(
-        key => typeof firstItem[key] === 'string'
+        (k: string): boolean => typeof firstItem[k] === 'string'
       );
       
       if (stringProps.length > 0) {
@@ -91,11 +91,11 @@ const ChartRenderer: React.FC<{ chartData: any, darkMode?: boolean }> = ({
     
     // If the specified yKeys don't exist, try to find suitable properties
     const numericProps = Object.keys(firstItem).filter(
-      key => typeof firstItem[key] === 'number' || !isNaN(Number(firstItem[key]))
+      (k: string): boolean => typeof firstItem[k] === 'number' || !isNaN(Number(firstItem[k]))
     );
     
     if (numericProps.length > 0 && 
-        (safeYKeys.length === 0 || !safeYKeys.some(key => firstItem[key] !== undefined))) {
+        (safeYKeys.length === 0 || !safeYKeys.some((k: string): boolean => firstItem[k] !== undefined))) {
       safeYKeys = [numericProps[0]];
       console.log(`ChartRenderer: Using '${numericProps[0]}' as yKey instead of '${chartData.yKeys}'`);
     }
