@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db, pool } from '../db';
 import { 
   loyaltyPasses, 
   loyaltyActivities, 
@@ -36,10 +36,25 @@ export async function createLoyaltyPass(data: InsertLoyaltyPass) {
       xpPoints: 0
     };
     
-    // Insert into database
-    const [loyaltyPass] = await db.insert(loyaltyPasses)
-      .values(passWithVerxioId)
-      .returning();
+    // Insert into database using raw SQL to use the correct column names
+    const query = `
+      INSERT INTO loyalty_passes 
+      (streamer_id, wallet_address, tier, xp_points, verxio_id, benefits)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    
+    const values = [
+      data.userId,
+      data.walletAddress || null,
+      data.tier,
+      0, // Initial XP
+      loyaltyPassData.verxioId,
+      JSON.stringify(tierBenefits[data.tier as LoyaltyTier])
+    ];
+    
+    const { rows } = await pool.query(query, values);
+    const loyaltyPass = rows[0];
     
     return loyaltyPass;
   } catch (error) {
@@ -74,10 +89,15 @@ export async function getLoyaltyPassById(id: number) {
 export async function getLoyaltyPassByUserId(userId: number) {
   try {
     console.log(`Looking for loyalty pass for user ID: ${userId}`);
-    // Use the correct column name "user_id" which is defined in the schema
-    const passes = await db.select()
-      .from(loyaltyPasses)
-      .where(eq(loyaltyPasses.userId, userId));
+    // Check for matching passes - we need to check both streamer_id and audience_id
+    // since the database has these columns instead of user_id
+    const query = `
+      SELECT * FROM loyalty_passes
+      WHERE streamer_id = $1 OR audience_id = $1
+      LIMIT 1
+    `;
+    
+    const { rows: passes } = await pool.query(query, [userId]);
     
     console.log(`Found ${passes.length} passes for user ID: ${userId}`);
     if (passes.length === 0) {
