@@ -1,6 +1,9 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
+
+// For adding a memo to each transaction to prevent duplicate processing
+const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 
 // Define wallet object interface
 interface Wallet {
@@ -194,11 +197,24 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
           // Create transaction
           const transaction = new Transaction();
           
+          // Generate a unique transaction ID to prevent duplicates
+          const uniqueId = Date.now().toString() + Math.random().toString().substring(2, 8);
+          
+          // Add a memo instruction with the unique ID to prevent duplicate transactions
+          const memoInstruction = new TransactionInstruction({
+            keys: [],
+            programId: MEMO_PROGRAM_ID,
+            data: Buffer.from(`Vyna.live payment: ${uniqueId}`)
+          });
+          
           // Parse amount to lamports (SOL's smallest unit)
           const lamports = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL);
           
           // Add transfer instruction
           transaction.add(
+            // Add memo first to ensure unique transaction
+            memoInstruction,
+            // Then add the actual transfer
             SystemProgram.transfer({
               fromPubkey: new PublicKey(wallet.publicKey),
               toPubkey: new PublicKey(recipient),
