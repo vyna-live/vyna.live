@@ -1,8 +1,18 @@
 import { Request, Response } from "express";
 import { z } from "zod";
-import { insertLoyaltyPassSchema, LoyaltyTier } from "../shared/loyaltySchema";
-import { createLoyaltyPass, getLoyaltyPassById, getLoyaltyPassesByAudienceId, getLoyaltyPassesByStreamerId, upgradeLoyaltyPass, hasLoyaltyPass, getTierBenefits } from "./services/loyaltyService";
-import { initVerxioContext } from "./services/verxioService";
+import { insertLoyaltyPassSchema, LoyaltyTier, PointActivity } from "../shared/loyaltySchema";
+import { 
+  createLoyaltyPass, 
+  getLoyaltyPassById, 
+  getLoyaltyPassByUserId,
+  getAllUserLoyaltyPasses, 
+  upgradeLoyaltyPass, 
+  hasLoyaltyPass, 
+  getTierBenefits,
+  awardPointsToUser,
+  getUserLoyaltyActivities
+} from "./services/loyaltyService";
+import { initVerxioContext, createLoyaltyProgram } from "./services/verxioService";
 import { ensureAuthenticated } from "./auth";
 
 // Initialize Verxio Context at startup

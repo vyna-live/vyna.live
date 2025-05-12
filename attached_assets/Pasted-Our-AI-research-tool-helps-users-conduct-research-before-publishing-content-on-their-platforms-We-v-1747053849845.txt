@@ -1,0 +1,107 @@
+Our AI research tool helps users conduct research before publishing content on their platforms. We've previously installed the Verxio Protocol SDK and created a basic loyalty system, but it needs to be redesigned to better align with our project goals and aesthetic.
+REQUIRED CHANGES
+1. LOYALTY PROGRAM STRUCTURE
+Please modify our existing Verxio implementation to match the following structure:
+Program Name: "AI Research Rewards"
+Organization Name: "Vyna Live"
+Brand Color: ( match our existing theme colors)
+2. TIER STRUCTURE
+Implement these exact tiers:
+Tier Name	XP Required	Rewards
+Bronze Researcher	0	Basic AI research templates
+Silver Researcher	500	Advanced research tools, Priority support
+Gold Researcher	1500	Exclusive research databases, Extended API access, Early feature access
+Platinum Expert	5000	Unlimited research sessions, Custom AI model fine-tuning, Dedicated support
+3. POINTS SYSTEM
+Modify the points system to award points for these specific activities:
+Complete Research Session: 100 points
+Share Research Insight: 50 points
+Provide Platform Feedback: 25 points
+Daily Login: 5 points
+IMPORTANT: Remove any points awarding for note-taking/saving. Users should NOT receive points for note-related activities.
+4. TECHNICAL IMPLEMENTATION
+Use this core implementation approach:
+// Initialize Verxio with our existing setup
+const context = initializeVerxio(umi, publicKey(programAuthorityKey));
+context.umi.use(keypairIdentity(feePayer));
+
+// Create or update our loyalty program with the new structure
+const result = await createLoyaltyProgram(context, {
+  loyaltyProgramName: "AI Research Rewards",
+  metadataUri: 'https://your-metadata-server.com/program-metadata.json',
+  programAuthority: context.programAuthority,
+  updateAuthority: programAuthority,
+  metadata: {
+    organizationName: 'AI Research Platform',
+    brandColor: '#4A86E8', // Match our theme
+  },
+  tiers: [
+    {
+      name: 'Bronze Researcher',
+      xpRequired: 0,
+      rewards: ['Basic AI research templates']
+    },
+    {
+      name: 'Silver Researcher',
+      xpRequired: 500,
+      rewards: ['Advanced research tools', 'Priority support']
+    },
+    {
+      name: 'Gold Researcher',
+      xpRequired: 1500,
+      rewards: ['Exclusive research databases', 'Extended API access', 'Early feature access']
+    },
+    {
+      name: 'Platinum Expert',
+      xpRequired: 5000,
+      rewards: ['Unlimited research sessions', 'Custom AI model fine-tuning', 'Dedicated support']
+    }
+  ],
+  pointsPerAction: {
+    completeResearch: 100,
+    shareInsight: 50,
+    provideFeedback: 25,
+    dailyLogin: 5
+  },
+});
+5. USER INTERFACE REQUIREMENTS
+Loyalty Pass Page Redesign
+Create a modern, aesthetic loyalty pass page that:
+Follows our existing UI theme and color scheme
+Shows current tier status with visual progression indicator
+Displays points earned and points needed for next tier
+Lists available rewards for current tier
+Shows completed actions that earned points
+Uses clean, minimalist design principles with subtle animations
+Loyalty Pass Creation Notification
+Implement a dual notification system when a loyalty pass is created:
+1.In-App Notification: Elegant modal or toast notification explaining: 
+oTheir loyalty pass has been created
+oInitial tier status
+oHow to earn points
+oBenefits of the program
+2.Email Notification: Send a well-designed HTML email with: 
+oWelcome to the loyalty program
+oTheir current tier and benefits
+oClear explanation of how to earn points
+oLink back to the loyalty dashboard
+6. INTEGRATION POINTS
+Connect the loyalty system to these user actions:
+Research session completion → Award points
+Sharing research insights → Award points
+Feedback submission → Award points
+Daily login → Award points
+7. DATA DISPLAY
+Update the user dashboard to show:
+Current tier with visual indicator
+Total points earned
+Points needed for next tier
+Available rewards with activation buttons
+History of point-earning activities
+ADDITIONAL NOTES
+Ensure all blockchain transactions are properly error-handled
+Implement local caching to reduce blockchain queries
+Batch point awards where possible to minimize transaction fees
+Test thoroughly across all user journeys
+Ensure the design is responsive for all device sizes
+Remember, This is not a mock, it’s a real life application 
