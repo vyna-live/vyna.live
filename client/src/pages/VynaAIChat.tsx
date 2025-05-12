@@ -702,8 +702,8 @@ export default function VynaAIChat() {
         )}
       </header>
 
-      {/* Main content with spacing from navbar - in fullscreen mode we hide the header */}
-      <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden ${isFullscreen ? 'mt-[-60px]' : ''} transition-all duration-300`}>
+      {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
+      <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden transition-all duration-300`}>
         {/* Sidebar with spacing - hidden in fullscreen mode */}
         <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
           <div className="p-3 pb-2">
@@ -803,17 +803,17 @@ export default function VynaAIChat() {
             </div>
           )}
           
-          {/* Chat Header */}
-          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
+          {/* Chat Header - ensure it's visible in fullscreen mode */}
+          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg relative z-[10]">
             <button 
               onClick={toggleFullscreen}
-              className="p-2 text-[#999999] hover:text-white"
+              className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
               title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
             >
               {isFullscreen ? (
-                <Minimize size={18} />
+                <Minimize size={20} className="animate-pulse" />
               ) : (
-                <Maximize size={18} />
+                <Maximize size={20} />
               )}
             </button>
             <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
