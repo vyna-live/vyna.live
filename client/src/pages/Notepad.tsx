@@ -122,6 +122,10 @@ export default function Notepad() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // Mobile drawer state
+  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+  // Track if we're in mobile view
+  const [isMobileView, setIsMobileView] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,7 +142,11 @@ export default function Notepad() {
   
   // Toggle sidebar collapse
   const toggleSidebar = () => {
-    setSidebarCollapsed(prev => !prev);
+    if (isMobileView) {
+      setShowMobileDrawer(prev => !prev);
+    } else {
+      setSidebarCollapsed(prev => !prev);
+    }
   };
   
   // Toggle fullscreen mode
@@ -146,11 +154,24 @@ export default function Notepad() {
     setIsFullscreen(prev => !prev);
   };
   
+  // Close mobile drawer when clicking outside
+  const closeMobileDrawer = () => {
+    if (showMobileDrawer) {
+      setShowMobileDrawer(false);
+    }
+  };
+  
   // Check window size to auto-collapse sidebar on small screens
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      const mobileWidth = 768;
+      if (window.innerWidth < mobileWidth) {
         setSidebarCollapsed(true);
+        setIsMobileView(true);
+        setShowMobileDrawer(false); // Hide drawer when resizing to mobile
+      } else {
+        setIsMobileView(false);
+        setShowMobileDrawer(false); // Always hide drawer when not in mobile
       }
     };
     
@@ -815,6 +836,17 @@ export default function Notepad() {
       {/* Header */}
       <header className="flex items-center justify-between h-[60px] px-6 border-b border-[#202020] bg-black z-[2]">
         <div className="flex items-center">
+          {isMobileView && (
+            <button 
+              className="mr-3 text-gray-400 hover:text-white transition-colors"
+              onClick={toggleSidebar}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
           <Logo size="sm" />
         </div>
         {isAuthenticated ? (
