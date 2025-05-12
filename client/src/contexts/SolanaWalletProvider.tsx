@@ -254,6 +254,21 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
               console.log('Transaction confirmed:', txSignature);
             } catch (error) {
               console.error('Transaction error:', error);
+              
+              // Check if the error is about a transaction already being processed
+              const errorMessage = String(error).toLowerCase();
+              if (errorMessage.includes('already been processed')) {
+                // If the transaction was already processed, we can consider it a success
+                toast({
+                  title: 'Transaction Note',
+                  description: 'This transaction appears to have already been processed successfully.',
+                  variant: 'default',
+                });
+                
+                // Return the most recent signature if available, or a placeholder
+                return { signature: signature || 'ALREADY_PROCESSED' };
+              }
+              
               throw new Error('Transaction failed: ' + (error instanceof Error ? error.message : String(error)));
             }
           } else if (wallet.provider === 'solflare' && window.solflare) {
@@ -285,6 +300,21 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
               console.log('Transaction confirmed:', txSignature);
             } catch (error) {
               console.error('Transaction error:', error);
+              
+              // Check if the error is about a transaction already being processed
+              const errorMessage = String(error).toLowerCase();
+              if (errorMessage.includes('already been processed')) {
+                // If the transaction was already processed, we can consider it a success
+                toast({
+                  title: 'Transaction Note',
+                  description: 'This transaction appears to have already been processed successfully.',
+                  variant: 'default',
+                });
+                
+                // Return the most recent signature if available, or a placeholder
+                return { signature: signature || 'ALREADY_PROCESSED' };
+              }
+              
               throw new Error('Transaction failed: ' + (error instanceof Error ? error.message : String(error)));
             }
           } else {
@@ -297,10 +327,32 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       } catch (error) {
         console.error('Error sending transaction:', error);
-        throw new Error(error instanceof Error ? error.message : 'Failed to send transaction');
+        
+        // Check for already processed transactions at the global level as well
+        const errorMessage = String(error).toLowerCase();
+        if (errorMessage.includes('already been processed')) {
+          toast({
+            title: 'Transaction Note',
+            description: 'This transaction appears to have already been processed successfully.',
+            variant: 'default',
+          });
+          
+          return { signature: 'ALREADY_PROCESSED' };
+        }
+        
+        // More user-friendly error messages based on error type
+        if (errorMessage.includes('insufficient funds')) {
+          throw new Error('Insufficient funds in your wallet for this transaction');
+        } else if (errorMessage.includes('rejected')) {
+          throw new Error('Transaction was rejected. Please try again');
+        } else if (errorMessage.includes('timeout')) {
+          throw new Error('Transaction timed out. The network may be congested');
+        } else {
+          throw new Error(error instanceof Error ? error.message : 'Failed to send transaction');
+        }
       }
     },
-    [wallet]
+    [wallet, toast]
   );
 
   // Context value
