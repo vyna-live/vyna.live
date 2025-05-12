@@ -403,6 +403,29 @@ export function setupAuth(app: Express) {
         // Create stream session if it doesn't exist
         await createStreamSession(user);
         
+        // Check if user is eligible for daily login reward
+        try {
+          const { hasLoyaltyPass, checkDailyLoginEligibility, awardPointsToUser } = require('./services/loyaltyService');
+          const { PointActivity } = require('../shared/loyaltySchema');
+          
+          const userId = user.id;
+          const hasPass = await hasLoyaltyPass(userId);
+          
+          if (hasPass) {
+            // Check if eligible for daily login reward (24 hours have passed)
+            const isEligible = await checkDailyLoginEligibility(userId);
+            
+            if (isEligible) {
+              // Award points for daily login
+              await awardPointsToUser(userId, PointActivity.DAILY_LOGIN, "Daily login reward");
+              log(`Awarded daily login points to user ${userId}`, 'info');
+            }
+          }
+        } catch (loyaltyError) {
+          // Don't fail login if loyalty reward fails
+          log(`Failed to process loyalty rewards: ${loyaltyError}`, 'error');
+        }
+        
         return res.json(user);
       });
     })(req, res, next);

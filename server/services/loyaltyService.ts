@@ -395,3 +395,72 @@ export async function getUserLoyaltyActivities(userId: number) {
 export function getTierBenefits(tier: LoyaltyTier) {
   return tierBenefits[tier];
 }
+
+// Check if user is eligible for daily login reward
+export async function checkDailyLoginEligibility(userId: number): Promise<boolean> {
+  try {
+    // Get the latest login activity for this user
+    const query = `
+      SELECT created_at as "createdAt"
+      FROM loyalty_activities
+      WHERE user_id = $1 AND activity_type = $2
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    
+    const { rows } = await pool.query(query, [userId, PointActivity.DAILY_LOGIN]);
+    
+    // If no previous login activity, they are eligible
+    if (rows.length === 0) {
+      return true;
+    }
+    
+    // Check if the last login was more than 24 hours ago
+    const lastLoginTime = new Date(rows[0].createdAt).getTime();
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    
+    return (now - lastLoginTime) >= oneDayMs;
+  } catch (error) {
+    console.error('Error checking daily login eligibility:', error);
+    return false; // Default to not eligible on error
+  }
+}
+
+// Check and track research activity count for a user within the current chat session
+// Returns true if the user should be awarded points (reached threshold)
+export async function checkAndTrackResearchActivity(userId: number): Promise<boolean> {
+  try {
+    // Count is tracked in database to persist between server restarts
+    const countQuery = `
+      SELECT COUNT(*) as count
+      FROM loyalty_activities 
+      WHERE user_id = $1 
+      AND activity_type = $2
+      AND created_at > (NOW() - INTERVAL '1 hour')
+    `;
+    
+    const { rows } = await pool.query(countQuery, [userId, 'researchTracker']);
+    const currentCount = parseInt(rows[0].count, 10);
+    
+    // Record this activity regardless of whether points will be awarded
+    const trackQuery = `
+      INSERT INTO loyalty_activities
+      (user_id, activity_type, points_earned, description)
+      VALUES ($1, $2, $3, $4)
+    `;
+    
+    await pool.query(trackQuery, [
+      userId, 
+      'researchTracker', 
+      0, // No points for tracking
+      `Research activity tracker: ${currentCount + 1}/15`
+    ]);
+    
+    // Return true if this is the 15th activity (reached threshold)
+    return (currentCount + 1) >= 15;
+  } catch (error) {
+    console.error('Error tracking research activity:', error);
+    return false;
+  }
+}
