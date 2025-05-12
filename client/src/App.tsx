@@ -17,6 +17,7 @@ import VynaAIChat from "@/pages/VynaAIChat";
 import Notepad from "@/pages/Notepad";
 import ProfilePage from "@/pages/ProfilePage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
+import ResearchRewardsPage from "@/pages/ResearchRewardsPage";
 import { SolanaWalletProvider } from "@/contexts/SolanaWalletProvider";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/join-stream" component={JoinStream} />
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
+      <Route path="/research-rewards" component={ResearchRewardsPage} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -15,6 +15,21 @@ import {
 import { initVerxioContext, createLoyaltyProgram } from "./services/verxioService";
 import { ensureAuthenticated } from "./auth";
 
+// Interface for upgraded loyalty pass response
+interface UpgradedLoyaltyPassResponse {
+  upgraded: boolean;
+  id: number;
+  userId: number;
+  tier: string;
+  xpPoints: number;
+  walletAddress: string | null;
+  verxioId: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  benefits: any;
+  newTier?: string; // Optional property for the new tier name
+}
+
 // Initialize Verxio Context at startup with AI Research Rewards program
 export async function initializeVerxioContext() {
   try {
@@ -247,7 +262,7 @@ export async function upgradeLoyaltyPassHandler(req: Request, res: Response) {
     }
     
     // Check if pass is eligible for upgrade
-    const upgradedPass = await upgradeLoyaltyPass(userPass.id);
+    const upgradedPass = await upgradeLoyaltyPass(userPass.id) as UpgradedLoyaltyPassResponse;
     
     if (!upgradedPass.upgraded) {
       return res.status(400).json({ 
@@ -258,9 +273,12 @@ export async function upgradeLoyaltyPassHandler(req: Request, res: Response) {
       });
     }
     
+    // Get tier name for display in message
+    const tierName = upgradedPass.newTier || upgradedPass.tier;
+    
     res.status(200).json({
       success: true,
-      message: `Congratulations! You've been upgraded to ${upgradedPass.newTier}!`,
+      message: `Congratulations! You've been upgraded to ${tierName}!`,
       loyaltyPass: upgradedPass
     });
   } catch (error) {
