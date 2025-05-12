@@ -999,22 +999,34 @@ export default function Notepad() {
         {/* Main Note Area - adjusts for fullscreen mode and mobile view */}
         <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} ${isMobileView ? 'w-full' : ''} transition-all duration-300`}>
           {/* Note Header */}
-          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
-            <button 
-              onClick={toggleFullscreen}
-              className="p-2 text-[#999999] hover:text-white"
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {isFullscreen ? (
-                <Minimize size={18} />
-              ) : (
-                <Maximize size={18} />
-              )}
-            </button>
-            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
+          <div className={`${isMobileView ? 'h-[40px]' : 'h-[50px]'} border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg`}>
+            {isMobileView ? (
+              <button 
+                onClick={toggleSidebar}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                  <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            ) : (
+              <button 
+                onClick={toggleFullscreen}
+                className="p-2 text-[#999999] hover:text-white"
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                {isFullscreen ? (
+                  <Minimize size={18} />
+                ) : (
+                  <Maximize size={18} />
+                )}
+              </button>
+            )}
+            <h2 className={`flex-1 text-center flex items-center justify-center text-white ${isMobileView ? 'text-sm' : 'text-base'} font-medium`}>
               {currentNote ? currentNote.title : "Notepad"}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
-                <ChevronDown size={16} />
+                <ChevronDown size={isMobileView ? 14 : 16} />
               </button>
             </h2>
           </div>
