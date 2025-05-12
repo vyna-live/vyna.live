@@ -857,8 +857,8 @@ export default function Notepad() {
 
       {/* Main content with spacing from navbar - in fullscreen mode we hide the header */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden z-[1] ${isFullscreen ? 'mt-[-60px]' : ''} transition-all duration-300`}>
-        {/* Sidebar with spacing */}
-        <aside className={`${sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
+        {/* Sidebar with spacing - hidden in fullscreen mode */}
+        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
