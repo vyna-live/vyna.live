@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronsUpDown, LogOut, Settings, Star, User, DollarSign } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Settings, Star, User, TrendingUp, Award, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'wouter';
 import { SolanaWalletButton } from './SolanaWalletButton';
@@ -49,6 +49,11 @@ export default function UserAvatar() {
   const handleProfile = () => {
     setIsOpen(false);
     setLocation('/profile');
+  };
+  
+  const handleResearchRewards = () => {
+    setIsOpen(false);
+    setLocation('/research-rewards');
   };
   
   return (
@@ -104,6 +109,14 @@ export default function UserAvatar() {
               >
                 <User size={16} className="text-gray-400 mr-2" />
                 Profile & Passes
+              </button>
+              
+              <button
+                onClick={handleResearchRewards}
+                className="flex items-center w-full px-4 py-2 text-left text-sm text-gray-100 hover:bg-[#252525] transition-colors bg-[#1a1a1a]"
+              >
+                <Award size={16} className="text-amber-500 mr-2" />
+                Research Rewards
               </button>
               
               <button

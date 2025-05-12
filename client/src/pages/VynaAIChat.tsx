@@ -24,7 +24,8 @@ import {
   PenLine,
   FilePlus,
   CirclePlus,
-  MessageCirclePlus
+  MessageCirclePlus,
+  TrendingUp
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -250,6 +251,76 @@ export default function VynaAIChat() {
   const addToTeleprompter = (text: string) => {
     setTeleprompterText(text);
     setShowTeleprompter(true);
+  };
+  
+  // Handle earning research points for insights
+  const handleEarnResearchPoints = async (content: string) => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please login to earn research points',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      // Award points for research insight
+      const response = await fetch('/api/research/rewards/points', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          activityType: 'shareInsight',
+          description: 'Shared valuable research insight'
+        })
+      });
+      
+      if (!response.ok) {
+        // If 404, user needs to enroll in the program
+        if (response.status === 404) {
+          toast({
+            title: 'Join Research Rewards',
+            description: 'Enroll in the AI Research Rewards program to earn points for your research activities',
+            action: (
+              <Link to="/research-rewards">
+                <button className="px-3 py-1 rounded bg-[#121212] text-[#DCC5A2] text-xs">
+                  Enroll
+                </button>
+              </Link>
+            )
+          });
+          return;
+        }
+        
+        throw new Error('Failed to award research points');
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: 'Research Points Earned!',
+        description: `+${result.pointsAwarded} XP added to your research profile`,
+        variant: 'default'
+      });
+      
+      // If user should upgrade, notify them
+      if (result.shouldUpgrade) {
+        toast({
+          title: 'Tier Upgrade Available!',
+          description: `You can now upgrade to ${result.nextTier} tier`,
+          variant: 'default'
+        });
+      }
+    } catch (error) {
+      console.error('Error awarding research points:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to award research points. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
   
   // Handle sending messages to AI
