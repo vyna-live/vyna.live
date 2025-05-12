@@ -20,32 +20,42 @@ import {
 // Create a new loyalty pass for AI Research Rewards
 export async function createLoyaltyPass(data: InsertLoyaltyPass) {
   try {
+    // Make sure we have a valid userId
+    if (!data.userId && !data.streamerId && !data.audienceId) {
+      throw new Error('Missing required user identification field');
+    }
+    
+    // Determine which user ID to use (default to streamerId for consistency)
+    const userId = data.userId || data.streamerId;
+    
+    if (!userId) {
+      throw new Error('Missing required user ID');
+    }
+    
     // Issue the loyalty pass via Verxio Protocol
     const loyaltyPassData = await createUserLoyaltyPass(
-      data.userId,
+      userId,
       data.walletAddress || undefined,
       data.tier as LoyaltyTier,
       0 // Initial XP points
     );
     
-    // Set the verxioId and benefits from the response
-    const passWithVerxioId = {
-      ...data,
-      verxioId: loyaltyPassData.verxioId,
-      benefits: JSON.stringify(tierBenefits[data.tier as LoyaltyTier]),
-      xpPoints: 0
-    };
-    
     // Insert into database using raw SQL to use the correct column names
     const query = `
       INSERT INTO loyalty_passes 
-      (streamer_id, wallet_address, tier, xp_points, verxio_id, benefits)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      (streamer_id, audience_id, wallet_address, tier, xp_points, verxio_id, benefits)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
     
+    // Use either streamerId or userId for the streamer_id column
+    const streamerId = data.streamerId || data.userId || null;
+    // Use audienceId if provided
+    const audienceId = data.audienceId || null;
+    
     const values = [
-      data.userId,
+      streamerId,
+      audienceId,
       data.walletAddress || null,
       data.tier,
       0, // Initial XP
@@ -158,18 +168,41 @@ export async function getAllUserLoyaltyPasses() {
 // Update a loyalty pass tier based on XP
 export async function upgradeLoyaltyPass(id: number) {
   try {
-    // Get the existing pass
-    const [existingPass] = await db.select()
-      .from(loyaltyPasses)
-      .where(eq(loyaltyPasses.id, id));
+    // Get the existing pass with raw SQL
+    const query = `
+      SELECT 
+        id, 
+        streamer_id as "streamerId", 
+        audience_id as "audienceId", 
+        wallet_address as "walletAddress", 
+        tier, 
+        xp_points as "xpPoints", 
+        verxio_id as "verxioId", 
+        benefits, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+      FROM loyalty_passes
+      WHERE id = $1
+    `;
     
-    if (!existingPass) {
+    const { rows } = await pool.query(query, [id]);
+    
+    if (!rows.length) {
       throw new Error(`Loyalty pass with ID ${id} not found`);
+    }
+    
+    const existingPass = rows[0];
+    
+    // Determine the user ID (either streamerId or audienceId)
+    const userId = existingPass.streamerId || existingPass.audienceId;
+    
+    if (!userId) {
+      throw new Error(`Loyalty pass with ID ${id} has no associated user ID`);
     }
     
     // Check if eligible for upgrade
     const upgradeCheck = await checkAndUpgradeTier(
-      existingPass.userId,
+      userId,
       existingPass.xpPoints || 0,
       existingPass.tier as LoyaltyTier
     );
@@ -178,7 +211,8 @@ export async function upgradeLoyaltyPass(id: number) {
       return {
         ...existingPass,
         benefits: existingPass.benefits ? JSON.parse(existingPass.benefits) : null,
-        upgraded: false
+        upgraded: false,
+        userId // Add for compatibility
       };
     }
     
@@ -188,25 +222,46 @@ export async function upgradeLoyaltyPass(id: number) {
     if (existingPass.verxioId) {
       await upgradeLoyaltyPassTier(
         existingPass.verxioId, 
-        existingPass.userId,
+        userId,
         existingPass.walletAddress || undefined
       );
     }
     
-    // Update in database
-    const [updatedPass] = await db.update(loyaltyPasses)
-      .set({ 
-        tier: newTier,
-        benefits: JSON.stringify(tierBenefits[newTier]),
-        updatedAt: new Date()
-      })
-      .where(eq(loyaltyPasses.id, id))
-      .returning();
+    // Update in database with raw SQL
+    const updateQuery = `
+      UPDATE loyalty_passes
+      SET 
+        tier = $1,
+        benefits = $2,
+        updated_at = NOW()
+      WHERE id = $3
+      RETURNING 
+        id, 
+        streamer_id as "streamerId", 
+        audience_id as "audienceId", 
+        wallet_address as "walletAddress", 
+        tier, 
+        xp_points as "xpPoints", 
+        verxio_id as "verxioId", 
+        benefits, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+    `;
+    
+    const updateValues = [
+      newTier,
+      JSON.stringify(tierBenefits[newTier]),
+      id
+    ];
+    
+    const updateResult = await pool.query(updateQuery, updateValues);
+    const updatedPass = updateResult.rows[0];
     
     return {
       ...updatedPass,
       benefits: updatedPass.benefits ? JSON.parse(updatedPass.benefits) : null,
       upgraded: true,
+      userId: existingPass.streamerId || existingPass.audienceId, // Add for compatibility
       newTier
     };
   } catch (error) {
