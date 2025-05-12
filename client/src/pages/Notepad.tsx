@@ -863,10 +863,28 @@ export default function Notepad() {
         )}
       </header>
 
+      {/* Mobile overlay - only shown when mobile drawer is active */}
+      {isMobileView && showMobileDrawer && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-70 z-50"
+          onClick={closeMobileDrawer}
+        ></div>
+      )}
+
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden z-[1] transition-all duration-300`}>
-        {/* Sidebar with spacing - hidden in fullscreen mode */}
-        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
+        {/* Sidebar with spacing - different behavior for mobile vs desktop */}
+        <aside className={`
+            ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
+            ${isMobileView 
+              ? showMobileDrawer 
+                ? 'fixed left-0 top-[60px] bottom-0 w-[270px] z-50' 
+                : 'w-0 opacity-0'
+              : sidebarCollapsed ? 'w-[60px]' : 'w-[270px] mr-4'
+            }
+            bg-[#1A1A1A] rounded-lg flex flex-col h-full overflow-hidden transition-all duration-300
+          `}>
+        
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
@@ -880,7 +898,7 @@ export default function Notepad() {
                   </svg>
                 </button>
               </div>
-              {!sidebarCollapsed && (
+              {(!sidebarCollapsed || (isMobileView && showMobileDrawer)) && (
                 <div className="flex p-1 bg-[#202020] rounded-lg">
                   <button 
                     className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
