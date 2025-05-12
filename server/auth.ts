@@ -11,8 +11,7 @@ import { User as SelectUser, users, streamSessions, InsertStreamSession } from '
 import { eq, SQL } from 'drizzle-orm';
 import { log } from './vite';
 import { saveCoverImage } from './fileUpload';
-import { createLoyaltyPass, awardPointsToUser } from './services/loyaltyService';
-import { PointActivity } from '../shared/loyaltySchema';
+// We're directly using SQL for loyalty pass creation now
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -351,18 +350,28 @@ export function setupAuth(app: Express) {
       // Create loyalty pass for the new user directly using SQL
       try {
         // Insert a loyalty pass directly using SQL
+        // For new users, we use the same ID for both streamer_id and audience_id
         const query = `
           INSERT INTO loyalty_passes 
-          (streamer_id, tier, xp_points, benefits)
-          VALUES ($1, $2, $3, $4)
+          (streamer_id, audience_id, tier, xp_points, benefits)
+          VALUES ($1, $2, $3, $4, $5)
           RETURNING *
         `;
         
         const values = [
           user.id,
-          'bronze',
+          user.id,  // Same ID for audience_id to satisfy NOT NULL constraint
+          'bronze', // Bronze tier (Researcher level)
           5, // Award 5XP for initial signup
-          JSON.stringify(tierBenefits.bronze)
+          JSON.stringify({
+            description: "Researcher Benefits",
+            features: [
+              "Access to basic AI research tools",
+              "Track your research progress",
+              "Basic visualization tools",
+              "Earn 5XP for every 15 research queries"
+            ]
+          })
         ];
         
         const { rows } = await pool.query(query, values);
@@ -376,7 +385,7 @@ export function setupAuth(app: Express) {
         
         const activityValues = [
           user.id,
-          PointActivity.DAILY_LOGIN,
+          'dailyLogin', // PointActivity.DAILY_LOGIN
           5,
           'Initial account creation'
         ];
