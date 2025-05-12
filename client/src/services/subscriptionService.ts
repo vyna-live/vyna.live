@@ -86,21 +86,18 @@ export async function createSubscription(
   // Special handling for 'ALREADY_PROCESSED' transactions
   // This is a placeholder signature used when a transaction was already submitted
   if (transactionSignature === 'ALREADY_PROCESSED') {
+    console.log('Processing ALREADY_PROCESSED transaction - creating a new unique signature');
+    
+    // Instead of reusing an existing subscription, always create a new one
+    // This allows multiple subscriptions from the same wallet
+    
     // In development mode, return mock data since we know the transaction succeeded
     if (process.env.NODE_ENV === 'development') {
-      // Get user subscription to check if they already have one
-      try {
-        const existingSubscription = await getUserSubscription();
-        if (existingSubscription && existingSubscription.tier !== 'none') {
-          return existingSubscription;
-        }
-      } catch (err) {
-        console.error('Error checking existing subscription:', err);
-      }
+      console.log('Creating a new subscription with unique ID in development mode');
       
-      // Return a mock subscription if none exists
-      return getMockUserSubscription() || {
-        id: 123,
+      // Always return a new mock subscription with unique ID
+      return {
+        id: 123 + Math.floor(Math.random() * 1000), // Ensure unique ID
         userId: 456,
         tier: tierId,
         status: 'active',
