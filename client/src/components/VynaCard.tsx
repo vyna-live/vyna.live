@@ -29,8 +29,13 @@ const VynaCard: React.FC<VynaCardProps> = ({
       "bg-gradient-to-br from-[#f7f2eb] to-[#efe6dc]",
       className
     )}>
-      {/* Background curved lines */}
+      {/* Background watermark and curved lines */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Large Vyna text watermark */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-5">
+          <span className="text-[25vw] font-bold text-[#1A1A1A]">Vyna</span>
+        </div>
+        {/* Decorative curved lines */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] opacity-10">
           <div className="absolute top-0 right-0 w-full h-full border-[1px] border-[#A67D44] rounded-full"></div>
           <div className="absolute bottom-0 left-0 w-3/4 h-3/4 border-[1px] border-[#A67D44] rounded-full"></div>
@@ -41,10 +46,11 @@ const VynaCard: React.FC<VynaCardProps> = ({
       {showLogo && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
           <div className="flex items-center">
-            <div className="w-6 h-6 relative">
-              <div className="w-full h-full rounded-full border-2 border-black"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8A1538]"></div>
-            </div>
+            {/* Updated logo to match reference image */}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 12C5 8.13401 8.13401 5 12 5V12H19C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12Z" fill="#1A1A1A"/>
+              <circle cx="12" cy="8" r="3" fill="#8A1538"/>
+            </svg>
             <span className="ml-1 text-xl font-semibold text-black">Vyna</span>
           </div>
           <span className="text-xs tracking-widest uppercase text-black">LIVE</span>
@@ -59,11 +65,11 @@ const VynaCard: React.FC<VynaCardProps> = ({
         {children}
       </div>
 
-      {/* Branding Element - "JUST GO LIVE" */}
+      {/* Branding Element - Always use "JUST GO LIVE" for consistency */}
       {showBranding && (
         <div className="absolute bottom-4 right-4 z-10">
           <span className="text-sm font-bold text-[#8A1538]">
-            {isTeleprompter ? "JUST GO LIVE" : "VYNA LIVE"}
+            JUST GO LIVE
           </span>
         </div>
       )}
