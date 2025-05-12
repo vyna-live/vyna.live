@@ -646,6 +646,11 @@ export default function VynaAIChat() {
     setSidebarCollapsed(prev => !prev);
   };
   
+  // Toggle fullscreen mode
+  const toggleFullscreen = () => {
+    setIsFullscreen(prev => !prev);
+  };
+  
   // Check window size to auto-collapse sidebar on small screens
   useEffect(() => {
     const handleResize = () => {
@@ -695,10 +700,10 @@ export default function VynaAIChat() {
         )}
       </header>
 
-      {/* Main content with spacing from navbar */}
-      <div className="flex flex-1 p-4 pt-4 overflow-hidden">
-        {/* Sidebar with spacing */}
-        <aside className={`${sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
+      {/* Main content with spacing from navbar - in fullscreen mode we hide the header */}
+      <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden ${isFullscreen ? 'mt-[-60px]' : ''} transition-all duration-300`}>
+        {/* Sidebar with spacing - hidden in fullscreen mode */}
+        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               {/* Drawer/hamburger menu icon */}
