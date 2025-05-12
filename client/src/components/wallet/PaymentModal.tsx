@@ -17,6 +17,9 @@ import { SubscriptionTier } from '@/services/subscriptionService';
 // Define payment status type at the top level
 type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
 
+// Helper function to check if status is processing (to avoid type errors)
+const isProcessingStatus = (status: PaymentStatus): boolean => status === 'processing';
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,9 +42,13 @@ export function PaymentModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when modal opens
+  // Reset state when modal opens/closes
   const handleOpenChange = (open: boolean) => {
     if (!open) {
+      // Reset state
+      setStatus('idle');
+      setIsProcessing(false);
+      setError(null);
       onClose();
     }
   };
@@ -50,6 +57,7 @@ export function PaymentModal({
   useEffect(() => {
     if (selectedTier) {
       setStatus('idle');
+      setIsProcessing(false);
       setError(null);
     }
   }, [selectedTier]);
@@ -229,16 +237,16 @@ export function PaymentModal({
             variant="outline" 
             onClick={onClose}
             className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
-            disabled={isPending || status === 'processing'}
+            disabled={isPending || isProcessing}
           >
             Cancel
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={isPending || status === 'processing'}
+            disabled={isPending || isProcessing}
             className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
           >
-            {isPending || status === 'processing' ? (
+            {isPending || isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
