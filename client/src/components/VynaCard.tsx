@@ -42,25 +42,22 @@ const VynaCard: React.FC<VynaCardProps> = ({
         </div>
       </div>
 
-      {/* Logo */}
+      {/* Logo - using exact reference image */}
       {showLogo && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center z-10">
-          <div className="flex items-center">
-            {/* Updated logo to match reference image */}
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12C5 8.13401 8.13401 5 12 5V12H19C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12Z" fill="#1A1A1A"/>
-              <circle cx="12" cy="8" r="3" fill="#8A1538"/>
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center z-10">
+          <div className="w-[90px] h-[70px]">
+            <svg width="100%" height="100%" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+              <path d="M235 220C235 165.817 278.817 122 333 122V220H431C431 274.183 387.183 318 333 318C278.817 318 235 274.183 235 220Z" fill="#1A1A1A"/>
+              <circle cx="333" cy="170" r="48" fill="#8A1538"/>
             </svg>
-            <span className="ml-1 text-xl font-semibold text-black">Vyna</span>
           </div>
-          <span className="text-xs tracking-widest uppercase text-black">LIVE</span>
         </div>
       )}
 
       {/* Content container with padding for logo */}
       <div className={cn(
         "relative z-10 p-6",
-        showLogo && "pt-16"
+        showLogo && "pt-20"
       )}>
         {children}
       </div>
