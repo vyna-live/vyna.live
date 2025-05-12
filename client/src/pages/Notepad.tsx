@@ -122,6 +122,8 @@ export default function Notepad() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -139,6 +141,9 @@ export default function Notepad() {
   // Toggle sidebar collapse
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => !prev);
+    if (isMobileView) {
+      setShowMobileSidebar(prev => !prev);
+    }
   };
   
   // Toggle fullscreen mode
@@ -146,15 +151,23 @@ export default function Notepad() {
     setIsFullscreen(prev => !prev);
   };
   
-  // Check window size to auto-collapse sidebar on small screens
+  // Monitor window resize for responsive layout
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 768;
+      setIsMobileView(mobile);
+      
+      // Auto-collapse sidebar on mobile
+      if (mobile && !sidebarCollapsed) {
         setSidebarCollapsed(true);
+        setShowMobileSidebar(false);
+      } else if (!mobile && sidebarCollapsed && !showMobileSidebar) {
+        // On desktop, we want to show the collapsed sidebar by default
+        setShowMobileSidebar(true);
       }
     };
     
-    // Initial check
+    // Set initial state
     handleResize();
     
     // Add event listener
@@ -164,7 +177,7 @@ export default function Notepad() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [sidebarCollapsed, showMobileSidebar]);
   
   // Load notes when component mounts
   useEffect(() => {
@@ -831,21 +844,46 @@ export default function Notepad() {
         )}
       </header>
 
+      {/* Mobile overlay for drawer sidebar */}
+      {isMobileView && showMobileSidebar && !sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => {
+            setSidebarCollapsed(true);
+            setShowMobileSidebar(false);
+          }}
+        ></div>
+      )}
+      
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden z-[1] transition-all duration-300`}>
         {/* Sidebar with spacing - hidden in fullscreen mode */}
-        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
+        <aside 
+          className={`
+            ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
+            ${isMobileView && !showMobileSidebar ? 'w-0 opacity-0 mr-0' : ''}
+            ${isMobileView && showMobileSidebar && !sidebarCollapsed ? 'fixed left-0 top-[60px] bottom-0 z-50 w-[270px] rounded-none rounded-tr-lg' : ''}
+            ${!isMobileView && sidebarCollapsed ? 'w-[60px]' : ''}
+            ${!isMobileView && !sidebarCollapsed ? 'w-[270px]' : ''}
+            bg-[#1A1A1A] flex flex-col h-full mr-4 overflow-hidden transition-all duration-300
+          `}
+        >
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
                 <button 
                   className="text-gray-400 hover:text-white transition-colors"
                   onClick={toggleSidebar}
+                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                    <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  {isMobileView ? (
+                    <Menu size={18} />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                      <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                 </button>
               </div>
               {!sidebarCollapsed && (
