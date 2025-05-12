@@ -22,7 +22,7 @@ export default function ResearchRewardsPage() {
   const tiers = [
     {
       name: 'Bronze Researcher',
-      icon: <FileText className="h-7 w-7 text-amber-700" />,
+      icon: <FileText className="h-7 w-7 text-amber-600" />,
       description: 'Begin your research journey',
       xpRequired: '0',
       benefits: [
@@ -34,39 +34,43 @@ export default function ResearchRewardsPage() {
     },
     {
       name: 'Silver Researcher',
-      icon: <Star className="h-7 w-7 text-slate-400" />,
+      icon: <Star className="h-7 w-7 text-slate-300" />,
       description: 'Expand your research capabilities',
       xpRequired: '500',
       benefits: [
-        'All Bronze benefits',
-        'Increased daily research quota',
-        'Advanced data visualization',
-        'Export research to multiple formats'
+        'Everything in Bronze tier',
+        'Advanced AI model access',
+        'Priority processing for research queries',
+        'Enhanced visualization tools',
+        'Detailed analytics dashboard'
       ]
     },
     {
       name: 'Gold Researcher',
-      icon: <Award className="h-7 w-7 text-yellow-400" />,
+      icon: <Award className="h-7 w-7 text-yellow-300" />,
       description: 'Become a research expert',
       xpRequired: '1,000',
       benefits: [
-        'All Silver benefits',
-        'Priority research query processing',
-        'Early access to new research models',
-        'Collaborative research tools'
+        'Everything in Silver tier',
+        'Unlimited research queries',
+        'Custom AI model fine-tuning',
+        'Dedicated support channel',
+        'Advanced export and sharing tools',
+        'Early access to new features'
       ]
     },
     {
       name: 'Platinum Researcher',
-      icon: <Sparkles className="h-7 w-7 text-indigo-400" />,
+      icon: <Sparkles className="h-7 w-7 text-indigo-300" />,
       description: 'Master the art of AI research',
       xpRequired: '2,000',
       benefits: [
-        'All Gold benefits',
-        'Unlimited research queries',
-        'Custom research domains',
-        'Research API access',
-        'Dedicated support for research projects'
+        'Everything in Gold tier',
+        'Personalized AI research assistant',
+        'White-glove support with dedicated account manager',
+        'Exclusive webinars and workshops',
+        'Advanced data integration capabilities',
+        'Custom research templates and workflows'
       ]
     }
   ];

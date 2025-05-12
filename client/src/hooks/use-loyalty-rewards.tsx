@@ -198,15 +198,15 @@ export function formatTierName(tier: LoyaltyTier): string {
 }
 
 export const tierColors: Record<LoyaltyTier, string> = {
-  bronze: 'text-amber-700',
-  silver: 'text-slate-400',
-  gold: 'text-yellow-400',
-  platinum: 'text-indigo-400'
+  bronze: 'text-amber-600',
+  silver: 'text-slate-300',
+  gold: 'text-yellow-300',
+  platinum: 'text-indigo-300'
 };
 
 export const tierBackgroundColors: Record<LoyaltyTier, string> = {
-  bronze: 'bg-amber-100',
-  silver: 'bg-slate-100',
-  gold: 'bg-yellow-100',
-  platinum: 'bg-indigo-100'
+  bronze: 'bg-amber-700/20',
+  silver: 'bg-slate-700/20',
+  gold: 'bg-yellow-700/20',
+  platinum: 'bg-indigo-700/20'
 };

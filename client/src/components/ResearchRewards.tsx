@@ -147,10 +147,10 @@ export function ResearchRewards() {
       <CardHeader className={`${tierBgClass} rounded-t-lg`}>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>AI Research Rewards</CardTitle>
-            <CardDescription>Your research journey and achievements</CardDescription>
+            <CardTitle className="text-gray-900 font-semibold">AI Research Rewards</CardTitle>
+            <CardDescription className="text-gray-800">Your research journey and achievements</CardDescription>
           </div>
-          <Badge variant="outline" className={`${tierClass} border-current px-3 py-1`}>
+          <Badge variant="outline" className={`${tierClass} border-current px-3 py-1 bg-black/10`}>
             <div className="flex items-center gap-1">
               {tierIcon}
               <span>{tierDisplay} Researcher</span>
