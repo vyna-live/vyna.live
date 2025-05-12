@@ -1073,14 +1073,14 @@ export default function Notepad() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
+                <div className="flex items-center gap-2 sm:gap-5 text-[#999999]">
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isSaving || !isAuthenticated}
                   >
-                    <Paperclip size={16} />
+                    <Paperclip size={isMobileView ? 14 : 16} />
                   </button>
                   <button 
                     className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
@@ -1088,7 +1088,7 @@ export default function Notepad() {
                     onClick={toggleAudioRecording}
                     disabled={isSaving || !isAuthenticated}
                   >
-                    <Mic size={16} />
+                    <Mic size={isMobileView ? 14 : 16} />
                   </button>
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
@@ -1096,7 +1096,7 @@ export default function Notepad() {
                     onClick={handleImageUpload}
                     disabled={isSaving || !isAuthenticated}
                   >
-                    <ImageIcon size={16} />
+                    <ImageIcon size={isMobileView ? 14 : 16} />
                   </button>
                 </div>
                 <button 
