@@ -119,6 +119,7 @@ export default function Notepad() {
   const [dropdowns, setDropdowns] = useState<DropdownState>({ noteOptionsDropdown: {} });
   const [isDeleting, setIsDeleting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -660,7 +661,9 @@ export default function Notepad() {
   };
   
   const handleInputKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // Only handle Enter key for submitting when Ctrl+Enter is pressed
+    // Normal Enter key will insert a new line
+    if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
       handleAddNote();
     }
