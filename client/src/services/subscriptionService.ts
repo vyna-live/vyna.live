@@ -83,6 +83,42 @@ export async function createSubscription(
   amount: string,
   transactionSignature: string
 ): Promise<UserSubscription> {
+  // Special handling for 'ALREADY_PROCESSED' transactions
+  // This is a placeholder signature used when a transaction was already submitted
+  if (transactionSignature === 'ALREADY_PROCESSED') {
+    // In development mode, return mock data since we know the transaction succeeded
+    if (process.env.NODE_ENV === 'development') {
+      // Get user subscription to check if they already have one
+      try {
+        const existingSubscription = await getUserSubscription();
+        if (existingSubscription && existingSubscription.tier !== 'none') {
+          return existingSubscription;
+        }
+      } catch (err) {
+        console.error('Error checking existing subscription:', err);
+      }
+      
+      // Return a mock subscription if none exists
+      return getMockUserSubscription() || {
+        id: 123,
+        userId: 456,
+        tier: tierId,
+        status: 'active',
+        startDate: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        gracePeriodEnd: new Date(Date.now() + 33 * 24 * 60 * 60 * 1000).toISOString(), // 33 days from now
+        autoRenew: true,
+        lastPayment: {
+          amount: amount,
+          currency: paymentMethod.toUpperCase(),
+          date: new Date().toISOString(),
+          transactionId: 'already-processed-' + Date.now()
+        }
+      };
+    }
+  }
+  
+  // Regular API call for normal transactions
   const response = await apiRequest('POST', '/api/subscription/create', {
     tierId,
     paymentMethod,

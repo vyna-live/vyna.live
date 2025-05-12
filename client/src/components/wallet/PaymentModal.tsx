@@ -35,6 +35,8 @@ export function PaymentModal({
   const { wallet, sendTransaction } = useSolanaWallet();
   const [paymentMethod, setPaymentMethod] = useState<'sol' | 'usdc'>('sol');
   const [status, setStatus] = useState<PaymentStatus>('idle');
+  // Keep track of processing status separately for button disabling
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Reset state when modal opens
@@ -60,6 +62,7 @@ export function PaymentModal({
     }
 
     setStatus('processing');
+    setIsProcessing(true);
     setError(null);
 
     try {
@@ -69,7 +72,7 @@ export function PaymentModal({
         : selectedTier.priceUsdc.toString();
 
       // Program wallet that receives the payment
-      const recipient = 'HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU'; // Solana wallet address that receives payments
+      const recipient = '5FHgaHwGCEW31KNu7Xv4KhQTQXTXBkREPgzAixRjUU56'; // Solana wallet address that receives payments
       
       // Create and send transaction
       const result = await sendTransaction({
@@ -78,12 +81,21 @@ export function PaymentModal({
         paymentMethod,
       });
 
+      // Check if this was a previously processed transaction
+      if (result.signature === 'ALREADY_PROCESSED') {
+        // Still mark as success but with a note (the toast will have already been shown by the wallet provider)
+        console.log('Transaction was already processed previously');
+        // No need for additional handling, just continue with success flow
+      }
+
       // Show success and call the onSuccess callback
       setStatus('success');
       onSuccess(result.signature, amount, paymentMethod);
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to process payment');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
