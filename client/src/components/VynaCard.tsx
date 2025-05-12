@@ -8,7 +8,7 @@ interface VynaCardProps {
   className?: string;
   isTeleprompter?: boolean;
   showLogo?: boolean;
-  showBranding?: boolean;
+  showBranding?: boolean; // Keep for future use, but we won't display it for now
 }
 
 /**
@@ -64,14 +64,14 @@ const VynaCard: React.FC<VynaCardProps> = ({
         {children}
       </div>
 
-      {/* Branding Element - Always use "JUST GO LIVE" for consistency */}
-      {showBranding && (
+      {/* Branding Element removed for now - will be added back later */}
+      {/* {showBranding && (
         <div className="absolute bottom-4 right-4 z-10">
           <span className="text-sm font-bold text-[#8A1538]">
             JUST GO LIVE
           </span>
         </div>
-      )}
+      )} */}
     </Card>
   );
 };
