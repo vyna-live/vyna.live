@@ -351,7 +351,7 @@ export function setupAuth(app: Express) {
         const { createLoyaltyPass } = require('./services/loyaltyService');
         // Initialize the user with the loyalty program
         await createLoyaltyPass({
-          userId: user.id,
+          streamerId: user.id, // Use streamerId to match database schema
           tier: 'bronze',
           xpPoints: 5, // Award 5XP for initial signup
         });

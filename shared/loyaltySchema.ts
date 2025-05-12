@@ -122,9 +122,9 @@ export const tierBenefits = {
     ]
   },
   [LoyaltyTier.PLATINUM]: {
-    description: "Platinum Expert Benefits",
+    description: "Luminary Benefits",
     features: [
-      "Everything in Gold tier",
+      "Everything in Expert tier",
       "Personalized AI research assistant",
       "White-glove support with dedicated account manager",
       "Exclusive webinars and workshops",

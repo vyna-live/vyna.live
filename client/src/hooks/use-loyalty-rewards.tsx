@@ -60,10 +60,17 @@ export function useLoyaltyRewards() {
   } = useQuery<LoyaltyResponse>({
     queryKey: ['/api/research/rewards/user'],
     enabled: !!isAuthenticated,
+    retry: false, // Don't retry on 404 error
+    // Handle errors from the rewards API
+    meta: {
+      errorMessage: "Failed to fetch research rewards data"
+    }
   });
 
-  // Check if not enrolled
-  const isNotEnrolled = isError && (error as any)?.status === 404;
+  // Check if not enrolled (either from status code or response message)
+  const isNotEnrolled = isError && 
+    ((error as any)?.status === 404 || 
+     (error as any)?.message?.includes?.('No loyalty pass found'));
 
   useEffect(() => {
     if (isNotEnrolled && isAuthenticated) {

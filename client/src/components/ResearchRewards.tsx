@@ -61,12 +61,21 @@ export function ResearchRewards() {
 
   if (isError && !isNotEnrolled) {
     return (
-      <Card className="border-red-200 bg-red-50 mb-6">
+      <Card className="bg-zinc-900 border-zinc-800 mb-6">
         <CardHeader>
-          <CardTitle className="text-red-700">Error Loading Research Rewards</CardTitle>
+          <CardTitle className="text-amber-500">Research Rewards</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-600">There was a problem loading your research rewards. Please try again later.</p>
+          <div className="mb-4">
+            <p className="text-gray-400">We're having trouble loading your research rewards data.</p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="bg-stone-800 hover:bg-stone-700 border-stone-700 text-amber-500"
+            onClick={() => refetch()}
+          >
+            Try again
+          </Button>
         </CardContent>
       </Card>
     );
