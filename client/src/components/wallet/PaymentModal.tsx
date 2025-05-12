@@ -80,7 +80,7 @@ export function PaymentModal({
         : selectedTier.priceUsdc.toString();
 
       // Program wallet that receives the payment
-      const recipient = '5FHgaHwGCEW31KNu7Xv4KhQTQXTXBkREPgzAixRjUU56'; // Solana wallet address that receives payments
+      const recipient = 'HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU'; // Solana wallet address that receives payments
       
       // Create and send transaction
       const result = await sendTransaction({
