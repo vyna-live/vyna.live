@@ -346,6 +346,27 @@ export function setupAuth(app: Express) {
       // Create stream session for the new user
       await createStreamSession(user);
       
+      // Create loyalty pass for the new user
+      try {
+        const { createLoyaltyPass } = require('./services/loyaltyService');
+        // Initialize the user with the loyalty program
+        await createLoyaltyPass({
+          userId: user.id,
+          tier: 'bronze',
+          xpPoints: 5, // Award 5XP for initial signup
+        });
+        
+        // Record the initial login activity
+        const { awardPointsToUser } = require('./services/loyaltyService');
+        const { PointActivity } = require('../shared/loyaltySchema');
+        await awardPointsToUser(user.id, PointActivity.DAILY_LOGIN, 'Initial account creation');
+        
+        log(`Created loyalty pass for new user ${user.id}`, 'info');
+      } catch (loyaltyError) {
+        // Don't fail registration if loyalty pass creation fails
+        log(`Failed to create loyalty pass for new user: ${loyaltyError}`, 'error');
+      }
+      
       // Log the user in automatically
       req.login(user, (err: Error | null) => {
         if (err) {
