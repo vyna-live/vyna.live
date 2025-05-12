@@ -1137,14 +1137,14 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
+                <div className="flex items-center gap-2 sm:gap-5 text-[#999999]">
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
                   >
-                    <Paperclip size={16} />
+                    <Paperclip size={isMobileView ? 14 : 16} />
                   </button>
                   <button 
                     className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
@@ -1152,7 +1152,7 @@ export default function VynaAIChat() {
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
                   >
-                    <Mic size={16} />
+                    <Mic size={isMobileView ? 14 : 16} />
                   </button>
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
@@ -1160,24 +1160,26 @@ export default function VynaAIChat() {
                     onClick={handleImageUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
                   >
-                    <ImageIcon size={16} />
+                    <ImageIcon size={isMobileView ? 14 : 16} />
                   </button>
                   
-                  {/* Commentary style selector - moved here */}
+                  {/* Commentary style selector - with mobile adaptations */}
                   <div className="flex items-center">
-                    <span className="text-xs text-[#999999] mx-2">Style:</span>
+                    <span className="text-xs text-[#999999] mx-2 hidden sm:inline">Style:</span>
                     <div className="flex bg-[#232323] rounded-md p-1">
                       <button
                         className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('color')}
+                        title="Color commentary"
                       >
-                        Color
+                        {isMobileView ? 'cc' : 'Color'}
                       </button>
                       <button
                         className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('play-by-play')}
+                        title="Play-by-play commentary"
                       >
-                        Play-by-play
+                        {isMobileView ? 'pp' : 'Play-by-play'}
                       </button>
                     </div>
                   </div>
