@@ -94,39 +94,42 @@ export const tierBenefits = {
   [LoyaltyTier.BRONZE]: {
     description: "Bronze Researcher Benefits",
     features: [
-      "Basic AI research templates",
-      "Standard research tools",
-      "Community forum access"
+      "Access to basic AI research tools",
+      "Earn points for every research query",
+      "Track your research progress",
+      "Basic visualization tools"
     ]
   },
   [LoyaltyTier.SILVER]: {
     description: "Silver Researcher Benefits",
     features: [
-      "Advanced research tools",
-      "Priority support",
-      "Enhanced AI response quality",
-      "Access to specialized templates"
+      "Everything in Bronze tier",
+      "Advanced AI model access",
+      "Priority processing for research queries",
+      "Enhanced visualization tools",
+      "Detailed analytics dashboard"
     ]
   },
   [LoyaltyTier.GOLD]: {
     description: "Gold Researcher Benefits",
     features: [
-      "Exclusive research databases",
-      "Extended API access",
-      "Early feature access",
+      "Everything in Silver tier",
+      "Unlimited research queries",
+      "Custom AI model fine-tuning",
       "Dedicated support channel",
-      "Advanced visualization tools"
+      "Advanced export and sharing tools",
+      "Early access to new features"
     ]
   },
   [LoyaltyTier.PLATINUM]: {
     description: "Platinum Expert Benefits",
     features: [
-      "Unlimited research sessions",
-      "Custom AI model fine-tuning",
-      "Dedicated support",
-      "Premium analytics tools",
-      "Custom export options",
-      "Exclusive workshops and webinars"
+      "Everything in Gold tier",
+      "Personalized AI research assistant",
+      "White-glove support with dedicated account manager",
+      "Exclusive webinars and workshops",
+      "Advanced data integration capabilities",
+      "Custom research templates and workflows"
     ]
   }
 };
