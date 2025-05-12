@@ -16,6 +16,8 @@ import {
   Image as ImageIcon,
   Upload,
   Loader2,
+  Maximize,
+  Minimize,
   Book,
   FileUp,
   X,
@@ -784,8 +786,8 @@ export default function VynaAIChat() {
           </div>
         </aside>
 
-        {/* Main Chat Area with spacing */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1]">
+        {/* Main Chat Area with spacing - adjusts for fullscreen mode */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
           {/* Teleprompter overlay */}
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
@@ -803,6 +805,17 @@ export default function VynaAIChat() {
           
           {/* Chat Header */}
           <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
+            <button 
+              onClick={toggleFullscreen}
+              className="p-2 text-[#999999] hover:text-white"
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize size={18} />
+              ) : (
+                <Maximize size={18} />
+              )}
+            </button>
             <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
               {currentTitle}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
@@ -968,8 +981,8 @@ export default function VynaAIChat() {
             <div ref={messagesEndRef} />
           </div>
           
-          {/* Input Area - No border */}
-          <div className="p-4 bg-black rounded-b-lg">
+          {/* Input Area - No border - hidden in fullscreen mode */}
+          <div className={`p-4 bg-black rounded-b-lg ${isFullscreen ? 'hidden' : 'block'} transition-all duration-300`}>
             <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-3">
               <div className="flex-grow mb-2">
                 <textarea
