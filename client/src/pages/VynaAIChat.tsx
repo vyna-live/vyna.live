@@ -25,7 +25,8 @@ import {
   FilePlus,
   CirclePlus,
   MessageCirclePlus,
-  TrendingUp
+  TrendingUp,
+  Menu
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -113,10 +114,40 @@ export default function VynaAIChat() {
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const noteDropdownRef = useRef<HTMLDivElement>(null);
   
-  // Sidebar state for responsive design
+  // Sidebar and responsive design states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Monitor window resize for responsive layout
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobileView(mobile);
+      
+      // Auto-collapse sidebar on mobile
+      if (mobile && !sidebarCollapsed) {
+        setSidebarCollapsed(true);
+        setShowMobileSidebar(false);
+      } else if (!mobile && sidebarCollapsed && !showMobileSidebar) {
+        // On desktop, we want to show the collapsed sidebar by default
+        setShowMobileSidebar(true);
+      }
+    };
+    
+    // Set initial state
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [sidebarCollapsed, showMobileSidebar]);
   
   // Fetch chat sessions when user logs in
   const fetchChatData = useCallback(async () => {
@@ -773,22 +804,52 @@ export default function VynaAIChat() {
         )}
       </header>
 
+      {/* Mobile overlay for drawer sidebar */}
+      {isMobileView && showMobileSidebar && !sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => {
+            setSidebarCollapsed(true);
+            setShowMobileSidebar(false);
+          }}
+        ></div>
+      )}
+      
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden transition-all duration-300`}>
         {/* Sidebar with spacing - hidden in fullscreen mode */}
-        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
+        <aside 
+          className={`
+            ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
+            ${isMobileView && !showMobileSidebar ? 'w-0 opacity-0 mr-0' : ''}
+            ${isMobileView && showMobileSidebar && !sidebarCollapsed ? 'fixed left-0 top-[60px] bottom-0 z-50 w-[270px] rounded-none rounded-tr-lg' : ''}
+            ${!isMobileView && sidebarCollapsed ? 'w-[60px]' : ''}
+            ${!isMobileView && !sidebarCollapsed ? 'w-[270px]' : ''}
+            bg-[#1A1A1A] flex flex-col h-full mr-4 overflow-hidden transition-all duration-300
+          `}
+        >
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               {/* Drawer/hamburger menu icon */}
               <div className="p-1 mr-1">
                 <button 
                   className="text-gray-400 hover:text-white transition-colors"
-                  onClick={toggleSidebar}
+                  onClick={() => {
+                    setSidebarCollapsed(!sidebarCollapsed);
+                    if (isMobileView) {
+                      setShowMobileSidebar(!showMobileSidebar);
+                    }
+                  }}
+                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                    <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  {isMobileView ? (
+                    <Menu size={18} />
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                      <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
                 </button>
               </div>
               
