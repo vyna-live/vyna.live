@@ -13,7 +13,9 @@ import {
   Loader2,
   X,
   Trash2,
-  Menu
+  Menu,
+  Maximize,
+  Minimize
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";

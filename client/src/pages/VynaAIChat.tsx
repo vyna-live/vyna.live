@@ -90,6 +90,7 @@ export default function VynaAIChat() {
   const [showTeleprompter, setShowTeleprompter] = useState(false);
   const [teleprompterText, setTeleprompterText] = useState("");
   const [commentaryStyle, setCommentaryStyle] = useState<'color' | 'play-by-play'>('color');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
