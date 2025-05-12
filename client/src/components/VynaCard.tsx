@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import vynaLogoPath from '../assets/vyna-logo.png';
 
 interface VynaCardProps {
   children: React.ReactNode;
@@ -42,14 +43,15 @@ const VynaCard: React.FC<VynaCardProps> = ({
         </div>
       </div>
 
-      {/* Logo - using exact reference image */}
+      {/* Logo - using the exact image provided */}
       {showLogo && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center z-10">
-          <div className="w-[90px] h-[70px]">
-            <svg width="100%" height="100%" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-              <path d="M235 220C235 165.817 278.817 122 333 122V220H431C431 274.183 387.183 318 333 318C278.817 318 235 274.183 235 220Z" fill="#1A1A1A"/>
-              <circle cx="333" cy="170" r="48" fill="#8A1538"/>
-            </svg>
+          <div className="w-[90px] h-[70px] flex items-center justify-center">
+            <img 
+              src={vynaLogoPath} 
+              alt="Vyna Live Logo" 
+              className="max-w-full max-h-full object-contain"
+            />
           </div>
         </div>
       )}
