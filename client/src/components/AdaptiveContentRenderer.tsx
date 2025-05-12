@@ -120,12 +120,12 @@ const AdaptiveContentRenderer: React.FC<AdaptiveContentRendererProps> = ({
   
   // For rich content that requires the Vyna card
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn("relative", className)}>
       <VynaCard 
         isTeleprompter={renderingMetadata.isTeleprompter}
         showLogo={true} 
         showBranding={true}
-        className={`${renderingMetadata.isTeleprompter ? "min-h-[200px]" : ""} w-full sm:w-[95%] md:w-[90%] mx-auto`}
+        className={renderingMetadata.isTeleprompter ? "min-h-[200px]" : ""}
       >
         <RichContentRenderer
           content={content}

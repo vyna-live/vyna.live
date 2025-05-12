@@ -122,10 +122,6 @@ export default function Notepad() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // Mobile drawer state
-  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-  // Track if we're in mobile view
-  const [isMobileView, setIsMobileView] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,11 +138,7 @@ export default function Notepad() {
   
   // Toggle sidebar collapse
   const toggleSidebar = () => {
-    if (isMobileView) {
-      setShowMobileDrawer(prev => !prev);
-    } else {
-      setSidebarCollapsed(prev => !prev);
-    }
+    setSidebarCollapsed(prev => !prev);
   };
   
   // Toggle fullscreen mode
@@ -154,24 +146,11 @@ export default function Notepad() {
     setIsFullscreen(prev => !prev);
   };
   
-  // Close mobile drawer when clicking outside
-  const closeMobileDrawer = () => {
-    if (showMobileDrawer) {
-      setShowMobileDrawer(false);
-    }
-  };
-  
   // Check window size to auto-collapse sidebar on small screens
   useEffect(() => {
     const handleResize = () => {
-      const mobileWidth = 768;
-      if (window.innerWidth < mobileWidth) {
+      if (window.innerWidth < 768) {
         setSidebarCollapsed(true);
-        setIsMobileView(true);
-        setShowMobileDrawer(false); // Hide drawer when resizing to mobile
-      } else {
-        setIsMobileView(false);
-        setShowMobileDrawer(false); // Always hide drawer when not in mobile
       }
     };
     
@@ -836,17 +815,6 @@ export default function Notepad() {
       {/* Header */}
       <header className="flex items-center justify-between h-[60px] px-6 border-b border-[#202020] bg-black z-[2]">
         <div className="flex items-center">
-          {isMobileView && (
-            <button 
-              className="mr-3 text-gray-400 hover:text-white transition-colors"
-              onClick={toggleSidebar}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          )}
           <Logo size="sm" />
         </div>
         {isAuthenticated ? (
@@ -863,28 +831,10 @@ export default function Notepad() {
         )}
       </header>
 
-      {/* Mobile overlay - only shown when mobile drawer is active */}
-      {isMobileView && showMobileDrawer && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-70 z-50"
-          onClick={closeMobileDrawer}
-        ></div>
-      )}
-
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden z-[1] transition-all duration-300`}>
-        {/* Sidebar with spacing - different behavior for mobile vs desktop */}
-        <aside className={`
-            ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
-            ${isMobileView 
-              ? showMobileDrawer 
-                ? 'fixed left-0 top-[60px] bottom-0 w-[270px] z-50' 
-                : 'w-0 opacity-0'
-              : sidebarCollapsed ? 'w-[60px]' : 'w-[270px] mr-4'
-            }
-            bg-[#1A1A1A] rounded-lg flex flex-col h-full overflow-hidden transition-all duration-300
-        `}>
-        
+        {/* Sidebar with spacing - hidden in fullscreen mode */}
+        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
@@ -898,7 +848,7 @@ export default function Notepad() {
                   </svg>
                 </button>
               </div>
-              {(!sidebarCollapsed || (isMobileView && showMobileDrawer)) && (
+              {!sidebarCollapsed && (
                 <div className="flex p-1 bg-[#202020] rounded-lg">
                   <button 
                     className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
@@ -996,37 +946,25 @@ export default function Notepad() {
         
         </aside>
 
-        {/* Main Note Area - adjusts for fullscreen mode and mobile view */}
-        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} ${isMobileView ? 'w-full' : ''} transition-all duration-300`}>
+        {/* Main Note Area - adjusts for fullscreen mode */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
           {/* Note Header */}
-          <div className={`${isMobileView ? 'h-[40px]' : 'h-[50px]'} border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg`}>
-            {isMobileView ? (
-              <button 
-                onClick={toggleSidebar}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                  <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            ) : (
-              <button 
-                onClick={toggleFullscreen}
-                className="p-2 text-[#999999] hover:text-white"
-                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize size={18} />
-                ) : (
-                  <Maximize size={18} />
-                )}
-              </button>
-            )}
-            <h2 className={`flex-1 text-center flex items-center justify-center text-white ${isMobileView ? 'text-sm' : 'text-base'} font-medium`}>
+          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
+            <button 
+              onClick={toggleFullscreen}
+              className="p-2 text-[#999999] hover:text-white"
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize size={18} />
+              ) : (
+                <Maximize size={18} />
+              )}
+            </button>
+            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
               {currentNote ? currentNote.title : "Notepad"}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
-                <ChevronDown size={isMobileView ? 14 : 16} />
+                <ChevronDown size={16} />
               </button>
             </h2>
           </div>
@@ -1097,9 +1035,9 @@ export default function Notepad() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 sm:gap-3 md:gap-5 text-[#999999]">
+                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isSaving || !isAuthenticated}
@@ -1107,7 +1045,7 @@ export default function Notepad() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isSaving || !isAuthenticated}
@@ -1115,7 +1053,7 @@ export default function Notepad() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isSaving || !isAuthenticated}

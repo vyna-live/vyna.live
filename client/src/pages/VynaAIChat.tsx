@@ -115,10 +115,6 @@ export default function VynaAIChat() {
   
   // Sidebar state for responsive design
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  // Mobile drawer state
-  const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-  // Track if we're in mobile view
-  const [isMobileView, setIsMobileView] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -720,11 +716,7 @@ export default function VynaAIChat() {
   
   // Toggle sidebar collapse
   const toggleSidebar = () => {
-    if (isMobileView) {
-      setShowMobileDrawer(prev => !prev);
-    } else {
-      setSidebarCollapsed(prev => !prev);
-    }
+    setSidebarCollapsed(prev => !prev);
   };
   
   // Toggle fullscreen mode
@@ -732,24 +724,11 @@ export default function VynaAIChat() {
     setIsFullscreen(prev => !prev);
   };
   
-  // Close mobile drawer when clicking outside
-  const closeMobileDrawer = () => {
-    if (showMobileDrawer) {
-      setShowMobileDrawer(false);
-    }
-  };
-  
   // Check window size to auto-collapse sidebar on small screens
   useEffect(() => {
     const handleResize = () => {
-      const mobileWidth = 768;
-      if (window.innerWidth < mobileWidth) {
+      if (window.innerWidth < 768) {
         setSidebarCollapsed(true);
-        setIsMobileView(true);
-        setShowMobileDrawer(false); // Hide drawer when resizing to mobile
-      } else {
-        setIsMobileView(false);
-        setShowMobileDrawer(false); // Always hide drawer when not in mobile
       }
     };
     
@@ -778,17 +757,6 @@ export default function VynaAIChat() {
       {/* Header */}
       <header className="flex items-center justify-between h-[60px] px-6 border-b border-[#202020] bg-black z-10">
         <div className="flex items-center">
-          {isMobileView && (
-            <button 
-              className="mr-3 text-gray-400 hover:text-white transition-colors"
-              onClick={toggleSidebar}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          )}
           <Logo size="sm" />
         </div>
         {isLoading ? (
@@ -805,29 +773,10 @@ export default function VynaAIChat() {
         )}
       </header>
 
-      {/* Mobile overlay - only shown when mobile drawer is active */}
-      {isMobileView && showMobileDrawer && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-70 z-50"
-          onClick={closeMobileDrawer}
-        ></div>
-      )}
-      
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden transition-all duration-300`}>
-        {/* Sidebar with spacing - different behavior for mobile vs desktop */}
-        <aside 
-          className={`
-            ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
-            ${isMobileView 
-              ? showMobileDrawer 
-                ? 'fixed left-0 top-[60px] bottom-0 w-[270px] z-50' 
-                : 'w-0 opacity-0'
-              : sidebarCollapsed ? 'w-[60px]' : 'w-[270px] mr-4'
-            }
-            bg-[#1A1A1A] rounded-lg flex flex-col h-full overflow-hidden transition-all duration-300
-          `}
-        >
+        {/* Sidebar with spacing - hidden in fullscreen mode */}
+        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               {/* Drawer/hamburger menu icon */}
@@ -844,7 +793,7 @@ export default function VynaAIChat() {
               </div>
               
               {/* Tabs - hidden when sidebar is collapsed */}
-              {(!sidebarCollapsed || (isMobileView && showMobileDrawer)) && (
+              {!sidebarCollapsed && (
                 <div className="flex p-1 bg-[#202020] rounded-lg">
                   <button 
                     className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
@@ -908,8 +857,8 @@ export default function VynaAIChat() {
           </div>
         </aside>
 
-        {/* Main Chat Area with spacing - adjusts for fullscreen mode and mobile view */}
-        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen ? 'w-full' : ''} ${isMobileView ? 'w-full' : ''} transition-all duration-300`}>
+        {/* Main Chat Area with spacing - adjusts for fullscreen mode */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
           {/* Teleprompter overlay */}
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
@@ -926,34 +875,22 @@ export default function VynaAIChat() {
           )}
           
           {/* Chat Header - ensure it's visible in fullscreen mode */}
-          <div className={`${isMobileView ? 'h-[40px]' : 'h-[50px]'} border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg relative z-[10]`}>
-            {isMobileView ? (
-              <button 
-                onClick={toggleSidebar}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                  <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            ) : (
-              <button 
-                onClick={toggleFullscreen}
-                className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
-                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize size={20} className="animate-pulse" />
-                ) : (
-                  <Maximize size={20} />
-                )}
-              </button>
-            )}
-            <h2 className={`flex-1 text-center flex items-center justify-center text-white ${isMobileView ? 'text-sm' : 'text-base'} font-medium`}>
+          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg relative z-[10]">
+            <button 
+              onClick={toggleFullscreen}
+              className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize size={20} className="animate-pulse" />
+              ) : (
+                <Maximize size={20} />
+              )}
+            </button>
+            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
               {currentTitle}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
-                <ChevronDown size={isMobileView ? 14 : 16} />
+                <ChevronDown size={16} />
               </button>
             </h2>
           </div>
@@ -968,16 +905,16 @@ export default function VynaAIChat() {
                   className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
                   {message.role === 'assistant' && (
-                    <div className={`${isMobileView ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar`}>
-                      <Sparkles size={isMobileView ? 12 : 16} color="#121212" />
+                    <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
+                      <Sparkles size={16} color="#121212" />
                     </div>
                   )}
                   
                   <div 
                     className={`rounded-xl px-4 py-3.5 ${
                       message.role === 'user' 
-                        ? 'bg-[#2A2A2A] text-white max-w-[90%] sm:max-w-[80%]' 
-                        : 'bg-[#232323] text-[#DDDDDD] max-w-[95%] sm:max-w-[85%]'
+                        ? 'bg-[#2A2A2A] text-white max-w-[85%] sm:max-w-[80%]' 
+                        : 'bg-[#232323] text-[#DDDDDD] max-w-[90%] sm:max-w-[80%]'
                     }`}
                   >
                     {message.role === 'user' ? (
@@ -1139,9 +1076,9 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 sm:gap-3 md:gap-5 text-[#999999]">
+                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1149,7 +1086,7 @@ export default function VynaAIChat() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1157,7 +1094,7 @@ export default function VynaAIChat() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1167,21 +1104,19 @@ export default function VynaAIChat() {
                   
                   {/* Commentary style selector - moved here */}
                   <div className="flex items-center">
-                    <span className="text-xs text-[#999999] mx-2 hidden sm:inline">Style:</span>
+                    <span className="text-xs text-[#999999] mx-2">Style:</span>
                     <div className="flex bg-[#232323] rounded-md p-1">
                       <button
                         className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('color')}
-                        title="Color Commentary"
                       >
-                        {isMobileView ? "CC" : "Color"}
+                        Color
                       </button>
                       <button
                         className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('play-by-play')}
-                        title="Play-by-play Commentary"
                       >
-                        {isMobileView ? "PP" : "Play-by-play"}
+                        Play-by-play
                       </button>
                     </div>
                   </div>
