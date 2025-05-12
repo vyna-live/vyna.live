@@ -883,7 +883,7 @@ export default function Notepad() {
               : sidebarCollapsed ? 'w-[60px]' : 'w-[270px] mr-4'
             }
             bg-[#1A1A1A] rounded-lg flex flex-col h-full overflow-hidden transition-all duration-300
-          `}>
+        `}>
         
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
@@ -996,8 +996,8 @@ export default function Notepad() {
         
         </aside>
 
-        {/* Main Note Area - adjusts for fullscreen mode */}
-        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
+        {/* Main Note Area - adjusts for fullscreen mode and mobile view */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} ${isMobileView ? 'w-full' : ''} transition-all duration-300`}>
           {/* Note Header */}
           <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
             <button 
@@ -1085,9 +1085,9 @@ export default function Notepad() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
+                <div className="flex items-center gap-1 sm:gap-3 md:gap-5 text-[#999999]">
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isSaving || !isAuthenticated}
@@ -1095,7 +1095,7 @@ export default function Notepad() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isSaving || !isAuthenticated}
@@ -1103,7 +1103,7 @@ export default function Notepad() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isSaving || !isAuthenticated}
