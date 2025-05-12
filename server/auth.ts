@@ -11,6 +11,8 @@ import { User as SelectUser, users, streamSessions, InsertStreamSession } from '
 import { eq, SQL } from 'drizzle-orm';
 import { log } from './vite';
 import { saveCoverImage } from './fileUpload';
+import { createLoyaltyPass, awardPointsToUser } from './services/loyaltyService';
+import { PointActivity } from '../shared/loyaltySchema';
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -346,20 +348,40 @@ export function setupAuth(app: Express) {
       // Create stream session for the new user
       await createStreamSession(user);
       
-      // Create loyalty pass for the new user
+      // Create loyalty pass for the new user directly using SQL
       try {
-        const { createLoyaltyPass } = require('./services/loyaltyService');
-        // Initialize the user with the loyalty program
-        await createLoyaltyPass({
-          streamerId: user.id, // Use streamerId to match database schema
-          tier: 'bronze',
-          xpPoints: 5, // Award 5XP for initial signup
-        });
+        // Insert a loyalty pass directly using SQL
+        const query = `
+          INSERT INTO loyalty_passes 
+          (streamer_id, tier, xp_points, benefits)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *
+        `;
+        
+        const values = [
+          user.id,
+          'bronze',
+          5, // Award 5XP for initial signup
+          JSON.stringify(tierBenefits.bronze)
+        ];
+        
+        const { rows } = await pool.query(query, values);
         
         // Record the initial login activity
-        const { awardPointsToUser } = require('./services/loyaltyService');
-        const { PointActivity } = require('../shared/loyaltySchema');
-        await awardPointsToUser(user.id, PointActivity.DAILY_LOGIN, 'Initial account creation');
+        const activityQuery = `
+          INSERT INTO loyalty_activities 
+          (user_id, activity_type, points_earned, description)
+          VALUES ($1, $2, $3, $4)
+        `;
+        
+        const activityValues = [
+          user.id,
+          PointActivity.DAILY_LOGIN,
+          5,
+          'Initial account creation'
+        ];
+        
+        await pool.query(activityQuery, activityValues);
         
         log(`Created loyalty pass for new user ${user.id}`, 'info');
       } catch (loyaltyError) {

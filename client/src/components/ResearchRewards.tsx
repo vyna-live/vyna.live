@@ -44,7 +44,8 @@ export function ResearchRewards() {
     isEnrolling,
     upgrade,
     isUpgrading,
-    showEnrollPrompt
+    showEnrollPrompt,
+    refetchRewards
   } = useLoyaltyRewards();
   
   // Check if user is enrolled
@@ -72,7 +73,7 @@ export function ResearchRewards() {
           <Button 
             variant="outline" 
             className="bg-stone-800 hover:bg-stone-700 border-stone-700 text-amber-500"
-            onClick={() => refetch()}
+            onClick={() => refetchRewards()}
           >
             Try again
           </Button>
