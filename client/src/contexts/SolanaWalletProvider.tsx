@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
+// We'll use browser-native TextEncoder for binary data
 
 // For adding a memo to each transaction to prevent duplicate processing
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -201,10 +202,14 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
           const uniqueId = Date.now().toString() + Math.random().toString().substring(2, 8);
           
           // Add a memo instruction with the unique ID to prevent duplicate transactions
+          // Use TextEncoder instead of Buffer for browser compatibility
+          const encoder = new TextEncoder();
+          const data = encoder.encode(`Vyna.live payment: ${uniqueId}`);
+          
           const memoInstruction = new TransactionInstruction({
             keys: [],
             programId: MEMO_PROGRAM_ID,
-            data: Buffer.from(`Vyna.live payment: ${uniqueId}`)
+            data: data
           });
           
           // Parse amount to lamports (SOL's smallest unit)

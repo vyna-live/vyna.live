@@ -210,29 +210,10 @@ export async function createUserSubscription(req: Request, res: Response) {
     // Special case: 'ALREADY_PROCESSED' signature 
     // This is a placeholder used when a transaction was already processed
     if (transactionSignature === 'ALREADY_PROCESSED') {
-      // Check if user already has an active subscription
-      // Get the most recent active subscription
-      const existingSubscription = await db
-        .select()
-        .from(subscriptions)
-        .where(
-          and(
-            eq(subscriptions.userId, userId),
-            eq(subscriptions.status, 'active')
-          )
-        )
-        // Use a simpler approach without desc()
-        .orderBy(subscriptions.createdAt)
-        .limit(1);
-      
-      // If user already has an active subscription, return it
-      if (existingSubscription.length > 0) {
-        return res.status(200).json(existingSubscription[0]);
-      }
-      
-      // Otherwise, we'll just continue with creating a new subscription
-      // We'll create a unique ID for the transaction
+      // For 'ALREADY_PROCESSED' transactions, we always create a new unique transaction ID
+      // This allows multiple subscriptions from the same wallet 
       req.body.transactionSignature = `already-processed-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+      console.log('Generated new transaction signature for ALREADY_PROCESSED request:', req.body.transactionSignature);
     }
     
     // Calculate subscription dates
