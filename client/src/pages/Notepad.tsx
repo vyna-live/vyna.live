@@ -817,28 +817,21 @@ export default function Notepad() {
         <div className="flex items-center">
           <Logo size="sm" />
           
-          {/* Fullscreen toggle button */}
-          <button 
-            onClick={toggleFullscreen}
-            className="ml-4 p-2 text-[#777] hover:text-white rounded-md hover:bg-[#333] transition-all"
-            title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          >
-            {isFullscreen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 3v4a1 1 0 0 1-1 1H3"></path>
-                <path d="M21 8h-4a1 1 0 0 1-1-1V3"></path>
-                <path d="M3 16h4a1 1 0 0 1 1 1v4"></path>
-                <path d="M16 21v-4a1 1 0 0 1 1-1h4"></path>
-              </svg>
-            ) : (
+          {/* Fullscreen toggle button - only shown when not in fullscreen mode */}
+          {!isFullscreen && (
+            <button 
+              onClick={toggleFullscreen}
+              className="ml-4 p-2 text-[#777] hover:text-white rounded-md hover:bg-[#333] transition-all"
+              title="Enter fullscreen"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15 3 21 3 21 9"></polyline>
                 <polyline points="9 21 3 21 3 15"></polyline>
                 <line x1="21" y1="3" x2="14" y2="10"></line>
                 <line x1="3" y1="21" x2="10" y2="14"></line>
               </svg>
-            )}
-          </button>
+            </button>
+          )}
         </div>
         {isAuthenticated ? (
           <div className="flex items-center gap-2">
