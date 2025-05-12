@@ -11,7 +11,16 @@ import { User as SelectUser, users, streamSessions, InsertStreamSession } from '
 import { eq, SQL } from 'drizzle-orm';
 import { log } from './vite';
 import { saveCoverImage } from './fileUpload';
-// We're directly using SQL for loyalty pass creation now
+// Define bronze tier benefits directly to avoid import issues
+const BRONZE_BENEFITS = {
+  description: "Researcher Benefits",
+  features: [
+    "Access to basic AI research tools",
+    "Track your research progress", 
+    "Basic visualization tools",
+    "Earn 5XP for every 15 research queries"
+  ]
+};
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -363,15 +372,7 @@ export function setupAuth(app: Express) {
           user.id,  // Same ID for audience_id to satisfy NOT NULL constraint
           'bronze', // Bronze tier (Researcher level)
           5, // Award 5XP for initial signup
-          JSON.stringify({
-            description: "Researcher Benefits",
-            features: [
-              "Access to basic AI research tools",
-              "Track your research progress",
-              "Basic visualization tools",
-              "Earn 5XP for every 15 research queries"
-            ]
-          })
+          JSON.stringify(BRONZE_BENEFITS)
         ];
         
         const { rows } = await pool.query(query, values);
