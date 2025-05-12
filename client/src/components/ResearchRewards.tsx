@@ -51,7 +51,7 @@ export function ResearchRewards() {
   const isEnrolled = !!rewardsData?.loyaltyPass;
   
   // Show enrollment dialog if not enrolled
-  useState(() => {
+  useEffect(() => {
     if (isNotEnrolled || showEnrollPrompt) {
       setShowEnrollDialog(true);
     }

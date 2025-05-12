@@ -89,10 +89,21 @@ export async function getLoyaltyPassById(id: number) {
 export async function getLoyaltyPassByUserId(userId: number) {
   try {
     console.log(`Looking for loyalty pass for user ID: ${userId}`);
-    // Check for matching passes - we need to check both streamer_id and audience_id
-    // since the database has these columns instead of user_id
+    
+    // Use raw SQL with explicit column names
     const query = `
-      SELECT * FROM loyalty_passes
+      SELECT 
+        id, 
+        streamer_id, 
+        audience_id, 
+        wallet_address, 
+        tier, 
+        xp_points as "xpPoints", 
+        verxio_id as "verxioId", 
+        benefits, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+      FROM loyalty_passes
       WHERE streamer_id = $1 OR audience_id = $1
       LIMIT 1
     `;
@@ -106,10 +117,21 @@ export async function getLoyaltyPassByUserId(userId: number) {
     
     // Parse benefits JSON and return the pass
     const pass = passes[0];
-    return {
-      ...pass,
-      benefits: pass.benefits ? JSON.parse(pass.benefits) : null
+    
+    // Map database fields to our expected model
+    const result = {
+      id: pass.id,
+      userId: pass.streamer_id || pass.audience_id,
+      tier: pass.tier,
+      xpPoints: pass.xpPoints || 0,
+      walletAddress: pass.wallet_address,
+      benefits: pass.benefits ? JSON.parse(pass.benefits) : [],
+      verxioId: pass.verxioId,
+      createdAt: pass.createdAt,
+      updatedAt: pass.updatedAt
     };
+    
+    return result;
   } catch (error) {
     console.error('Error getting loyalty pass by user ID:', error);
     throw error;
@@ -257,11 +279,17 @@ export async function awardPointsToUser(userId: number, activityType: PointActiv
 // Check if a user has a loyalty pass
 export async function hasLoyaltyPass(userId: number) {
   try {
-    const [pass] = await db.select()
-      .from(loyaltyPasses)
-      .where(eq(loyaltyPasses.userId, userId));
+    // Use raw SQL to check if user has a loyalty pass
+    const query = `
+      SELECT COUNT(*) as count
+      FROM loyalty_passes
+      WHERE streamer_id = $1 OR audience_id = $1
+    `;
     
-    return !!pass;
+    const { rows } = await pool.query(query, [userId]);
+    const { count } = rows[0];
+    
+    return count > 0;
   } catch (error) {
     console.error('Error checking if user has loyalty pass:', error);
     throw error;
@@ -271,10 +299,21 @@ export async function hasLoyaltyPass(userId: number) {
 // Get user loyalty activity history
 export async function getUserLoyaltyActivities(userId: number) {
   try {
-    const activities = await db.select()
-      .from(loyaltyActivities)
-      .where(eq(loyaltyActivities.userId, userId))
-      .orderBy(desc(loyaltyActivities.createdAt));
+    // Use raw SQL to get activities with correct column names
+    const query = `
+      SELECT 
+        id,
+        user_id as "userId",
+        activity_type as "activityType",
+        points_earned as "pointsEarned",
+        description,
+        created_at as "createdAt"
+      FROM loyalty_activities
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+    `;
+    
+    const { rows: activities } = await pool.query(query, [userId]);
     
     return activities;
   } catch (error) {
