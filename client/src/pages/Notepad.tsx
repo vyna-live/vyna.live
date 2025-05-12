@@ -819,9 +819,6 @@ export default function Notepad() {
         </div>
         {isAuthenticated ? (
           <div className="flex items-center gap-2">
-            <button className="rounded-lg px-5 py-1.5 border border-[#222222] text-white hover:bg-[#222222] transition-all text-sm font-medium">
-              Go Live
-            </button>
             <UserAvatar />
           </div>
         ) : (
