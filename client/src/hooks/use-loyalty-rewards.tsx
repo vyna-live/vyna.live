@@ -60,10 +60,21 @@ export function useLoyaltyRewards() {
   } = useQuery<LoyaltyResponse>({
     queryKey: ['/api/research/rewards/user'],
     enabled: !!isAuthenticated,
-    retry: false, // Don't retry on 404 error
+    retry: 1, // Attempt one retry for network errors
+    retryDelay: 1000, // Wait 1 second before retrying
     // Handle errors from the rewards API
     meta: {
       errorMessage: "Failed to fetch research rewards data"
+    },
+    onError: (error) => {
+      // Only show toast for errors that aren't 404 (not enrolled)
+      if (!(error as any)?.status === 404 && !(error as any)?.message?.includes?.('No loyalty pass found')) {
+        toast({
+          title: 'Research Rewards',
+          description: 'There was an issue loading your rewards data. Please try again.',
+          variant: 'destructive',
+        });
+      }
     }
   });
 

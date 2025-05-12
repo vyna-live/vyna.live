@@ -63,16 +63,20 @@ export function ResearchRewards() {
   if (isError && !isNotEnrolled) {
     return (
       <Card className="bg-zinc-900 border-zinc-800 mb-6">
-        <CardHeader>
-          <CardTitle className="text-amber-500">Research Rewards</CardTitle>
+        <CardHeader className="border-b border-zinc-800 pb-3">
+          <CardTitle className="text-amber-500 flex items-center gap-2">
+            <Award className="h-5 w-5" /> 
+            Research Rewards
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <p className="text-gray-400">We're having trouble loading your research rewards data.</p>
+        <CardContent className="pt-4">
+          <div className="mb-4 bg-zinc-800 p-4 rounded-md border border-zinc-700">
+            <p className="text-gray-200 mb-2 font-medium">Unable to load research rewards</p>
+            <p className="text-gray-300">We're having trouble accessing your research rewards data. Please try again or check back later.</p>
           </div>
           <Button 
             variant="outline" 
-            className="bg-stone-800 hover:bg-stone-700 border-stone-700 text-amber-500"
+            className="bg-amber-600/90 hover:bg-amber-600 border-amber-700 text-white mt-2"
             onClick={() => refetchRewards()}
           >
             Try again
@@ -85,19 +89,28 @@ export function ResearchRewards() {
   if (!isEnrolled) {
     return (
       <>
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>AI Research Rewards</CardTitle>
-            <CardDescription>Join our research rewards program to earn points and unlock benefits</CardDescription>
+        <Card className="mb-6 bg-zinc-900 border-zinc-800">
+          <CardHeader className="border-b border-zinc-800 pb-4">
+            <CardTitle className="text-amber-500 flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              AI Research Rewards
+            </CardTitle>
+            <CardDescription className="text-zinc-400">
+              Join our research rewards program to earn points and unlock benefits
+            </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-6">
-              <Award className="h-16 w-16 text-amber-400 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Enhance Your Research Experience</h3>
-              <p className="text-center text-gray-500 mb-4">
-                Earn points for every research action and unlock exclusive benefits as you progress through tiers.
+              <div className="bg-zinc-800/50 p-4 rounded-full mb-6">
+                <Award className="h-16 w-16 text-amber-400" />
+              </div>
+              <h3 className="text-lg font-medium mb-2 text-zinc-100">Enhance Your Research Experience</h3>
+              <p className="text-center text-zinc-400 mb-6 max-w-md">
+                Earn points for every research action and unlock exclusive benefits as you progress through research tiers.
               </p>
-              <Button onClick={() => setShowEnrollDialog(true)}>
+              <Button 
+                className="bg-amber-600/90 hover:bg-amber-600 border-amber-700 text-white"
+                onClick={() => setShowEnrollDialog(true)}>
                 Enroll Now
               </Button>
             </div>
@@ -105,38 +118,54 @@ export function ResearchRewards() {
         </Card>
 
         <Dialog open={showEnrollDialog} onOpenChange={setShowEnrollDialog}>
-          <DialogContent>
+          <DialogContent className="bg-zinc-900 border-zinc-700 text-zinc-100">
             <DialogHeader>
-              <DialogTitle>Join AI Research Rewards</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-amber-500 flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Join AI Research Rewards
+              </DialogTitle>
+              <DialogDescription className="text-zinc-300">
                 Earn points for conducting research, sharing insights, and providing feedback.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <h4 className="font-medium mb-2">Program Benefits:</h4>
-              <ul className="space-y-2">
+              <h4 className="font-medium mb-3 text-zinc-200">Program Benefits:</h4>
+              <ul className="space-y-3 bg-zinc-800 rounded-md p-4 border border-zinc-700">
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                  <span>Earn XP for research activities</span>
+                  <Check className="h-5 w-5 text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-zinc-200">Earn XP for research activities</span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                  <span>Unlock advanced research tools</span>
+                  <Check className="h-5 w-5 text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-zinc-200">Unlock advanced research tools</span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                  <span>Get priority support and exclusive features</span>
+                  <Check className="h-5 w-5 text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-zinc-200">Get priority support and exclusive features</span>
                 </li>
                 <li className="flex items-start">
-                  <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                  <span>Early access to new AI models</span>
+                  <Check className="h-5 w-5 text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-zinc-200">Early access to new AI models</span>
                 </li>
               </ul>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEnrollDialog(false)}>Cancel</Button>
-              <Button onClick={() => enroll(null)} disabled={isEnrolling}>
-                {isEnrolling ? "Enrolling..." : "Enroll Now"}
+            <DialogFooter className="mt-2">
+              <Button variant="outline" 
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                onClick={() => setShowEnrollDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="bg-amber-600/90 hover:bg-amber-600 border-amber-700 text-white"
+                onClick={() => enroll(null)} 
+                disabled={isEnrolling}>
+                {isEnrolling ? 
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" />
+                    Enrolling...
+                  </span> : 
+                  "Enroll Now"
+                }
               </Button>
             </DialogFooter>
           </DialogContent>
