@@ -970,10 +970,21 @@ export default function Notepad() {
         
         </aside>
 
-        {/* Main Note Area */}
-        <main className="flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1]">
+        {/* Main Note Area - adjusts for fullscreen mode */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
           {/* Note Header */}
           <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
+            <button 
+              onClick={toggleFullscreen}
+              className="p-2 text-[#999999] hover:text-white"
+              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? (
+                <Minimize size={18} />
+              ) : (
+                <Maximize size={18} />
+              )}
+            </button>
             <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
               {currentNote ? currentNote.title : "Notepad"}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
@@ -1032,8 +1043,8 @@ export default function Notepad() {
             )}
           </div>
           
-          {/* Input Area */}
-          <div className="p-4 bg-black rounded-b-lg">
+          {/* Input Area - hidden in fullscreen mode */}
+          <div className={`p-4 bg-black rounded-b-lg ${isFullscreen ? 'hidden' : 'block'} transition-all duration-300`}>
             <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-3">
               <div className="flex-grow mb-2">
                 <textarea
