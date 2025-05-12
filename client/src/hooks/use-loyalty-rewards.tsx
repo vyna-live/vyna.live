@@ -65,23 +65,13 @@ export function useLoyaltyRewards() {
     // Handle errors from the rewards API
     meta: {
       errorMessage: "Failed to fetch research rewards data"
-    },
-    onError: (error) => {
-      // Only show toast for errors that aren't 404 (not enrolled)
-      if (!(error as any)?.status === 404 && !(error as any)?.message?.includes?.('No loyalty pass found')) {
-        toast({
-          title: 'Research Rewards',
-          description: 'There was an issue loading your rewards data. Please try again.',
-          variant: 'destructive',
-        });
-      }
     }
   });
 
   // Check if not enrolled (either from status code or response message)
   const isNotEnrolled = isError && 
-    ((error as any)?.status === 404 || 
-     (error as any)?.message?.includes?.('No loyalty pass found'));
+    ((error instanceof Error && (error as any)?.status === 404) || 
+     (error instanceof Error && error.message.includes('No loyalty pass found')));
 
   useEffect(() => {
     if (isNotEnrolled && isAuthenticated) {

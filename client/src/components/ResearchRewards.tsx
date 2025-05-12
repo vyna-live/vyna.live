@@ -149,7 +149,7 @@ export function ResearchRewards() {
                 </li>
               </ul>
             </div>
-            <DialogFooter className="mt-2">
+            <DialogFooter className="mt-2 flex justify-between gap-4">
               <Button variant="outline" 
                 className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                 onClick={() => setShowEnrollDialog(false)}>

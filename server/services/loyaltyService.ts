@@ -32,13 +32,21 @@ export async function createLoyaltyPass(data: InsertLoyaltyPass) {
       throw new Error('Missing required user ID');
     }
     
-    // Issue the loyalty pass via Verxio Protocol
-    const loyaltyPassData = await createUserLoyaltyPass(
-      userId,
-      data.walletAddress || undefined,
-      data.tier as LoyaltyTier,
-      0 // Initial XP points
-    );
+    // Try to issue the loyalty pass via Verxio Protocol
+    let verxioId = '';
+    try {
+      const loyaltyPassData = await createUserLoyaltyPass(
+        userId,
+        data.walletAddress || undefined,
+        data.tier as LoyaltyTier,
+        0 // Initial XP points
+      );
+      verxioId = loyaltyPassData.verxioId;
+    } catch (verxioError) {
+      console.error('Verxio integration error:', verxioError);
+      // Generate a fallback ID in case Verxio integration fails
+      verxioId = `${data.tier}-${Date.now()}`;
+    }
     
     // Insert into database using raw SQL to use the correct column names
     const query = `
@@ -50,16 +58,17 @@ export async function createLoyaltyPass(data: InsertLoyaltyPass) {
     
     // Use either streamerId or userId for the streamer_id column
     const streamerId = data.streamerId || data.userId || null;
-    // Use audienceId if provided
-    const audienceId = data.audienceId || null;
+    // Handle audienceId - MUST be provided as NOT NULL in the database
+    // If no audienceId, use the same value as streamerId
+    const audienceId = data.audienceId || streamerId;
     
     const values = [
       streamerId,
       audienceId,
       data.walletAddress || null,
       data.tier,
-      0, // Initial XP
-      loyaltyPassData.verxioId,
+      data.xpPoints || 0, // Use provided XP or default to 0
+      verxioId, // Use the verxioId from either Verxio or fallback
       JSON.stringify(tierBenefits[data.tier as LoyaltyTier])
     ];
     

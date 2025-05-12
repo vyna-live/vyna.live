@@ -63,8 +63,10 @@ export async function createLoyaltyPassHandler(req: Request, res: Response) {
     }
 
     // Create pass data - start with bronze tier
+    // Use both streamerId and audienceId for new loyalty passes
     const passData = {
-      userId: req.user!.id,
+      streamerId: req.user!.id,
+      audienceId: req.user!.id, // Use the same ID for both to satisfy NOT NULL constraint
       tier: LoyaltyTier.BRONZE,
       walletAddress: req.body.walletAddress || null,
     };
