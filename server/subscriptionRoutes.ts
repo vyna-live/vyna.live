@@ -272,18 +272,26 @@ export async function createUserSubscription(req: Request, res: Response) {
         console.log(`Transaction ${transactionSignature} already exists in database, reusing record.`);
         
         // Update the metadata to link to this new subscription if needed
-        // Safely handle metadata which might be null or undefined
-        const currentMetadata = transaction.metadata || {};
-        if (!currentMetadata.subscriptionId) {
+        // First check if there's any existing metadata
+        const existingMetadata = typeof transaction.metadata === 'object' 
+          ? transaction.metadata as Record<string, unknown> 
+          : {};
+        
+        // Check if subscriptionId exists in the metadata
+        const hasSubscriptionId = existingMetadata 
+          && 'subscriptionId' in existingMetadata;
+          
+        if (!hasSubscriptionId) {
+          // Create new metadata object with the subscription info
+          const newMetadata = {
+            ...existingMetadata,
+            subscriptionId: newSubscription.id,
+            tier: tierId
+          };
+          
           await db
             .update(walletTransactions)
-            .set({
-              metadata: {
-                ...currentMetadata,
-                subscriptionId: newSubscription.id,
-                tier: tierId
-              }
-            })
+            .set({ metadata: newMetadata })
             .where(eq(walletTransactions.id, transaction.id));
         }
       } else {
