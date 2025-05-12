@@ -4,10 +4,10 @@ import { pgTable, serial, integer, text, varchar, timestamp } from "drizzle-orm/
 
 // Loyalty tiers for AI Research Rewards
 export enum LoyaltyTier {
-  BRONZE = "bronze",
-  SILVER = "silver",
-  GOLD = "gold",
-  PLATINUM = "platinum"
+  BRONZE = "bronze",     // Maps to "Researcher" in the UI
+  SILVER = "silver",     // Maps to "Scholar" in the UI
+  GOLD = "gold",         // Maps to "Expert" in the UI
+  PLATINUM = "platinum"  // Maps to "Luminary" in the UI
 }
 
 // Activity types for point rewards
@@ -20,10 +20,10 @@ export enum PointActivity {
 
 // Points awarded per activity
 export const pointsPerActivity = {
-  [PointActivity.COMPLETE_RESEARCH]: 100,
-  [PointActivity.SHARE_INSIGHT]: 50,
-  [PointActivity.PROVIDE_FEEDBACK]: 25,
-  [PointActivity.DAILY_LOGIN]: 5
+  [PointActivity.COMPLETE_RESEARCH]: 5, // 5XP for research (after 15 activities)
+  [PointActivity.SHARE_INSIGHT]: 5,     // 5XP for sharing insight
+  [PointActivity.PROVIDE_FEEDBACK]: 3,  // 3XP for providing feedback
+  [PointActivity.DAILY_LOGIN]: 5        // 5XP for daily login
 };
 
 // XP requirements for each tier
@@ -92,18 +92,18 @@ export type InsertLoyaltyActivity = z.infer<typeof insertLoyaltyActivitySchema>;
 // Benefits defined for each tier based on AI Research Rewards program
 export const tierBenefits = {
   [LoyaltyTier.BRONZE]: {
-    description: "Bronze Researcher Benefits",
+    description: "Researcher Benefits",
     features: [
       "Access to basic AI research tools",
-      "Earn points for every research query",
       "Track your research progress",
-      "Basic visualization tools"
+      "Basic visualization tools",
+      "Earn 5XP for every 15 research queries"
     ]
   },
   [LoyaltyTier.SILVER]: {
-    description: "Silver Researcher Benefits",
+    description: "Scholar Benefits",
     features: [
-      "Everything in Bronze tier",
+      "Everything in Researcher tier",
       "Advanced AI model access",
       "Priority processing for research queries",
       "Enhanced visualization tools",
@@ -111,9 +111,9 @@ export const tierBenefits = {
     ]
   },
   [LoyaltyTier.GOLD]: {
-    description: "Gold Researcher Benefits",
+    description: "Expert Benefits",
     features: [
-      "Everything in Silver tier",
+      "Everything in Scholar tier",
       "Unlimited research queries",
       "Custom AI model fine-tuning",
       "Dedicated support channel",

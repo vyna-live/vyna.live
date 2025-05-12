@@ -339,20 +339,31 @@ export function registerLoyaltyRoutes(app: any) {
   // Add loyalty check to all research activities
   app.use('/api/ai/research', ensureAuthenticated, async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Award points for completing research
+      // Only process POST requests (actual research queries)
       if (req.method === 'POST') {
         const userId = req.user!.id;
         // Check if user has a loyalty pass
         const hasPass = await hasLoyaltyPass(userId);
         
         if (hasPass) {
-          // Award points asynchronously, don't wait for result
-          awardPointsToUser(userId, PointActivity.COMPLETE_RESEARCH, "Completed AI research query")
-            .catch(err => console.error("Error awarding research points:", err));
+          // Import the check function
+          const { checkAndTrackResearchActivity } = require('./services/loyaltyService');
+          
+          // Track this research activity and check if we've reached the threshold
+          const shouldAwardPoints = await checkAndTrackResearchActivity(userId);
+          
+          // Only award points if we've reached the 15-activity threshold
+          if (shouldAwardPoints) {
+            console.log(`User ${userId} reached research threshold of 15 activities - awarding points`);
+            // Award points asynchronously, don't wait for result
+            awardPointsToUser(userId, PointActivity.COMPLETE_RESEARCH, "Completed 15 AI research queries")
+              .catch(err => console.error("Error awarding research points:", err));
+          }
         }
       }
       next();
     } catch (error) {
+      console.error("Error in research rewards middleware:", error);
       next();
     }
   });
