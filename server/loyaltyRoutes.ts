@@ -19,7 +19,9 @@ import { ensureAuthenticated } from "./auth";
 interface UpgradedLoyaltyPassResponse {
   upgraded: boolean;
   id: number;
-  userId: number;
+  userId?: number; // Backward compatibility
+  streamerId?: number | null;
+  audienceId?: number | null;
   tier: string;
   xpPoints: number;
   walletAddress: string | null;

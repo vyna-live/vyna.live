@@ -235,26 +235,40 @@ export async function awardPointsToUser(userId: number, activityType: PointActiv
     // Get points for this activity
     const pointsAwarded = pointsPerActivity[activityType];
     
-    // Record the activity
-    const [activity] = await db.insert(loyaltyActivities)
-      .values({
-        userId,
-        activityType,
-        pointsEarned: pointsAwarded,
-        description: description || `Completed ${activityType}`
-      })
-      .returning();
+    // Record the activity using raw SQL
+    const insertActivityQuery = `
+      INSERT INTO loyalty_activities 
+      (user_id, activity_type, points_earned, description)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `;
+    
+    const activityValues = [
+      userId,
+      activityType,
+      pointsAwarded,
+      description || `Completed ${activityType}`
+    ];
+    
+    const activityResult = await pool.query(insertActivityQuery, activityValues);
+    const activity = activityResult.rows[0];
     
     // Update user's XP in their loyalty pass
     const newXpTotal = (userPass.xpPoints || 0) + pointsAwarded;
     
-    const [updatedPass] = await db.update(loyaltyPasses)
-      .set({ 
-        xpPoints: newXpTotal,
-        updatedAt: new Date()
-      })
-      .where(eq(loyaltyPasses.id, userPass.id))
-      .returning();
+    // Use streamer_id or audience_id as appropriate
+    const updatePassQuery = `
+      UPDATE loyalty_passes
+      SET 
+        xp_points = $1,
+        updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `;
+    
+    const updatePassValues = [newXpTotal, userPass.id];
+    const updateResult = await pool.query(updatePassQuery, updatePassValues);
+    const updatedPass = updateResult.rows[0];
     
     // Check if user should be upgraded to next tier
     const upgradeCheck = await checkAndUpgradeTier(

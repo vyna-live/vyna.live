@@ -37,10 +37,11 @@ export const tierXpRequirements = {
 // LoyaltyPass table schema
 export const loyaltyPasses = pgTable("loyalty_passes", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(), // The user ID of the pass owner
+  streamerId: integer("streamer_id"), // The streamer ID (can be null)
+  audienceId: integer("audience_id"), // The audience ID (can be null)
   walletAddress: varchar("wallet_address", { length: 255 }), // Optional wallet address for blockchain verification
   tier: varchar("tier", { length: 50 }).notNull().default(LoyaltyTier.BRONZE),
-  xpPoints: integer("xp_points").notNull().default(0), // Current XP points
+  xpPoints: integer("xp_points").default(0), // Current XP points
   verxioId: varchar("verxio_id", { length: 255 }), // ID from Verxio Protocol
   benefits: text("benefits"), // JSON string of benefits
   createdAt: timestamp("created_at").defaultNow(),
@@ -66,7 +67,11 @@ export type LoyaltyActivity = typeof loyaltyActivities.$inferSelect;
 // Insert schema for validation
 export const insertLoyaltyPassSchema = createInsertSchema(loyaltyPasses, {
   tier: z.enum([LoyaltyTier.BRONZE, LoyaltyTier.SILVER, LoyaltyTier.GOLD, LoyaltyTier.PLATINUM]),
-}).omit({ id: true, createdAt: true, updatedAt: true, xpPoints: true });
+}).omit({ id: true, createdAt: true, updatedAt: true, xpPoints: true })
+  .extend({
+    // Add userId field for backward compatibility
+    userId: z.number().optional(),
+  });
 
 // Insert schema for loyalty activities
 export const insertLoyaltyActivitySchema = createInsertSchema(loyaltyActivities, {
