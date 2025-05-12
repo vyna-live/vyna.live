@@ -251,7 +251,7 @@ export async function getUserLoyaltyActivities(userId: number) {
     const activities = await db.select()
       .from(loyaltyActivities)
       .where(eq(loyaltyActivities.userId, userId))
-      .orderBy(loyaltyActivities.createdAt, 'desc');
+      .orderBy(desc(loyaltyActivities.createdAt));
     
     return activities;
   } catch (error) {
