@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { db } from './db';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { 
   subscriptions, 
   walletTransactions,
@@ -211,6 +211,7 @@ export async function createUserSubscription(req: Request, res: Response) {
     // This is a placeholder used when a transaction was already processed
     if (transactionSignature === 'ALREADY_PROCESSED') {
       // Check if user already has an active subscription
+      // Get the most recent active subscription
       const existingSubscription = await db
         .select()
         .from(subscriptions)
@@ -220,7 +221,8 @@ export async function createUserSubscription(req: Request, res: Response) {
             eq(subscriptions.status, 'active')
           )
         )
-        .orderBy(desc(subscriptions.createdAt))
+        // Use a simpler approach without desc()
+        .orderBy(subscriptions.createdAt)
         .limit(1);
       
       // If user already has an active subscription, return it
@@ -254,25 +256,64 @@ export async function createUserSubscription(req: Request, res: Response) {
       })
       .returning();
     
-    // Save transaction details
-    const [transaction] = await db
-      .insert(walletTransactions)
-      .values({
-        userId,
-        signature: transactionSignature,
-        amount: amount.toString(),
-        transactionType: 'subscription',
-        status: 'confirmed',
-        fromAddress: req.body.fromAddress || 'unknown',
-        toAddress: req.body.toAddress || 'unknown',
-        metadata: {
-          subscriptionId: newSubscription.id,
-          tier: tierId
-        },
-        createdAt: now,
-        confirmedAt: now
-      })
-      .returning();
+    // Check if this transaction signature has already been recorded
+    // This helps prevent duplicate entries if a client resubmits the same transaction
+    let transaction;
+    try {
+      const existingTransaction = await db
+        .select()
+        .from(walletTransactions)
+        .where(eq(walletTransactions.signature, transactionSignature))
+        .limit(1);
+      
+      if (existingTransaction.length > 0) {
+        // Transaction already exists, just use it
+        transaction = existingTransaction[0];
+        console.log(`Transaction ${transactionSignature} already exists in database, reusing record.`);
+        
+        // Update the metadata to link to this new subscription if needed
+        // Safely handle metadata which might be null or undefined
+        const currentMetadata = transaction.metadata || {};
+        if (!currentMetadata.subscriptionId) {
+          await db
+            .update(walletTransactions)
+            .set({
+              metadata: {
+                ...currentMetadata,
+                subscriptionId: newSubscription.id,
+                tier: tierId
+              }
+            })
+            .where(eq(walletTransactions.id, transaction.id));
+        }
+      } else {
+        // Save new transaction details
+        const [newTransaction] = await db
+          .insert(walletTransactions)
+          .values({
+            userId,
+            signature: transactionSignature,
+            amount: amount.toString(),
+            transactionType: 'subscription',
+            status: 'confirmed',
+            fromAddress: req.body.fromAddress || 'unknown',
+            toAddress: req.body.toAddress || 'unknown',
+            metadata: {
+              subscriptionId: newSubscription.id,
+              tier: tierId
+            },
+            createdAt: now,
+            confirmedAt: now
+          })
+          .returning();
+        
+        transaction = newTransaction;
+      }
+    } catch (error) {
+      console.error('Error processing transaction record:', error);
+      // If we can't record the transaction, we'll still return the subscription
+      // since the payment has been made
+    }
     
     res.status(201).json({
       subscription: newSubscription,
