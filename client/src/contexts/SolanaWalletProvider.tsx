@@ -189,7 +189,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
         // Only handle SOL transfers for now
         if (paymentMethod === 'sol') {
           // Set up connection to Solana devnet
-          const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+          const connection = new Connection('https://api.testnet.solana.com', 'confirmed');
           
           // Create transaction
           const transaction = new Transaction();
