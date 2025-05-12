@@ -73,10 +73,13 @@ export async function getLoyaltyPassById(id: number) {
 // Get loyalty pass for a user
 export async function getLoyaltyPassByUserId(userId: number) {
   try {
+    console.log(`Looking for loyalty pass for user ID: ${userId}`);
+    // Use the correct column name "user_id" which is defined in the schema
     const passes = await db.select()
       .from(loyaltyPasses)
       .where(eq(loyaltyPasses.userId, userId));
     
+    console.log(`Found ${passes.length} passes for user ID: ${userId}`);
     if (passes.length === 0) {
       return null;
     }
