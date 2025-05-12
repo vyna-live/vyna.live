@@ -875,6 +875,14 @@ export default function VynaAIChat() {
                           <ThumbsDown size={14} />
                         </button>
                         <button
+                          className="hover:text-[#DCC5A2] p-1"
+                          onClick={() => handleEarnResearchPoints(message.content)}
+                          aria-label="Earn research points"
+                          title="Earn research points for this insight"
+                        >
+                          <TrendingUp size={14} />
+                        </button>
+                        <button
                           className="hover:text-[#DCC5A2] p-1 relative"
                           onClick={() => handleAddToNote(message.id)}
                           aria-label="Add to note"

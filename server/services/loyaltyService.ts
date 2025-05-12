@@ -9,7 +9,7 @@ import {
   type InsertLoyaltyPass,
   type InsertLoyaltyActivity
 } from '../../shared/loyaltySchema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { 
   createUserLoyaltyPass, 
   upgradeLoyaltyPassTier,
