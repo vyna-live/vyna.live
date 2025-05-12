@@ -1,7 +1,14 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, TransactionInstruction } from '@solana/web3.js';
-// We'll use browser-native TextEncoder for binary data
+
+// Create a special type for TransactionInstruction that can work with Uint8Array
+// This helps us bypass TypeScript error with Buffer/Uint8Array when code runs in browser
+interface CustomTransactionInstruction {
+  keys: Array<any>;
+  programId: PublicKey;
+  data: Uint8Array;
+}
 
 // For adding a memo to each transaction to prevent duplicate processing
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -202,15 +209,24 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
           const uniqueId = Date.now().toString() + Math.random().toString().substring(2, 8);
           
           // Add a memo instruction with the unique ID to prevent duplicate transactions
-          // Use TextEncoder instead of Buffer for browser compatibility
-          const encoder = new TextEncoder();
-          const data = encoder.encode(`Vyna.live payment: ${uniqueId}`);
+          // Generate a simplified string message for the memo - no need for TextEncoder
+          const memoMessage = `Vyna.live payment: ${uniqueId}`;
           
-          const memoInstruction = new TransactionInstruction({
+          // Create memo instruction with the message - directly creating Uint8Array from string chars
+          const data = new Uint8Array(memoMessage.length);
+          for (let i = 0; i < memoMessage.length; i++) {
+            data[i] = memoMessage.charCodeAt(i);
+          }
+          
+          // Create the instruction parameters with our custom interface
+          const instructionParams: CustomTransactionInstruction = {
             keys: [],
             programId: MEMO_PROGRAM_ID,
             data: data
-          });
+          };
+          
+          // Create the instruction using the parameters
+          const memoInstruction = new TransactionInstruction(instructionParams);
           
           // Parse amount to lamports (SOL's smallest unit)
           const lamports = Math.floor(parseFloat(amount) * LAMPORTS_PER_SOL);
