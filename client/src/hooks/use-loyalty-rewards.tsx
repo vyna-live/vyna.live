@@ -7,13 +7,18 @@ import { useToast } from '@/hooks/use-toast';
 // Define loyalty tier types
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
 
+export interface LoyaltyPassBenefits {
+  description: string;
+  features: string[];
+}
+
 export interface LoyaltyPass {
   id: number;
   userId: number;
   tier: LoyaltyTier;
   xpPoints: number;
   walletAddress: string | null;
-  benefits: string[];
+  benefits: LoyaltyPassBenefits | null;
   verxioId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -36,7 +41,7 @@ export interface LoyaltyResponse {
     progress: number;
     currentXp: number;
     xpNeeded: number;
-    benefits: string[];
+    benefits: LoyaltyPassBenefits | null;
   } | null;
 }
 

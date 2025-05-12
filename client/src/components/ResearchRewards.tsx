@@ -200,14 +200,29 @@ export function ResearchRewards() {
           {/* Benefits */}
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-3">Current Benefits</h3>
-            <ul className="space-y-2">
-              {loyaltyPass.benefits.map((benefit, index) => (
-                <li key={index} className="flex items-start">
-                  <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
-                  <span className="text-sm">{benefit}</span>
-                </li>
-              ))}
-            </ul>
+            {loyaltyPass.benefits ? (
+              <>
+                <div className="text-sm font-semibold text-gray-700 mb-2">
+                  {loyaltyPass.benefits.description}
+                </div>
+                <ul className="space-y-2">
+                  {loyaltyPass.benefits.features && Array.isArray(loyaltyPass.benefits.features) ? (
+                    loyaltyPass.benefits.features.map((benefit, index) => (
+                      <li key={index} className="flex items-start">
+                        <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5" />
+                        <span className="text-sm">{benefit}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-sm text-gray-500">No specific benefits listed</li>
+                  )}
+                </ul>
+              </>
+            ) : (
+              <div className="text-sm text-gray-500">
+                No benefits available for this tier.
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
