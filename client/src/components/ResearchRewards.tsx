@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Link } from "wouter";
 import { Award, Check, TrendingUp, Star, Sparkles, Book, FileText, Zap } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -16,58 +14,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Define loyalty tier types
-type LoyaltyTier = "bronze" | "silver" | "gold" | "platinum";
-
-interface LoyaltyPass {
-  id: number;
-  userId: number;
-  tier: LoyaltyTier;
-  xpPoints: number;
-  walletAddress: string | null;
-  benefits: string[];
-  verxioId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LoyaltyActivity {
-  id: number;
-  userId: number;
-  activityType: string;
-  pointsEarned: number;
-  description: string;
-  createdAt: string;
-}
-
-interface LoyaltyResponse {
-  loyaltyPass: LoyaltyPass;
-  recentActivities: LoyaltyActivity[];
-  nextTier: {
-    name: string;
-    progress: number;
-    currentXp: number;
-    xpNeeded: number;
-    benefits: string[];
-  } | null;
-}
-
-const tierColors = {
-  bronze: "text-amber-700",
-  silver: "text-slate-400",
-  gold: "text-yellow-400",
-  platinum: "text-indigo-400"
-};
-
-const tierBackgroundColors = {
-  bronze: "bg-amber-100",
-  silver: "bg-slate-100",
-  gold: "bg-yellow-100",
-  platinum: "bg-indigo-100"
-};
+import { 
+  useLoyaltyRewards, 
+  formatTierName, 
+  tierColors, 
+  tierBackgroundColors, 
+  LoyaltyTier 
+} from "@/hooks/use-loyalty-rewards";
 
 const tierIcons = {
   bronze: <Book className="h-5 w-5" />,
@@ -79,83 +33,33 @@ const tierIcons = {
 export function ResearchRewards() {
   const { user } = useAuth();
   const [showEnrollDialog, setShowEnrollDialog] = useState(false);
-
-  // Query for loyalty pass
-  const { 
-    data: rewardsData, 
-    isLoading, 
-    isError, 
-    error
-  } = useQuery<LoyaltyResponse>({
-    queryKey: ['/api/research/rewards/user'],
-    enabled: !!user,
-  });
-
-  // Enroll mutation
-  const enrollMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/research/rewards/enroll', { walletAddress: null });
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/research/rewards/user'] });
-      toast({
-        title: "Welcome to AI Research Rewards!",
-        description: "You've successfully enrolled in the program.",
-      });
-      setShowEnrollDialog(false);
-    },
-    onError: (error) => {
-      toast({
-        title: "Enrollment failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Upgrade mutation
-  const upgradeMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/research/rewards/upgrade');
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/research/rewards/user'] });
-      if (data.success) {
-        toast({
-          title: "Tier Upgraded!",
-          description: data.message,
-        });
-      } else {
-        toast({
-          description: data.message,
-        });
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "Upgrade failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-
+  
+  // Use our custom hook for loyalty rewards
+  const {
+    loyaltyData: rewardsData,
+    isLoading,
+    isError,
+    isNotEnrolled,
+    enroll,
+    isEnrolling,
+    upgrade,
+    isUpgrading,
+    showEnrollPrompt
+  } = useLoyaltyRewards();
+  
   // Check if user is enrolled
   const isEnrolled = !!rewardsData?.loyaltyPass;
-  const isNotFound = isError && (error as any)?.status === 404;
-
-  // Handle 404 (not enrolled yet)
-  useEffect(() => {
-    if (isNotFound) {
+  
+  // Show enrollment dialog if not enrolled
+  useState(() => {
+    if (isNotEnrolled || showEnrollPrompt) {
       setShowEnrollDialog(true);
     }
-  }, [isNotFound]);
+  }, [isNotEnrolled, showEnrollPrompt]);
 
   if (isLoading) return <LoadingSkeleton />;
 
-  if (isError && !isNotFound) {
+  if (isError && !isNotEnrolled) {
     return (
       <Card className="border-red-200 bg-red-50 mb-6">
         <CardHeader>
@@ -221,8 +125,8 @@ export function ResearchRewards() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowEnrollDialog(false)}>Cancel</Button>
-              <Button onClick={() => enrollMutation.mutate()} disabled={enrollMutation.isPending}>
-                {enrollMutation.isPending ? "Enrolling..." : "Enroll Now"}
+              <Button onClick={() => enroll(null)} disabled={isEnrolling}>
+                {isEnrolling ? "Enrolling..." : "Enroll Now"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -311,11 +215,11 @@ export function ResearchRewards() {
         {nextTier && (
           <Button 
             variant="outline" 
-            onClick={() => upgradeMutation.mutate()}
-            disabled={upgradeMutation.isPending || nextTier.progress < 100}
+            onClick={() => upgrade()}
+            disabled={isUpgrading || nextTier.progress < 100}
           >
             <TrendingUp className="mr-2 h-4 w-4" />
-            {upgradeMutation.isPending ? "Checking..." : "Check for Upgrade"}
+            {isUpgrading ? "Checking..." : "Check for Upgrade"}
           </Button>
         )}
         <Button variant="link" className="text-gray-500" onClick={() => window.open('/research-rewards', '_blank')}>
