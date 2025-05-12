@@ -926,22 +926,34 @@ export default function VynaAIChat() {
           )}
           
           {/* Chat Header - ensure it's visible in fullscreen mode */}
-          <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg relative z-[10]">
-            <button 
-              onClick={toggleFullscreen}
-              className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {isFullscreen ? (
-                <Minimize size={20} className="animate-pulse" />
-              ) : (
-                <Maximize size={20} />
-              )}
-            </button>
-            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
+          <div className={`${isMobileView ? 'h-[40px]' : 'h-[50px]'} border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg relative z-[10]`}>
+            {isMobileView ? (
+              <button 
+                onClick={toggleSidebar}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                  <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            ) : (
+              <button 
+                onClick={toggleFullscreen}
+                className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                {isFullscreen ? (
+                  <Minimize size={20} className="animate-pulse" />
+                ) : (
+                  <Maximize size={20} />
+                )}
+              </button>
+            )}
+            <h2 className={`flex-1 text-center flex items-center justify-center text-white ${isMobileView ? 'text-sm' : 'text-base'} font-medium`}>
               {currentTitle}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
-                <ChevronDown size={16} />
+                <ChevronDown size={isMobileView ? 14 : 16} />
               </button>
             </h2>
           </div>
@@ -956,16 +968,16 @@ export default function VynaAIChat() {
                   className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
                   {message.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
-                      <Sparkles size={16} color="#121212" />
+                    <div className={`${isMobileView ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar`}>
+                      <Sparkles size={isMobileView ? 12 : 16} color="#121212" />
                     </div>
                   )}
                   
                   <div 
                     className={`rounded-xl px-4 py-3.5 ${
                       message.role === 'user' 
-                        ? 'bg-[#2A2A2A] text-white max-w-[85%] sm:max-w-[80%]' 
-                        : 'bg-[#232323] text-[#DDDDDD] max-w-[90%] sm:max-w-[80%]'
+                        ? 'bg-[#2A2A2A] text-white max-w-[90%] sm:max-w-[80%]' 
+                        : 'bg-[#232323] text-[#DDDDDD] max-w-[95%] sm:max-w-[85%]'
                     }`}
                   >
                     {message.role === 'user' ? (
