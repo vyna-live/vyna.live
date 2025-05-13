@@ -1114,11 +1114,13 @@ export default function Notepad() {
                 )}
               </button>
             )}
-            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
+            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium text-base md:text-lg">
               {currentNote ? currentNote.title : "Notepad"}
-              <button className="p-1 ml-2 text-[#999999] hover:text-white">
-                <ChevronDown size={16} />
-              </button>
+              {!isMobile && (
+                <button className="p-1 ml-2 text-[#999999] hover:text-white">
+                  <ChevronDown size={16} />
+                </button>
+              )}
             </h2>
           </div>
           
@@ -1132,7 +1134,7 @@ export default function Notepad() {
             ) : currentNote ? (
               <div 
                 ref={contentRef}
-                className="text-[#DDDDDD] text-sm"
+                className="text-[#DDDDDD] text-xs md:text-sm"
                 style={{ lineHeight: '1.7' }}
               >
                 {/* Render visualizations at the top using the AdaptiveContentRenderer */}

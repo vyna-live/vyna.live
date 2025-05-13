@@ -1065,7 +1065,7 @@ export default function VynaAIChat() {
                     )}
                     
                     {message.role === 'assistant' && (
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-3 text-[#777777] message-controls">
+                      <div className="flex flex-wrap items-center gap-x-2 md:gap-x-3 gap-y-2 mt-3 text-[#777777] message-controls text-xs md:text-sm">
                         <button 
                           className="hover:text-[#DCC5A2] p-1" 
                           aria-label="Add to teleprompter"
@@ -1213,9 +1213,9 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-3 sm:gap-5'} text-[#999999]`}>
+                <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-3 sm:gap-5'} text-[#999999]`}>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1223,7 +1223,7 @@ export default function VynaAIChat() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
