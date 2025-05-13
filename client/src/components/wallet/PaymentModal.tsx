@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, AlertCircle, Check, CreditCard, Coins } from 'lucide-react';
+import { Loader2, AlertCircle, Check, CreditCard, Coins, Wallet, QrCode } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
+import { QRCodeDisplay } from './QRCodeDisplay';
 
 // Define payment status type at the top level
 type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
@@ -41,6 +43,7 @@ export function PaymentModal({
   // Keep track of processing status separately for button disabling
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paymentTab, setPaymentTab] = useState<'wallet' | 'qrcode'>('wallet');
 
   // Reset state when modal opens/closes
   const handleOpenChange = (open: boolean) => {
@@ -49,6 +52,7 @@ export function PaymentModal({
       setStatus('idle');
       setIsProcessing(false);
       setError(null);
+      setPaymentTab('wallet');
       onClose();
     }
   };
@@ -59,6 +63,7 @@ export function PaymentModal({
       setStatus('idle');
       setIsProcessing(false);
       setError(null);
+      setPaymentTab('wallet');
     }
   }, [selectedTier]);
 
@@ -159,7 +164,7 @@ export function PaymentModal({
       );
     }
 
-    // Default/idle state - payment form
+    // Default/idle state - payment form with tabs
     return (
       <>
         <div className="space-y-4 py-2">
@@ -223,39 +228,87 @@ export function PaymentModal({
               </div>
             </RadioGroup>
           </div>
-
-          {error && (
-            <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
+          
+          <div className="mt-4">
+            <Tabs value={paymentTab} onValueChange={(value) => setPaymentTab(value as 'wallet' | 'qrcode')}>
+              <TabsList className="grid w-full grid-cols-2 h-9">
+                <TabsTrigger value="wallet" className="flex items-center gap-1">
+                  <Wallet className="h-3.5 w-3.5" />
+                  <span>Direct Payment</span>
+                </TabsTrigger>
+                <TabsTrigger value="qrcode" className="flex items-center gap-1">
+                  <QrCode className="h-3.5 w-3.5" />
+                  <span>QR Code</span>
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="wallet" className="pt-4">
+                <p className="text-sm text-neutral-400 mb-2">
+                  Pay directly using your connected wallet ({wallet?.name})
+                </p>
+                
+                {error && (
+                  <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2 mt-4">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-end space-x-2 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={onClose}
+                    className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
+                    disabled={isPending || isProcessing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSubmit}
+                    disabled={isPending || isProcessing}
+                    className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
+                  >
+                    {isPending || isProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      `Pay ${paymentMethod === 'sol' ? selectedTier.priceSol + ' SOL' : selectedTier.priceUsdc + ' USDC'}`
+                    )}
+                  </Button>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="qrcode" className="pt-4">
+                {/* Pass the payment recipient address, amount, and currency symbol */}
+                <QRCodeDisplay 
+                  walletAddress="HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU"
+                  amount={paymentMethod === 'sol' ? selectedTier.priceSol : selectedTier.priceUsdc}
+                  currencySymbol={paymentMethod === 'sol' ? 'SOL' : 'USDC'}
+                />
+                
+                {error && (
+                  <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2 mt-4">
+                    <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-center mt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={onClose}
+                    className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
+                    disabled={isPending || isProcessing}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
-            disabled={isPending || isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit}
-            disabled={isPending || isProcessing}
-            className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
-          >
-            {isPending || isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              `Pay ${paymentMethod === 'sol' ? selectedTier.priceSol + ' SOL' : selectedTier.priceUsdc + ' USDC'}`
-            )}
-          </Button>
-        </DialogFooter>
       </>
     );
   };

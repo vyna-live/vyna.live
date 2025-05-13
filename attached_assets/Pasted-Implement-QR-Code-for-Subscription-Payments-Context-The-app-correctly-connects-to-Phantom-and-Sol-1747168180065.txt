@@ -1,0 +1,54 @@
+Implement QR Code for  Subscription Payments
+Context
+The app correctly connects to Phantom and Solflare wallets on desktop. I need to add a QR code feature to the existing wallet connection modal so mobile users can easily copy the apps wallet address to pay.
+Requirements
+1.Add QR code to the existing wallet payment modal that already works for web connections
+2.Use the QRcode image attached in this prompt, as it has the wallet address to pay to already imbedded in it.
+3.The QR code should allow users copy the wallet address imbedded already in the qrcode
+4.Maintain the current styling theme and ensure the design is modern and intuitive
+5.the full payment flow (transaction creation, payment verification, subscription activation) should walk seamlessly. 
+6.The solution should work seamlessly alongside the existing wallet connection methods
+7.The users wallet must have been connected to the website, before he/she can be able to copy wallet address using qrcode.
+8.This should not affect the existing payment flow. 
+Technical Specifications
+Subscription Payment
+Add a tab or section within the existing wallet connection modal to display the QR code(this should only be added on the subscription wallet modal)
+Provide short, clear instructions for users on how to scan the code
+Match styling to the current application theme (colors, fonts, border-radius, etc.)
+Show loading states when waiting for confirmation
+Display success feedback once confirmed
+Since there’s no way to redirect to the website, since the user will be paying from the mobile app, make sure inform them that they should pay using the wallet connected to there website,
+This will ensure that you listen for payments coming from that wallet address on the blockchain, and confirm the payment
+Display success feedback once connected and payment is completed
+Include payment confirmation details after successful transaction
+Integration Points
+1.Modify the existing wallet connection modal component 
+2.Add QR code generation and display logic
+3.Create backend endpoints for connection verification and payment processing
+4.Add payment transaction creation and verification
+5.Implement callback handling for mobile redirects
+6.Create subscription status tracking and management
+Code Structure
+Please provide:
+1.Frontend component modifications to add QR code to existing modal
+2.Subscription status tracking and management system
+3.Any additional utility functions needed
+Constraints
+The solution must work with the existing Solana wallet adapter implementation
+Maintain all current functionality for desktop wallet connections
+Implement proper validation to prevent payment errors
+Ensure security of payment transactions with proper encryption and verification
+Example User Flow
+Subscription Payment Flow
+1.User navigates to subscription section or is prompted to subscribe
+2.User selects desired subscription plan/tier
+3.Payment modal appears with subscription details and total amount
+4.Modal includes QR code for mobile payment
+5.User scans QR code to copy the web wallet address  with their already-connected wallet app
+6.Wallet app shows transaction details including amount and recipient
+7.User approves the payment transaction
+8.Web application verifies the transaction on the blockchain
+9.User receives confirmation of successful payment
+10.User's subscription status is updated in the system
+11.User is granted access to subscription features/content
+Please provide a clean implementation that integrates seamlessly with my existing codebase while following best practices for Solana dApp development and subscription payment processing.
