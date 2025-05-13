@@ -119,15 +119,9 @@ export function WalletConnectionModal({ isOpen, onClose, onSuccess }: WalletConn
       // Solflare deep link format
       const solflareLink = `https://solflare.com/ul/browse/${encodeURIComponent(`${baseUrl}/wallet-connect/${sessionData.sessionId}`)}`;
       
-      // We'll use a universal format that contains both deep links
-      const qrData = JSON.stringify({
-        sessionId: sessionData.sessionId,
-        phantom: phantomLink,
-        solflare: solflareLink,
-        expires: sessionData.expiresAt
-      });
-      
-      setQrValue(qrData);
+      // Use the Phantom deep link directly instead of JSON
+      // This allows mobile wallet apps to directly recognize and process the QR code
+      setQrValue(phantomLink);
     } catch (error) {
       console.error('Error creating mobile session:', error);
       setError('Failed to generate QR code. Please try again.');
@@ -304,22 +298,38 @@ export function WalletConnectionModal({ isOpen, onClose, onSuccess }: WalletConn
               {mobileConnectStatus === 'pending' && qrValue && (
                 <>
                   <div className="text-center mb-4">
-                    <h3 className="text-sm font-medium mb-1">Scan with your mobile wallet</h3>
+                    <h3 className="text-sm font-medium mb-1">Scan with Phantom wallet</h3>
                     <p className="text-xs text-neutral-400">
-                      Scan this code with your Phantom or Solflare mobile app to connect your wallet
+                      Open Phantom mobile app and scan this code to connect your wallet
                     </p>
                   </div>
                   
-                  <div className="bg-white p-3 rounded-xl mb-4">
-                    <QRCode value={qrValue} size={200} />
+                  <div className="bg-white p-3 rounded-xl mb-4 flex items-center justify-center">
+                    <QRCode 
+                      value={qrValue} 
+                      size={250} 
+                      bgColor="#ffffff" 
+                      fgColor="#000000" 
+                    />
                   </div>
                   
-                  <div className="flex flex-col md:flex-row gap-3 w-full">
+                  <div className="mb-4 w-full text-center">
+                    <p className="text-xs text-neutral-500 mb-2">
+                      Need help? Make sure to:
+                    </p>
+                    <ul className="text-xs text-neutral-400 mb-3 text-left list-disc list-inside">
+                      <li>Open Phantom mobile app first</li>
+                      <li>Tap the scan button in Phantom</li>
+                      <li>Point your camera at this QR code</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex flex-col gap-3 w-full">
                     <a
                       href="https://phantom.app/download"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1"
+                      className="w-full"
                     >
                       <Button 
                         variant="outline" 
@@ -341,36 +351,7 @@ export function WalletConnectionModal({ isOpen, onClose, onSuccess }: WalletConn
                             fill="white"
                           />
                         </svg>
-                        Get Phantom
-                      </Button>
-                    </a>
-                    <a
-                      href="https://solflare.com/download"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1"
-                    >
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-neutral-800 hover:bg-neutral-900"
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 40 40"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="mr-2"
-                        >
-                          <rect width="40" height="40" rx="6.4" fill="#FFD11F" />
-                          <path
-                            fillRule="evenodd"
-                            clipRule="evenodd"
-                            d="M14.5919 14.1824C14.5919 13.74 14.9601 13.3813 15.4141 13.3813H24.5859C25.0399 13.3813 25.4081 13.74 25.4081 14.1824V15.7846C25.4081 16.227 25.0399 16.5857 24.5859 16.5857H15.4141C14.9601 16.5857 14.5919 16.227 14.5919 15.7846V14.1824ZM14.5919 19.7901C14.5919 19.3478 14.9601 18.989 15.4141 18.989H24.5859C25.0399 18.989 25.4081 19.3478 25.4081 19.7901V21.3923C25.4081 21.8347 25.0399 22.1935 24.5859 22.1935H15.4141C14.9601 22.1935 14.5919 21.8347 14.5919 21.3923V19.7901ZM22.4141 24.597C21.9601 24.597 21.5919 24.9557 21.5919 25.3981V27.0003C21.5919 27.4426 21.9601 27.8014 22.4141 27.8014H31.5859C32.0399 27.8014 32.4081 27.4426 32.4081 27.0003V25.3981C32.4081 24.9557 32.0399 24.597 31.5859 24.597H22.4141ZM7.59193 25.3981C7.59193 24.9557 7.96014 24.597 8.41412 24.597H17.5859C18.0399 24.597 18.4081 24.9557 18.4081 25.3981V27.0003C18.4081 27.4426 18.0399 27.8014 17.5859 27.8014H8.41412C7.96014 27.8014 7.59193 27.4426 7.59193 27.0003V25.3981Z"
-                            fill="black"
-                          />
-                        </svg>
-                        Get Solflare
+                        Get Phantom App
                       </Button>
                     </a>
                   </div>
