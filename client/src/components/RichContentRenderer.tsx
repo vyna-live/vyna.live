@@ -309,16 +309,8 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
             return (
               <div className="visualization-container mb-6" key={`chart-${index}`}>
                 <EnhancedChartRenderer 
-                  data={viz.data}
-                  chartType={viz.chartType}
-                  xKey={viz.xKey}
-                  yKeys={viz.yKeys}
-                  colors={viz.colors}
-                  width={viz.width}
-                  height={viz.height}
+                  chartData={viz}
                   darkMode={darkMode}
-                  title={viz.title}
-                  subtitle={viz.subtitle}
                 />
               </div>
             );
@@ -331,14 +323,17 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-[#2A2A2A] border-b border-[#444]">
+                        {/* @ts-ignore */}
                         {viz.headers.map((header, i) => (
                           <th key={`header-${i}`} className="px-4 py-3 text-left text-sm font-medium">{header}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
+                      {/* @ts-ignore */}
                       {viz.rows.map((row, rowIndex) => (
                         <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-[#1D1D1D]' : 'bg-[#232323]'}>
+                          {/* @ts-ignore */}
                           {row.map((cell, cellIndex) => (
                             <td key={`cell-${rowIndex}-${cellIndex}`} className="px-4 py-3 border-t border-[#333] text-sm">{cell}</td>
                           ))}
