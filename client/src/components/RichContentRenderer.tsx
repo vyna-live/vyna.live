@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
+import { useIsMobile } from '@/hooks/useIsMobile';
 // @ts-ignore
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // @ts-ignore
@@ -329,8 +330,8 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
   darkMode = true,
   size = 'medium'
 }) => {
-  // Check if we're running in a mobile environment to adjust styling
-  const isMobile = window.innerWidth < 768;
+  // Use the hook for mobile detection
+  const isMobile = useIsMobile();
   // State to track if we need to fallback to text-only mode
   const [fallbackToText, setFallbackToText] = React.useState(false);
   

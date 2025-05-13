@@ -1032,13 +1032,13 @@ export default function VynaAIChat() {
           </div>
           
           {/* Messages Area - Conditional overflow based on whether there are messages */}
-          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-6 space-y-6 bg-black`}>
+          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-4 md:p-6 space-y-4 md:space-y-6 bg-black`}>
             {messages.length > 0 ? (
               // Display messages when available
               messages.map((message) => (
                 <div 
                   key={message.id} 
-                  className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
+                  className={`flex message-appear mb-5 ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
                   {/* Only show AI avatar on non-mobile view */}
                   {message.role === 'assistant' && !isMobile && (
