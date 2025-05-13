@@ -918,13 +918,8 @@ export default function VynaAIChat() {
           </div>
         </aside>
 
-        {/* Main Chat Area with spacing - adjusts for fullscreen mode and sidebar state */}
-        <main className={`
-          flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] 
-          ${isFullscreen ? 'w-full' : ''} 
-          ${(isMobileView && !showMobileSidebar) || (sidebarCollapsed && !isMobileView) ? 'w-full' : ''}
-          transition-all duration-300
-        `}>
+        {/* Main Chat Area with spacing - adjusts for fullscreen mode */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
           {/* Teleprompter overlay */}
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
