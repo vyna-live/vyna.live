@@ -11,10 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
+import QRCodeDisplay from './QRCodeDisplay';
 
 // Define payment status type at the top level
 type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
@@ -335,48 +335,11 @@ export function PaymentModal({
             )}
               
             {paymentTab === 'qrcode' && (
-              <div className="pt-3">
-                <div className="flex justify-center py-3">
-                  <div className="w-[260px] h-[260px] rounded-lg bg-white overflow-hidden">
-                    <img 
-                      src="/Untitled.png" 
-                      alt="Payment QR Code" 
-                      className="w-full h-full"
-                    />
-                  </div>
-                </div>
-                
-                <div className="flex items-center bg-[#1a1a1a] p-3 mx-0 my-3 rounded-lg border border-[#333] overflow-hidden">
-                  <div className="truncate text-sm text-neutral-300 px-2 flex-1">
-                    HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-8 px-2"
-                    onClick={() => {
-                      navigator.clipboard.writeText("HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU");
-                      toast({
-                        title: "Address copied",
-                        description: "Payment address copied to clipboard",
-                      });
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <div className="flex justify-center mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={onClose}
-                    className="border-[#333] text-white hover:bg-[#252525]"
-                    disabled={isPending || isProcessing}
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
+              <QRCodeDisplay 
+                walletAddress="HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU"
+                onClose={onClose}
+                isPending={isPending || isProcessing}
+              />
             )}
           </div>
         </div>
