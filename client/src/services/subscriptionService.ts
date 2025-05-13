@@ -214,54 +214,80 @@ export function formatSubscriptionTimeRemaining(expiresAt: string): string {
 function getMockSubscriptionTiers(): SubscriptionTier[] {
   return [
     {
-      id: 'basic',
-      name: 'Basic',
-      headline: 'Essential streaming features',
-      description: 'For casual streamers who need the essential tools',
-      priceSol: 0.1,
-      priceUsdc: 15,
+      id: 'free',
+      name: 'Free',
+      headline: 'Get started with basic features',
+      description: 'For users who want to try out the platform',
+      priceSol: 0,
+      priceUsdc: 0,
       features: [
-        'HD video quality (720p)',
-        'Basic AI teleprompter',
-        '5 hours of stream storage',
-        'Limited analytics',
-        'Email support'
+        'Access to basic AI model (standard quality)',
+        'Limited rich response formatting (5 per day)',
+        'One active chat session at a time',
+        'Up to 5 saved notes',
+        'Basic text formatting',
+        'No rich content support in notes',
+        'Manual saves only',
+        'No categorization or tagging features',
+        'Basic customer support (48-hour response)',
+        'Research rewards program (basic level)'
       ]
     },
     {
       id: 'pro',
       name: 'Pro',
-      headline: 'For regular content creators',
-      description: 'Perfect for regular streamers who want to grow their audience',
-      priceSol: 0.25,
-      priceUsdc: 39,
+      headline: 'Advanced features for power users',
+      description: 'Perfect for users who want enhanced AI capabilities',
+      priceSol: 0.1,
+      priceUsdc: 15,
       mostPopular: true,
       features: [
-        'Full HD video quality (1080p)',
-        'Advanced AI teleprompter',
-        'Dual commentary styles',
-        'Unlimited stream storage',
-        'Detailed analytics dashboard',
-        'Priority email support',
-        'Custom branding options'
+        'Access to advanced AI models (Claude, GPT-4)',
+        'Unlimited messages per day',
+        'Rich response formatting (tables, code, cards)',
+        'Up to 10 concurrent chat sessions',
+        'Ability to export chat history',
+        'Unlimited saved notes',
+        'Advanced text formatting and markdown',
+        'Supports embedding images and links',
+        'Auto-save feature',
+        'Basic categorization with tags',
+        'Search functionality across notes',
+        'Priority customer support (24-hour response)',
+        'Enhanced research rewards (higher points)',
+        'Customizable UI themes',
+        'AI model selection option'
       ]
     },
     {
-      id: 'enterprise',
-      name: 'Enterprise',
-      headline: 'For professional creators',
-      description: 'Our complete solution for professional content creators',
-      priceSol: 0.5,
-      priceUsdc: 79,
+      id: 'max',
+      name: 'Max',
+      headline: 'Premium experience for professionals',
+      description: 'Our complete solution for professionals and teams',
+      priceSol: 0.4,
+      priceUsdc: 75,
       features: [
-        '4K video quality',
-        'Premium AI teleprompter',
-        'Custom AI model training',
-        'Multi-stream capability',
-        'Advanced analytics and reports',
-        'Dedicated support manager',
-        'White-label option',
-        'Early access to new features'
+        'Access to all AI models (including exclusive ones)',
+        'Priority API access (faster response times)',
+        'Premium response quality with visualizations',
+        'Unlimited concurrent chat sessions',
+        'Unlimited chat history retention',
+        'Advanced data visualization in responses',
+        'Custom AI configuration options',
+        'Unlimited notes with version history',
+        'Advanced formatting with templates',
+        'Collaborative notes with sharing options',
+        'Real-time sync across devices',
+        'Advanced organization with folders',
+        'Full-text search with filters',
+        'Export in multiple formats (PDF, HTML)',
+        'AI-powered note suggestions',
+        'Max support (dedicated account manager)',
+        'Highest research rewards tier',
+        'White-label option for embedded use',
+        'API access for custom integrations',
+        'Analytics dashboard for usage',
+        'Custom training for AI responses'
       ]
     }
   ];
@@ -280,7 +306,7 @@ function getMockUserSubscription(): UserSubscription | null {
       gracePeriodEnd: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(), // 18 days from now
       autoRenew: true,
       lastPayment: {
-        amount: '0.25',
+        amount: '0.1',
         currency: 'SOL',
         date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
         transactionId: 'mock_tx_' + Math.random().toString(36).substring(2, 15)
@@ -291,10 +317,10 @@ function getMockUserSubscription(): UserSubscription | null {
   return {
     id: 0,
     userId: 456,
-    tier: 'none',
-    status: 'none',
-    startDate: '',
-    expiresAt: null,
+    tier: 'free',
+    status: 'active',
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+    expiresAt: null, // Free tier doesn't expire
     gracePeriodEnd: null,
     autoRenew: false,
     lastPayment: null
