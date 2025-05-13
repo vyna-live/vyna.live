@@ -102,7 +102,12 @@ const DraggableParagraph = ({ id, content, index, moveParagraph }: {
           showAddToNote={false}
         />
       ) : (
-        content
+        // For non-rich content, we still want to use the RichContentRenderer to get proper heading formatting
+        <RichContentRenderer
+          content={content}
+          darkMode={true}
+          size="small"
+        />
       )}
     </div>
   );

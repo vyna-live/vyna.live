@@ -329,6 +329,8 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
   darkMode = true,
   size = 'medium'
 }) => {
+  // Check if we're running in a mobile environment to adjust styling
+  const isMobile = window.innerWidth < 768;
   // State to track if we need to fallback to text-only mode
   const [fallbackToText, setFallbackToText] = React.useState(false);
   
@@ -354,13 +356,13 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
               components={{
                 // Enhance h1 and h2 elements to be properly formatted
                 h1: ({node, ...props}) => (
-                  <h1 className="text-2xl font-bold mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]" {...props} />
+                  <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3 md:mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]`} {...props} />
                 ),
                 h2: ({node, ...props}) => (
-                  <h2 className="text-xl font-semibold mb-3 text-[#C9B18C] mt-6" {...props} />
+                  <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2 md:mb-3 text-[#C9B18C] mt-4 md:mt-6`} {...props} />
                 ),
                 h3: ({node, ...props}) => (
-                  <h3 className="text-lg font-semibold mb-2 text-[#B8A283] mt-4" {...props} />
+                  <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1.5 md:mb-2 text-[#B8A283] mt-3 md:mt-4`} {...props} />
                 ),
                 // @ts-ignore
                 code: ({node, inline, className, children, ...props}) => {
@@ -423,6 +425,16 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw, rehypeSanitize]}
                     components={{
+                      // Enhance h1 and h2 elements to be properly formatted
+                      h1: ({node, ...props}) => (
+                        <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3 md:mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]`} {...props} />
+                      ),
+                      h2: ({node, ...props}) => (
+                        <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2 md:mb-3 text-[#C9B18C] mt-4 md:mt-6`} {...props} />
+                      ),
+                      h3: ({node, ...props}) => (
+                        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1.5 md:mb-2 text-[#B8A283] mt-3 md:mt-4`} {...props} />
+                      ),
                       // @ts-ignore
                       code: ({node, inline, className, children, ...props}) => {
                         const match = /language-(\w+)/.exec(className || '');
