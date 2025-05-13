@@ -1137,9 +1137,9 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-5 text-[#999999]">
+                <div className="flex items-center gap-1 sm:gap-5 text-[#999999]">
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
