@@ -13,13 +13,15 @@ const rateLimiter = {
   tokensUsed: 0,
   
   canMakeRequest(estimatedTokens: number = 1000): boolean {
-    // Reset counter if it's been more than resetInterval
-    if (Date.now() - this.lastReset > this.resetInterval) {
-      this.tokensUsed = 0;
-      this.lastReset = Date.now();
-    }
+    // Temporarily disabled rate limiting - always return true
+    // Original implementation:
+    // if (Date.now() - this.lastReset > this.resetInterval) {
+    //   this.tokensUsed = 0;
+    //   this.lastReset = Date.now();
+    // }
+    // return (this.tokensUsed + estimatedTokens) <= this.tokens;
     
-    return (this.tokensUsed + estimatedTokens) <= this.tokens;
+    return true; // Always allow requests
   },
   
   trackUsage(tokens: number): void {
