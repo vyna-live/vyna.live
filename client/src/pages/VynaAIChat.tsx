@@ -807,7 +807,7 @@ export default function VynaAIChat() {
       {/* Mobile sidebar - shown as overlay when toggled */}
       {isMobile && (
         <div 
-          className={`fixed inset-0 bg-black ${showMobileSidebar ? 'opacity-70' : 'opacity-0 pointer-events-none'} z-50 transition-opacity duration-300`} 
+          className={`fixed inset-0 ${showMobileSidebar ? 'bg-black bg-opacity-70' : 'bg-transparent opacity-0 pointer-events-none'} z-50 transition-all duration-300`} 
           onClick={toggleSidebar}
         >
           <aside 
@@ -1021,7 +1021,7 @@ export default function VynaAIChat() {
                 )}
               </button>
             )}
-            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
+            <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium text-base md:text-lg">
               {currentTitle}
               {!isMobile && (
                 <button className="p-1 ml-2 text-[#999999] hover:text-white">
@@ -1040,17 +1040,18 @@ export default function VynaAIChat() {
                   key={message.id} 
                   className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
-                  {message.role === 'assistant' && (
+                  {/* Only show AI avatar on non-mobile view */}
+                  {message.role === 'assistant' && !isMobile && (
                     <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
                       <Sparkles size={16} color="#121212" />
                     </div>
                   )}
                   
                   <div 
-                    className={`rounded-xl px-4 py-3.5 ${
+                    className={`rounded-xl px-4 py-3.5 text-sm md:text-base ${
                       message.role === 'user' 
-                        ? 'bg-[#2A2A2A] text-white max-w-[85%] sm:max-w-[80%]' 
-                        : 'bg-[#232323] text-[#DDDDDD] max-w-[90%] sm:max-w-[80%]'
+                        ? 'bg-[#2A2A2A] text-white ml-auto mr-0 max-w-[85%] sm:max-w-[80%] md:ml-0' 
+                        : 'bg-[#232323] text-[#DDDDDD] mr-auto ml-0 max-w-[95%] sm:max-w-[90%] md:mr-0'
                     }`}
                   >
                     {message.role === 'user' ? (

@@ -862,7 +862,7 @@ export default function Notepad() {
       {/* Mobile sidebar - shown as overlay when toggled */}
       {isMobile && (
         <div 
-          className={`fixed inset-0 bg-black ${showMobileSidebar ? 'opacity-70' : 'opacity-0 pointer-events-none'} z-50 transition-opacity duration-300`} 
+          className={`fixed inset-0 ${showMobileSidebar ? 'bg-black bg-opacity-70' : 'bg-transparent opacity-0 pointer-events-none'} z-50 transition-all duration-300`} 
           onClick={toggleSidebar}
         >
           <aside 
