@@ -25,7 +25,8 @@ import {
   FilePlus,
   CirclePlus,
   MessageCirclePlus,
-  TrendingUp
+  TrendingUp,
+  Menu
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
@@ -113,8 +114,26 @@ export default function VynaAIChat() {
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const noteDropdownRef = useRef<HTMLDivElement>(null);
   
-  // Sidebar state for responsive design
+  // Sidebar and responsive design states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  
+  // Detect mobile view
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    checkMobileView();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobileView);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobileView);
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -787,8 +806,12 @@ export default function VynaAIChat() {
 
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden transition-all duration-300`}>
-        {/* Sidebar with spacing - hidden in fullscreen mode */}
-        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
+        {/* Sidebar - hidden on mobile by default, shown as overlay when toggled */}
+        <aside className={`
+          bg-[#1A1A1A] flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out
+          ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
+          ${sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} mr-4 rounded-lg
+        `}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               {/* Drawer/hamburger menu icon */}
@@ -870,7 +893,7 @@ export default function VynaAIChat() {
         </aside>
 
         {/* Main Chat Area with spacing - adjusts for fullscreen mode */}
-        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen || isMobileView ? 'w-full' : ''} transition-all duration-300`}>
           {/* Teleprompter overlay */}
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
