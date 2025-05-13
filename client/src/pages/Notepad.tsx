@@ -343,12 +343,22 @@ export default function Notepad() {
   const handleTabChange = (tab: 'vynaai' | 'notepad') => {
     setActiveTab(tab);
     if (tab === 'vynaai') {
-      // For mobile view, we need to be more careful with the animation
       if (isMobile) {
-        // First close the sidebar immediately
+        // For mobile, we need a clean transition without any animation artifacts
+        
+        // 1. First immediately hide both mobile and desktop sidebars to prevent any animations
+        document.body.classList.add('prevent-transitions');
         setShowMobileSidebar(false);
-        // Then navigate with a slight delay to avoid animation issues
-        setTimeout(() => setLocation("/ai-chat"), 10);
+        
+        // 2. Navigate to the new page after a very brief delay
+        setTimeout(() => {
+          setLocation("/ai-chat");
+          
+          // 3. Re-enable transitions after navigation
+          setTimeout(() => {
+            document.body.classList.remove('prevent-transitions');
+          }, 50);
+        }, 20);
       } else {
         setLocation("/ai-chat");
       }
@@ -850,10 +860,13 @@ export default function Notepad() {
 
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       {/* Mobile sidebar - shown as overlay when toggled */}
-      {isMobile && showMobileSidebar && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 z-50" onClick={toggleSidebar}>
+      {isMobile && (
+        <div 
+          className={`fixed inset-0 bg-black ${showMobileSidebar ? 'opacity-70' : 'opacity-0 pointer-events-none'} z-50 transition-opacity duration-300`} 
+          onClick={toggleSidebar}
+        >
           <aside 
-            className="w-[80%] max-w-[320px] h-full bg-[#1A1A1A] rounded-r-lg flex flex-col overflow-hidden shadow-xl transition-all duration-300 transform" 
+            className={`w-[80%] max-w-[320px] h-full bg-[#1A1A1A] rounded-r-lg flex flex-col overflow-hidden shadow-xl transition-all duration-300 transform ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full'}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Exact same layout as desktop sidebar */}
