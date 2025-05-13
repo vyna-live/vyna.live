@@ -1,0 +1,65 @@
+Suggested Subscription Plan Features
+Based on our current implementation of VynaAI with AI Chat and Notepad functionality, here are suggested features for each subscription tier:
+1. Free Tier
+
+oAccess to basic AI model (standard response quality)
+oLimited rich response formatting (including tables, code blocks, cards), 5per chat session daily
+oOne active chat session at a time
+
+
+oUp to 5 saved notes
+oBasic text formatting
+oNo rich content support
+oManual saves only
+oNo categorization or tagging features
+2. Pro Tier (15$ monthly)
+
+
+oAccess to advanced AI models (Claude, GPT-4)
+oUnlimited messages per day
+oRich response formatting (including tables, code blocks, cards)
+oUp to 10 concurrent chat sessions
+oAbility to export chat history
+oUnlimited saved notes
+oAdvanced text formatting and markdown support
+oSupports embedding images and links
+oAuto-save feature
+oBasic categorization with tags
+oSearch functionality across notes
+3. Max Tier ($75)
+
+
+oAccess to all AI models, including exclusive enterprise-only models
+oPriority API access (faster response times)
+oPremium response quality with enhanced visualizations
+oUnlimited concurrent chat sessions
+oUnlimited chat history retention
+oAdvanced data visualization in responses
+oCustom AI configuration options (tone, verbosity, etc.)
+
+
+oUnlimited notes with version history
+oAdvanced formatting with templates
+oCollaborative notes with sharing options
+oReal-time sync across devices
+oAdvanced organization with folders and nested tags
+oFull-text search with filters
+oExport in multiple formats (PDF, HTML, Markdown)
+oAI-powered note suggestions and enhancements
+Additional Benefits by Tier
+Free
+Basic customer support (email only, 48-hour response time)
+Research rewards program participation (basic level)
+Pro
+Priority customer support (email, 24-hour response time)
+Enhanced research rewards program (higher points multiplier)
+Customizable UI themes
+AI model selection option
+Enterprise
+Max support (dedicated account manager)
+Highest research rewards program tier
+White-label option for embedded use
+API access for custom integrations
+Analytics dashboard for usage statistics
+Custom training for AI responses
+Would you like to adjust any of these features before we implement the subscription system?

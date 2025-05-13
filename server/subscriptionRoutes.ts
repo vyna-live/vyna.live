@@ -12,51 +12,80 @@ import { ensureAuthenticated } from './auth';
 // Define subscription tiers (same as client-side but defined here for server use)
 const subscriptionTiers = [
   {
-    id: 'basic',
-    name: 'Basic',
-    headline: 'For casual streamers',
-    description: 'Get started with the essential features to enhance your streams',
-    priceSol: 0.05,
-    priceUsdc: 5,
+    id: 'free',
+    name: 'Free',
+    headline: 'Get started with basic features',
+    description: 'Experience VynaAI with essential features for casual users.',
+    priceSol: 0,
+    priceUsdc: 0,
     features: [
-      'AI Assistant with Standard Models',
-      'Up to 5 saved sessions per month',
-      'Basic streaming features',
-      'Standard quality video'
+      'Access to basic AI model (standard response quality)',
+      'Limited rich response formatting (5 per chat session daily)',
+      'One active chat session at a time',
+      'Up to 5 saved notes',
+      'Basic text formatting',
+      'Manual saves only',
+      'No rich content support',
+      'No categorization or tagging features',
+      'Basic customer support (email only, 48-hour response time)',
+      'Research rewards program participation (basic level)'
     ]
   },
   {
     id: 'pro',
     name: 'Pro',
-    headline: 'For growing creators',
-    description: 'Take your content to the next level with advanced features',
-    priceSol: 0.25,
-    priceUsdc: 25,
+    headline: 'For power users and creators',
+    description: 'Enhance your experience with advanced features and capabilities.',
+    priceSol: 0.15,
+    priceUsdc: 15,
     features: [
-      'Advanced AI with premium models',
-      'Unlimited saved sessions',
-      'Priority streaming slots',
-      'HD quality video',
-      'Custom stream branding',
-      'Priority customer support'
+      'Access to advanced AI models (Claude, GPT-4)',
+      'Unlimited messages per day',
+      'Rich response formatting (tables, code blocks, cards)',
+      'Up to 10 concurrent chat sessions',
+      'Ability to export chat history',
+      'Unlimited saved notes',
+      'Advanced text formatting and markdown support',
+      'Supports embedding images and links',
+      'Auto-save feature',
+      'Basic categorization with tags',
+      'Search functionality across notes',
+      'Priority customer support (24-hour response time)',
+      'Enhanced research rewards program (higher points multiplier)',
+      'Customizable UI themes',
+      'AI model selection option'
     ],
     mostPopular: true
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    headline: 'For professional content creators',
-    description: 'Unlock the full potential with our premium offering',
-    priceSol: 1,
-    priceUsdc: 100,
+    id: 'max',
+    name: 'Max',
+    headline: 'For professionals and teams',
+    description: 'Unlock the full potential with our most comprehensive plan.',
+    priceSol: 0.75,
+    priceUsdc: 75,
     features: [
-      'Exclusive AI models access',
-      'Unlimited everything',
-      '4K video quality',
-      'Advanced analytics dashboard',
-      'White-labeled solution',
-      'Dedicated account manager',
-      'Custom integration support'
+      'Access to all AI models, including exclusive Max-only models',
+      'Priority API access (faster response times)',
+      'Premium response quality with enhanced visualizations',
+      'Unlimited concurrent chat sessions',
+      'Unlimited chat history retention',
+      'Advanced data visualization in responses',
+      'Custom AI configuration options (tone, verbosity, etc.)',
+      'Unlimited notes with version history',
+      'Advanced formatting with templates',
+      'Collaborative notes with sharing options',
+      'Real-time sync across devices',
+      'Advanced organization with folders and nested tags',
+      'Full-text search with filters',
+      'Export in multiple formats (PDF, HTML, Markdown)',
+      'AI-powered note suggestions and enhancements',
+      'Max support (dedicated account manager)',
+      'Highest research rewards program tier',
+      'White-label option for embedded use',
+      'API access for custom integrations',
+      'Analytics dashboard for usage statistics',
+      'Custom training for AI responses'
     ]
   }
 ];
@@ -67,14 +96,14 @@ function calculateExpirationDate(tierId: string): Date {
   let durationInDays = 30; // Default to 30 days
 
   switch (tierId) {
-    case 'basic':
-      durationInDays = 30;
+    case 'free':
+      durationInDays = 30; // Free tier also has a duration, used for tracking
       break;
     case 'pro':
       durationInDays = 30;
       break;
-    case 'enterprise':
-      durationInDays = 90;
+    case 'max':
+      durationInDays = 30;
       break;
     default:
       durationInDays = 30;
@@ -198,13 +227,18 @@ export async function createUserSubscription(req: Request, res: Response) {
     const { tierId, paymentMethod, amount, transactionSignature } = req.body;
     
     // Validate tier ID
-    if (!['basic', 'pro', 'enterprise'].includes(tierId)) {
+    if (!['free', 'pro', 'max'].includes(tierId)) {
       return res.status(400).json({ error: 'Invalid subscription tier' });
     }
     
     // Validate payment method
     if (!['sol', 'usdc'].includes(paymentMethod)) {
       return res.status(400).json({ error: 'Invalid payment method' });
+    }
+    
+    // Special case for free tier
+    if (tierId === 'free' && (paymentMethod !== 'sol' || parseFloat(amount) !== 0)) {
+      return res.status(400).json({ error: 'Free tier does not require payment' });
     }
     
     // Special case: 'ALREADY_PROCESSED' signature 
@@ -411,19 +445,33 @@ export function registerSubscriptionRoutes(app: express.Express) {
   // Get subscription tiers and benefits
   app.get('/api/subscription/tiers', getSubscriptionTierBenefits);
   
-  // Get user's subscription status
+  // Get user's subscription status (support both endpoints for compatibility)
+  app.get('/api/subscription/status', ensureAuthenticated, getUserSubscription);
   app.get('/api/subscription', ensureAuthenticated, getUserSubscription);
   
-  // Create a new subscription
+  // Create a new subscription (support both endpoints for compatibility)
+  app.post('/api/subscription/create', ensureAuthenticated, createUserSubscription);
   app.post('/api/subscription', ensureAuthenticated, createUserSubscription);
   
   // Cancel a subscription
   app.delete('/api/subscription/:subscriptionId', ensureAuthenticated, cancelUserSubscription);
+  app.post('/api/subscription/cancel', ensureAuthenticated, (req, res) => {
+    const subscriptionId = req.body.subscriptionId;
+    if (!subscriptionId) {
+      return res.status(400).json({ error: 'Subscription ID is required' });
+    }
+    req.params.subscriptionId = subscriptionId;
+    return cancelUserSubscription(req, res);
+  });
   
   // Toggle auto-renewal
-  app.patch(
-    '/api/subscription/:subscriptionId/renewal',
-    ensureAuthenticated,
-    toggleSubscriptionRenewal
-  );
+  app.patch('/api/subscription/:subscriptionId/renewal', ensureAuthenticated, toggleSubscriptionRenewal);
+  app.post('/api/subscription/toggle-renewal', ensureAuthenticated, (req, res) => {
+    const subscriptionId = req.body.subscriptionId;
+    if (!subscriptionId) {
+      return res.status(400).json({ error: 'Subscription ID is required' });
+    }
+    req.params.subscriptionId = subscriptionId;
+    return toggleSubscriptionRenewal(req, res);
+  });
 }
