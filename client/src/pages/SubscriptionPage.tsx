@@ -298,7 +298,114 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* No need for separate Free tier section as it's included in the tier list now */}
+        {/* Free tier */}
+        <div className="mt-12 p-6 rounded-lg border border-neutral-800 bg-neutral-900">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div className="w-full">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold">Free Plan</h3>
+                  <p className="text-neutral-400 mt-1">Get started with basic features</p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white cursor-default hidden sm:flex"
+                  disabled
+                >
+                  Current Plan
+                </Button>
+              </div>
+              
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-medium mb-3">AI Chat</h4>
+                  <ul className="space-y-2.5">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">Access to basic AI model</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">Limited rich response formatting (5 per chat session daily)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">One active chat session at a time</span>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-3">Notepad</h4>
+                  <ul className="space-y-2.5">
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">Up to 5 saved notes</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">Basic text formatting</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                      <span className="text-sm">Manual saves only</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              {/* Show More button */}
+              <div className="mt-4">
+                {expandedTiers['free'] && (
+                  <div className="pt-4 border-t border-neutral-800 mt-2">
+                    <h4 className="font-medium mb-3">Additional Benefits</h4>
+                    <ul className="space-y-2.5">
+                      <li className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                        <span className="text-sm">Basic customer support (email only, 48-hour response time)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                        <span className="text-sm">Research rewards program participation (basic level)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                        <span className="text-sm">No rich content support in notes</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
+                        <span className="text-sm">No categorization or tagging features</span>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+                
+                <button 
+                  onClick={() => setExpandedTiers(prev => ({...prev, free: !prev.free}))}
+                  className="w-full md:w-auto md:mx-auto md:px-4 mt-3 py-1.5 text-xs flex items-center justify-center gap-1 text-neutral-400 hover:text-white rounded-md border border-neutral-800 hover:border-neutral-700 transition-colors"
+                >
+                  {expandedTiers.free ? (
+                    <>
+                      <ChevronUp className="h-3.5 w-3.5" />
+                      Show Less
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                      Show More Features
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white cursor-default sm:hidden w-full mt-2"
+              disabled
+            >
+              Current Plan
+            </Button>
+          </div>
+        </div>
 
         {/* Privacy note */}
         <div className="mt-8 text-center text-sm text-neutral-500 max-w-2xl mx-auto">
