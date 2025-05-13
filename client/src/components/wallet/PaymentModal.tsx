@@ -347,9 +347,9 @@ export function PaymentModal({
                 </div>
                 
                 <div className="flex items-center justify-center">
-                  <div className="bg-white rounded-lg p-2 w-[200px] h-[200px]">
+                  <div className=" rounded-lg p-2 w-[200px] h-[200px]">
                     <img 
-                      src="/Untitled.png" 
+                      src="src/assets/qrcode.png" 
                       alt="Payment QR Code" 
                       className="w-full h-full object-contain"
                     />
