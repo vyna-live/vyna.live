@@ -33,6 +33,7 @@ import RichContentRenderer from "@/components/RichContentRenderer";
 import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import Teleprompter from "@/components/Teleprompter";
 import "./VynaAIChat.css";
 
@@ -82,6 +83,7 @@ export default function VynaAIChat() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [chatSessions, setChatSessions] = useState<AiChatSession[]>([]);
   const [aiChats, setAiChats] = useState<AiChat[]>([]); // For legacy support
@@ -876,22 +878,26 @@ export default function VynaAIChat() {
           
           {/* Chat Header - ensure it's visible in fullscreen mode */}
           <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg relative z-[10]">
-            <button 
-              onClick={toggleFullscreen}
-              className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {isFullscreen ? (
-                <Minimize size={20} className="animate-pulse" />
-              ) : (
-                <Maximize size={20} />
-              )}
-            </button>
+            {!isMobile && (
+              <button 
+                onClick={toggleFullscreen}
+                className={`p-2 ${isFullscreen ? 'text-white' : 'text-[#999999]'} hover:text-white transition-colors duration-200`}
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                {isFullscreen ? (
+                  <Minimize size={20} className="animate-pulse" />
+                ) : (
+                  <Maximize size={20} />
+                )}
+              </button>
+            )}
             <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
               {currentTitle}
-              <button className="p-1 ml-2 text-[#999999] hover:text-white">
-                <ChevronDown size={16} />
-              </button>
+              {!isMobile && (
+                <button className="p-1 ml-2 text-[#999999] hover:text-white">
+                  <ChevronDown size={16} />
+                </button>
+              )}
             </h2>
           </div>
           
