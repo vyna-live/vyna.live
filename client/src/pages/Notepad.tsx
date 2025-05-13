@@ -884,8 +884,8 @@ export default function Notepad() {
                   <button 
                     className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                     onClick={() => {
+                      setShowMobileSidebar(false); // Close sidebar immediately
                       handleTabChange('notepad');
-                      toggleSidebar();
                     }}
                   >
                     <FileText size={12} className="mr-1" />
