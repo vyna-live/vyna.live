@@ -162,7 +162,7 @@ const TableRenderer: React.FC<{ data: any[], darkMode?: boolean }> = ({ data, da
     const tableStyles = darkMode ? {
       table: "min-w-full bg-[#1E1E1E] border border-[#444] text-white",
       header: "bg-[#252525]",
-      headerCell: "px-4 py-2 text-left text-[#DCC5A2] border-b border-[#444]",
+      headerCell: "px-4 py-2 text-left text-[#E8B85B] border-b border-[#444]",
       rowEven: "bg-[#1E1E1E]",
       rowOdd: "bg-[#252525]",
       cell: "px-4 py-2 border-b border-[#444]"
@@ -267,7 +267,7 @@ const InfoCardRenderer: React.FC<{
       <div className="flex items-start">
         {icon && <div className="mr-3">{icon}</div>}
         <div className="w-full">
-          <h4 className={`font-bold mb-1 text-sm md:text-base ${darkMode ? 'text-[#DCC5A2]' : 'text-gray-900'}`}>
+          <h4 className={`font-bold mb-1 text-sm md:text-base ${darkMode ? 'text-[#E8B85B]' : 'text-gray-900'}`}>
             {title}
           </h4>
           <div className={`${scheme.content} text-xs md:text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
@@ -449,16 +449,16 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                         );
                       },
                       h1: ({node, ...props}) => (
-                        <h1 className="text-xl md:text-2xl font-bold mb-3 text-[#DCC5A2] mt-4" {...props} />
+                        <h1 className="text-xl md:text-2xl font-bold mb-3 text-[#E8B85B] mt-4" {...props} />
                       ),
                       h2: ({node, ...props}) => (
-                        <h2 className="text-lg md:text-xl font-semibold mb-2 text-[#DCC5A2] mt-3" {...props} />
+                        <h2 className="text-lg md:text-xl font-semibold mb-2 text-[#E8B85B] mt-3" {...props} />
                       ),
                       h3: ({node, ...props}) => (
-                        <h3 className="text-base md:text-lg font-medium mb-2 text-[#DCC5A2] mt-2" {...props} />
+                        <h3 className="text-base md:text-lg font-medium mb-2 text-[#E8B85B] mt-2" {...props} />
                       ),
                       h4: ({node, ...props}) => (
-                        <h4 className="text-sm md:text-base font-medium mb-1 text-[#DCC5A2] mt-2" {...props} />
+                        <h4 className="text-sm md:text-base font-medium mb-1 text-[#E8B85B] mt-2" {...props} />
                       ),
                       p: ({node, ...props}) => (
                         <p className="text-xs md:text-sm mb-4" {...props} />
