@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
@@ -336,35 +337,34 @@ export function PaymentModal({
             {paymentTab === 'qrcode' && (
               <div className="py-4 space-y-4">
                 <div className="text-center">
-                  <h3 className="font-medium">Mobile Payment</h3>
-                  <p className="text-sm text-neutral-400 mt-1">
+                  <h3 className="font-medium mb-1">Mobile Payment</h3>
+                  <p className="text-sm text-neutral-400">
                     Scan or copy this payment address to pay from your mobile wallet
                   </p>
-                  <p className="font-medium text-[#E6E2DA] mt-2">
+                  <p className="font-medium mt-2">
                     {paymentMethod === 'sol' ? selectedTier.priceSol : selectedTier.priceUsdc} {paymentMethod === 'sol' ? 'SOL' : 'USDC'}
                   </p>
                 </div>
                 
-                <div className="flex items-center justify-center my-3">
-                  <div className="bg-white rounded-md p-0 w-[200px] h-[200px] flex items-center justify-center overflow-hidden">
+                <div className="flex items-center justify-center">
+                  <div className="bg-white rounded-lg p-2 w-[200px] h-[200px]">
                     <img 
-                      src="/qr-payment.png" 
+                      src="/Untitled.png" 
                       alt="Payment QR Code" 
-                      width="200" 
-                      height="200"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 </div>
                 
-                <div className="mx-auto">
-                  <div className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded-md border border-[#333] overflow-hidden">
+                <div className="mx-auto px-1">
+                  <div className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded-lg border border-[#333] overflow-hidden">
                     <div className="truncate text-sm text-neutral-300 pl-2">
                       HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU
                     </div>
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      className="h-8 px-2 text-xs"
+                      className="h-8 px-3 text-xs"
                       onClick={() => {
                         navigator.clipboard.writeText("HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU");
                         toast({
@@ -374,19 +374,15 @@ export function PaymentModal({
                       }}
                     >
                       <Copy className="h-4 w-4" />
-                      Copy
                     </Button>
                   </div>
                 </div>
                 
-                <div className="text-center text-xs text-neutral-400 mt-3">
-                  <p>
-                    Payment must come from your connected wallet address:
-                    <span className="text-[#E6E2DA] font-mono block mt-1">
-                      {wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet?.publicKey?.length - 4)}
-                    </span>
+                <div className="text-center text-xs text-neutral-400 px-1">
+                  <p className="mb-1">
+                    Payment must come from your connected wallet address: <span className="text-white font-mono">{wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet?.publicKey?.length - 4)}</span>
                   </p>
-                  <p className="mt-2">
+                  <p>
                     The system will automatically detect your payment and activate your subscription.
                   </p>
                 </div>
