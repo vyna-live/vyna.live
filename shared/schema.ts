@@ -3,6 +3,31 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Custom types
+export type MobileSessionStatus = 'pending' | 'connected' | 'completed' | 'expired';
+export type WalletProvider = 'phantom' | 'solflare';
+export type PaymentMethod = 'sol' | 'usdc';
+export type TransactionStatus = 'pending' | 'completed' | 'failed';
+
+// Mobile Sessions Table
+export const mobileSessions = pgTable("mobile_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull().unique(),
+  status: text("status").notNull().$type<MobileSessionStatus>().default('pending'),
+  publicKey: text("public_key"),
+  provider: text("provider").$type<WalletProvider>(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  transactionData: jsonb("transaction_data")
+});
+
+// Mobile session types
+export type MobileSession = typeof mobileSessions.$inferSelect;
+export type InsertMobileSession = typeof mobileSessions.$inferInsert;
+
+// Define insert schema
+export const insertMobileSessionSchema = createInsertSchema(mobileSessions);
+
 // Table Definitions
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

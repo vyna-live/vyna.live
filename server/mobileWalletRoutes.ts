@@ -1,7 +1,13 @@
 import express, { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
 import { db } from './db';
-import { mobileSessions } from '@shared/schema';
+import { 
+  mobileSessions, 
+  MobileSessionStatus,
+  WalletProvider, 
+  PaymentMethod, 
+  TransactionStatus 
+} from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 // In-memory session store for development
