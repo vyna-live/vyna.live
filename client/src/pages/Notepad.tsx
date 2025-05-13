@@ -927,9 +927,12 @@ export default function Notepad() {
                         <div className="font-medium text-white truncate max-w-[85%]">
                           {note.title || 'Untitled note'}
                         </div>
-                        <button
+                        <button 
                           className="text-[#777777] hover:text-white p-1"
-                          onClick={(e) => toggleDropdown(e, note.id, 'noteOptionsDropdown')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleNoteOptionsDropdown(note.id);
+                          }}
                         >
                           <MoreVertical size={16} />
                         </button>
@@ -1062,21 +1065,34 @@ export default function Notepad() {
         
         </aside>
 
-        {/* Main Note Area - adjusts for fullscreen mode */}
-        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
+        {/* Main Note Area - adjusts for fullscreen mode and mobile */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg z-[1] ${isFullscreen || isMobile ? 'w-full' : ''} transition-all duration-300`}>
           {/* Note Header */}
           <div className="h-[50px] border-b border-[#202020] bg-black flex items-center px-6 rounded-t-lg">
-            <button 
-              onClick={toggleFullscreen}
-              className="p-2 text-[#999999] hover:text-white"
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-            >
-              {isFullscreen ? (
-                <Minimize size={18} />
-              ) : (
-                <Maximize size={18} />
-              )}
-            </button>
+            {isMobile ? (
+              <button 
+                onClick={toggleSidebar}
+                className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
+                title="Toggle sidebar"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                  <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            ) : (
+              <button 
+                onClick={toggleFullscreen}
+                className="p-2 text-[#999999] hover:text-white"
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                {isFullscreen ? (
+                  <Minimize size={18} />
+                ) : (
+                  <Maximize size={18} />
+                )}
+              </button>
+            )}
             <h2 className="flex-1 text-center flex items-center justify-center text-white font-medium">
               {currentNote ? currentNote.title : "Notepad"}
               <button className="p-1 ml-2 text-[#999999] hover:text-white">
