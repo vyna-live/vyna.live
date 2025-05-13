@@ -183,17 +183,17 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
               rehypePlugins={[rehypeRaw, rehypeSanitize]}
               components={{
                 // Enhance h1 and h2 elements to be properly formatted
-                h1: ({node, ...props}) => (
+                h1: (props) => (
                   <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3 md:mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]`} {...props} />
                 ),
-                h2: ({node, ...props}) => (
+                h2: (props) => (
                   <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2 md:mb-3 text-[#C9B18C] mt-4 md:mt-6`} {...props} />
                 ),
-                h3: ({node, ...props}) => (
+                h3: (props) => (
                   <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1.5 md:mb-2 text-[#B8A283] mt-3 md:mt-4`} {...props} />
                 ),
                 // @ts-ignore
-                code: ({node, inline, className, children, ...props}) => {
+                code: ({inline, className, children, ...props}) => {
                   const match = /language-(\w+)/.exec(className || '');
                   return !inline && match ? (
                     <SyntaxHighlighter
@@ -230,17 +230,17 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
               rehypePlugins={[rehypeRaw, rehypeSanitize]}
               components={{
                 // Enhance h1 and h2 elements to be properly formatted
-                h1: ({node, ...props}) => (
+                h1: (props) => (
                   <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3 md:mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]`} {...props} />
                 ),
-                h2: ({node, ...props}) => (
+                h2: (props) => (
                   <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2 md:mb-3 text-[#C9B18C] mt-4 md:mt-6`} {...props} />
                 ),
-                h3: ({node, ...props}) => (
+                h3: (props) => (
                   <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1.5 md:mb-2 text-[#B8A283] mt-3 md:mt-4`} {...props} />
                 ),
                 // @ts-ignore
-                code: ({node, inline, className, children, ...props}) => {
+                code: ({inline, className, children, ...props}) => {
                   const match = /language-(\w+)/.exec(className || '');
                   return !inline && match ? (
                     <SyntaxHighlighter
@@ -278,7 +278,7 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
               rehypePlugins={[rehypeRaw, rehypeSanitize]}
               components={{
                 // @ts-ignore
-                code: ({node, inline, className, children, ...props}) => {
+                code: ({inline, className, children, ...props}) => {
                   const match = /language-(\w+)/.exec(className || '');
                   return !inline && match ? (
                     <SyntaxHighlighter
@@ -439,11 +439,18 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
     }
     
     return (
-      <div className="rich-content">
+      <div className={`rich-content ${getTextSizeClass()} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
         <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
-          <strong>Error:</strong> Something went wrong while rendering content.
+          <strong>Error:</strong> Could not render rich content. Showing text-only version.
         </div>
-        <pre className="whitespace-pre-wrap">{content}</pre>
+        <div className="markdown-content">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
       </div>
     );
   }
