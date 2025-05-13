@@ -335,64 +335,36 @@ export function PaymentModal({
             )}
               
             {paymentTab === 'qrcode' && (
-              <div className="py-4 space-y-4">
-                <div className="text-center">
-                  <h3 className="font-medium mb-1">Mobile Payment</h3>
-                  <p className="text-sm text-neutral-400">
-                    Scan or copy this payment address to pay from your mobile wallet
-                  </p>
-                  <p className="font-medium mt-2">
-                    {paymentMethod === 'sol' ? selectedTier.priceSol : selectedTier.priceUsdc} {paymentMethod === 'sol' ? 'SOL' : 'USDC'}
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-center">
-                  <div className="bg-white rounded-lg p-2 w-[200px] h-[200px]">
+              <div className="pt-3">
+                <div className="flex justify-center py-3">
+                  <div className="w-[260px] h-[260px] rounded-lg bg-white overflow-hidden">
                     <img 
                       src="/Untitled.png" 
                       alt="Payment QR Code" 
-                      className="w-full h-full object-contain"
+                      className="w-full h-full"
                     />
                   </div>
                 </div>
                 
-                <div className="mx-auto px-1">
-                  <div className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded-lg border border-[#333] overflow-hidden">
-                    <div className="truncate text-sm text-neutral-300 pl-2">
-                      HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU
-                    </div>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-8 px-3 text-xs"
-                      onClick={() => {
-                        navigator.clipboard.writeText("HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU");
-                        toast({
-                          title: "Address copied",
-                          description: "Payment address copied to clipboard",
-                        });
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                <div className="flex items-center bg-[#1a1a1a] p-3 mx-0 my-3 rounded-lg border border-[#333] overflow-hidden">
+                  <div className="truncate text-sm text-neutral-300 px-2 flex-1">
+                    HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU
                   </div>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-8 px-2"
+                    onClick={() => {
+                      navigator.clipboard.writeText("HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU");
+                      toast({
+                        title: "Address copied",
+                        description: "Payment address copied to clipboard",
+                      });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
                 </div>
-                
-                <div className="text-center text-xs text-neutral-400 px-1">
-                  <p className="mb-1">
-                    Payment must come from your connected wallet address: <span className="text-white font-mono">{wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet?.publicKey?.length - 4)}</span>
-                  </p>
-                  <p>
-                    The system will automatically detect your payment and activate your subscription.
-                  </p>
-                </div>
-                
-                {error && (
-                  <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
                 
                 <div className="flex justify-center mt-4">
                   <Button 
