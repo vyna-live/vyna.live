@@ -21,6 +21,7 @@ export default function SubscriptionPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier | null>(null);
   const [expandedTiers, setExpandedTiers] = useState<Record<string, boolean>>({});
+  const [detailTier, setDetailTier] = useState<string>('free');
 
   // Fetch subscription tiers
   const { 
@@ -268,28 +269,44 @@ export default function SubscriptionPage() {
 
                   <div className="mt-8">
                     {isTierActive(tier.id) ? (
-                      <Button className="w-full bg-green-600 hover:bg-green-700 cursor-default text-white" disabled>
-                        Current Plan
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button className="w-full bg-green-600 hover:bg-green-700 cursor-default text-white" disabled>
+                          Current Plan
+                        </Button>
+                        <Button
+                          onClick={() => setDetailTier(tier.id)}
+                          className="w-full bg-transparent hover:bg-neutral-800 text-white border border-neutral-700"
+                        >
+                          View Details
+                        </Button>
+                      </div>
                     ) : (
-                      <Button
-                        onClick={() => handleSelectTier(tier)}
-                        disabled={isSubscribing}
-                        className={`w-full ${
-                          tier.mostPopular
-                            ? 'bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black'
-                            : 'bg-neutral-800 hover:bg-neutral-700 text-white'
-                        }`}
-                      >
-                        {isSubscribing && selectedTier?.id === tier.id ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          'Subscribe'
-                        )}
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          onClick={() => handleSelectTier(tier)}
+                          disabled={isSubscribing}
+                          className={`w-full ${
+                            tier.mostPopular
+                              ? 'bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black'
+                              : 'bg-neutral-800 hover:bg-neutral-700 text-white'
+                          }`}
+                        >
+                          {isSubscribing && selectedTier?.id === tier.id ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            'Subscribe'
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => setDetailTier(tier.id)}
+                          className="w-full bg-transparent hover:bg-neutral-800 text-white border border-neutral-700"
+                        >
+                          View Details
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -298,113 +315,134 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* Free tier */}
+        {/* Selected Plan Details */}
         <div className="mt-12 p-6 rounded-lg border border-neutral-800 bg-neutral-900">
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div className="w-full">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-bold">Free Plan</h3>
-                  <p className="text-neutral-400 mt-1">Get started with basic features</p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white cursor-default hidden sm:flex"
-                  disabled
-                >
-                  Current Plan
-                </Button>
-              </div>
-              
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-3">AI Chat</h4>
-                  <ul className="space-y-2.5">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span className="text-sm">Access to basic AI model</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span className="text-sm">Limited rich response formatting (5 per chat session daily)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span className="text-sm">One active chat session at a time</span>
-                    </li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-3">Notepad</h4>
-                  <ul className="space-y-2.5">
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span className="text-sm">Up to 5 saved notes</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span className="text-sm">Basic text formatting</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                      <span className="text-sm">Manual saves only</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              {/* Show More button */}
-              <div className="mt-4">
-                {expandedTiers['free'] && (
-                  <div className="pt-4 border-t border-neutral-800 mt-2">
-                    <h4 className="font-medium mb-3">Additional Benefits</h4>
-                    <ul className="space-y-2.5">
-                      <li className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">Basic customer support (email only, 48-hour response time)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">Research rewards program participation (basic level)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">No rich content support in notes</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-green-500 mt-0.5" />
-                        <span className="text-sm">No categorization or tagging features</span>
-                      </li>
+          {tiers?.map((tier) => (
+            tier.id === detailTier && (
+              <div key={`detail-${tier.id}`} className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="w-full">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        {tier.name} Plan
+                        {tier.id === 'max' && <Star className="h-4 w-4 text-yellow-500" />}
+                      </h3>
+                      <p className="text-neutral-400 mt-1">{tier.headline}</p>
+                    </div>
+                    
+                    <div className="hidden sm:flex items-center gap-2">
+                      {tier.id !== 'free' && (
+                        <div className="text-right">
+                          <div className="text-xl font-semibold">{tier.priceSol} SOL</div>
+                          <div className="text-xs text-neutral-400">per month</div>
+                        </div>
+                      )}
+                      
+                      {isTierActive(tier.id) ? (
+                        <Button
+                          variant="ghost"
+                          className="text-green-500 hover:text-green-400 cursor-default"
+                          disabled
+                        >
+                          <Check className="h-4 w-4 mr-1.5" />
+                          Current Plan
+                        </Button>
+                      ) : tier.id !== 'free' && (
+                        <Button
+                          onClick={() => handleSelectTier(tier)}
+                          className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
+                        >
+                          Subscribe
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold mb-3 text-[#E6E2DA] border-b border-neutral-800 pb-2">AI Chat Features</h4>
+                      <ul className="space-y-2.5">
+                        {tier.features.filter(f => 
+                          f.includes('AI model') || 
+                          f.includes('message') || 
+                          f.includes('chat') || 
+                          f.includes('response') ||
+                          f.includes('visualization')
+                        ).map((feature, index) => (
+                          <li key={`chat-${index}`} className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold mb-3 text-[#E6E2DA] border-b border-neutral-800 pb-2">Notepad Features</h4>
+                      <ul className="space-y-2.5">
+                        {tier.features.filter(f => 
+                          f.includes('note') || 
+                          f.includes('format') || 
+                          f.includes('text') || 
+                          f.includes('embed') ||
+                          f.includes('tag') ||
+                          f.includes('search') ||
+                          f.includes('export')
+                        ).map((feature, index) => (
+                          <li key={`notepad-${index}`} className="flex items-start gap-2">
+                            <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <h4 className="font-semibold mb-3 text-[#E6E2DA] border-b border-neutral-800 pb-2">Additional Benefits</h4>
+                    <ul className="space-y-2.5 mt-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2.5">
+                      {tier.features.filter(f => 
+                        f.includes('support') || 
+                        f.includes('reward') || 
+                        f.includes('theme') || 
+                        f.includes('API') ||
+                        f.includes('dashboard') ||
+                        f.includes('white-label') ||
+                        f.includes('training')
+                      ).map((feature, index) => (
+                        <li key={`benefit-${index}`} className="flex items-start gap-2">
+                          <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
-                )}
-                
-                <button 
-                  onClick={() => setExpandedTiers(prev => ({...prev, free: !prev.free}))}
-                  className="w-full md:w-auto md:mx-auto md:px-4 mt-3 py-1.5 text-xs flex items-center justify-center gap-1 text-neutral-400 hover:text-white rounded-md border border-neutral-800 hover:border-neutral-700 transition-colors"
-                >
-                  {expandedTiers.free ? (
-                    <>
-                      <ChevronUp className="h-3.5 w-3.5" />
-                      Show Less
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-3.5 w-3.5" />
-                      Show More Features
-                    </>
-                  )}
-                </button>
+                  
+                  {/* Mobile View Subscription Button */}
+                  <div className="sm:hidden mt-6">
+                    {isTierActive(tier.id) ? (
+                      <Button
+                        variant="ghost"
+                        className="w-full text-green-500 hover:text-green-400 cursor-default border border-green-900/30"
+                        disabled
+                      >
+                        <Check className="h-4 w-4 mr-1.5" />
+                        Current Plan
+                      </Button>
+                    ) : tier.id !== 'free' && (
+                      <Button
+                        onClick={() => handleSelectTier(tier)}
+                        className="w-full bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
+                      >
+                        Subscribe to {tier.name} - {tier.priceSol} SOL/month
+                      </Button>
+                    )}
+                  </div>
+                  
+                </div>
               </div>
-            </div>
-            <Button
-              variant="outline"
-              className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white cursor-default sm:hidden w-full mt-2"
-              disabled
-            >
-              Current Plan
-            </Button>
-          </div>
+            )
+          ))}
         </div>
 
         {/* Privacy note */}

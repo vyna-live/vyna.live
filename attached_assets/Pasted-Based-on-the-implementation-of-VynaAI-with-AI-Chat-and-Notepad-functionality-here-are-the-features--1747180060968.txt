@@ -1,0 +1,70 @@
+Based on the implementation of VynaAI with AI Chat and Notepad functionality, here are the features for each subscription tier:
+
+1. Free Tier
+AI Chat
+
+Access to basic AI model (standard response quality)
+Limited rich response formatting (including tables, code blocks, cards), 5 per chat session daily
+One active chat session at a time
+Notepad
+
+Up to 5 saved notes
+Basic text formatting
+No rich content support
+Manual saves only
+No categorization or tagging features
+2. Pro Tier ($15 monthly)
+AI Chat
+
+Access to advanced AI models (Claude, GPT-4)
+Unlimited messages per day
+Rich response formatting (including tables, code blocks, cards)
+Up to 10 concurrent chat sessions
+Ability to export chat history
+Notepad
+
+Unlimited saved notes
+Advanced text formatting and markdown support
+Supports embedding images and links
+Auto-save feature
+Basic categorization with tags
+Search functionality across notes
+3. Max Tier ($75)
+AI Chat
+
+Access to all AI models, including exclusive enterprise-only models
+Priority API access (faster response times)
+Premium response quality with enhanced visualizations
+Unlimited concurrent chat sessions
+Unlimited chat history retention
+Advanced data visualization in responses
+Custom AI configuration options (tone, verbosity, etc.)
+Notepad
+
+Unlimited notes with version history
+Advanced formatting with templates
+Collaborative notes with sharing options
+Real-time sync across devices
+Advanced organization with folders and nested tags
+Full-text search with filters
+Export in multiple formats (PDF, HTML, Markdown)
+AI-powered note suggestions and enhancements
+Additional Benefits by Tier
+Free
+
+Basic customer support (email only, 48-hour response time)
+Research rewards program participation (basic level)
+Pro
+
+Priority customer support (email, 24-hour response time)
+Enhanced research rewards program (higher points multiplier)
+Customizable UI themes
+AI model selection option
+Max
+
+Max support (dedicated account manager)
+Highest research rewards program tier
+White-label option for embedded use
+API access for custom integrations
+Analytics dashboard for usage statistics
+Custom training for AI responses
