@@ -67,7 +67,45 @@ export function PaymentModal({
     }
   }, [selectedTier]);
 
-  // Handle payment
+  // Listen for payments on the blockchain (simulated for now)
+  useEffect(() => {
+    // Only run this effect if we're in QR code payment mode and status is 'idle'
+    if (paymentTab === 'qrcode' && status === 'idle') {
+      // In a real implementation, this would connect to a blockchain listener
+      // For this demo, we'll simulate blockchain events with a timeout
+      let checkInterval: NodeJS.Timeout;
+      
+      const checkForPayment = () => {
+        // This is just for demo purposes
+        // In a real implementation, we would check for actual blockchain events
+        checkInterval = setTimeout(() => {
+          // 10% chance of "detecting" a payment in each interval (for demo purposes)
+          if (Math.random() < 0.1) {
+            // Simulate receiving a payment
+            const amount = paymentMethod === 'sol' 
+              ? selectedTier.priceSol.toString()
+              : selectedTier.priceUsdc.toString();
+              
+            // Simulate transaction signature
+            const mockSignature = 'QR' + Math.random().toString(36).substring(2, 15);
+            
+            // Show success and call the onSuccess callback
+            setStatus('success');
+            onSuccess(mockSignature, amount, paymentMethod);
+          }
+        }, 5000); // Check every 5 seconds
+      };
+      
+      checkForPayment();
+      
+      // Clean up on component unmount or when status/tab changes
+      return () => {
+        if (checkInterval) clearTimeout(checkInterval);
+      };
+    }
+  }, [paymentTab, status, paymentMethod, selectedTier, onSuccess]);
+
+  // Handle direct wallet payment
   const handleSubmit = async () => {
     if (!wallet) {
       setError('Wallet not connected. Please connect your wallet first.');
