@@ -431,7 +431,22 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                             {children}
                           </code>
                         );
-                      }
+                      },
+                      h1: ({node, ...props}) => (
+                        <h1 className="text-xl md:text-2xl font-bold mb-3 text-white mt-4" {...props} />
+                      ),
+                      h2: ({node, ...props}) => (
+                        <h2 className="text-lg md:text-xl font-semibold mb-2 text-white mt-3" {...props} />
+                      ),
+                      h3: ({node, ...props}) => (
+                        <h3 className="text-base md:text-lg font-medium mb-2 text-white mt-2" {...props} />
+                      ),
+                      h4: ({node, ...props}) => (
+                        <h4 className="text-sm md:text-base font-medium mb-1 text-white mt-2" {...props} />
+                      ),
+                      p: ({node, ...props}) => (
+                        <p className="text-xs md:text-sm mb-4" {...props} />
+                      )
                     }}
                   >
                     {part}
