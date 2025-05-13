@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'wouter';
-import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { useLocation, useParams } from 'wouter';
+import { ArrowLeft, CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { apiRequest } from '@/lib/queryClient';
 
 interface StatusMessageProps {
@@ -11,180 +12,181 @@ interface StatusMessageProps {
 
 function StatusMessage({ type, title, message }: StatusMessageProps) {
   return (
-    <div className="text-center my-8">
-      <div className="flex justify-center mb-4">
-        {type === 'loading' && (
-          <Loader2 className="h-12 w-12 text-[#E6E2DA] animate-spin" />
-        )}
-        {type === 'success' && (
-          <CheckCircle className="h-12 w-12 text-green-500" />
-        )}
-        {type === 'error' && (
-          <AlertCircle className="h-12 w-12 text-red-500" />
-        )}
-      </div>
+    <div className="flex flex-col items-center text-center">
+      {type === 'loading' && (
+        <Loader2 className="h-12 w-12 text-[#E6E2DA] animate-spin mb-4" />
+      )}
+      {type === 'success' && (
+        <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
+      )}
+      {type === 'error' && (
+        <XCircle className="h-12 w-12 text-red-500 mb-4" />
+      )}
       <h2 className="text-xl font-bold mb-2">{title}</h2>
-      <p className="text-neutral-400">{message}</p>
+      <p className="text-neutral-400 mb-6">{message}</p>
     </div>
   );
 }
 
 export default function WalletConnectPage() {
+  const [, setLocation] = useLocation();
   const params = useParams<{ sessionId: string }>();
-  const [, navigate] = useLocation();
-  const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
-  const [error, setError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<'phantom' | 'solflare' | null>(null);
-  
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState({
+    title: 'Connecting Wallet',
+    message: 'Please wait while we connect your wallet...'
+  });
+
+  // Used when browser is embedded in Phantom or Solflare app 
   useEffect(() => {
-    // Extract session ID from URL
-    const { sessionId } = params;
-    
-    if (!sessionId) {
-      setStatus('error');
-      setError('Invalid session ID');
-      return;
-    }
-    
-    // Detect wallet provider (Phantom or Solflare)
-    const detectWalletProvider = () => {
-      // Check if opened from Phantom or Solflare
-      const userAgent = navigator.userAgent.toLowerCase();
-      if (userAgent.includes('phantom')) {
-        return 'phantom';
-      } else if (userAgent.includes('solflare')) {
-        return 'solflare';
+    async function connectWallet() {
+      if (!params.sessionId) {
+        setStatus('error');
+        setMessage({
+          title: 'Connection Error',
+          message: 'Invalid session. Please try again.'
+        });
+        return;
       }
-      
-      // Attempt to detect wallet by checking what's available
-      if (typeof window !== 'undefined') {
-        if (window.phantom?.solana) {
-          return 'phantom';
-        } else if (window.solflare) {
-          return 'solflare';
-        }
-      }
-      
-      return null;
-    };
-    
-    const detectedProvider = detectWalletProvider();
-    setProvider(detectedProvider);
-    
-    const connectWallet = async () => {
+
       try {
-        // Check if wallet is available
-        if (!detectedProvider) {
+        setStatus('loading');
+        setMessage({
+          title: 'Connecting Wallet',
+          message: 'Please authorize your wallet to connect...'
+        });
+
+        // Get the wallet from the parent app
+        const solanaWeb3 = (window as any).solana;
+        const solflareWeb3 = (window as any).solflare;
+
+        if (!solanaWeb3 && !solflareWeb3) {
+          // No wallet found in browser context
           setStatus('error');
-          setError('No compatible wallet detected. Please install Phantom or Solflare mobile app.');
+          setMessage({
+            title: 'Wallet Not Found',
+            message: 'No compatible wallet was detected. Please make sure you\'re opening this link from a mobile wallet app.'
+          });
           return;
         }
 
+        // Determine which wallet we're using
+        const wallet = solanaWeb3 || solflareWeb3;
+        const provider = solanaWeb3 ? 'phantom' : 'solflare';
+
         // Connect to the wallet
-        let publicKey;
-        
-        if (detectedProvider === 'phantom') {
-          try {
-            const response = await window.phantom?.solana.connect();
-            publicKey = response?.publicKey.toString();
-          } catch (err) {
-            setStatus('error');
-            setError('Failed to connect to Phantom wallet. Please try again.');
-            return;
-          }
-        } else if (detectedProvider === 'solflare') {
-          try {
-            const response = await window.solflare?.connect();
-            publicKey = response?.publicKey.toString();
-          } catch (err) {
-            setStatus('error');
-            setError('Failed to connect to Solflare wallet. Please try again.');
-            return;
-          }
-        }
+        const { publicKey } = await wallet.connect();
         
         if (!publicKey) {
-          setStatus('error');
-          setError('Failed to get public key from wallet');
-          return;
+          throw new Error('Failed to connect to wallet');
         }
-        
-        // Update session with wallet connection
-        const response = await apiRequest('POST', `/api/mobile/session/${sessionId}/connect`, {
-          publicKey,
-          provider: detectedProvider
+
+        // Send public key to the server
+        const response = await apiRequest('POST', `/api/mobile/session/${params.sessionId}/connect`, {
+          publicKey: publicKey.toString(),
+          provider,
         });
-        
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to connect wallet');
-        }
-        
-        // Success - update status
-        setStatus('connected');
-        
-        // Automatically close after a short delay
-        setTimeout(() => {
-          // Close the window (for in-app browsers) or navigate to homepage
-          if (window.opener) {
-            window.close();
-          } else {
-            navigate('/');
+          // Special handling for expired sessions
+          if (response.status === 410) {
+            setStatus('error');
+            setMessage({
+              title: 'Session Expired',
+              message: 'This connection request has expired. Please try again with a new QR code.'
+            });
+            return;
           }
-        }, 3000);
+          
+          throw new Error('Failed to connect wallet to session');
+        }
+
+        // Get transaction data from session
+        const sessionData = await response.json();
         
+        // If we have transaction data, we need to send payment
+        if (sessionData.transactionData) {
+          setStatus('loading');
+          setMessage({
+            title: 'Authorizing Payment',
+            message: `Please approve the payment of ${sessionData.transactionData.amount} ${sessionData.transactionData.paymentMethod.toUpperCase()} for VynaAI subscription.`
+          });
+
+          const { amount, recipient, paymentMethod } = sessionData.transactionData;
+          
+          let transaction;
+          if (paymentMethod === 'sol') {
+            // Create SOL transfer transaction
+            transaction = await wallet.createTransferTransaction({
+              recipient,
+              amount: parseFloat(amount),
+            });
+          } else {
+            // For USDC, would need to create SPL token transfer
+            throw new Error('USDC payments not yet implemented for mobile');
+          }
+
+          // Sign and send the transaction
+          const { signature } = await wallet.signAndSendTransaction(transaction);
+          
+          // Confirm the payment on the server
+          const confirmResponse = await apiRequest('POST', `/api/mobile/payment/${params.sessionId}/confirm`, {
+            signature,
+          });
+          
+          if (!confirmResponse.ok) {
+            throw new Error('Failed to confirm payment');
+          }
+          
+          // Success!
+          setStatus('success');
+          setMessage({
+            title: 'Payment Successful',
+            message: 'Your subscription has been activated. You can close this window and return to the app.'
+          });
+        } else {
+          // Just wallet connection without payment
+          setStatus('success');
+          setMessage({
+            title: 'Wallet Connected',
+            message: 'Your wallet has been successfully connected. You can close this window and return to the app.'
+          });
+        }
       } catch (error) {
-        console.error('Error connecting wallet:', error);
+        console.error('Wallet connection error:', error);
         setStatus('error');
-        setError(error instanceof Error ? error.message : 'An unknown error occurred');
+        setMessage({
+          title: 'Connection Error',
+          message: error instanceof Error ? error.message : 'Failed to connect wallet. Please try again.'
+        });
       }
-    };
-    
+    }
+
     connectWallet();
-  }, [params, navigate]);
-  
+  }, [params.sessionId]);
+
+  const handleReturn = () => {
+    // Redirect to home page
+    setLocation('/');
+  };
+
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full p-6 bg-neutral-900 rounded-lg shadow-xl">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white">Vyna.live</h1>
-          <p className="text-neutral-400">Wallet Connection</p>
-        </div>
+    <div className="flex min-h-screen bg-black flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-xl p-8">
+        <StatusMessage 
+          type={status} 
+          title={message.title} 
+          message={message.message} 
+        />
         
-        {status === 'connecting' && (
-          <StatusMessage
-            type="loading"
-            title="Connecting Wallet"
-            message={`Connecting your ${provider || ''} wallet to Vyna.live. Please approve the connection request in your wallet app.`}
-          />
-        )}
-        
-        {status === 'connected' && (
-          <StatusMessage
-            type="success"
-            title="Wallet Connected!"
-            message="Your wallet has been successfully connected. You will be redirected automatically."
-          />
-        )}
-        
-        {status === 'error' && (
-          <StatusMessage
-            type="error"
-            title="Connection Failed"
-            message={error || 'An error occurred while connecting your wallet. Please try again.'}
-          />
-        )}
-        
-        {status === 'error' && (
-          <div className="flex justify-center mt-4">
-            <button
-              onClick={() => navigate('/')}
-              className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-md transition-colors"
-            >
-              Go to Homepage
-            </button>
-          </div>
-        )}
+        <Button
+          onClick={handleReturn}
+          variant="outline"
+          className="w-full border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Return to Application
+        </Button>
       </div>
     </div>
   );
