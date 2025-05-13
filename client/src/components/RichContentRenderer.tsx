@@ -8,10 +8,9 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // @ts-ignore
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-// Import the enhanced chart renderer
+
 import EnhancedChartRenderer from './EnhancedChartRenderer';
 
-// Define a type for rendering charts
 type ChartData = {
   type: 'chart';
   chartType: 'bar' | 'line' | 'pie' | 'area' | 'scatter';
@@ -25,297 +24,113 @@ type ChartData = {
   subtitle?: string;
 }
 
-// Function to extract and parse JSON blocks from text
+type TableData = {
+  type: 'table';
+  headers: string[];
+  rows: any[][];
+  title?: string;
+  description?: string;
+}
+
+type CardData = {
+  type: 'card';
+  title: string;
+  description: string;
+  image?: string;
+  url?: string;
+}
+
+type ImageData = {
+  type: 'image';
+  url: string;
+  caption?: string;
+  width?: number;
+  height?: number;
+  alt?: string;
+}
+
+type AudioData = {
+  type: 'audio';
+  url: string;
+  title?: string;
+}
+
+type CodeBlockData = {
+  type: 'code';
+  language: string;
+  code: string;
+}
+
+type RichContentBlock = ChartData | TableData | CardData | ImageData | AudioData | CodeBlockData;
+
 function extractJSONBlocks(text: string): { parsedBlocks: any[], cleanText: string } {
-  const jsonRegex = /```json\s*([\s\S]*?)\s*```/g;
-  
-  let cleanText = text;
+  const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/g;
   const parsedBlocks: any[] = [];
-  
-  // Use a different approach to avoid TypeScript issues with matchAll
   let match;
-  let index = 0;
-  
-  while ((match = jsonRegex.exec(text)) !== null) {
+  let cleanText = text;
+
+  while ((match = jsonBlockRegex.exec(text)) !== null) {
     try {
-      const jsonContent = match[1].trim();
-      const parsed = JSON.parse(jsonContent);
+      const jsonString = match[1].trim();
+      const parsedData = JSON.parse(jsonString);
       
-      // Replace the JSON block with a placeholder
-      cleanText = cleanText.replace(match[0], `[RICH_CONTENT_${index}]`);
-      
-      parsedBlocks.push(parsed);
-      index++;
-    } catch (error) {
-      console.error('Failed to parse JSON block:', error);
+      // Process different types of blocks
+      if (parsedData.type === 'chart') {
+        const enhancedChartData: ChartData = {
+          ...parsedData,
+          data: parsedData.data || [],
+          colors: parsedData.colors || ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c'],
+          xKey: parsedData.xKey || 'name',
+          yKeys: parsedData.yKeys || ['value'],
+          width: parsedData.width || 600,
+          height: parsedData.height || 300,
+          type: 'chart'
+        };
+        parsedBlocks.push(enhancedChartData);
+      } else if (parsedData.type === 'table') {
+        parsedBlocks.push({
+          ...parsedData,
+          headers: parsedData.headers || [],
+          rows: parsedData.rows || [],
+          type: 'table'
+        });
+      } else if (parsedData.type === 'card') {
+        parsedBlocks.push({
+          ...parsedData,
+          title: parsedData.title || '',
+          description: parsedData.description || '',
+          type: 'card'
+        });
+      } else if (parsedData.type === 'image') {
+        parsedBlocks.push({
+          ...parsedData,
+          url: parsedData.url || '',
+          type: 'image'
+        });
+      } else if (parsedData.type === 'audio') {
+        parsedBlocks.push({
+          ...parsedData,
+          url: parsedData.url || '',
+          type: 'audio'
+        });
+      } else if (parsedData.type === 'code') {
+        parsedBlocks.push({
+          ...parsedData,
+          language: parsedData.language || 'javascript',
+          code: parsedData.code || '',
+          type: 'code'
+        });
+      }
+    } catch (e) {
+      console.error('Error parsing JSON block:', e);
     }
   }
+  
+  // Remove JSON blocks from text
+  cleanText = text.replace(jsonBlockRegex, '');
   
   return { parsedBlocks, cleanText };
 }
-
-// Component to render a chart based on data
-const ChartRenderer: React.FC<{ chartData: any, darkMode?: boolean }> = ({ 
-  chartData,
-  darkMode = true
-}) => {
-  // Defensive programming approach - validate data thoroughly
-  if (!chartData || !chartData.data) {
-    console.error("ChartRenderer: chartData or chartData.data is undefined", chartData);
-    return null;
-  }
-  
-  if (!Array.isArray(chartData.data) || chartData.data.length === 0) {
-    console.error("ChartRenderer: chartData.data is not an array or is empty", chartData.data);
-    return null;
-  }
-  
-  try {
-    // Determine a safe xKey - either use the provided one or find the first string property
-    let safeXKey = chartData.xKey || 'name';
-    const firstItem = chartData.data[0];
-    
-    // If the specified xKey doesn't exist, try to find a suitable property
-    if (!firstItem[safeXKey]) {
-      const stringProps = Object.keys(firstItem).filter(
-        (k: string): boolean => typeof firstItem[k] === 'string'
-      );
-      
-      if (stringProps.length > 0) {
-        safeXKey = stringProps[0];
-        console.log(`ChartRenderer: Using '${safeXKey}' as xKey instead of '${chartData.xKey}'`);
-      }
-    }
-    
-    // Determine safe yKeys - either use the provided ones or find the first numeric properties
-    let safeYKeys = chartData.yKeys || ['value'];
-    
-    // If the specified yKeys don't exist, try to find suitable properties
-    const numericProps = Object.keys(firstItem).filter(
-      (k: string): boolean => typeof firstItem[k] === 'number' || !isNaN(Number(firstItem[k]))
-    );
-    
-    if (numericProps.length > 0 && 
-        (safeYKeys.length === 0 || !safeYKeys.some((k: string): boolean => firstItem[k] !== undefined))) {
-      safeYKeys = [numericProps[0]];
-      console.log(`ChartRenderer: Using '${numericProps[0]}' as yKey instead of '${chartData.yKeys}'`);
-    }
-    
-    // Ensure the chart data has the required structure for EnhancedChartRenderer
-    const enhancedChartData: ChartData = {
-      type: 'chart',
-      chartType: chartData.chartType || 'bar',
-      data: chartData.data,
-      xKey: safeXKey,
-      yKeys: safeYKeys,
-      colors: chartData.colors,
-      width: chartData.width,
-      height: chartData.height,
-      title: chartData.title,
-      subtitle: chartData.subtitle
-    };
-    
-    // Use our advanced chart renderer that uses ECharts
-    return <EnhancedChartRenderer chartData={enhancedChartData} darkMode={darkMode} />;
-  } catch (error) {
-    console.error("Error in ChartRenderer:", error);
-    return (
-      <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
-        <strong>Chart Error:</strong> Unable to render chart due to invalid data structure.
-      </div>
-    );
-  }
-};
-
-// Component to render a data table
-const TableRenderer: React.FC<{ data: any[], darkMode?: boolean }> = ({ data, darkMode = true }) => {
-  try {
-    // Defensive validation
-    if (!data) {
-      console.error("TableRenderer: data is undefined");
-      return null;
-    }
-    
-    if (!Array.isArray(data)) {
-      console.error("TableRenderer: data is not an array", data);
-      return null;
-    }
-    
-    if (data.length === 0) {
-      console.error("TableRenderer: data array is empty");
-      return null;
-    }
-    
-    if (typeof data[0] !== 'object' || data[0] === null) {
-      console.error("TableRenderer: first item in data is not an object", data[0]);
-      return null;
-    }
-    
-    // Extract headers from the first item
-    const headers = Object.keys(data[0]);
-    
-    if (headers.length === 0) {
-      console.error("TableRenderer: no headers found in data", data[0]);
-      return null;
-    }
-    
-    // Define styles based on dark or light mode
-    const tableStyles = darkMode ? {
-      table: "min-w-full bg-[#1E1E1E] border border-[#444] text-white",
-      header: "bg-[#252525]",
-      headerCell: "px-4 py-2 text-left text-[#DCC5A2] border-b border-[#444]",
-      rowEven: "bg-[#1E1E1E]",
-      rowOdd: "bg-[#252525]",
-      cell: "px-4 py-2 border-b border-[#444]"
-    } : {
-      table: "min-w-full bg-white border border-[#E0D5C5] text-[#333333]",
-      header: "bg-[#F7F2EB]",
-      headerCell: "px-4 py-2 text-left text-[#8A1538] border-b border-[#E0D5C5] font-medium",
-      rowEven: "bg-white",
-      rowOdd: "bg-[#F7F2EB]",
-      cell: "px-4 py-2 border-b border-[#E0D5C5]"
-    };
-    
-    return (
-      <div className="overflow-x-auto my-4">
-        <table className={tableStyles.table}>
-          <thead className={tableStyles.header}>
-            <tr>
-              {headers.map((header) => (
-                <th key={header} className={tableStyles.headerCell}>
-                  {header.charAt(0).toUpperCase() + header.slice(1)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex % 2 === 0 ? tableStyles.rowEven : tableStyles.rowOdd}>
-                {headers.map((header) => (
-                  <td key={`${rowIndex}-${header}`} className={tableStyles.cell}>
-                    {/* Convert any object or array to JSON string for display */}
-                    {typeof row[header] === 'object' && row[header] !== null 
-                      ? JSON.stringify(row[header]) 
-                      : row[header] !== undefined 
-                        ? String(row[header]) 
-                        : ''}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  } catch (error) {
-    console.error("Error in TableRenderer:", error);
-    return (
-      <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
-        <strong>Table Error:</strong> Unable to render table due to invalid data structure.
-      </div>
-    );
-  }
-};
-
-// Component to render an info card
-const InfoCardRenderer: React.FC<{ 
-  title: string;
-  content: string;
-  icon?: string; 
-  type?: 'info' | 'warning' | 'success' | 'error';
-  darkMode?: boolean;
-}> = ({ title, content, icon, type = 'info', darkMode = true }) => {
-  // Define color schemes for dark and light modes
-  const colorSchemes = {
-    dark: {
-      bg: {
-        info: 'bg-[#1E3A53]',
-        warning: 'bg-[#513923]',
-        success: 'bg-[#1E4D2B]',
-        error: 'bg-[#572A2A]'
-      },
-      border: {
-        info: 'border-[#3E6B99]',
-        warning: 'border-[#9B7846]',
-        success: 'border-[#3A9D55]',
-        error: 'border-[#AA5555]'
-      },
-      title: 'text-white',
-      content: 'text-[#DDDDDD]'
-    },
-    light: {
-      bg: {
-        info: 'bg-[#EBF5FF]',
-        warning: 'bg-[#FFF8E6]',
-        success: 'bg-[#EDFCF2]',
-        error: 'bg-[#FFF1F1]'
-      },
-      border: {
-        info: 'border-[#A3D0FF]',
-        warning: 'border-[#FFE8B2]',
-        success: 'border-[#B3F0C4]',
-        error: 'border-[#FFCCCC]'
-      },
-      title: 'text-[#333333]',
-      content: 'text-[#555555]'
-    }
-  };
-  
-  const scheme = darkMode ? colorSchemes.dark : colorSchemes.light;
-  
-  return (
-    <div className={`p-4 rounded-lg border ${scheme.border[type]} ${scheme.bg[type]} my-4`}>
-      <div className="flex items-start">
-        {icon && <div className="mr-3">{icon}</div>}
-        <div>
-          <h4 className={`font-semibold mb-1 ${scheme.title}`}>{title}</h4>
-          <div className={scheme.content}>{content}</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Audio player component
-const AudioRenderer: React.FC<{ src: string }> = ({ src }) => {
-  return (
-    <div className="my-4">
-      <audio controls className="w-full">
-        <source src={src} />
-        Your browser does not support the audio element.
-      </audio>
-    </div>
-  );
-};
-
-// Image renderer with lazy loading
-const ImageRenderer: React.FC<{ src: string; alt: string; darkMode?: boolean }> = ({ 
-  src, 
-  alt,
-  darkMode = true 
-}) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  return (
-    <div className="my-4 relative">
-      {!isLoaded && (
-        <div className={`absolute inset-0 flex items-center justify-center ${
-          darkMode ? 'bg-[#1A1A1A]' : 'bg-[#F7F2EB]'
-        } animate-pulse rounded-lg`}>
-          <span className={darkMode ? 'text-[#DCC5A2]' : 'text-[#8A1538]'}>
-            Loading image...
-          </span>
-        </div>
-      )}
-      <img 
-        src={src} 
-        alt={alt} 
-        onLoad={() => setIsLoaded(true)}
-        className="max-w-full rounded-lg shadow-sm"
-      />
-    </div>
-  );
-};
 
 interface RichContentRendererProps {
   content: string;
@@ -352,13 +167,13 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
     // Extract any JSON blocks that might contain rich content data
     const { parsedBlocks, cleanText } = extractJSONBlocks(content);
     
-    // Split the text by placeholders
-    const textParts = cleanText.split(/\[RICH_CONTENT_(\d+)\]/);
+    // Combine extracted blocks with any passed visualizations
+    const allVisualizations = [...parsedBlocks, ...visualizations];
     
     // If in fallback mode, just return the original text
     if (fallbackToText) {
       return (
-        <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
+        <div className={`rich-content ${getTextSizeClass()} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
           <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
             <strong>Note:</strong> Some rich content couldn't be rendered properly. Showing text-only version.
           </div>
@@ -404,157 +219,225 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
         </div>
       );
     }
-    
+
+    // If there are no visualizations, just render the content as markdown
+    if (allVisualizations.length === 0) {
+      return (
+        <div className={`rich-content ${getTextSizeClass()} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
+          <div className="markdown-content">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw, rehypeSanitize]}
+              components={{
+                // Enhance h1 and h2 elements to be properly formatted
+                h1: ({node, ...props}) => (
+                  <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3 md:mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]`} {...props} />
+                ),
+                h2: ({node, ...props}) => (
+                  <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2 md:mb-3 text-[#C9B18C] mt-4 md:mt-6`} {...props} />
+                ),
+                h3: ({node, ...props}) => (
+                  <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1.5 md:mb-2 text-[#B8A283] mt-3 md:mt-4`} {...props} />
+                ),
+                // @ts-ignore
+                code: ({node, inline, className, children, ...props}) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline && match ? (
+                    <SyntaxHighlighter
+                      // @ts-ignore
+                      style={vscDarkPlus}
+                      language={match[1]}
+                      PreTag="div"
+                      {...props}
+                    >
+                      {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                  ) : (
+                    <code className={className} {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+              }}
+            >
+              {cleanText}
+            </ReactMarkdown>
+          </div>
+        </div>
+      );
+    }
+
+    // Otherwise, render both the content and the visualizations
     return (
-      <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
-        {/* Render direct visualizations if provided */}
-        {visualizations && visualizations.length > 0 && (
-          <div className="visualizations-container mb-4">
-            {visualizations.map((visualization, idx) => {
-              try {
-                if (visualization.type === 'chart' && visualization.data) {
-                  return <ChartRenderer key={`viz-chart-${idx}`} chartData={visualization} darkMode={darkMode} />;
+      <div className={`rich-content ${getTextSizeClass()} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
+        {/* If there's text content, render it with markdown */}
+        {cleanText.trim() !== '' && (
+          <div className="markdown-content mb-4">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw, rehypeSanitize]}
+              components={{
+                // @ts-ignore
+                code: ({node, inline, className, children, ...props}) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline && match ? (
+                    <SyntaxHighlighter
+                      // @ts-ignore
+                      style={vscDarkPlus}
+                      language={match[1]}
+                      PreTag="div"
+                      {...props}
+                    >
+                      {String(children).replace(/\n$/, '')}
+                    </SyntaxHighlighter>
+                  ) : (
+                    <code className={className} {...props}>
+                      {children}
+                    </code>
+                  );
                 }
-                if (visualization.type === 'table' && visualization.data) {
-                  return <TableRenderer key={`viz-table-${idx}`} data={visualization.data} darkMode={darkMode} />;
-                }
-                return null;
-              } catch (err) {
-                console.error("Error rendering visualization:", err);
-                return null;
-              }
-            })}
+              }}
+            >
+              {cleanText}
+            </ReactMarkdown>
           </div>
         )}
         
-        {/* Render content from markdown */}
-        {textParts.map((part, index) => {
-          try {
-            // Even indices are regular text
-            if (index % 2 === 0) {
-              return part ? (
-                <div className="markdown-content" key={`text-${index}`}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                    components={{
-                      // Enhance h1 and h2 elements to be properly formatted
-                      h1: ({node, ...props}) => (
-                        <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold mb-3 md:mb-4 text-[#DCC5A2] pb-2 border-b border-[#333333]`} {...props} />
-                      ),
-                      h2: ({node, ...props}) => (
-                        <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold mb-2 md:mb-3 text-[#C9B18C] mt-4 md:mt-6`} {...props} />
-                      ),
-                      h3: ({node, ...props}) => (
-                        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold mb-1.5 md:mb-2 text-[#B8A283] mt-3 md:mt-4`} {...props} />
-                      ),
-                      // @ts-ignore
-                      code: ({node, inline, className, children, ...props}) => {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            // @ts-ignore
-                            style={vscDarkPlus}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, '')}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        );
-                      }
-                    }}
-                  >
-                    {part}
-                  </ReactMarkdown>
+        {/* Render visualizations */}
+        {allVisualizations.map((viz, index) => {
+          if (viz.type === 'chart') {
+            return (
+              <div className="visualization-container mb-6" key={`chart-${index}`}>
+                <EnhancedChartRenderer 
+                  data={viz.data}
+                  chartType={viz.chartType}
+                  xKey={viz.xKey}
+                  yKeys={viz.yKeys}
+                  colors={viz.colors}
+                  width={viz.width}
+                  height={viz.height}
+                  darkMode={darkMode}
+                  title={viz.title}
+                  subtitle={viz.subtitle}
+                />
+              </div>
+            );
+          } else if (viz.type === 'table') {
+            return (
+              <div className="visualization-container mb-6 overflow-auto" key={`table-${index}`}>
+                {viz.title && <h3 className="text-lg font-semibold mb-2">{viz.title}</h3>}
+                {viz.description && <p className="text-gray-400 mb-3 text-sm">{viz.description}</p>}
+                <div className="table-responsive overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-[#2A2A2A] border-b border-[#444]">
+                        {viz.headers.map((header, i) => (
+                          <th key={`header-${i}`} className="px-4 py-3 text-left text-sm font-medium">{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viz.rows.map((row, rowIndex) => (
+                        <tr key={`row-${rowIndex}`} className={rowIndex % 2 === 0 ? 'bg-[#1D1D1D]' : 'bg-[#232323]'}>
+                          {row.map((cell, cellIndex) => (
+                            <td key={`cell-${rowIndex}-${cellIndex}`} className="px-4 py-3 border-t border-[#333] text-sm">{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ) : null;
-            }
-            
-            // Odd indices correspond to rich content blocks
-            const blockIndex = parseInt(part, 10);
-            const richContentBlock = parsedBlocks[blockIndex];
-            
-            if (!richContentBlock) return null;
-            
-            switch (richContentBlock.type) {
-              case 'chart':
-                if (!richContentBlock.data) return null;
-                return <ChartRenderer key={`chart-${index}`} chartData={richContentBlock} darkMode={darkMode} />;
-              
-              case 'table':
-                if (!richContentBlock.data) return null;
-                return <TableRenderer key={`table-${index}`} data={richContentBlock.data} darkMode={darkMode} />;
-              
-              case 'card':
-                if (!richContentBlock.title || !richContentBlock.content) return null;
-                return (
-                  <InfoCardRenderer
-                    key={`card-${index}`}
-                    title={richContentBlock.title}
-                    content={richContentBlock.content}
-                    icon={richContentBlock.icon}
-                    type={richContentBlock.cardType}
-                    darkMode={darkMode}
+              </div>
+            );
+          } else if (viz.type === 'card') {
+            return (
+              <div className="visualization-container mb-6" key={`card-${index}`}>
+                <div className="bg-[#2A2A2A] rounded-xl overflow-hidden shadow-lg">
+                  {viz.image && (
+                    <div className="h-48 overflow-hidden">
+                      <img src={viz.image} alt={viz.title} className="w-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <h3 className="text-xl font-semibold mb-2">{viz.title}</h3>
+                    <p className="text-gray-300">{viz.description}</p>
+                    {viz.url && (
+                      <a href={viz.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 text-blue-400 hover:underline">
+                        Learn More →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          } else if (viz.type === 'image') {
+            return (
+              <div className="visualization-container mb-6" key={`image-${index}`}>
+                <figure>
+                  <img 
+                    src={viz.url} 
+                    alt={viz.alt || "Visualization"} 
+                    className="rounded-lg max-w-full h-auto" 
+                    style={{
+                      width: viz.width ? `${viz.width}px` : 'auto',
+                      height: viz.height ? `${viz.height}px` : 'auto',
+                      maxWidth: '100%'
+                    }}
                   />
-                );
-              
-              case 'audio':
-                if (!richContentBlock.src) return null;
-                return <AudioRenderer key={`audio-${index}`} src={richContentBlock.src} />;
-              
-              case 'image':
-                if (!richContentBlock.src) return null;
-                return (
-                  <ImageRenderer
-                    key={`image-${index}`}
-                    src={richContentBlock.src}
-                    alt={richContentBlock.alt || 'Image'}
-                    darkMode={darkMode}
-                  />
-                );
-              
-              default:
-                return null;
-            }
-          } catch (err) {
-            console.error("Error rendering part:", err);
-            return null;
+                  {viz.caption && (
+                    <figcaption className="text-center text-gray-400 mt-2">{viz.caption}</figcaption>
+                  )}
+                </figure>
+              </div>
+            );
+          } else if (viz.type === 'audio') {
+            return (
+              <div className="visualization-container mb-6" key={`audio-${index}`}>
+                {viz.title && <h3 className="text-lg font-semibold mb-2">{viz.title}</h3>}
+                <audio controls className="w-full">
+                  <source src={viz.url} />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            );
+          } else if (viz.type === 'code') {
+            return (
+              <div className="visualization-container mb-6" key={`code-${index}`}>
+                <SyntaxHighlighter
+                  // @ts-ignore
+                  style={vscDarkPlus}
+                  language={viz.language}
+                  PreTag="div"
+                >
+                  {viz.code}
+                </SyntaxHighlighter>
+              </div>
+            );
+          } else {
+            // For unknown visualization types
+            return (
+              <div className="text-xs text-gray-400 p-2 mb-2" key={`unknown-${index}`}>
+                Unknown visualization type
+              </div>
+            );
           }
         })}
       </div>
     );
   } catch (error) {
-    console.error("Error in rich content rendering, falling back to text-only mode:", error);
+    // If there's an error rendering rich content, fallback to simple text view
+    console.error("Error rendering rich content:", error);
     
-    // If we haven't already fallen back, set the state and rerender
     if (!fallbackToText) {
       setFallbackToText(true);
-      
-      // Return a loading state while we're transitioning to the fallback
-      return (
-        <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
-          <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
-            <strong>Note:</strong> Some rich content couldn't be rendered properly. Showing text-only version in a moment...
-          </div>
-        </div>
-      );
     }
     
-    // This should never happen because we've set fallbackToText = true
-    // but just in case there's another error, show the original content
     return (
-      <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
-        <div className="p-3 bg-red-100 border border-red-300 rounded-md text-red-800 mb-4">
-          <strong>Error:</strong> Content could not be rendered properly.
+      <div className="rich-content">
+        <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
+          <strong>Error:</strong> Something went wrong while rendering content.
         </div>
-        <div className="markdown-content">
-          <pre className="whitespace-pre-wrap">{content}</pre>
-        </div>
+        <pre className="whitespace-pre-wrap">{content}</pre>
       </div>
     );
   }
