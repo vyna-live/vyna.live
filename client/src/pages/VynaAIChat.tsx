@@ -1213,9 +1213,9 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-3 sm:gap-5'} text-[#999999]`}>
+                <div className={`flex items-center ${isMobile ? 'gap-0' : 'gap-3 sm:gap-5'} text-[#999999]`}>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
+                    className={`hover:text-[#DCC5A2] transition-colors ${isMobile ? 'p-0.5' : 'p-1 sm:p-1.5'}`}
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1223,7 +1223,7 @@ export default function VynaAIChat() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors ${isMobile ? 'p-0.5' : 'p-1 sm:p-1.5'} ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
