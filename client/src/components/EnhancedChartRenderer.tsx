@@ -43,7 +43,8 @@ const EnhancedChartRenderer: React.FC<EnhancedChartRendererProps> = ({
         subtext: subtitle,
         left: 'center',
         textStyle: {
-          color: darkMode ? '#e2e8f0' : '#334155'
+          color: darkMode ? '#DCC5A2' : '#334155',
+          fontWeight: 'bold'
         },
         subtextStyle: {
           color: darkMode ? '#94a3b8' : '#64748b'
