@@ -1,71 +1,36 @@
-import express, { Request, Response } from 'express';
-import { randomBytes } from 'crypto';
+import { Request, Response } from 'express';
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
-import { 
-  mobileSessions, 
-  MobileSessionStatus,
-  WalletProvider, 
-  PaymentMethod, 
-  TransactionStatus 
-} from '@shared/schema';
+import { mobileSessions, MobileSessionStatus, WalletProvider, PaymentMethod, TransactionStatus } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { addMinutes } from 'date-fns';
 
-// In-memory session store for development
-const mobileSessions_temp = new Map<string, {
-  sessionId: string,
-  status: 'pending' | 'connected' | 'completed' | 'expired',
-  createdAt: Date,
-  publicKey?: string,
-  provider?: 'phantom' | 'solflare',
-  expiresAt: Date,
-  transactionData?: {
-    status: 'pending' | 'completed' | 'failed',
-    amount: string,
-    recipient: string,
-    paymentMethod: 'sol' | 'usdc',
-    tierId?: string,
-    signature?: string
-  }
-}>();
-
-// Create a new mobile wallet session
+// Create a new mobile session
 export async function createMobileSession(req: Request, res: Response) {
   try {
-    // Generate unique session ID
-    const sessionId = randomBytes(16).toString('hex');
+    // Generate a unique session ID
+    const sessionId = uuidv4();
     
-    // Create expiration date (10 minutes from now)
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+    // Set expiration time (15 minutes from now)
+    const expiresAt = addMinutes(new Date(), 15);
     
-    if (db) {
-      // Store in database if available
-      await db.insert(mobileSessions).values({
-        sessionId,
-        status: 'pending',
-        createdAt: new Date(),
-        expiresAt
-      });
-    } else {
-      // Use in-memory store if database not available
-      mobileSessions_temp.set(sessionId, {
-        sessionId,
-        status: 'pending',
-        createdAt: new Date(),
-        expiresAt
-      });
-    }
+    // Insert new session into database
+    const [session] = await db.insert(mobileSessions).values({
+      sessionId,
+      status: 'pending',
+      expiresAt,
+    }).returning();
     
     // Return session data
-    return res.status(201).json({ 
-      sessionId,
-      expiresAt
+    return res.status(201).json({
+      sessionId: session.sessionId,
+      status: session.status,
+      expiresAt: session.expiresAt,
     });
   } catch (error) {
     console.error('Error creating mobile session:', error);
-    return res.status(500).json({ 
-      error: 'Failed to create mobile session' 
-    });
+    return res.status(500).json({ error: 'Failed to create mobile session' });
   }
 }
 
@@ -78,46 +43,36 @@ export async function getMobileSessionStatus(req: Request, res: Response) {
       return res.status(400).json({ error: 'Session ID is required' });
     }
     
-    let session;
-    
-    if (db) {
-      // Get from database
-      const [dbSession] = await db.select()
-        .from(mobileSessions)
-        .where(eq(mobileSessions.sessionId, sessionId));
-      
-      session = dbSession;
-    } else {
-      // Get from in-memory store
-      session = mobileSessions_temp.get(sessionId);
-    }
+    // Get session from database
+    const [session] = await db.select().from(mobileSessions).where(eq(mobileSessions.sessionId, sessionId));
     
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
     
-    // Check if session expired
+    // Check if session has expired
     if (new Date() > session.expiresAt) {
       // Update session status to expired
-      if (db) {
-        await db.update(mobileSessions)
-          .set({ status: 'expired' })
-          .where(eq(mobileSessions.sessionId, sessionId));
-      } else {
-        session.status = 'expired';
-        mobileSessions_temp.set(sessionId, session);
-      }
+      await db.update(mobileSessions)
+        .set({ status: 'expired' })
+        .where(eq(mobileSessions.sessionId, sessionId));
       
-      return res.status(410).json({ error: 'Session expired' });
+      // Return expired session
+      return res.status(410).json({
+        sessionId: session.sessionId,
+        status: 'expired',
+        expiresAt: session.expiresAt,
+      });
     }
     
-    // Return session status
-    return res.status(200).json({
+    // Return session data
+    return res.json({
+      sessionId: session.sessionId,
       status: session.status,
       publicKey: session.publicKey,
       provider: session.provider,
       expiresAt: session.expiresAt,
-      transactionData: session.transactionData
+      transactionData: session.transactionData,
     });
   } catch (error) {
     console.error('Error getting mobile session status:', error);
@@ -125,60 +80,64 @@ export async function getMobileSessionStatus(req: Request, res: Response) {
   }
 }
 
-// Update mobile session (connect wallet)
+// Update mobile session with wallet connection
 export async function updateMobileSession(req: Request, res: Response) {
   try {
     const { sessionId } = req.params;
     const { publicKey, provider } = req.body;
     
-    if (!sessionId || !publicKey || !provider) {
-      return res.status(400).json({ 
-        error: 'Session ID, public key, and provider are required' 
-      });
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
     }
     
-    let session;
-    
-    if (db) {
-      // Get from database
-      const [dbSession] = await db.select()
-        .from(mobileSessions)
-        .where(eq(mobileSessions.sessionId, sessionId));
-      
-      session = dbSession;
-    } else {
-      // Get from in-memory store
-      session = mobileSessions_temp.get(sessionId);
+    if (!publicKey) {
+      return res.status(400).json({ error: 'Public key is required' });
     }
+    
+    if (!provider || (provider !== 'phantom' && provider !== 'solflare')) {
+      return res.status(400).json({ error: 'Provider must be either "phantom" or "solflare"' });
+    }
+    
+    // Get session from database
+    const [session] = await db.select().from(mobileSessions).where(eq(mobileSessions.sessionId, sessionId));
     
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
     
-    // Check if session expired
+    // Check if session has expired
     if (new Date() > session.expiresAt) {
-      return res.status(410).json({ error: 'Session expired' });
-    }
-    
-    // Update session
-    if (db) {
+      // Update session status to expired
       await db.update(mobileSessions)
-        .set({ 
-          status: 'connected',
-          publicKey,
-          provider: provider === 'phantom' ? 'phantom' : 'solflare'
-        })
+        .set({ status: 'expired' })
         .where(eq(mobileSessions.sessionId, sessionId));
-    } else {
-      session.status = 'connected';
-      session.publicKey = publicKey;
-      session.provider = provider === 'phantom' ? 'phantom' : 'solflare';
-      mobileSessions_temp.set(sessionId, session);
+      
+      // Return expired session
+      return res.status(410).json({
+        sessionId: session.sessionId,
+        status: 'expired',
+        expiresAt: session.expiresAt,
+      });
     }
     
-    return res.status(200).json({ 
-      message: 'Session updated successfully',
-      sessionId
+    // Update session with wallet connection
+    const [updatedSession] = await db.update(mobileSessions)
+      .set({
+        status: 'connected' as MobileSessionStatus,
+        publicKey,
+        provider: provider as WalletProvider,
+      })
+      .where(eq(mobileSessions.sessionId, sessionId))
+      .returning();
+    
+    // Return updated session data
+    return res.json({
+      sessionId: updatedSession.sessionId,
+      status: updatedSession.status,
+      publicKey: updatedSession.publicKey,
+      provider: updatedSession.provider,
+      expiresAt: updatedSession.expiresAt,
+      transactionData: updatedSession.transactionData,
     });
   } catch (error) {
     console.error('Error updating mobile session:', error);
@@ -186,162 +145,155 @@ export async function updateMobileSession(req: Request, res: Response) {
   }
 }
 
-// Create payment request for a mobile session
+// Create a payment request for a mobile session
 export async function createMobilePaymentRequest(req: Request, res: Response) {
   try {
     const { sessionId } = req.params;
-    const { amount, recipient, paymentMethod, tierId } = req.body;
+    const { amount, paymentMethod, tierId } = req.body;
     
-    if (!sessionId || !amount || !recipient || !paymentMethod) {
-      return res.status(400).json({ 
-        error: 'Session ID, amount, recipient, and payment method are required' 
-      });
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
     }
     
-    let session;
-    
-    if (db) {
-      // Get from database
-      const [dbSession] = await db.select()
-        .from(mobileSessions)
-        .where(eq(mobileSessions.sessionId, sessionId));
-      
-      session = dbSession;
-    } else {
-      // Get from in-memory store
-      session = mobileSessions_temp.get(sessionId);
+    if (!amount) {
+      return res.status(400).json({ error: 'Amount is required' });
     }
+    
+    if (!paymentMethod || (paymentMethod !== 'sol' && paymentMethod !== 'usdc')) {
+      return res.status(400).json({ error: 'Payment method must be either "sol" or "usdc"' });
+    }
+    
+    // Get session from database
+    const [session] = await db.select().from(mobileSessions).where(eq(mobileSessions.sessionId, sessionId));
     
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
     
-    // Check if session expired
+    // Check if session has expired
     if (new Date() > session.expiresAt) {
-      return res.status(410).json({ error: 'Session expired' });
-    }
-    
-    // Check if wallet is connected
-    if (session.status !== 'connected') {
-      return res.status(400).json({ error: 'Wallet not connected for this session' });
-    }
-    
-    // Update session with transaction data
-    if (db) {
+      // Update session status to expired
       await db.update(mobileSessions)
-        .set({ 
-          transactionData: {
-            status: 'pending',
-            amount,
-            recipient,
-            paymentMethod,
-            tierId
-          }
-        })
+        .set({ status: 'expired' })
         .where(eq(mobileSessions.sessionId, sessionId));
-    } else {
-      session.transactionData = {
-        status: 'pending',
-        amount,
-        recipient,
-        paymentMethod,
-        tierId
-      };
-      mobileSessions_temp.set(sessionId, session);
+      
+      // Return expired session
+      return res.status(410).json({
+        sessionId: session.sessionId,
+        status: 'expired',
+        expiresAt: session.expiresAt,
+      });
     }
     
-    return res.status(200).json({ 
-      message: 'Payment request created',
-      sessionId,
+    // Program wallet that receives the payment (must match the one in the client)
+    const recipient = 'HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU';
+    
+    // Update session with payment request
+    const transactionData = {
+      status: 'pending' as TransactionStatus,
       amount,
       recipient,
-      paymentMethod
+      paymentMethod: paymentMethod as PaymentMethod,
+      tierId,
+    };
+    
+    const [updatedSession] = await db.update(mobileSessions)
+      .set({ transactionData })
+      .where(eq(mobileSessions.sessionId, sessionId))
+      .returning();
+    
+    // Return updated session data
+    return res.json({
+      sessionId: updatedSession.sessionId,
+      status: updatedSession.status,
+      publicKey: updatedSession.publicKey,
+      provider: updatedSession.provider,
+      expiresAt: updatedSession.expiresAt,
+      transactionData: updatedSession.transactionData,
     });
   } catch (error) {
-    console.error('Error creating payment request:', error);
+    console.error('Error creating mobile payment request:', error);
     return res.status(500).json({ error: 'Failed to create payment request' });
   }
 }
 
-// Confirm mobile payment
+// Confirm a payment for a mobile session
 export async function confirmMobilePayment(req: Request, res: Response) {
   try {
     const { sessionId } = req.params;
     const { signature } = req.body;
     
-    if (!sessionId || !signature) {
-      return res.status(400).json({ 
-        error: 'Session ID and transaction signature are required' 
-      });
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
     }
     
-    let session;
-    
-    if (db) {
-      // Get from database
-      const [dbSession] = await db.select()
-        .from(mobileSessions)
-        .where(eq(mobileSessions.sessionId, sessionId));
-      
-      session = dbSession;
-    } else {
-      // Get from in-memory store
-      session = mobileSessions_temp.get(sessionId);
+    if (!signature) {
+      return res.status(400).json({ error: 'Transaction signature is required' });
     }
+    
+    // Get session from database
+    const [session] = await db.select().from(mobileSessions).where(eq(mobileSessions.sessionId, sessionId));
     
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
     }
     
-    // Check if session expired
+    // Check if session has expired
     if (new Date() > session.expiresAt) {
-      return res.status(410).json({ error: 'Session expired' });
+      // Update session status to expired
+      await db.update(mobileSessions)
+        .set({ status: 'expired' })
+        .where(eq(mobileSessions.sessionId, sessionId));
+      
+      // Return expired session
+      return res.status(410).json({
+        sessionId: session.sessionId,
+        status: 'expired',
+        expiresAt: session.expiresAt,
+      });
     }
     
-    // Check if payment request exists
+    // Check if session has transaction data
     if (!session.transactionData) {
       return res.status(400).json({ error: 'No payment request found for this session' });
     }
     
-    // Update session with transaction completion
-    const updatedTransactionData = {
+    // Update transaction data with signature
+    const transactionData = {
       ...session.transactionData,
-      status: 'completed' as const,
-      signature
+      status: 'completed' as TransactionStatus,
+      signature,
     };
     
-    if (db) {
-      await db.update(mobileSessions)
-        .set({ 
-          status: 'completed',
-          transactionData: updatedTransactionData
-        })
-        .where(eq(mobileSessions.sessionId, sessionId));
-    } else {
-      session.status = 'completed';
-      session.transactionData = updatedTransactionData;
-      mobileSessions_temp.set(sessionId, session);
-    }
+    // Update session with completed payment
+    const [updatedSession] = await db.update(mobileSessions)
+      .set({
+        status: 'completed' as MobileSessionStatus,
+        transactionData,
+      })
+      .where(eq(mobileSessions.sessionId, sessionId))
+      .returning();
     
     // Return updated session data
-    return res.status(200).json({
-      message: 'Payment confirmed',
-      sessionId,
-      status: 'completed',
-      transactionData: updatedTransactionData
+    return res.json({
+      sessionId: updatedSession.sessionId,
+      status: updatedSession.status,
+      publicKey: updatedSession.publicKey,
+      provider: updatedSession.provider,
+      expiresAt: updatedSession.expiresAt,
+      transactionData: updatedSession.transactionData,
     });
   } catch (error) {
-    console.error('Error confirming payment:', error);
+    console.error('Error confirming mobile payment:', error);
     return res.status(500).json({ error: 'Failed to confirm payment' });
   }
 }
 
-// Register mobile wallet routes
+// Register all mobile wallet routes
 export function registerMobileWalletRoutes(app: express.Express) {
-  // Mobile session routes
   app.post('/api/mobile/session', createMobileSession);
   app.get('/api/mobile/session/:sessionId', getMobileSessionStatus);
   app.post('/api/mobile/session/:sessionId/connect', updateMobileSession);
-  app.post('/api/mobile/session/:sessionId/payment', createMobilePaymentRequest);
-  app.post('/api/mobile/session/:sessionId/payment/confirm', confirmMobilePayment);
+  app.post('/api/mobile/payment/:sessionId', createMobilePaymentRequest);
+  app.post('/api/mobile/payment/:sessionId/confirm', confirmMobilePayment);
 }
