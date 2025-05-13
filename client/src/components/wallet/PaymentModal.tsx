@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
+import { QRCode } from './QRCode';
 import { apiRequest } from '@/lib/queryClient';
 
 // Define payment status type at the top level
@@ -389,13 +390,11 @@ export function PaymentModal({
           </div>
           
           <div className="bg-white p-3 rounded-xl mb-4 flex items-center justify-center">
-            {/* Direct Google Charts QR code implementation */}
-            <img 
-              src={`https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(qrValue)}&chs=250x250&choe=UTF-8&chld=L|0`}
-              alt="QR Code for payment" 
-              width={250} 
-              height={250}
-              style={{ display: 'block' }}
+            <QRCode 
+              value={qrValue} 
+              size={250} 
+              bgColor="#ffffff" 
+              fgColor="#000000" 
             />
           </div>
           
