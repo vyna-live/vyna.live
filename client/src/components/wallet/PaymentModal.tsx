@@ -390,12 +390,25 @@ export function PaymentModal({
           </div>
           
           <div className="bg-white p-3 rounded-xl mb-4 flex items-center justify-center">
-            <QRCode 
-              value={qrValue} 
-              size={250} 
-              bgColor="#ffffff" 
-              fgColor="#000000" 
-            />
+            {/* Direct QR code implementation with Google Charts API */}
+            <div className="flex flex-col items-center">
+              <a 
+                href={qrValue} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-neutral-400 mb-2"
+              >
+                Open in Wallet App
+              </a>
+              
+              <img 
+                src={`https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(qrValue)}&chs=250x250&choe=UTF-8&chld=L|0`}
+                alt="QR Code for payment" 
+                width={250} 
+                height={250}
+                style={{ display: 'block' }}
+              />
+            </div>
           </div>
           
           <div className="text-center mb-2">
