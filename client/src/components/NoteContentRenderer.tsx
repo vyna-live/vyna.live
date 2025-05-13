@@ -46,22 +46,22 @@ const NoteContentRenderer: React.FC<NoteContentRendererProps> = ({
             );
           },
           h1: ({node, ...props}) => (
-            <h1 className="text-xl md:text-2xl font-bold mb-3 text-white mt-4" {...props} />
+            <h1 className={`text-lg md:text-2xl font-bold mb-3 mt-4 ${darkMode ? 'text-white' : 'text-gray-900'}`} {...props} />
           ),
           h2: ({node, ...props}) => (
-            <h2 className="text-lg md:text-xl font-semibold mb-2 text-white mt-3" {...props} />
+            <h2 className={`text-base md:text-xl font-semibold mb-2 mt-3 ${darkMode ? 'text-white' : 'text-gray-900'}`} {...props} />
           ),
           h3: ({node, ...props}) => (
-            <h3 className="text-base md:text-lg font-medium mb-2 text-white mt-2" {...props} />
+            <h3 className={`text-sm md:text-lg font-medium mb-2 mt-2 ${darkMode ? 'text-white' : 'text-gray-900'}`} {...props} />
           ),
           h4: ({node, ...props}) => (
-            <h4 className="text-sm md:text-base font-medium mb-1 text-white mt-2" {...props} />
+            <h4 className={`text-xs md:text-base font-medium mb-1 mt-2 ${darkMode ? 'text-white' : 'text-gray-900'}`} {...props} />
           ),
           p: ({node, ...props}) => (
-            <p className="text-xs md:text-sm mb-4" {...props} />
+            <p className={`text-xs md:text-sm mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} {...props} />
           ),
           li: ({node, ...props}) => (
-            <li className="text-xs md:text-sm mb-1" {...props} />
+            <li className={`text-xs md:text-sm mb-1 ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} {...props} />
           ),
           ul: ({node, ...props}) => (
             <ul className="list-disc pl-5 mb-4" {...props} />
@@ -70,11 +70,11 @@ const NoteContentRenderer: React.FC<NoteContentRendererProps> = ({
             <ol className="list-decimal pl-5 mb-4" {...props} />
           ),
           blockquote: ({node, ...props}) => (
-            <blockquote className="border-l-4 border-[#DCC5A2] pl-4 italic my-4 text-xs md:text-sm" {...props} />
+            <blockquote className={`border-l-4 border-[#DCC5A2] pl-4 italic my-4 text-xs md:text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`} {...props} />
           ),
           table: ({node, ...props}) => (
             <div className="overflow-x-auto mb-4">
-              <table className="min-w-full divide-y divide-gray-700 text-xs md:text-sm" {...props} />
+              <table className={`min-w-full divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-300'} text-xs md:text-sm ${darkMode ? 'text-gray-200' : 'text-gray-700'}`} {...props} />
             </div>
           )
         }}

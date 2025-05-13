@@ -240,7 +240,7 @@ const InfoCardRenderer: React.FC<{
         error: 'border-[#AA5555]'
       },
       title: 'text-white',
-      content: 'text-[#DDDDDD]'
+      content: 'text-gray-200'
     },
     light: {
       bg: {
@@ -255,8 +255,8 @@ const InfoCardRenderer: React.FC<{
         success: 'border-[#B3F0C4]',
         error: 'border-[#FFCCCC]'
       },
-      title: 'text-[#333333]',
-      content: 'text-[#555555]'
+      title: 'text-gray-800',
+      content: 'text-gray-700'
     }
   };
   
@@ -266,9 +266,13 @@ const InfoCardRenderer: React.FC<{
     <div className={`p-4 rounded-lg border ${scheme.border[type]} ${scheme.bg[type]} my-4`}>
       <div className="flex items-start">
         {icon && <div className="mr-3">{icon}</div>}
-        <div>
-          <h4 className={`font-semibold mb-1 ${scheme.title}`}>{title}</h4>
-          <div className={scheme.content}>{content}</div>
+        <div className="w-full">
+          <h4 className={`font-bold mb-1 text-sm md:text-base ${scheme.title} ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            {title}
+          </h4>
+          <div className={`${scheme.content} text-xs md:text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+            {content}
+          </div>
         </div>
       </div>
     </div>
