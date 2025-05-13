@@ -390,7 +390,12 @@ export function PaymentModal({
           </div>
           
           <div className="bg-white p-3 rounded-xl mb-4 flex items-center justify-center">
-            <QRCode value={qrValue} size={200} />
+            <QRCode 
+              value={qrValue} 
+              size={250} 
+              bgColor="#ffffff" 
+              fgColor="#000000" 
+            />
           </div>
           
           <div className="text-center mb-2">
