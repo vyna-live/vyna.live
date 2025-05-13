@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-
 /**
  * Simple QR Code component using Google Charts API
  * This provides a reliable QR code that mobile scanners can detect
@@ -18,27 +16,24 @@ export function QRCode({
   bgColor = 'FFFFFF',
   fgColor = '000000',
 }: QRCodeProps) {
-  const [encodedValue, setEncodedValue] = useState('');
+  // Direct URL without state management
+  const encodedValue = encodeURIComponent(value || '');
+  const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${encodedValue}&chs=${size}x${size}&choe=UTF-8&chld=L|0`;
   
-  useEffect(() => {
-    // URL encode the value for the Google Charts API
-    setEncodedValue(encodeURIComponent(value));
-  }, [value]);
-  
-  // Google Charts API QR code URL
-  // This is one of the most reliable QR code generators that works well with mobile scanners
-  const qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chl=${encodedValue}&chs=${size}x${size}&choe=UTF-8&chld=L|0&chco=${fgColor}`;
+  if (!value) {
+    return <div className="w-full h-full flex items-center justify-center">No QR data available</div>;
+  }
   
   return (
     <div className="flex flex-col items-center">
-      {/* Add phantom deep link directly on the page */}
+      {/* Direct URL for app handling */}
       <a 
         href={value} 
         target="_blank" 
         rel="noopener noreferrer"
         className="text-xs text-neutral-400 mb-2"
       >
-        Open in Phantom App
+        Open in Wallet App
       </a>
       
       {/* Google Charts QR code image */}
@@ -52,15 +47,15 @@ export function QRCode({
         />
       </div>
       
-      {/* Display the URL as text for fallback */}
-      <div className="mt-2 w-full text-center">
+      {/* Short URL preview */}
+      <div className="mt-2 text-center">
         <a
           href={value}
-          className="text-xs text-blue-500 underline break-all"
+          className="text-xs text-blue-500 underline"
           target="_blank"
           rel="noopener noreferrer"
         >
-          {value.length > 40 ? value.substring(0, 40) + '...' : value}
+          {value.length > 30 ? value.substring(0, 30) + '...' : value}
         </a>
       </div>
     </div>
