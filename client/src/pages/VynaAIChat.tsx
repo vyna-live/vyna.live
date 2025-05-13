@@ -1231,7 +1231,7 @@ export default function VynaAIChat() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
+                    className={`hover:text-[#DCC5A2] transition-colors ${isMobile ? 'p-0.5' : 'p-1 sm:p-1.5'}`}
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}

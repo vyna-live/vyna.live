@@ -335,6 +335,18 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
   // State to track if we need to fallback to text-only mode
   const [fallbackToText, setFallbackToText] = React.useState(false);
   
+  // Helper function to determine text size classes based on size prop and mobile state
+  const getTextSizeClass = () => {
+    if (size === 'small') {
+      return isMobile ? 'text-xs' : 'text-sm';
+    } else if (size === 'large') {
+      return isMobile ? 'text-base' : 'text-lg';
+    } else {
+      // medium size (default)
+      return isMobile ? 'text-sm' : 'text-base';
+    }
+  };
+  
   // Try catch block to handle potential errors in rich content rendering
   try {
     // Extract any JSON blocks that might contain rich content data
