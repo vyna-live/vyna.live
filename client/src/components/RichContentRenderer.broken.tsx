@@ -309,18 +309,7 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
             return (
               <div className="visualization-container mb-6" key={`chart-${index}`}>
                 <EnhancedChartRenderer 
-                  chartData={{
-                    type: 'chart',
-                    chartType: viz.chartType,
-                    data: viz.data,
-                    xKey: viz.xKey,
-                    yKeys: viz.yKeys,
-                    colors: viz.colors,
-                    width: viz.width,
-                    height: viz.height,
-                    title: viz.title,
-                    subtitle: viz.subtitle
-                  }}
+                  chartData={viz}
                   darkMode={darkMode}
                 />
               </div>
