@@ -23,6 +23,7 @@ import RichContentRenderer from "@/components/RichContentRenderer";
 import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import "../pages/VynaAIChat.css";
 import { Note } from "@/types";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -122,6 +123,8 @@ export default function Notepad() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const isMobile = useIsMobile();
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,9 +139,15 @@ export default function Notepad() {
   
   const contentRef = useRef<HTMLDivElement>(null);
   
-  // Toggle sidebar collapse
+  // Toggle sidebar collapse - handles both mobile and desktop views
   const toggleSidebar = () => {
-    setSidebarCollapsed(prev => !prev);
+    if (isMobile) {
+      // For mobile, toggle the mobile sidebar visibility
+      setShowMobileSidebar(prev => !prev);
+    } else {
+      // For desktop, toggle the sidebar collapsed state
+      setSidebarCollapsed(prev => !prev);
+    }
   };
   
   // Toggle fullscreen mode
@@ -832,9 +841,116 @@ export default function Notepad() {
       </header>
 
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
+      {/* Mobile sidebar - shown as overlay when toggled */}
+      {isMobile && showMobileSidebar && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50" onClick={toggleSidebar}>
+          <aside 
+            className="w-[80%] max-w-[320px] h-full bg-[#1A1A1A] rounded-r-lg flex flex-col overflow-hidden shadow-xl transition-all duration-300 transform" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Exact same layout as desktop sidebar */}
+            <div className="p-3 pb-2">
+              <div className="flex items-center mb-2.5 px-1">
+                {/* Close button */}
+                <div className="p-1 mr-1">
+                  <button 
+                    className="text-gray-400 hover:text-white transition-colors"
+                    onClick={toggleSidebar}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                
+                {/* Tabs - exactly the same as desktop */}
+                <div className="flex p-1 bg-[#202020] rounded-lg">
+                  <button 
+                    className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => {
+                      handleTabChange('vynaai');
+                      toggleSidebar();
+                    }}
+                  >
+                    <Sparkles size={12} />
+                    <span>VynaAI</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => {
+                      handleTabChange('notepad');
+                      toggleSidebar();
+                    }}
+                  >
+                    <FileText size={12} className="mr-1" />
+                    <span>Notepad</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* New note button - exactly the same as desktop */}
+              <button 
+                className="w-full mb-3 flex items-center justify-center gap-1.5 py-2 bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all"
+                onClick={() => {
+                  handleNewNote();
+                  toggleSidebar(); // Close sidebar after creating new note
+                }}
+                disabled={isSaving || !isAuthenticated}
+              >
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Plus size={16} />
+                    <span className="text-sm">New note</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            <div className="px-3 py-2">
+              <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
+              <div className="overflow-y-auto max-h-[calc(100vh-180px)] custom-scrollbar pb-3">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#DCC5A2]" />
+                  </div>
+                ) : notes.length > 0 ? (
+                  notes.map((note) => (
+                    <div 
+                      key={note.id}
+                      className={`flex flex-col px-2 py-2.5 rounded-md text-sm cursor-pointer mb-1 ${note.active ? 'bg-[#252525]' : 'hover:bg-[#232323]'}`}
+                      onClick={() => {
+                        handleNoteClick(note.id);
+                        toggleSidebar(); // Close sidebar after selecting note
+                      }}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="font-medium text-white truncate max-w-[85%]">
+                          {note.title || 'Untitled note'}
+                        </div>
+                        <button
+                          className="text-[#777777] hover:text-white p-1"
+                          onClick={(e) => toggleDropdown(e, note.id, 'noteOptionsDropdown')}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                      </div>
+                      <div className="text-[#999999] text-xs mt-1 line-clamp-2">
+                        {getNotePreview(note.content || '')}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[#777777] text-sm px-3 py-2">No notes yet</div>
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+      
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden z-[1] transition-all duration-300`}>
-        {/* Sidebar with spacing - hidden in fullscreen mode */}
-        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
+        {/* Desktop sidebar - hidden in fullscreen mode and on mobile */}
+        <aside className={`${isFullscreen || isMobile ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
               <div className="p-1 mr-1">
