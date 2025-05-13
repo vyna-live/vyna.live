@@ -118,6 +118,9 @@ export default function VynaAIChat() {
   
   // Sidebar state for responsive design
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Mobile sidebar visibility state
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -717,9 +720,15 @@ export default function VynaAIChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
-  // Toggle sidebar collapse
+  // Toggle sidebar collapse - handles both mobile and desktop views
   const toggleSidebar = () => {
-    setSidebarCollapsed(prev => !prev);
+    if (isMobile) {
+      // For mobile, toggle the mobile sidebar visibility
+      setShowMobileSidebar(prev => !prev);
+    } else {
+      // For desktop, toggle the sidebar collapsed state
+      setSidebarCollapsed(prev => !prev);
+    }
   };
   
   // Toggle fullscreen mode
@@ -777,8 +786,67 @@ export default function VynaAIChat() {
       </header>
 
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
+      {/* Mobile sidebar - shown as overlay when toggled */}
+      {isMobile && showMobileSidebar && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50" onClick={toggleSidebar}>
+          <aside 
+            className="w-[80%] max-w-[320px] h-full bg-[#1A1A1A] rounded-r-lg flex flex-col overflow-hidden shadow-xl transition-all duration-300 transform" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-[#333333] flex items-center justify-between">
+              <div className="flex items-center">
+                <Logo size="sm" />
+              </div>
+              <button 
+                className="text-[#999999] hover:text-white"
+                onClick={toggleSidebar}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-3">
+              {/* New chat button - always show text in mobile sidebar */}
+              <button 
+                className="w-full mb-3 flex items-center justify-center gap-1.5 py-2 bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all"
+                onClick={() => {
+                  handleNewChat();
+                  toggleSidebar(); // Close sidebar after creating new chat
+                }}
+              >
+                <Plus size={16} />
+                <span className="text-sm">New chat</span>
+              </button>
+              
+              <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
+              <div className="overflow-y-auto max-h-[calc(100vh-180px)] custom-scrollbar pb-3">
+                {chatSessions.length > 0 ? (
+                  chatSessions.map((session) => (
+                    <div 
+                      key={session.id}
+                      className={`flex items-center justify-between px-3 py-3 rounded-md text-sm cursor-pointer ${session.id === currentSessionId ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
+                      onClick={() => {
+                        handleSessionClick(session.id);
+                        toggleSidebar(); // Close sidebar after selecting session
+                      }}
+                    >
+                      <div className="truncate">{session.title}</div>
+                      <button className="text-[#777777] hover:text-white p-1">
+                        <MoreVertical size={16} />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-[#777777] text-sm px-3 py-2">No recent chats</div>
+                )}
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
+      
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden transition-all duration-300`}>
-        {/* Sidebar with spacing - hidden in fullscreen mode and on mobile by default */}
+        {/* Desktop sidebar - hidden in fullscreen mode and on mobile */}
         <aside className={`${isFullscreen || isMobile ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
@@ -862,8 +930,8 @@ export default function VynaAIChat() {
           </div>
         </aside>
 
-        {/* Main Chat Area with spacing - adjusts for fullscreen mode */}
-        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen ? 'w-full' : ''} transition-all duration-300`}>
+        {/* Main Chat Area with spacing - adjusts for fullscreen mode and mobile */}
+        <main className={`flex-1 flex flex-col h-full overflow-hidden bg-black rounded-lg relative z-[1] ${isFullscreen || isMobile ? 'w-full' : ''} transition-all duration-300`}>
           {/* Teleprompter overlay */}
           {showTeleprompter && (
             <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9000]">
