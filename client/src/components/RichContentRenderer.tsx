@@ -343,7 +343,13 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
     // If in fallback mode, just return the original text
     if (fallbackToText) {
       return (
-        <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
+        <div className={`rich-content ${
+        size === 'small' 
+          ? 'text-xs md:text-sm' 
+          : size === 'large' 
+            ? 'text-sm md:text-lg' 
+            : 'text-xs md:text-base'
+      } ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
           <div className="p-3 bg-orange-100 border border-orange-300 rounded-md text-orange-800 mb-4">
             <strong>Note:</strong> Some rich content couldn't be rendered properly. Showing text-only version.
           </div>
@@ -381,7 +387,13 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
     }
     
     return (
-      <div className={`rich-content ${size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base'} ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
+      <div className={`rich-content ${
+        size === 'small' 
+          ? 'text-xs md:text-sm' 
+          : size === 'large' 
+            ? 'text-sm md:text-lg' 
+            : 'text-xs md:text-base'
+      } ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
         {/* Render direct visualizations if provided */}
         {visualizations && visualizations.length > 0 && (
           <div className="visualizations-container mb-4">
