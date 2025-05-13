@@ -1082,7 +1082,7 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
+                <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-3 sm:gap-5'} text-[#999999]`}>
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
@@ -1110,19 +1110,19 @@ export default function VynaAIChat() {
                   
                   {/* Commentary style selector - moved here */}
                   <div className="flex items-center">
-                    <span className="text-xs text-[#999999] mx-2">Style:</span>
+                    <span className={`text-xs text-[#999999] ${isMobile ? 'mx-1' : 'mx-2'}`}>{isMobile ? "S:" : "Style:"}</span>
                     <div className="flex bg-[#232323] rounded-md p-1">
                       <button
-                        className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                        className={`text-xs ${isMobile ? 'px-1.5' : 'px-2'} py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('color')}
                       >
-                        Color
+                        {isMobile ? "cc" : "Color"}
                       </button>
                       <button
-                        className={`text-xs px-2 py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                        className={`text-xs ${isMobile ? 'px-1.5' : 'px-2'} py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('play-by-play')}
                       >
-                        Play-by-play
+                        {isMobile ? "pp" : "Play-by-play"}
                       </button>
                     </div>
                   </div>
