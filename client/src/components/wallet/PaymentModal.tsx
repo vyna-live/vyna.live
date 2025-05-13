@@ -185,12 +185,26 @@ export function PaymentModal({
       // Base URL - Use the current origin
       const baseUrl = window.location.origin;
       
-      // Create a direct deep link instead of JSON data
-      // Use Phantom as the default since it's more widely used
+      // Phantom deep link format
       const phantomLink = `https://phantom.app/ul/browse/${encodeURIComponent(`${baseUrl}/wallet-connect/${sessionData.sessionId}`)}`;
       
-      // Set the QR code value directly to the deep link - no JSON encoding
-      setQrValue(phantomLink);
+      // Solflare deep link format
+      const solflareLink = `https://solflare.com/ul/browse/${encodeURIComponent(`${baseUrl}/wallet-connect/${sessionData.sessionId}`)}`;
+      
+      // We'll use a universal format that contains both deep links
+      const qrData = JSON.stringify({
+        sessionId: sessionData.sessionId,
+        phantom: phantomLink,
+        solflare: solflareLink,
+        expires: sessionData.expiresAt,
+        paymentInfo: {
+          tier: selectedTier.name,
+          amount,
+          currency: paymentMethod
+        }
+      });
+      
+      setQrValue(qrData);
     } catch (err) {
       console.error('Error creating mobile payment session:', err);
       setError('Failed to generate QR code for mobile payment. Please try again.');
@@ -383,48 +397,14 @@ export function PaymentModal({
       return (
         <div className="flex flex-col items-center py-2">
           <div className="text-center mb-4">
-            <h3 className="text-sm font-medium mb-1">Scan with Phantom wallet</h3>
+            <h3 className="text-sm font-medium mb-1">Scan with your mobile wallet</h3>
             <p className="text-xs text-neutral-400">
-              Open Phantom mobile app and scan this code to connect and pay 
+              Scan this code with Phantom or Solflare mobile app to pay with your wallet
             </p>
           </div>
           
-          <div className="bg-white p-3 rounded-xl mb-4 flex items-center justify-center">
-            {/* Direct QR code implementation with Google Charts API */}
-            <div className="flex flex-col items-center">
-              <a 
-                href={qrValue} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-xs text-neutral-400 mb-2"
-              >
-                Open in Wallet App
-              </a>
-              
-              <img 
-                src={`https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(qrValue)}&chs=250x250&choe=UTF-8&chld=L|0`}
-                alt="QR Code for payment" 
-                width={250} 
-                height={250}
-                style={{ display: 'block' }}
-              />
-            </div>
-          </div>
-          
-          <div className="text-center mb-2">
-            <p className="text-xs font-medium text-[#E6E2DA]">Payment for {selectedTier.name} Tier</p>
-            <p className="text-xs text-neutral-400">{paymentMethod === 'sol' ? `${selectedTier.priceSol} SOL` : `${selectedTier.priceUsdc} USDC`}</p>
-          </div>
-          
-          <div className="mb-4 w-full text-center">
-            <p className="text-xs text-neutral-500 mb-2">
-              Need help? Make sure to:
-            </p>
-            <ul className="text-xs text-neutral-400 mb-3 text-left list-disc list-inside">
-              <li>Open Phantom mobile app first</li>
-              <li>Tap the scan button in Phantom</li>
-              <li>Point your camera at this QR code</li>
-            </ul>
+          <div className="bg-white p-3 rounded-xl mb-4">
+            <QRCode value={qrValue} size={180} />
           </div>
           
           <div className="px-2 mb-4 w-full">

@@ -61,12 +61,11 @@ export default function WalletConnectPage() {
         const solflareWeb3 = (window as any).solflare;
 
         if (!solanaWeb3 && !solflareWeb3) {
-          // No wallet found in browser context - this might be normal if user 
-          // opened directly in browser instead of through a wallet app
+          // No wallet found in browser context
           setStatus('error');
           setMessage({
-            title: 'Mobile Wallet Required',
-            message: 'Please make sure you\'re scanning this QR code with the Phantom mobile app. If you\'re seeing this page, try going back and scanning again.'
+            title: 'Wallet Not Found',
+            message: 'No compatible wallet was detected. Please make sure you\'re opening this link from a mobile wallet app.'
           });
           return;
         }
