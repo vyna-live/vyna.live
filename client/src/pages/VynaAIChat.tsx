@@ -787,19 +787,7 @@ export default function VynaAIChat() {
     <div className="flex flex-col h-screen bg-black">
       {/* Header */}
       <header className="flex items-center justify-between h-[60px] px-6 border-b border-[#202020] bg-black z-10">
-        <div className="flex items-center gap-3">
-          {isMobileView && (
-            <button 
-              className="text-gray-400 hover:text-white transition-colors p-1"
-              onClick={() => {
-                setSidebarCollapsed(!sidebarCollapsed);
-                setShowMobileSidebar(!showMobileSidebar);
-              }}
-              aria-label={showMobileSidebar ? "Hide sidebar" : "Show sidebar"}
-            >
-              <Menu size={20} />
-            </button>
-          )}
+        <div className="flex items-center">
           <Logo size="sm" />
         </div>
         {isLoading ? (
@@ -816,12 +804,10 @@ export default function VynaAIChat() {
         )}
       </header>
 
-      {/* Mobile overlay for drawer sidebar with improved animation */}
-      {isMobileView && (
+      {/* Mobile overlay for drawer sidebar */}
+      {isMobileView && showMobileSidebar && !sidebarCollapsed && (
         <div 
-          className={`fixed inset-0 bg-black z-40 transition-all duration-300 ${
-            showMobileSidebar && !sidebarCollapsed ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => {
             setSidebarCollapsed(true);
             setShowMobileSidebar(false);
@@ -834,32 +820,38 @@ export default function VynaAIChat() {
         {/* Sidebar with spacing - hidden in fullscreen mode */}
         <aside 
           className={`
-            bg-[#1A1A1A] flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out
-            ${isFullscreen ? 'w-0 opacity-0 mr-0 transform -translate-x-full' : ''} 
-            ${isMobileView ? 'fixed left-0 top-[60px] bottom-0 z-50 rounded-tr-lg shadow-xl' : 'mr-4'}
-            ${isMobileView && showMobileSidebar && !sidebarCollapsed ? 'w-[270px] opacity-100 transform translate-x-0' : ''}
-            ${isMobileView && (!showMobileSidebar || sidebarCollapsed) ? 'w-0 opacity-0 transform -translate-x-full' : ''}
-            ${!isMobileView && sidebarCollapsed ? 'w-[60px] opacity-100' : ''}
-            ${!isMobileView && !sidebarCollapsed ? 'w-[270px] opacity-100' : ''}
+            ${isFullscreen ? 'w-0 opacity-0 mr-0' : ''} 
+            ${isMobileView && !showMobileSidebar ? 'w-0 opacity-0 mr-0' : ''}
+            ${isMobileView && showMobileSidebar && !sidebarCollapsed ? 'fixed left-0 top-[60px] bottom-0 z-50 w-[270px] rounded-none rounded-tr-lg' : ''}
+            ${!isMobileView && sidebarCollapsed ? 'w-[60px]' : ''}
+            ${!isMobileView && !sidebarCollapsed ? 'w-[270px]' : ''}
+            bg-[#1A1A1A] flex flex-col h-full mr-4 overflow-hidden transition-all duration-300
           `}
         >
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
-              {/* Drawer/hamburger menu icon - only shown on desktop */}
-              {!isMobileView && (
-                <div className="p-1 mr-1">
-                  <button 
-                    className="text-gray-400 hover:text-white transition-colors"
-                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  >
+              {/* Drawer/hamburger menu icon */}
+              <div className="p-1 mr-1">
+                <button 
+                  className="text-gray-400 hover:text-white transition-colors"
+                  onClick={() => {
+                    setSidebarCollapsed(!sidebarCollapsed);
+                    if (isMobileView) {
+                      setShowMobileSidebar(!showMobileSidebar);
+                    }
+                  }}
+                  aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {isMobileView ? (
+                    <Menu size={18} />
+                  ) : (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
                       <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                  </button>
-                </div>
-              )}
+                  )}
+                </button>
+              </div>
               
               {/* Tabs - hidden when sidebar is collapsed */}
               {!sidebarCollapsed && (

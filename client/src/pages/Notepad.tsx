@@ -122,8 +122,6 @@ export default function Notepad() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,9 +139,6 @@ export default function Notepad() {
   // Toggle sidebar collapse
   const toggleSidebar = () => {
     setSidebarCollapsed(prev => !prev);
-    if (isMobileView) {
-      setShowMobileSidebar(prev => !prev);
-    }
   };
   
   // Toggle fullscreen mode
@@ -151,23 +146,15 @@ export default function Notepad() {
     setIsFullscreen(prev => !prev);
   };
   
-  // Monitor window resize for responsive layout
+  // Check window size to auto-collapse sidebar on small screens
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobileView(mobile);
-      
-      // Auto-collapse sidebar on mobile
-      if (mobile && !sidebarCollapsed) {
+      if (window.innerWidth < 768) {
         setSidebarCollapsed(true);
-        setShowMobileSidebar(false);
-      } else if (!mobile && sidebarCollapsed && !showMobileSidebar) {
-        // On desktop, we want to show the collapsed sidebar by default
-        setShowMobileSidebar(true);
       }
     };
     
-    // Set initial state
+    // Initial check
     handleResize();
     
     // Add event listener
@@ -177,7 +164,7 @@ export default function Notepad() {
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [sidebarCollapsed, showMobileSidebar]);
+  }, []);
   
   // Load notes when component mounts
   useEffect(() => {
@@ -827,19 +814,7 @@ export default function Notepad() {
     <div className="flex flex-col h-screen bg-black">
       {/* Header */}
       <header className="flex items-center justify-between h-[60px] px-6 border-b border-[#202020] bg-black z-[2]">
-        <div className="flex items-center gap-3">
-          {isMobileView && (
-            <button 
-              className="text-gray-400 hover:text-white transition-colors p-1"
-              onClick={() => {
-                setSidebarCollapsed(!sidebarCollapsed);
-                setShowMobileSidebar(!showMobileSidebar);
-              }}
-              aria-label={showMobileSidebar ? "Hide sidebar" : "Show sidebar"}
-            >
-              <Menu size={20} />
-            </button>
-          )}
+        <div className="flex items-center">
           <Logo size="sm" />
         </div>
         {isAuthenticated ? (
@@ -856,50 +831,23 @@ export default function Notepad() {
         )}
       </header>
 
-      {/* Mobile overlay for drawer sidebar with improved animation */}
-      {isMobileView && (
-        <div 
-          className={`fixed inset-0 bg-black z-40 transition-all duration-300 ${
-            showMobileSidebar && !sidebarCollapsed ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-          onClick={() => {
-            setSidebarCollapsed(true);
-            setShowMobileSidebar(false);
-          }}
-        ></div>
-      )}
-      
       {/* Main content with spacing from navbar - in fullscreen mode we adjust spacing but keep header visible */}
       <div className={`flex flex-1 ${isFullscreen ? 'pt-0' : 'p-4 pt-4'} overflow-hidden z-[1] transition-all duration-300`}>
         {/* Sidebar with spacing - hidden in fullscreen mode */}
-        <aside 
-          className={`
-            bg-[#1A1A1A] flex flex-col h-full overflow-hidden transition-all duration-300 ease-in-out
-            ${isFullscreen ? 'w-0 opacity-0 mr-0 transform -translate-x-full' : ''} 
-            ${isMobileView ? 'fixed left-0 top-[60px] bottom-0 z-50 rounded-tr-lg shadow-xl' : 'mr-4'}
-            ${isMobileView && showMobileSidebar && !sidebarCollapsed ? 'w-[270px] opacity-100 transform translate-x-0' : ''}
-            ${isMobileView && (!showMobileSidebar || sidebarCollapsed) ? 'w-0 opacity-0 transform -translate-x-full' : ''}
-            ${!isMobileView && sidebarCollapsed ? 'w-[60px] opacity-100' : ''}
-            ${!isMobileView && !sidebarCollapsed ? 'w-[270px] opacity-100' : ''}
-          `}
-        >
+        <aside className={`${isFullscreen ? 'w-0 opacity-0 mr-0' : sidebarCollapsed ? 'w-[60px]' : 'w-[270px]'} bg-[#1A1A1A] rounded-lg flex flex-col h-full mr-4 overflow-hidden z-[1] transition-all duration-300`}>
           <div className="p-3 pb-2">
             <div className="flex items-center mb-2.5 px-1">
-              {/* Drawer/hamburger menu icon - only shown on desktop */}
-              {!isMobileView && (
-                <div className="p-1 mr-1">
-                  <button 
-                    className="text-gray-400 hover:text-white transition-colors"
-                    onClick={toggleSidebar}
-                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
-                      <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-              )}
+              <div className="p-1 mr-1">
+                <button 
+                  className="text-gray-400 hover:text-white transition-colors"
+                  onClick={toggleSidebar}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                    <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
               {!sidebarCollapsed && (
                 <div className="flex p-1 bg-[#202020] rounded-lg">
                   <button 
@@ -1087,14 +1035,14 @@ export default function Notepad() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 sm:gap-5 text-[#999999]">
+                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isSaving || !isAuthenticated}
                   >
-                    <Paperclip size={isMobileView ? 14 : 16} />
+                    <Paperclip size={16} />
                   </button>
                   <button 
                     className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
@@ -1102,7 +1050,7 @@ export default function Notepad() {
                     onClick={toggleAudioRecording}
                     disabled={isSaving || !isAuthenticated}
                   >
-                    <Mic size={isMobileView ? 14 : 16} />
+                    <Mic size={16} />
                   </button>
                   <button 
                     className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
@@ -1110,7 +1058,7 @@ export default function Notepad() {
                     onClick={handleImageUpload}
                     disabled={isSaving || !isAuthenticated}
                   >
-                    <ImageIcon size={isMobileView ? 14 : 16} />
+                    <ImageIcon size={16} />
                   </button>
                 </div>
                 <button 
