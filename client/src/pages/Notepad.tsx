@@ -343,7 +343,15 @@ export default function Notepad() {
   const handleTabChange = (tab: 'vynaai' | 'notepad') => {
     setActiveTab(tab);
     if (tab === 'vynaai') {
-      setLocation("/ai-chat");
+      // For mobile view, we need to be more careful with the animation
+      if (isMobile) {
+        // First close the sidebar immediately
+        setShowMobileSidebar(false);
+        // Then navigate with a slight delay to avoid animation issues
+        setTimeout(() => setLocation("/ai-chat"), 10);
+      } else {
+        setLocation("/ai-chat");
+      }
     }
   };
   
@@ -866,8 +874,8 @@ export default function Notepad() {
                   <button 
                     className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                     onClick={() => {
+                      setShowMobileSidebar(false); // Close sidebar immediately
                       handleTabChange('vynaai');
-                      toggleSidebar();
                     }}
                   >
                     <Sparkles size={12} />

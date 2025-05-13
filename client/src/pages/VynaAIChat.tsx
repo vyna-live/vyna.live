@@ -235,7 +235,15 @@ export default function VynaAIChat() {
     
     // If switching to Notepad tab, redirect to the Notepad page
     if (tab === 'notepad') {
-      setLocation("/notepad");
+      // For mobile view, we need to be more careful with the animation
+      if (isMobile) {
+        // First close the sidebar immediately
+        setShowMobileSidebar(false);
+        // Then navigate with a slight delay to avoid animation issues
+        setTimeout(() => setLocation("/notepad"), 10);
+      } else {
+        setLocation("/notepad");
+      }
     }
   };
   
@@ -811,8 +819,8 @@ export default function VynaAIChat() {
                   <button 
                     className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                     onClick={() => {
+                      setShowMobileSidebar(false); // Close sidebar immediately
                       handleTabChange('vynaai');
-                      toggleSidebar();
                     }}
                   >
                     <Sparkles size={12} />
@@ -821,8 +829,8 @@ export default function VynaAIChat() {
                   <button 
                     className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                     onClick={() => {
+                      setShowMobileSidebar(false); // Close sidebar immediately
                       handleTabChange('notepad');
-                      toggleSidebar();
                     }}
                   >
                     <FileText size={12} className="mr-1" />
