@@ -793,20 +793,45 @@ export default function VynaAIChat() {
             className="w-[80%] max-w-[320px] h-full bg-[#1A1A1A] rounded-r-lg flex flex-col overflow-hidden shadow-xl transition-all duration-300 transform" 
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-[#333333] flex items-center justify-between">
-              <div className="flex items-center">
-                <Logo size="sm" />
+            {/* Exact same layout as desktop sidebar */}
+            <div className="p-3 pb-2">
+              <div className="flex items-center mb-2.5 px-1">
+                {/* Close button */}
+                <div className="p-1 mr-1">
+                  <button 
+                    className="text-gray-400 hover:text-white transition-colors"
+                    onClick={toggleSidebar}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                
+                {/* Tabs - exactly the same as desktop */}
+                <div className="flex p-1 bg-[#202020] rounded-lg">
+                  <button 
+                    className={`flex items-center gap-1 mr-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => {
+                      handleTabChange('vynaai');
+                      toggleSidebar();
+                    }}
+                  >
+                    <Sparkles size={12} />
+                    <span>VynaAI</span>
+                  </button>
+                  <button 
+                    className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                    onClick={() => {
+                      handleTabChange('notepad');
+                      toggleSidebar();
+                    }}
+                  >
+                    <FileText size={12} className="mr-1" />
+                    <span>Notepad</span>
+                  </button>
+                </div>
               </div>
-              <button 
-                className="text-[#999999] hover:text-white"
-                onClick={toggleSidebar}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-3">
-              {/* New chat button - always show text in mobile sidebar */}
+              
+              {/* New chat button - exactly the same as desktop */}
               <button 
                 className="w-full mb-3 flex items-center justify-center gap-1.5 py-2 bg-[#DCC5A2] text-[#121212] font-medium rounded-md hover:bg-[#C6B190] transition-all"
                 onClick={() => {
@@ -817,14 +842,16 @@ export default function VynaAIChat() {
                 <Plus size={16} />
                 <span className="text-sm">New chat</span>
               </button>
-              
+            </div>
+            
+            <div className="px-3 py-2">
               <h3 className="text-xs font-semibold text-[#777777] px-2 mb-1.5">RECENTS</h3>
               <div className="overflow-y-auto max-h-[calc(100vh-180px)] custom-scrollbar pb-3">
                 {chatSessions.length > 0 ? (
                   chatSessions.map((session) => (
                     <div 
                       key={session.id}
-                      className={`flex items-center justify-between px-3 py-3 rounded-md text-sm cursor-pointer ${session.id === currentSessionId ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
+                      className={`flex items-center justify-between ${false ? 'px-1 py-3' : 'px-2 py-2.5'} rounded-md text-sm cursor-pointer ${session.id === currentSessionId ? 'bg-[#252525] text-white' : 'text-[#BBBBBB] hover:bg-[#232323]'}`}
                       onClick={() => {
                         handleSessionClick(session.id);
                         toggleSidebar(); // Close sidebar after selecting session
@@ -952,10 +979,13 @@ export default function VynaAIChat() {
             {isMobile ? (
               <button 
                 onClick={toggleSidebar}
-                className="p-2 text-[#999999] hover:text-white transition-colors duration-200"
+                className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
                 title="Toggle sidebar"
               >
-                <Menu size={20} />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
+                  <rect x="4" y="4" width="16" height="16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 5V19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
             ) : (
               <button 
