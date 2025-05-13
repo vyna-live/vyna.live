@@ -403,6 +403,17 @@ export function PaymentModal({
             <p className="text-xs text-neutral-400">{paymentMethod === 'sol' ? `${selectedTier.priceSol} SOL` : `${selectedTier.priceUsdc} USDC`}</p>
           </div>
           
+          <div className="mb-4 w-full text-center">
+            <p className="text-xs text-neutral-500 mb-2">
+              Need help? Make sure to:
+            </p>
+            <ul className="text-xs text-neutral-400 mb-3 text-left list-disc list-inside">
+              <li>Open Phantom mobile app first</li>
+              <li>Tap the scan button in Phantom</li>
+              <li>Point your camera at this QR code</li>
+            </ul>
+          </div>
+          
           <div className="px-2 mb-4 w-full">
             <PaymentMethodSelector />
           </div>
