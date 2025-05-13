@@ -1183,16 +1183,16 @@ export default function Notepad() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleInputKeyDown}
                   placeholder="Type your note"
-                  className="chat-input w-full h-[60px] px-3 py-2 text-sm bg-transparent"
+                  className="chat-input w-full h-[60px] px-3 py-2 text-xs md:text-sm bg-transparent"
                   disabled={isSaving || !isAuthenticated}
                 />
               </div>
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 sm:gap-5 text-[#999999]">
+                <div className="flex items-center gap-0.5 sm:gap-3 md:gap-5 text-[#999999]">
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isSaving || !isAuthenticated}
@@ -1200,7 +1200,7 @@ export default function Notepad() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isSaving || !isAuthenticated}
@@ -1208,7 +1208,7 @@ export default function Notepad() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1.5 sm:p-1" 
+                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isSaving || !isAuthenticated}
