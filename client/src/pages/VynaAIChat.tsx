@@ -1000,7 +1000,7 @@ export default function VynaAIChat() {
             {isMobile ? (
               <button 
                 onClick={toggleSidebar}
-                className="p-1 pl-0 text-gray-400 hover:text-white transition-colors duration-200"
+                className="p-2 text-gray-400 hover:text-white transition-colors duration-200"
                 title="Toggle sidebar"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-gray-400">
@@ -1032,13 +1032,13 @@ export default function VynaAIChat() {
           </div>
           
           {/* Messages Area - Conditional overflow based on whether there are messages */}
-          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-4 md:p-6 space-y-4 md:space-y-6 bg-black`}>
+          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-6 space-y-6 bg-black`}>
             {messages.length > 0 ? (
               // Display messages when available
               messages.map((message) => (
                 <div 
                   key={message.id} 
-                  className={`flex message-appear mb-5 ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
+                  className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
                   {/* Only show AI avatar on non-mobile view */}
                   {message.role === 'assistant' && !isMobile && (
@@ -1048,10 +1048,10 @@ export default function VynaAIChat() {
                   )}
                   
                   <div 
-                    className={`rounded-xl py-3.5 text-sm md:text-base ${
+                    className={`rounded-xl px-4 py-3.5 text-sm md:text-base ${
                       message.role === 'user' 
-                        ? 'bg-[#2A2A2A] text-white ml-auto mr-0 px-4 max-w-[85%] sm:max-w-[80%] md:ml-0' 
-                        : 'bg-[#232323] text-[#DDDDDD] mr-auto ml-0 px-4 md:px-5 max-w-[95%] sm:max-w-[90%] md:mr-0'
+                        ? 'bg-[#2A2A2A] text-white ml-auto mr-0 max-w-[85%] sm:max-w-[80%] md:ml-0' 
+                        : 'bg-[#232323] text-[#DDDDDD] mr-auto ml-0 max-w-[95%] sm:max-w-[90%] md:mr-0'
                     }`}
                   >
                     {message.role === 'user' ? (
@@ -1213,9 +1213,9 @@ export default function VynaAIChat() {
               
               {/* Input controls */}
               <div className="flex items-center justify-between">
-                <div className={`flex items-center ${isMobile ? 'gap-0' : 'gap-3 sm:gap-5'} text-[#999999]`}>
+                <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-3 sm:gap-5'} text-[#999999]`}>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors ${isMobile ? 'p-0.5' : 'p-1 sm:p-1.5'}`}
+                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1223,7 +1223,7 @@ export default function VynaAIChat() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors ${isMobile ? 'p-0.5' : 'p-1 sm:p-1.5'} ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1231,7 +1231,7 @@ export default function VynaAIChat() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors ${isMobile ? 'p-0.5' : 'p-1 sm:p-1.5'}`}
+                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
