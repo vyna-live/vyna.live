@@ -21,6 +21,7 @@ import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import RichContentRenderer from "@/components/RichContentRenderer";
 import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
+import NoteContentRenderer from "@/components/NoteContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -102,7 +103,10 @@ const DraggableParagraph = ({ id, content, index, moveParagraph }: {
           showAddToNote={false}
         />
       ) : (
-        content
+        <NoteContentRenderer 
+          content={content}
+          darkMode={true}
+        />
       )}
     </div>
   );
