@@ -18,6 +18,7 @@ import Notepad from "@/pages/Notepad";
 import ProfilePage from "@/pages/ProfilePage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import ResearchRewardsPage from "@/pages/ResearchRewardsPage";
+import WalletConnectPage from "@/pages/WalletConnectPage";
 import { SolanaWalletProvider } from "@/contexts/SolanaWalletProvider";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
       <Route path="/research-rewards" component={ResearchRewardsPage} />
+      <Route path="/wallet-connect/:sessionId" component={WalletConnectPage} />
       <Route component={NotFound} />
     </Switch>
   );

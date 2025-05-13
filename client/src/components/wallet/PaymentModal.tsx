@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, AlertCircle, Check, CreditCard, Coins } from 'lucide-react';
+import { Loader2, AlertCircle, Check, CreditCard, Coins, QrCode, TabletSmartphone, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,15 +10,35 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
+import { QRCode } from './QRCode';
+import { apiRequest } from '@/lib/queryClient';
 
 // Define payment status type at the top level
 type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
 
 // Helper function to check if status is processing (to avoid type errors)
 const isProcessingStatus = (status: PaymentStatus): boolean => status === 'processing';
+
+// Mobile session interface
+interface MobileSession {
+  sessionId: string;
+  status: 'pending' | 'connected' | 'completed' | 'expired';
+  publicKey?: string;
+  provider?: 'phantom' | 'solflare';
+  expiresAt: string;
+  transactionData?: {
+    status: 'pending' | 'completed' | 'failed';
+    amount: string;
+    recipient: string;
+    paymentMethod: 'sol' | 'usdc';
+    tierId?: string;
+    signature?: string;
+  };
+}
 
 interface PaymentModalProps {
   isOpen: boolean;
