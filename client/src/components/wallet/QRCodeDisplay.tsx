@@ -17,8 +17,7 @@ export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeD
   const [pollingForPayment, setPollingForPayment] = useState(false);
   
   // Import the QR code image - this is the one provided by the user
-  // Use an imported asset for more reliable loading
-  const qrCodeImage = new URL('/Untitled.png', import.meta.url).href;
+  const qrCodeImage = '/Untitled.png';
   
   // Reset the copied state after 2 seconds
   useEffect(() => {
