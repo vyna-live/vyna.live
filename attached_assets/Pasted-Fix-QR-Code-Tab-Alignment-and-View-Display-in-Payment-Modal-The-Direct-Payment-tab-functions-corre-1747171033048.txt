@@ -1,0 +1,34 @@
+Fix QR Code Tab Alignment and View Display in Payment Modal
+ The Direct Payment tab functions correctly, but the QR Code tab has alignment and display issues. When users click the QR Code tab, the view doesn't display properly within the modal.
+## Current Issues 
+1. The tab buttons for "Direct Payment" and "QR Code" appear to have alignment issues
+2. When the QR Code tab is selected, the QR code view is not displaying properly within the modal 
+3. The "Mobile Payment" section appears to be misaligned or positioned incorrectly within the overall modal flow
+## Design Requirements
+1. Follow the existing dark theme and styling of the modal
+2. Maintain consistency with the well-designed elements in the first screenshot
+3. Ensure the modal remains compact and well-structured
+## Specific Changes Needed
+1. Fix the tab button alignment for "Direct Payment" and "QR Code" options
+   - Ensure both buttons are the same width
+   - Implement proper active/inactive styling for the tabs
+   - Make sure tab selection is visually clear to users
+2. Correct the QR code view display
+   - QR code should be centered in the modal
+   - Include clear instructions above the QR code ("Scan or copy this payment address to pay from your mobile wallet")
+     - Include a wallet address display below the QR code with a copy button as currently designed
+
+3. Ensure proper modal flow and continuity
+   - When switching between tabs, the modal height should adjust smoothly
+   - Cancel and payment buttons should remain at the bottom of the modal
+   - Content should be properly spaced with consistent margins
+
+## Technical Implementation Notes
+1. Use the QRcode image I sent you, I just resent it
+2. Ensure responsive behavior of the modal and its contents
+3. Implement proper tab switching logic to show/hide content appropriately
+4. Maintain all existing functionality while improving the UI
+
+## Reference Points
+- The "Direct Payment" tab shown in the second screenshot is well-designed and should be used as a reference for styling consistency
+- Follow the overall layout structure from the first screenshot, which shows the payment flow correctly

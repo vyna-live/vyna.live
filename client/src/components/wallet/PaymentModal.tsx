@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, AlertCircle, Check, CreditCard, Coins, Wallet, QrCode } from 'lucide-react';
+import { Loader2, AlertCircle, Check, CreditCard, Coins, Wallet, QrCode, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
-import { QRCodeDisplay } from './QRCodeDisplay';
+import { useToast } from '@/hooks/use-toast';
 
 // Define payment status type at the top level
 type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
@@ -38,6 +38,7 @@ export function PaymentModal({
   isPending = false,
 }: PaymentModalProps) {
   const { wallet, sendTransaction } = useSolanaWallet();
+  const { toast } = useToast();
   const [paymentMethod, setPaymentMethod] = useState<'sol' | 'usdc'>('sol');
   const [status, setStatus] = useState<PaymentStatus>('idle');
   // Keep track of processing status separately for button disabling
@@ -268,20 +269,34 @@ export function PaymentModal({
           </div>
           
           <div className="mt-4">
-            <Tabs value={paymentTab} onValueChange={(value) => setPaymentTab(value as 'wallet' | 'qrcode')}>
-              <TabsList className="grid w-full grid-cols-2 h-9">
-                <TabsTrigger value="wallet" className="flex items-center gap-1">
-                  <Wallet className="h-3.5 w-3.5" />
-                  <span>Direct Payment</span>
-                </TabsTrigger>
-                <TabsTrigger value="qrcode" className="flex items-center gap-1">
-                  <QrCode className="h-3.5 w-3.5" />
-                  <span>QR Code</span>
-                </TabsTrigger>
-              </TabsList>
+            <div className="grid grid-cols-2 gap-0 overflow-hidden rounded-md border border-[#333]">
+              <button 
+                onClick={() => setPaymentTab('wallet')}
+                className={`flex h-10 items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
+                  paymentTab === 'wallet' 
+                    ? 'bg-[#252525] text-white' 
+                    : 'bg-[#1a1a1a] text-neutral-400 hover:bg-[#252525]/30'
+                }`}
+              >
+                <Wallet className="h-4 w-4" />
+                Direct Payment
+              </button>
+              <button
+                onClick={() => setPaymentTab('qrcode')}
+                className={`flex h-10 items-center justify-center gap-1.5 text-sm font-medium transition-colors ${
+                  paymentTab === 'qrcode' 
+                    ? 'bg-[#252525] text-white' 
+                    : 'bg-[#1a1a1a] text-neutral-400 hover:bg-[#252525]/30'
+                }`}
+              >
+                <QrCode className="h-4 w-4" />
+                QR Code
+              </button>
+            </div>
               
-              <TabsContent value="wallet" className="pt-4">
-                <p className="text-sm text-neutral-400 mb-2">
+            {paymentTab === 'wallet' && (
+              <div className="pt-4 pb-2">
+                <p className="text-sm text-neutral-400 mb-4">
                   Pay directly using your connected wallet ({wallet?.name})
                 </p>
                 
@@ -316,18 +331,64 @@ export function PaymentModal({
                     )}
                   </Button>
                 </div>
-              </TabsContent>
+              </div>
+            )}
               
-              <TabsContent value="qrcode" className="pt-4">
-                {/* Pass the payment recipient address, amount, and currency symbol */}
-                <QRCodeDisplay 
-                  walletAddress="HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU"
-                  amount={paymentMethod === 'sol' ? selectedTier.priceSol : selectedTier.priceUsdc}
-                  currencySymbol={paymentMethod === 'sol' ? 'SOL' : 'USDC'}
-                />
+            {paymentTab === 'qrcode' && (
+              <div className="py-4 space-y-4">
+                <div className="text-center">
+                  <h3 className="font-medium mb-1">Mobile Payment</h3>
+                  <p className="text-sm text-neutral-400">
+                    Scan or copy this payment address to pay from your mobile wallet
+                  </p>
+                  <p className="font-medium mt-2">
+                    {paymentMethod === 'sol' ? selectedTier.priceSol : selectedTier.priceUsdc} {paymentMethod === 'sol' ? 'SOL' : 'USDC'}
+                  </p>
+                </div>
+                
+                <div className="flex items-center justify-center">
+                  <div className="bg-white rounded-lg p-2 w-[200px] h-[200px]">
+                    <img 
+                      src="/Untitled.png" 
+                      alt="Payment QR Code" 
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mx-auto px-1">
+                  <div className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded-lg border border-[#333] overflow-hidden">
+                    <div className="truncate text-sm text-neutral-300 pl-2">
+                      HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="h-8 px-3 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText("HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU");
+                        toast({
+                          title: "Address copied",
+                          description: "Payment address copied to clipboard",
+                        });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="text-center text-xs text-neutral-400 px-1">
+                  <p className="mb-1">
+                    Payment must come from your connected wallet address: <span className="text-white font-mono">{wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet?.publicKey?.length - 4)}</span>
+                  </p>
+                  <p>
+                    The system will automatically detect your payment and activate your subscription.
+                  </p>
+                </div>
                 
                 {error && (
-                  <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2 mt-4">
+                  <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2">
                     <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                     <span>{error}</span>
                   </div>
@@ -337,14 +398,14 @@ export function PaymentModal({
                   <Button 
                     variant="outline" 
                     onClick={onClose}
-                    className="border-neutral-700 text-white hover:bg-neutral-800 hover:text-white"
+                    className="border-[#333] text-white hover:bg-[#252525]"
                     disabled={isPending || isProcessing}
                   >
                     Close
                   </Button>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </div>
         </div>
       </>
