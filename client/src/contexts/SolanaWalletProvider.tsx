@@ -5,12 +5,16 @@ import {
   PublicKey, 
   Transaction, 
   TransactionInstruction, 
-  clusterApiUrl, 
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
-  Keypair,
-  sendAndConfirmTransaction
+  clusterApiUrl
 } from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
+  createTransferInstruction,
+  getAccount,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID
+} from '@solana/spl-token';
 
 // For adding a memo to each transaction to prevent duplicate processing
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -22,104 +26,6 @@ const USDC_MINT = new PublicKey('EaKWDkLz4U8pCyA4yrbqZffxjEyxzXY34tXtDg13WhhA');
 
 // USDC has 6 decimal places
 const USDC_DECIMALS = 6;
-
-// Token Program ID on Solana
-const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-
-// Associated Token Program ID
-const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
-
-// Implementation of SPL Token functions
-// These are simplified versions of the functions from the @solana/spl-token package
-
-/**
- * Derive the associated token account address for a wallet and token mint
- */
-async function getAssociatedTokenAddress(
-  mint: PublicKey,
-  owner: PublicKey
-): Promise<PublicKey> {
-  return (await PublicKey.findProgramAddress(
-    [
-      owner.toBuffer(),
-      TOKEN_PROGRAM_ID.toBuffer(),
-      mint.toBuffer(),
-    ],
-    ASSOCIATED_TOKEN_PROGRAM_ID
-  ))[0];
-}
-
-/**
- * Create instruction to create an associated token account
- */
-function createAssociatedTokenAccountInstruction(
-  payer: PublicKey,
-  associatedToken: PublicKey,
-  owner: PublicKey,
-  mint: PublicKey
-): TransactionInstruction {
-  return new TransactionInstruction({
-    keys: [
-      { pubkey: payer, isSigner: true, isWritable: true },
-      { pubkey: associatedToken, isSigner: false, isWritable: true },
-      { pubkey: owner, isSigner: false, isWritable: false },
-      { pubkey: mint, isSigner: false, isWritable: false },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-      { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-    ],
-    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
-    data: Buffer.from([])
-  });
-}
-
-/**
- * Create a token transfer instruction
- */
-function createTransferInstruction(
-  source: PublicKey,
-  destination: PublicKey,
-  owner: PublicKey,
-  amount: bigint
-): TransactionInstruction {
-  const dataLayout = {
-    transfer: 3, // instruction code for transfer
-  };
-  
-  const data = Buffer.alloc(12);
-  data.writeUInt8(dataLayout.transfer, 0); // instruction
-  data.writeBigUInt64LE(amount, 4); // amount as a 64-bit little-endian value
-  
-  return new TransactionInstruction({
-    keys: [
-      { pubkey: source, isSigner: false, isWritable: true },
-      { pubkey: destination, isSigner: false, isWritable: true },
-      { pubkey: owner, isSigner: true, isWritable: false },
-    ],
-    programId: TOKEN_PROGRAM_ID,
-    data
-  });
-}
-
-/**
- * Check if a token account exists and get its data
- */
-async function getAccount(
-  connection: Connection,
-  address: PublicKey
-): Promise<any> {
-  const accountInfo = await connection.getAccountInfo(address);
-  if (!accountInfo) {
-    throw new Error('Token account not found');
-  }
-  return {
-    address,
-    mint: new PublicKey(accountInfo.data.slice(0, 32)),
-    owner: new PublicKey(accountInfo.data.slice(32, 64)),
-    amount: BigInt(new DataView(accountInfo.data.buffer).getBigUint64(64, true)),
-    // Additional fields would be here in the real implementation
-  };
-}
 
 // Define wallet object interface
 interface Wallet {
@@ -323,9 +229,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
         const senderPublicKey = new PublicKey(wallet.publicKey);
         const recipientPublicKey = new PublicKey(recipient);
         
-        // Calculate token accounts (following the associated token account derivation)
-        // This is a simplified version that normally would use getAssociatedTokenAddress from @solana/spl-token
-        
         // Add memo instruction with payment details
         const memoMessage = `Vyna.live USDC payment: ${uniqueId}`;
         const encoder = new TextEncoder();
@@ -337,40 +240,61 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({ childr
           data: memoData
         });
         
-        // Add memo instruction to transaction for tracking
-        transaction.add(memoInstruction);
+        // Get the associated token accounts for sender and recipient
+        const senderTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT,
+          senderPublicKey
+        );
         
-        // Since we can't directly use spl-token methods, we'll implement a token transfer
-        // We'll use a more direct approach with detailed instructions to handle USDC transfer
+        const recipientTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT,
+          recipientPublicKey
+        );
         
-        // In a production environment, we would include a proper SPL token transfer instruction
-        // This would require creating associated token accounts and proper token program instructions
+        // Check if sender token account exists
+        let senderTokenAccountInfo;
+        try {
+          senderTokenAccountInfo = await getAccount(connection, senderTokenAccount);
+        } catch (error) {
+          console.error('Error getting sender token account:', error);
+          throw new Error('Your wallet does not have a USDC token account or insufficient USDC balance');
+        }
         
-        // For now, we'll use a fallback approach - create a comprehensive memo indicating payment details
-        // This is a placeholder for actual token transfer that should be replaced with proper SPL token handling
+        // Check if recipient token account exists, create if it doesn't
+        let recipientTokenAccountExists = false;
+        try {
+          await getAccount(connection, recipientTokenAccount);
+          recipientTokenAccountExists = true;
+        } catch (error) {
+          console.log('Recipient token account does not exist, will create it');
+          // We'll create the account in the transaction
+        }
         
-        const paymentDetailsMessage = JSON.stringify({
-          action: 'USDC_TRANSFER',
-          amount: amount,
-          recipient: recipient,
-          sender: wallet.publicKey,
-          timestamp: Date.now(),
-          txId: uniqueId,
-          currency: 'USDC'
-        });
+        // If recipient token account doesn't exist, add instruction to create it
+        if (!recipientTokenAccountExists) {
+          const createAccountInstruction = createAssociatedTokenAccountInstruction(
+            senderPublicKey, // payer
+            recipientTokenAccount, // associated token account address
+            recipientPublicKey, // owner
+            USDC_MINT // mint
+          );
+          transaction.add(createAccountInstruction);
+        }
         
-        const paymentDetailsMemo = new TransactionInstruction({
-          keys: [
-            { pubkey: senderPublicKey, isSigner: true, isWritable: true },
-            { pubkey: recipientPublicKey, isSigner: false, isWritable: true },
-            { pubkey: USDC_MINT, isSigner: false, isWritable: false }
-          ],
-          programId: MEMO_PROGRAM_ID,
-          data: encoder.encode(paymentDetailsMessage)
-        });
+        // Convert the amount from decimal USDC to token units (USDC has 6 decimals)
+        const usdcAmount = BigInt(Math.floor(parseFloat(amount) * Math.pow(10, USDC_DECIMALS)));
         
-        // Add the payment details instruction
-        transaction.add(paymentDetailsMemo);
+        // Create the token transfer instruction
+        const transferInstruction = createTransferInstruction(
+          senderTokenAccount, // source
+          recipientTokenAccount, // destination
+          senderPublicKey, // owner
+          usdcAmount // amount in token units
+        );
+        
+        // Add the instructions to the transaction
+        transaction.add(transferInstruction);
+        transaction.add(memoInstruction); // Add memo after transfer
         
         // Get recent blockhash and set transaction fee payer
         const blockhash = await connection.getLatestBlockhash();

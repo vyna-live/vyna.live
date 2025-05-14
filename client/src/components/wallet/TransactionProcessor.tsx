@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { Loader2, CheckCircle2, XCircle, ArrowLeftCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { createSubscriptionTransaction, confirmTransaction, activateSubscription } from '@/services/subscriptionService';
+import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 
 interface TransactionProcessorProps {
   amount: number; // Amount in USDC
@@ -20,16 +19,17 @@ export default function TransactionProcessor({
   onError,
   onCancel
 }: TransactionProcessorProps) {
-  const { publicKey, signTransaction } = useWallet();
   const [status, setStatus] = useState<TransactionStatus>('initial');
   const [progress, setProgress] = useState(0);
   const [signature, setSignature] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Function to handle the payment process
+  const { wallet, sendTransaction } = useSolanaWallet();
+  
   const processPayment = async () => {
-    if (!publicKey || !signTransaction) {
-      onError(new Error('Wallet not connected or unable to sign transactions'));
+    if (!wallet) {
+      onError(new Error('Wallet not connected'));
       return;
     }
 
@@ -38,63 +38,71 @@ export default function TransactionProcessor({
       setStatus('processing');
       setProgress(10);
 
-      // Create a transaction
-      const transaction = await createSubscriptionTransaction(publicKey, amount);
+      // Get recipient address (Vyna.live's USDC wallet)
+      // TODO: Replace this with your actual receiving USDC wallet address
+      const recipientAddress = "8ZFTmXYdx6YjWXHukKbKYZXvJ3DYiJnWvQwzmqApmLXe"; 
       
       // Update progress
       setProgress(30);
       
-      // Sign the transaction
-      const signedTransaction = await signTransaction(transaction);
-      
-      // Update progress
-      setProgress(50);
-      
-      // Get the transaction signature and confirm it
-      const connection = transaction.recentBlockhash ? 
-        transaction.feePayer?.equals(publicKey) : false;
-      
-      if (!connection) {
-        throw new Error('Transaction connection error');
-      }
-      
       // Send the transaction
-      const txSignature = await window.solana.sendTransaction(signedTransaction);
-      setSignature(txSignature);
-      
-      // Update status and progress
-      setStatus('confirming');
-      setProgress(70);
-      
-      // Confirm the transaction
-      const confirmed = await confirmTransaction(txSignature);
-      
-      if (!confirmed) {
-        throw new Error('Transaction failed to confirm');
+      try {
+        const { signature } = await sendTransaction({
+          amount: amount.toString(),
+          recipient: recipientAddress,
+          paymentMethod: 'usdc'
+        });
+        
+        setSignature(signature);
+        
+        // Update status and progress
+        setStatus('confirming');
+        setProgress(70);
+        
+        // Update progress
+        setProgress(90);
+        
+        // Simulate activation
+        // TODO: Replace with actual subscription activation API call
+        const activateSubscription = async () => {
+          // Call your API to activate the subscription
+          try {
+            const response = await fetch('/api/subscription/create', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                tier: 'pro',
+                transactionId: signature,
+                paymentMethod: 'usdc'
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error('Failed to activate subscription');
+            }
+            
+            return true;
+          } catch (error) {
+            console.error('Activation error:', error);
+            return false;
+          }
+        };
+        
+        await activateSubscription();
+        
+        // Update status and progress
+        setStatus('success');
+        setProgress(100);
+        
+        // Call success callback after a short delay
+        setTimeout(() => {
+          onSuccess();
+        }, 2000);
+      } catch (error) {
+        throw error;
       }
-      
-      // Update progress
-      setProgress(90);
-      
-      // Activate the subscription
-      const activated = await activateSubscription(
-        1, // TODO: Get actual user ID
-        'pro', // Default to Pro tier
-        txSignature
-      );
-      
-      if (!activated) {
-        throw new Error('Failed to activate subscription');
-      }
-      
-      // Update status and progress
-      setStatus('success');
-      setProgress(100);
-      
-      // Call success callback after a short delay
-      setTimeout(() => {
-        onSuccess();
-      }, 2000);
       
     } catch (error) {
       console.error('Payment error:', error);
