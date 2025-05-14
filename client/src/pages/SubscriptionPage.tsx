@@ -197,10 +197,10 @@ export default function SubscriptionPage() {
                   <p className="text-neutral-400 mt-1">{tier.headline}</p>
 
                   <div className="mt-4 flex items-baseline">
-                    <span className="text-3xl font-bold">{tier.priceSol} SOL</span>
-                    <span className="ml-2 text-neutral-400">/ month</span>
+                    <span className="text-3xl font-bold">${tier.priceUsdc}</span>
+                    <span className="ml-2 text-neutral-400">USDC / month</span>
                   </div>
-                  <p className="text-xs text-neutral-500 mt-1">or {tier.priceUsdc} USDC</p>
+                  <p className="text-xs text-neutral-500 mt-1">USDC operates with 6 decimal places precision</p>
 
                   <div className="mt-6">
                     <div className="feature-categories">
@@ -333,7 +333,7 @@ export default function SubscriptionPage() {
                     <div className="hidden sm:flex items-center gap-2">
                       {tier.id !== 'free' && (
                         <div className="text-right">
-                          <div className="text-xl font-semibold">{tier.priceSol} SOL</div>
+                          <div className="text-xl font-semibold">${tier.priceUsdc} USDC</div>
                           <div className="text-xs text-neutral-400">per month</div>
                         </div>
                       )}

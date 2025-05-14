@@ -233,7 +233,6 @@ function getMockSubscriptionTiers(): SubscriptionTier[] {
       name: 'Free',
       headline: 'Get started with basic features',
       description: 'Experience VynaAI with essential features for casual users.',
-      priceSol: 0,
       priceUsdc: 0,
       features: [
         'Access to basic AI model (standard response quality)',
@@ -246,15 +245,25 @@ function getMockSubscriptionTiers(): SubscriptionTier[] {
         'No categorization or tagging features',
         'Basic customer support (email only, 48-hour response time)',
         'Research rewards program participation (basic level)'
-      ]
+      ],
+      featureAccess: {
+        maxChatSessions: 1,
+        maxMessagePerDay: 20,
+        maxNotes: 5,
+        allowedAiModels: ['basic'],
+        richResponsesPerDay: 5,
+        advancedFormatting: false,
+        noteCategories: false,
+        searchEnabled: false,
+        exportEnabled: false
+      }
     },
     {
       id: 'pro',
       name: 'Pro',
       headline: 'For power users and creators',
       description: 'Enhance your experience with advanced features and capabilities.',
-      priceSol: 0.15,
-      priceUsdc: 15,
+      priceUsdc: 15.00,
       mostPopular: true,
       features: [
         'Access to advanced AI models (Claude, GPT-4)',
@@ -272,15 +281,25 @@ function getMockSubscriptionTiers(): SubscriptionTier[] {
         'Enhanced research rewards program (higher points multiplier)',
         'Customizable UI themes',
         'AI model selection option'
-      ]
+      ],
+      featureAccess: {
+        maxChatSessions: 10,
+        maxMessagePerDay: -1, // Unlimited
+        maxNotes: -1, // Unlimited
+        allowedAiModels: ['basic', 'claude', 'gpt4'],
+        richResponsesPerDay: -1, // Unlimited
+        advancedFormatting: true,
+        noteCategories: true,
+        searchEnabled: true,
+        exportEnabled: true
+      }
     },
     {
       id: 'max',
       name: 'Max',
       headline: 'For professionals and teams',
       description: 'Unlock the full potential with our most comprehensive plan.',
-      priceSol: 0.75,
-      priceUsdc: 75,
+      priceUsdc: 75.00,
       features: [
         'Access to all AI models, including exclusive Max-only models',
         'Priority API access (faster response times)',
@@ -303,7 +322,23 @@ function getMockSubscriptionTiers(): SubscriptionTier[] {
         'API access for custom integrations',
         'Analytics dashboard for usage statistics',
         'Custom training for AI responses'
-      ]
+      ],
+      featureAccess: {
+        maxChatSessions: -1, // Unlimited
+        maxMessagePerDay: -1, // Unlimited
+        maxNotes: -1, // Unlimited
+        allowedAiModels: ['basic', 'claude', 'gpt4', 'max-exclusive'],
+        richResponsesPerDay: -1, // Unlimited
+        advancedFormatting: true,
+        advancedVisualization: true,
+        noteCategories: true,
+        advancedNoteOrganization: true,
+        searchEnabled: true,
+        exportEnabled: true,
+        collaborationEnabled: true,
+        apiAccessEnabled: true,
+        customTraining: true
+      }
     }
   ];
 }
@@ -313,7 +348,7 @@ function getMockUserSubscription(): UserSubscription | null {
   if (Math.random() > 0.5) {
     // Randomly select a tier between pro and max
     const tier = Math.random() > 0.5 ? 'pro' : 'max';
-    const amount = tier === 'pro' ? '0.15' : '0.75';
+    const amount = tier === 'pro' ? '15.00' : '75.00';
     
     return {
       id: 123,
@@ -326,7 +361,7 @@ function getMockUserSubscription(): UserSubscription | null {
       autoRenew: true,
       lastPayment: {
         amount: amount,
-        currency: 'SOL',
+        currency: 'USDC',
         date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
         transactionId: 'mock_tx_' + Math.random().toString(36).substring(2, 15)
       }
