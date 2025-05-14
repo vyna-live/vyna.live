@@ -6,10 +6,25 @@ export interface SubscriptionTier {
   name: string;
   description: string;
   headline: string;
-  priceSol: number;
   priceUsdc: number;
   features: string[];
   mostPopular?: boolean;
+  featureAccess?: {
+    maxChatSessions?: number;
+    maxMessagePerDay?: number;
+    maxNotes?: number;
+    allowedAiModels?: string[];
+    richResponsesPerDay?: number;
+    advancedFormatting?: boolean;
+    noteCategories?: boolean;
+    searchEnabled?: boolean;
+    exportEnabled?: boolean;
+    advancedVisualization?: boolean;
+    advancedNoteOrganization?: boolean;
+    collaborationEnabled?: boolean;
+    apiAccessEnabled?: boolean;
+    customTraining?: boolean;
+  };
 }
 
 // User Subscription interface

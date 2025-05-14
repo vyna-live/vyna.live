@@ -26,7 +26,7 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedTier: SubscriptionTier;
-  onSuccess: (signature: string, amount: string, paymentMethod: 'sol' | 'usdc') => void;
+  onSuccess: (signature: string, amount: string, paymentMethod: 'usdc') => void;
   isPending?: boolean;
 }
 
@@ -39,7 +39,8 @@ export function PaymentModal({
 }: PaymentModalProps) {
   const { wallet, sendTransaction } = useSolanaWallet();
   const { toast } = useToast();
-  const [paymentMethod, setPaymentMethod] = useState<'sol' | 'usdc'>('sol');
+  // USDC is the only payment method now
+  const paymentMethod = 'usdc';
   const [status, setStatus] = useState<PaymentStatus>('idle');
   // Keep track of processing status separately for button disabling
   const [isProcessing, setIsProcessing] = useState(false);
@@ -82,10 +83,8 @@ export function PaymentModal({
         checkInterval = setTimeout(() => {
           // 10% chance of "detecting" a payment in each interval (for demo purposes)
           if (Math.random() < 0.1) {
-            // Simulate receiving a payment
-            const amount = paymentMethod === 'sol' 
-              ? selectedTier.priceSol.toString()
-              : selectedTier.priceUsdc.toString();
+            // Get the USDC amount with proper formatting
+            const amount = selectedTier.priceUsdc.toString();
               
             // Simulate transaction signature
             const mockSignature = 'QR' + Math.random().toString(36).substring(2, 15);
@@ -104,7 +103,7 @@ export function PaymentModal({
         if (checkInterval) clearTimeout(checkInterval);
       };
     }
-  }, [paymentTab, status, paymentMethod, selectedTier, onSuccess]);
+  }, [paymentTab, status, selectedTier, onSuccess]);
 
   // Handle direct wallet payment
   const handleSubmit = async () => {
@@ -118,10 +117,8 @@ export function PaymentModal({
     setError(null);
 
     try {
-      // Get amount based on payment method
-      const amount = paymentMethod === 'sol' 
-        ? selectedTier.priceSol.toString()
-        : selectedTier.priceUsdc.toString();
+      // Get USDC amount with 6 decimal places precision
+      const amount = selectedTier.priceUsdc.toFixed(6);
 
       // Program wallet that receives the payment
       const recipient = 'HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU'; // Solana wallet address that receives payments
@@ -218,54 +215,20 @@ export function PaymentModal({
             </div>
             <div className="flex justify-between font-medium text-lg pt-2 border-t border-neutral-800">
               <span>Total</span>
-              <span>{paymentMethod === 'sol' ? `${selectedTier.priceSol} SOL` : `${selectedTier.priceUsdc} USDC`}</span>
+              <span>${selectedTier.priceUsdc} USDC</span>
             </div>
           </div>
 
           <div>
             <div className="mb-2 font-medium">Payment Method</div>
-            <RadioGroup 
-              defaultValue="sol" 
-              value={paymentMethod} 
-              onValueChange={(value) => setPaymentMethod(value as 'sol' | 'usdc')}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div>
-                <RadioGroupItem 
-                  value="sol" 
-                  id="sol" 
-                  className="peer sr-only" 
-                />
-                <Label
-                  htmlFor="sol"
-                  className="flex flex-col items-center justify-between rounded-lg border-2 border-neutral-800 bg-neutral-900 p-4 hover:bg-neutral-800/50 hover:text-accent-foreground peer-data-[state=checked]:border-[#E6E2DA] [&:has([data-state=checked])]:border-[#E6E2DA]"
-                >
-                  <Coins className="mb-3 h-6 w-6 text-[#E6E2DA]" />
-                  <div className="text-center">
-                    <p className="font-medium">SOL</p>
-                    <p className="text-sm text-neutral-400">Solana</p>
-                  </div>
-                </Label>
+            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-[#27a0f2]/30 bg-neutral-900 p-4">
+              <CreditCard className="mb-3 h-6 w-6 text-[#27a0f2]" />
+              <div className="text-center">
+                <p className="font-medium">USDC</p>
+                <p className="text-sm text-neutral-400">USD Coin (SPL Token)</p>
               </div>
-
-              <div>
-                <RadioGroupItem 
-                  value="usdc" 
-                  id="usdc" 
-                  className="peer sr-only" 
-                />
-                <Label
-                  htmlFor="usdc"
-                  className="flex flex-col items-center justify-between rounded-lg border-2 border-neutral-800 bg-neutral-900 p-4 hover:bg-neutral-800/50 hover:text-accent-foreground peer-data-[state=checked]:border-[#E6E2DA] [&:has([data-state=checked])]:border-[#E6E2DA]"
-                >
-                  <CreditCard className="mb-3 h-6 w-6 text-[#27a0f2]" />
-                  <div className="text-center">
-                    <p className="font-medium">USDC</p>
-                    <p className="text-sm text-neutral-400">USD Coin</p>
-                  </div>
-                </Label>
-              </div>
-            </RadioGroup>
+              <p className="text-xs text-neutral-500 mt-2">USDC operates with 6 decimal places precision</p>
+            </div>
           </div>
           
           <div className="mt-4">
@@ -327,7 +290,7 @@ export function PaymentModal({
                         Processing...
                       </>
                     ) : (
-                      `Pay ${paymentMethod === 'sol' ? selectedTier.priceSol + ' SOL' : selectedTier.priceUsdc + ' USDC'}`
+                      `Pay ${selectedTier.priceUsdc} USDC`
                     )}
                   </Button>
                 </div>
@@ -342,7 +305,7 @@ export function PaymentModal({
                     Scan or copy this payment address to pay from your mobile wallet
                   </p>
                   <p className="font-medium mt-2">
-                    {paymentMethod === 'sol' ? selectedTier.priceSol : selectedTier.priceUsdc} {paymentMethod === 'sol' ? 'SOL' : 'USDC'}
+                    {selectedTier.priceUsdc} USDC
                   </p>
                 </div>
                 
