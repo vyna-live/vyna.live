@@ -1,6 +1,16 @@
 import React, { createContext, useState, useContext, useCallback, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Connection, PublicKey, Transaction, TransactionInstruction, clusterApiUrl } from '@solana/web3.js';
+import { 
+  Connection, 
+  PublicKey, 
+  Transaction, 
+  TransactionInstruction, 
+  clusterApiUrl, 
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  Keypair,
+  sendAndConfirmTransaction
+} from '@solana/web3.js';
 
 // For adding a memo to each transaction to prevent duplicate processing
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -15,6 +25,101 @@ const USDC_DECIMALS = 6;
 
 // Token Program ID on Solana
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+
+// Associated Token Program ID
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+
+// Implementation of SPL Token functions
+// These are simplified versions of the functions from the @solana/spl-token package
+
+/**
+ * Derive the associated token account address for a wallet and token mint
+ */
+async function getAssociatedTokenAddress(
+  mint: PublicKey,
+  owner: PublicKey
+): Promise<PublicKey> {
+  return (await PublicKey.findProgramAddress(
+    [
+      owner.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      mint.toBuffer(),
+    ],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  ))[0];
+}
+
+/**
+ * Create instruction to create an associated token account
+ */
+function createAssociatedTokenAccountInstruction(
+  payer: PublicKey,
+  associatedToken: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey
+): TransactionInstruction {
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: associatedToken, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: false, isWritable: false },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+    ],
+    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
+    data: Buffer.from([])
+  });
+}
+
+/**
+ * Create a token transfer instruction
+ */
+function createTransferInstruction(
+  source: PublicKey,
+  destination: PublicKey,
+  owner: PublicKey,
+  amount: bigint
+): TransactionInstruction {
+  const dataLayout = {
+    transfer: 3, // instruction code for transfer
+  };
+  
+  const data = Buffer.alloc(12);
+  data.writeUInt8(dataLayout.transfer, 0); // instruction
+  data.writeBigUInt64LE(amount, 4); // amount as a 64-bit little-endian value
+  
+  return new TransactionInstruction({
+    keys: [
+      { pubkey: source, isSigner: false, isWritable: true },
+      { pubkey: destination, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: true, isWritable: false },
+    ],
+    programId: TOKEN_PROGRAM_ID,
+    data
+  });
+}
+
+/**
+ * Check if a token account exists and get its data
+ */
+async function getAccount(
+  connection: Connection,
+  address: PublicKey
+): Promise<any> {
+  const accountInfo = await connection.getAccountInfo(address);
+  if (!accountInfo) {
+    throw new Error('Token account not found');
+  }
+  return {
+    address,
+    mint: new PublicKey(accountInfo.data.slice(0, 32)),
+    owner: new PublicKey(accountInfo.data.slice(32, 64)),
+    amount: BigInt(new DataView(accountInfo.data.buffer).getBigUint64(64, true)),
+    // Additional fields would be here in the real implementation
+  };
+}
 
 // Define wallet object interface
 interface Wallet {
