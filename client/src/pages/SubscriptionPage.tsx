@@ -50,7 +50,7 @@ export default function SubscriptionPage() {
   } = useMutation({
     mutationFn: (variables: { 
       tierId: string; 
-      paymentMethod: 'sol' | 'usdc'; 
+      paymentMethod: 'usdc'; 
       amount: string; 
       transactionSignature: string;
     }) => createSubscription(
@@ -81,7 +81,7 @@ export default function SubscriptionPage() {
   const handlePaymentSuccess = (
     signature: string,
     amount: string,
-    paymentMethod: 'sol' | 'usdc'
+    paymentMethod: 'usdc'
   ) => {
     if (selectedTier) {
       createSubscriptionMutation({
@@ -434,7 +434,7 @@ export default function SubscriptionPage() {
                         onClick={() => handleSelectTier(tier)}
                         className="w-full bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
                       >
-                        Subscribe to {tier.name} - {tier.priceSol} SOL/month
+                        Subscribe to {tier.name} - ${tier.priceUsdc} USDC/month
                       </Button>
                     )}
                   </div>
