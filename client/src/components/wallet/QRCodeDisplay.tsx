@@ -7,7 +7,7 @@ import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 interface QRCodeDisplayProps {
   walletAddress: string;
   amount: number;
-  currencySymbol: string;
+  currencySymbol: 'USDC';
 }
 
 export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeDisplayProps) {
@@ -53,13 +53,14 @@ export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeD
       ) : null}
       
       <div className="text-center">
-        <h3 className="font-medium text-lg mb-1">Mobile Payment</h3>
+        <h3 className="font-medium text-lg mb-1">USDC Payment</h3>
         <p className="text-neutral-400 text-sm">
-          Scan or copy this payment address to pay from your mobile wallet
+          Scan or copy this payment address to pay with USDC from your wallet
         </p>
         <p className="font-medium mt-2 text-[#E6E2DA]">
-          {amount} {currencySymbol}
+          ${amount} {currencySymbol}
         </p>
+        <p className="text-xs text-neutral-500 mt-1">USDC operates with 6 decimal places precision</p>
       </div>
       
       <div className="border-2 border-[#E6E2DA]/20 rounded-lg p-2 bg-white">
@@ -101,14 +102,17 @@ export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeD
           Payment must come from your connected wallet address: <span className="text-[#E6E2DA]/80 font-mono text-xs">{wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet.publicKey.length - 4)}</span>
         </p>
         <p className="mt-2 text-[#E6E2DA]">
-          The system will automatically detect your payment and activate your subscription.
+          Send exact USDC amount to complete your subscription payment. The system will automatically detect your payment and activate your subscription.
+        </p>
+        <p className="mt-1 text-amber-500/80 text-xs">
+          Make sure you're sending USDC tokens and not some other token or cryptocurrency.
         </p>
       </div>
       
       {pollingForPayment && (
         <div className="rounded-lg bg-green-900/20 p-3 text-green-500 text-sm flex items-start gap-2 mt-2">
           <div className="animate-pulse bg-green-500 rounded-full h-2 w-2 mt-1.5" />
-          <span>Listening for payment confirmation...</span>
+          <span>Listening for USDC payment confirmation...</span>
         </div>
       )}
     </div>
