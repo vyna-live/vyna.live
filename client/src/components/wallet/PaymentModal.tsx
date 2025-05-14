@@ -300,13 +300,14 @@ export function PaymentModal({
             {paymentTab === 'qrcode' && (
               <div className="py-4 space-y-4">
                 <div className="text-center">
-                  <h3 className="font-medium mb-1">Mobile Payment</h3>
+                  <h3 className="font-medium mb-1">USDC Payment</h3>
                   <p className="text-sm text-neutral-400">
-                    Scan or copy this payment address to pay from your mobile wallet
+                    Scan or copy this payment address to pay with USDC from your wallet
                   </p>
                   <p className="font-medium mt-2">
-                    {selectedTier.priceUsdc} USDC
+                    ${selectedTier.priceUsdc} USDC
                   </p>
+                  <p className="text-xs text-neutral-500 mt-1">USDC operates with 6 decimal places precision</p>
                 </div>
                 
                 <div className="flex items-center justify-center">
@@ -346,7 +347,10 @@ export function PaymentModal({
                     Payment must come from your connected wallet address: <span className="text-white font-mono">{wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet?.publicKey?.length - 4)}</span>
                   </p>
                   <p>
-                    The system will automatically detect your payment and activate your subscription.
+                    Send exact USDC amount to complete your subscription payment. The system will automatically detect your payment and activate your subscription.
+                  </p>
+                  <p className="mt-1 text-amber-500/80">
+                    Make sure you're sending USDC tokens and not some other token or cryptocurrency.
                   </p>
                 </div>
                 

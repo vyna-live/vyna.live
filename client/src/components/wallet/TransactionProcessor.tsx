@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { createSubscriptionTransaction, confirmTransaction, activateSubscription } from '@/services/subscriptionService';
 
 interface TransactionProcessorProps {
-  amount: number; // Amount in SOL
+  amount: number; // Amount in USDC
   onSuccess: () => void;
   onError: (error: Error) => void;
   onCancel: () => void;

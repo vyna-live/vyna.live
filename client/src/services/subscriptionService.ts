@@ -94,7 +94,7 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
 // Create a new subscription
 export async function createSubscription(
   tierId: string,
-  paymentMethod: 'sol' | 'usdc',
+  paymentMethod: 'usdc',
   amount: string,
   transactionSignature: string
 ): Promise<UserSubscription> {
