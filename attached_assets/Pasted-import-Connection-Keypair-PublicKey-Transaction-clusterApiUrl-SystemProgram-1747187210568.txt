@@ -1,0 +1,111 @@
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  clusterApiUrl,
+  SystemProgram,
+  LAMPORTS_PER_SOL,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js';
+
+import {
+  getAssociatedTokenAddress,
+  getAccount,
+  createTransferInstruction,
+} from '@solana/spl-token';
+
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { toast } from 'react-hot-toast';
+import { WalletContextState } from '@solana/wallet-adapter-react';
+
+const USDC_DEVNET_MINT = new PublicKey('EaKWDkLz4U8pCyA4yrbqZffxjEyxzXY34tXtDg13WhhA'); // Devnet USDC
+
+export const sendTransaction = async (
+  wallet: WalletContextState,
+  amount: number,
+  receiver: string,
+  connection: Connection,
+  memo?: string, // Optional memo parameter
+) => {
+  try {
+    if (!wallet.connected || !wallet.publicKey) {
+      throw new Error('Wallet not connected');
+    }
+
+    const sender = wallet.publicKey;
+    const recipient = new PublicKey(receiver);
+
+    toast.loading('Preparing transaction...', { id: 'tx' });
+
+    // Get associated token addresses
+    const senderTokenAccount = await getAssociatedTokenAddress(
+      USDC_DEVNET_MINT,
+      sender
+    );
+
+    const recipientTokenAccount = await getAssociatedTokenAddress(
+      USDC_DEVNET_MINT,
+      recipient
+    );
+
+    // Check if token accounts exist
+    const senderTokenInfo = await getAccount(connection, senderTokenAccount).catch(() => null);
+    const recipientTokenInfo = await getAccount(connection, recipientTokenAccount).catch(() => null);
+
+    if (!senderTokenInfo) {
+      throw new Error('Sender has no USDC token account.');
+    }
+
+    if (!recipientTokenInfo) {
+      throw new Error('Recipient has no USDC token account.');
+    }
+
+    // Convert amount to smallest unit (USDC has 6 decimals)
+    const usdcAmount = BigInt(amount * 10 ** 6);
+
+    // Create transfer instruction
+    const transferInstruction = createTransferInstruction(
+      senderTokenAccount,
+      recipientTokenAccount,
+      sender,
+      usdcAmount
+    );
+
+    // If memo is provided, add it as a separate instruction
+    let memoInstruction;
+    if (memo) {
+      memoInstruction = SystemProgram.transfer({
+        fromPubkey: sender,
+        toPubkey: recipient,
+        lamports: 0, // No lamports are transferred with the memo
+      });
+      // Add the memo instruction
+      transferInstruction.data.push(Buffer.from(memo, 'utf8'));
+    }
+
+    // Create transaction
+    const transaction = new Transaction().add(transferInstruction);
+    if (memoInstruction) {
+      transaction.add(memoInstruction);
+    }
+
+    transaction.feePayer = sender;
+
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+
+    // Sign and send transaction
+    const signedTx = await wallet.signTransaction?.(transaction);
+    if (!signedTx) throw new Error('Transaction signing failed');
+
+    const signature = await connection.sendRawTransaction(signedTx.serialize());
+    await connection.confirmTransaction(signature, 'processed');
+
+    toast.success(`Transaction successful!`, { id: 'tx' });
+    console.log(`✅ Tx signature: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
+  } catch (err: any) {
+    toast.error(err.message || 'Transaction failed', { id: 'tx' });
+    console.error('❌ USDC Transaction Error:', err);
+  }
+};
