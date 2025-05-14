@@ -153,16 +153,20 @@ export const walletTransactions = pgTable("wallet_transactions", {
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  tierId: varchar("tier_id", { length: 50 }).notNull(), // free, pro, enterprise
+  tierId: varchar("tier_id", { length: 50 }).notNull(), // free, pro, max
   status: varchar("status", { length: 20 }).default("active").notNull(), // active, cancelled, expired, grace_period
-  paymentMethod: varchar("payment_method", { length: 10 }), // sol, usdc
-  amount: text("amount"), // Amount paid in SOL or USDC
+  paymentMethod: varchar("payment_method", { length: 10 }).default("usdc"), // Only usdc supported
+  amount: text("amount"), // Amount paid in USDC (6 decimal precision)
   activatedAt: timestamp("activated_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   cancelledAt: timestamp("cancelled_at"),
   renewalEnabled: boolean("renewal_enabled").default(false),
   lastRenewalReminderSent: timestamp("last_renewal_reminder_sent"),
   gracePeriodEnds: timestamp("grace_period_ends"),
+  transactionSignature: text("transaction_signature"), // Blockchain transaction signature
+  featureAccess: jsonb("feature_access"), // Specific feature access controls
+  usageMetrics: jsonb("usage_metrics"), // Track usage of limited features
+  paymentDetails: jsonb("payment_details"), // Payment-specific details with USDC precision
   metadata: jsonb("metadata"), // Additional subscription data
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

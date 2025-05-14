@@ -16,7 +16,6 @@ const subscriptionTiers = [
     name: 'Free',
     headline: 'Get started with basic features',
     description: 'Experience VynaAI with essential features for casual users.',
-    priceSol: 0,
     priceUsdc: 0,
     features: [
       'Access to basic AI model (standard response quality)',
@@ -29,15 +28,25 @@ const subscriptionTiers = [
       'No categorization or tagging features',
       'Basic customer support (email only, 48-hour response time)',
       'Research rewards program participation (basic level)'
-    ]
+    ],
+    featureAccess: {
+      maxChatSessions: 1,
+      maxMessagePerDay: 20,
+      maxNotes: 5,
+      allowedAiModels: ['basic'],
+      richResponsesPerDay: 5,
+      advancedFormatting: false,
+      noteCategories: false,
+      searchEnabled: false,
+      exportEnabled: false
+    }
   },
   {
     id: 'pro',
     name: 'Pro',
     headline: 'For power users and creators',
     description: 'Enhance your experience with advanced features and capabilities.',
-    priceSol: 0.15,
-    priceUsdc: 15,
+    priceUsdc: 15.00,
     features: [
       'Access to advanced AI models (Claude, GPT-4)',
       'Unlimited messages per day',
@@ -55,15 +64,25 @@ const subscriptionTiers = [
       'Customizable UI themes',
       'AI model selection option'
     ],
-    mostPopular: true
+    mostPopular: true,
+    featureAccess: {
+      maxChatSessions: 10,
+      maxMessagePerDay: -1, // Unlimited
+      maxNotes: -1, // Unlimited
+      allowedAiModels: ['basic', 'claude', 'gpt4'],
+      richResponsesPerDay: -1, // Unlimited
+      advancedFormatting: true,
+      noteCategories: true,
+      searchEnabled: true,
+      exportEnabled: true
+    }
   },
   {
     id: 'max',
     name: 'Max',
     headline: 'For professionals and teams',
     description: 'Unlock the full potential with our most comprehensive plan.',
-    priceSol: 0.75,
-    priceUsdc: 75,
+    priceUsdc: 75.00,
     features: [
       'Access to all AI models, including exclusive Max-only models',
       'Priority API access (faster response times)',
@@ -86,7 +105,23 @@ const subscriptionTiers = [
       'API access for custom integrations',
       'Analytics dashboard for usage statistics',
       'Custom training for AI responses'
-    ]
+    ],
+    featureAccess: {
+      maxChatSessions: -1, // Unlimited
+      maxMessagePerDay: -1, // Unlimited
+      maxNotes: -1, // Unlimited
+      allowedAiModels: ['basic', 'claude', 'gpt4', 'max-exclusive'],
+      richResponsesPerDay: -1, // Unlimited
+      advancedFormatting: true,
+      advancedVisualization: true,
+      noteCategories: true,
+      advancedNoteOrganization: true,
+      searchEnabled: true,
+      exportEnabled: true,
+      collaborationEnabled: true,
+      apiAccessEnabled: true,
+      customTraining: true
+    }
   }
 ];
 
@@ -143,6 +178,123 @@ export async function checkUserSubscription(userId: number): Promise<boolean> {
     return userSubscriptions.length > 0;
   } catch (error) {
     console.error('Error checking user subscription:', error);
+    return false;
+  }
+}
+
+/**
+ * Get a user's current subscription tier and access controls
+ */
+export async function getUserSubscriptionTier(userId: number): Promise<{
+  tierId: string;
+  featureAccess: any;
+  status: string;
+  expiresAt: Date | null;
+}> {
+  try {
+    const now = new Date();
+    
+    // Default to free tier
+    let tierId = 'free';
+    let status = 'active';
+    let expiresAt = null;
+    
+    // Check for active subscription
+    const userSubscriptions = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .orderBy(desc(subscriptions.id));
+    
+    if (userSubscriptions.length > 0) {
+      const subscription = userSubscriptions[0];
+      tierId = subscription.tierId;
+      status = subscription.status;
+      expiresAt = subscription.expiresAt;
+      
+      // Check if subscription is expired but in grace period
+      if (status === 'active' && subscription.expiresAt && new Date(subscription.expiresAt) < now) {
+        // If within grace period, mark as grace period
+        if (subscription.gracePeriodEnds && new Date(subscription.gracePeriodEnds) >= now) {
+          status = 'grace_period';
+        } else {
+          status = 'expired';
+          tierId = 'free'; // Revert to free tier if expired
+        }
+      }
+    }
+    
+    // Get feature access for the tier
+    const tier = subscriptionTiers.find(t => t.id === tierId);
+    if (!tier) {
+      // Fallback to free tier if the tier isn't found
+      const freeTier = subscriptionTiers.find(t => t.id === 'free');
+      return {
+        tierId: 'free',
+        featureAccess: freeTier ? freeTier.featureAccess : {},
+        status,
+        expiresAt
+      };
+    }
+    
+    return {
+      tierId,
+      featureAccess: tier.featureAccess,
+      status,
+      expiresAt
+    };
+  } catch (error) {
+    console.error('Error getting user subscription tier:', error);
+    // Fallback to free tier
+    const freeTier = subscriptionTiers.find(t => t.id === 'free');
+    return {
+      tierId: 'free',
+      featureAccess: freeTier ? freeTier.featureAccess : {},
+      status: 'none',
+      expiresAt: null
+    };
+  }
+}
+
+/**
+ * Check if user has access to a specific feature
+ */
+export async function checkFeatureAccess(userId: number, feature: string, value?: any): Promise<boolean> {
+  try {
+    const { featureAccess, status } = await getUserSubscriptionTier(userId);
+    
+    // If user's subscription is not active, restrict access to premium features
+    if (status !== 'active' && status !== 'grace_period' && feature !== 'maxChatSessions' && feature !== 'maxNotes') {
+      // Allow basic features even for expired subscriptions
+      const basicFeatures = ['allowedAiModels', 'maxChatSessions', 'maxNotes'];
+      if (!basicFeatures.includes(feature)) {
+        return false;
+      }
+    }
+    
+    // If the feature doesn't exist in the access control, deny access
+    if (!(feature in featureAccess)) {
+      return false;
+    }
+    
+    const accessValue = featureAccess[feature];
+    
+    // Handle different types of feature checks
+    if (feature === 'allowedAiModels' && value) {
+      // Check if the requested AI model is in the allowed list
+      return Array.isArray(accessValue) && accessValue.includes(value);
+    } else if (feature === 'maxChatSessions' || feature === 'maxMessagePerDay' || feature === 'maxNotes') {
+      // For numeric limits, -1 means unlimited
+      if (accessValue === -1) return true;
+      
+      // Check if the current usage is below the limit
+      return value <= accessValue;
+    } else {
+      // For boolean features, return the value directly
+      return !!accessValue;
+    }
+  } catch (error) {
+    console.error(`Error checking feature access for ${feature}:`, error);
     return false;
   }
 }
@@ -224,21 +376,48 @@ export async function createUserSubscription(req: Request, res: Response) {
     }
 
     const userId = req.user.id;
-    const { tierId, paymentMethod, amount, transactionSignature } = req.body;
+    const { tierId, amount, transactionSignature } = req.body;
+    const paymentMethod = 'usdc'; // We now only support USDC
     
     // Validate tier ID
     if (!['free', 'pro', 'max'].includes(tierId)) {
       return res.status(400).json({ error: 'Invalid subscription tier' });
     }
     
-    // Validate payment method
-    if (!['sol', 'usdc'].includes(paymentMethod)) {
-      return res.status(400).json({ error: 'Invalid payment method' });
+    // Special case for free tier
+    if (tierId === 'free' && parseFloat(amount) !== 0) {
+      return res.status(400).json({ error: 'Free tier does not require payment' });
     }
     
-    // Special case for free tier
-    if (tierId === 'free' && (paymentMethod !== 'sol' || parseFloat(amount) !== 0)) {
-      return res.status(400).json({ error: 'Free tier does not require payment' });
+    // Find the tier to validate the amount
+    const tier = subscriptionTiers.find(t => t.id === tierId);
+    if (!tier) {
+      return res.status(400).json({ error: 'Subscription tier not found' });
+    }
+    
+    // For paid tiers, verify the USDC amount matches the expected price
+    // Account for USDC's 6 decimal places in exact comparisons
+    if (tierId !== 'free') {
+      const expectedAmount = tier.priceUsdc.toFixed(6);
+      const providedAmount = parseFloat(amount).toFixed(6);
+      
+      // Check for underpayments with 1% tolerance for transaction fees
+      if (parseFloat(providedAmount) < parseFloat(expectedAmount) * 0.99) {
+        const balanceDue = (parseFloat(expectedAmount) - parseFloat(providedAmount)).toFixed(2);
+        return res.status(400).json({ 
+          error: 'Underpayment detected', 
+          expected: expectedAmount,
+          provided: providedAmount,
+          balanceDue: balanceDue,
+          currency: 'USDC'
+        });
+      }
+      
+      // Log overpayments but still process them
+      if (parseFloat(providedAmount) > parseFloat(expectedAmount) * 1.01) {
+        console.log(`Overpayment detected for subscription ${tierId}. Expected: ${expectedAmount} USDC, Received: ${providedAmount} USDC`);
+        // TODO: Implement overpayment handling (store as credit, etc.)
+      }
     }
     
     // Special case: 'ALREADY_PROCESSED' signature 

@@ -1,0 +1,95 @@
+Task: Comprehensive Migration to USDC-Only Subscription System
+Overview
+Transform our subscription payment system from dual-currency (SOL and USDC) to USDC-only. This requires extensive modifications across the entire application architecture, including front-end components, payment processing logic, transaction verification systems, feature access control based on subscription tiers, and database schema adjustments.
+Critical Technical Considerations
+Currency-Specific Implementation Details
+USDC Decimal Precision: USDC operates with 6 decimal places , unlike SOL which uses 9 decimal places 
+Amount Conversion: Ensure all amount calculations properly handle the decimal precision difference when migrating from SOL to USDC
+Display Formatting: Standardize USDC display to 2 decimal places in UI while maintaining full precision in calculations
+Transaction Validation: Account for decimal precision in all transaction verification algorithms
+Feature Access Control System
+The application features available to users are directly tied to their current subscription plan
+All feature access checks must be updated to reference the user's USDC-based subscription status
+Implement graceful degradation for users with expired subscriptions
+Display appropriate upgrade prompts when users attempt to access features not included in their current plan
+Implementation Requirements
+1. Payment Processing Architecture
+
+Remove SOL Payment Infrastructure
+
+oEliminate all SOL-related payment endpoints, methods, and handlers
+oUpdate blockchain listeners to ignore SOL transactions
+oRemove all SOL wallet connection options and related UI elements
+
+USDC Transaction Processing
+
+oEnhance USDC payment processor to handle all subscription types
+oUpdate transaction listeners to properly validate USDC transactions with correct decimal precision
+oImplement comprehensive error handling for failed USDC transactions
+oCreate detailed transaction logs with standardized formats for USDC payments
+
+Payment Verification Logic
+
+oImplement precise amount matching that accounts for USDC's 6 decimal places
+oFor exact plan amount matches: process subscription activation immediately
+oFor underpayments: calculate exact balance due with precision and present clear payment options
+oFor overpayments: implement configurable handling (store as credit, refund, or apply to next billing cycle)
+oAdd anti-fraud checks for suspicious transaction patterns
+2. UI Component System Updates
+
+Subscription Plan Selection UI
+
+oUpdate all plan cards to show USDC-only pricing with proper decimal formatting
+oRemove currency toggle components and related state management
+oAdd clear USDC icons/indicators to pricing elements
+oImplement price comparison visualizations for different subscription tiers
+
+Checkout Flow
+
+oRedesign checkout pages to focus exclusively on USDC payment options
+oUpdate all payment forms to remove SOL fields and validation
+oEnhance USDC payment instructions with detailed wallet connection steps
+oAdd real-time USDC balance checking when possible
+oImplement clearer transaction status indicators during payment processing
+
+User Dashboard
+
+oUpdate subscription management views to show USDC payment history
+oRevise upcoming payment notifications to reference USDC amounts
+oImplement clear visual indicators of current plan features and limitations
+oAdd upgrade paths with USDC price differentials clearly displayed
+
+Admin Interfaces(not yet implemented though)
+
+oUpdate subscription management tools to handle USDC-only transactions
+oRevise reporting interfaces to properly display USDC amounts
+oAdd migration tools for manually converting legacy SOL subscriptions
+3. Database and Data Model Updates
+Update subscribtions to:
+Add feature access control mapping for each plan tier
+
+o
+5. Blockchain Transaction Verification
+
+USDC-Specific Transaction Validation
+Implement precise validation logic for USDC transactions: 
+Transaction Receipt Generation
+
+oCreate detailed receipts for all USDC transactions
+oInclude blockchain confirmation details with transaction signatures
+oStandardize receipt format across all subscription plans
+Documentation Updates
+
+oRevise all payment-related documentation to reflect USDC-only process
+oCreate FAQ section specifically addressing the currency transition
+oUpdate API documentation for developers integrating with the payment system
+Implementation Phases and Testing Strategy
+Phase 1: Backend Infrastructure
+1.Update database schema for USDC-only transactions
+2.Implement precise USDC transaction verification with decimal handling
+3.Migrate existing subscription data with proper currency conversion
+4.Update feature access control system to work with new subscription model
+Phase 2: UI Component Updates
+1.Redesign subscription selection and checkout flows for USDC-only
+2.Implement clear payment status indicators and error messages
+3.Add plan-specific feature gates to all restricted components
