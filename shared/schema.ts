@@ -19,6 +19,9 @@ export const users = pgTable("users", {
   // Password reset fields
   resetPasswordToken: text("reset_password_token").unique(),
   resetPasswordExpires: timestamp("reset_password_expires"),
+  // Email verification fields
+  verificationToken: text("verification_token").unique(),
+  verificationExpires: timestamp("verification_expires"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(), // user, admin

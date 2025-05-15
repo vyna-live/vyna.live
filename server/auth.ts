@@ -506,19 +506,20 @@ export function setupAuth(app: Express) {
         })
         .where(eq(users.id, user.id));
       
-      // In a real implementation, you would send an email here with the reset link
-      // For this example, we'll just log it and return the token in the response
+      // Generate reset URL and send email
       const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
-      log(`Password reset link generated: ${resetUrl}`, 'info');
       
-      // TODO: Implement actual email sending in production
-      // Example: await sendEmail(email, 'Password Reset', `Click here to reset your password: ${resetUrl}`);
+      // Import at the top level might cause circular dependencies
+      const { sendPasswordResetEmail } = await import('./emailService');
+      const emailSent = await sendPasswordResetEmail(email, resetUrl);
       
+      if (!emailSent) {
+        log(`Failed to send password reset email to ${email}`, 'error');
+      }
+      
+      // Don't return token in production for security
       res.status(200).json({ 
-        message: 'If an account with that email exists, a password reset link has been sent.',
-        // In production, don't return the token in the response
-        resetUrl, // Remove this in production
-        token // Remove this in production
+        message: 'If an account with that email exists, a password reset link has been sent.'
       });
       
     } catch (error) {
