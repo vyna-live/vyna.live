@@ -129,9 +129,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const verifyResetTokenMutation = useMutation({
     mutationFn: async (token: string) => {
+      // Use a cache to prevent duplicate requests
+      const cacheKey = `resetToken_${token}`;
+      const cachedResult = sessionStorage.getItem(cacheKey);
+      
+      if (cachedResult) {
+        try {
+          return JSON.parse(cachedResult);
+        } catch (e) {
+          // If parsing fails, proceed with API call
+          console.warn('Failed to parse cached token result');
+        }
+      }
+      
       const response = await apiRequest('GET', `/api/verify-reset-token/${token}`);
       const data = await response.json();
-      return { valid: !!data.userId, userId: data.userId };
+      const result = { valid: !!data.userId, userId: data.userId };
+      
+      // Cache the result to prevent future requests
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(result));
+      } catch (e) {
+        console.warn('Failed to cache token result');
+      }
+      
+      return result;
     },
     onError: (error: any) => {
       console.error('Token verification error:', error);

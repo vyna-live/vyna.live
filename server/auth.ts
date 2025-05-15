@@ -572,6 +572,11 @@ export function setupAuth(app: Express) {
   // Verify reset token route - check if token is valid
   app.get('/api/verify-reset-token/:token', async (req: Request, res: Response) => {
     try {
+      // Set cache control headers to prevent browser caching
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const { token } = req.params;
       
       if (!token) {

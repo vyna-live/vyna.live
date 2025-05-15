@@ -59,8 +59,14 @@ export function ResetPassword() {
     
     setToken(tokenFromUrl);
     
+    // Only verify the token once to prevent infinite loops
+    let tokenVerified = false;
+    
     // Verify the token
     const verifyToken = async () => {
+      if (tokenVerified) return;
+      tokenVerified = true;
+      
       try {
         const result = await verifyResetToken(tokenFromUrl);
         
@@ -85,6 +91,11 @@ export function ResetPassword() {
     };
     
     verifyToken();
+    
+    // Clean up function to prevent memory leaks
+    return () => {
+      tokenVerified = true; // Prevent any pending async operations
+    };
   }, []);
 
   const onSubmit = async (data: FormData) => {
