@@ -110,6 +110,7 @@ export function ResetPassword() {
         toast({
           title: "Success",
           description: "Your password has been reset successfully.",
+          variant: "default", // Explicitly set default variant for success
         });
       } else {
         toast({
@@ -119,9 +120,13 @@ export function ResetPassword() {
         });
       }
     } catch (error: any) {
+      // Handle the error properly
+      const errorMessage = error?.message || "An error occurred while resetting password.";
+      console.error("Password reset error:", error);
+      
       toast({
         title: "Error",
-        description: error.message || "An error occurred while resetting password.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

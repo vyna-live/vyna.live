@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
+import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ export default function Auth() {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
   const { isAuthenticated, isLoading, login, register } = useAuth();
+  const { toast } = useToast();
   const [location, navigate] = useLocation();
 
   // Get URL parameters
@@ -130,7 +132,15 @@ export default function Auth() {
       await login(data);
       navigate(referrer);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to login';
+      setError(errorMessage);
+      
+      // Show error toast
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -139,13 +149,30 @@ export default function Auth() {
     setError(null);
     try {
       await register(data);
-      // Instead of navigating, show registration success message
+      
+      // Show verification email sent toast notification
+      toast({
+        title: "Registration Successful",
+        description: "A verification email has been sent to your email address. Please check your inbox to verify your account.",
+        variant: "default",
+      });
+      
+      // Show registration success message
       setRegisteredEmail(data.email);
       setRegistrationSuccess(true);
+      
       // Switch to login tab for when they dismiss the confirmation
       setActiveTab('login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to register';
+      setError(errorMessage);
+      
+      // Show error toast
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 

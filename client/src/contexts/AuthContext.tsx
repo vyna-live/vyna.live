@@ -173,13 +173,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ token, password }: { token: string; password: string }) => {
-      const response = await apiRequest('POST', '/api/reset-password', { token, password });
-      const data = await response.json();
-      return { success: response.ok, message: data.message || 'Password updated successfully' };
-    },
-    onError: (error: any) => {
-      console.error('Reset password error:', error);
-      return { success: false, message: error.message || 'Failed to reset password' };
+      try {
+        const response = await apiRequest('POST', '/api/reset-password', { token, password });
+        const data = await response.json();
+        return { 
+          success: response.ok, 
+          message: data.message || 'Password updated successfully' 
+        };
+      } catch (error: any) {
+        console.error('Reset password error:', error);
+        throw new Error(error.message || 'Failed to reset password');
+      }
     }
   });
   
