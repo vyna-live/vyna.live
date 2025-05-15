@@ -174,7 +174,7 @@ export default function Auth() {
       toast({
         title: "Registration Successful",
         description: "A verification email has been sent to your email address. Please check your inbox to verify your account.",
-        variant: "default",
+        variant: "success",
       });
       
       // Show registration success message

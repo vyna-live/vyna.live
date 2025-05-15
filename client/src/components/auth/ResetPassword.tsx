@@ -110,8 +110,13 @@ export function ResetPassword() {
         toast({
           title: "Success",
           description: "Your password has been reset successfully.",
-          variant: "default", // Explicitly set default variant for success
+          variant: "success" // Use success variant with green styling
         });
+        
+        // Redirect to login page after 1.5 seconds
+        setTimeout(() => {
+          setLocation('/auth');
+        }, 1500);
       } else {
         toast({
           title: "Error",
@@ -182,8 +187,11 @@ export function ResetPassword() {
         </CardHeader>
         <CardContent className="text-center p-4 space-y-4">
           <p>You can now log in with your new password.</p>
+          <p className="text-sm text-muted-foreground">Redirecting to login page in a moment...</p>
           <Link href="/auth">
-            <Button className="w-full">Go to Login</Button>
+            <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+              Go to Login
+            </Button>
           </Link>
         </CardContent>
       </Card>

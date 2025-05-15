@@ -38,7 +38,7 @@ export function ForgotPassword() {
       toast({
         title: "Email Sent",
         description: "If an account exists with this email, you'll receive a password reset link.",
-        variant: "default",
+        variant: "success",
       });
     } catch (error: any) {
       toast({
