@@ -104,6 +104,10 @@ interface CreateUserData {
   displayName?: string;
   role?: string;
   isEmailVerified?: boolean;
+  verificationToken?: string;
+  verificationExpires?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
 }
 
 // Create user record
@@ -127,6 +131,10 @@ async function createUser(userData: CreateUserData): Promise<SelectUser> {
       ...(userData.email && { email: userData.email }),
       ...(userData.displayName && { displayName: userData.displayName }),
       ...(userData.isEmailVerified !== undefined && { isEmailVerified: userData.isEmailVerified }),
+      ...(userData.verificationToken && { verificationToken: userData.verificationToken }),
+      ...(userData.verificationExpires && { verificationExpires: userData.verificationExpires }),
+      ...(userData.resetPasswordToken && { resetPasswordToken: userData.resetPasswordToken }),
+      ...(userData.resetPasswordExpires && { resetPasswordExpires: userData.resetPasswordExpires }),
     };
     
     // Insert the user
