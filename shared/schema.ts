@@ -16,6 +16,9 @@ export const users = pgTable("users", {
   walletAddress: text("wallet_address").unique(),
   walletProvider: varchar("wallet_provider", { length: 50 }),
   walletConnectedAt: timestamp("wallet_connected_at"),
+  // Password reset fields
+  resetPasswordToken: text("reset_password_token").unique(),
+  resetPasswordExpires: timestamp("reset_password_expires"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   role: varchar("role", { length: 20 }).default("user").notNull(), // user, admin

@@ -473,6 +473,143 @@ export function setupAuth(app: Express) {
       res.json({ message: 'Logged out successfully' });
     });
   });
+  
+  // Forgot password route - request password reset
+  app.post('/api/forgot-password', async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+      
+      // Find the user by email
+      const user = await getUserByEmail(email);
+      
+      if (!user) {
+        // For security reasons, don't reveal that the email doesn't exist
+        // We'll still return a success message to prevent email enumeration attacks
+        return res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+      }
+      
+      // Generate a secure random token
+      const token = randomBytes(32).toString('hex');
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 1); // Token valid for 1 hour
+      
+      // Store the token and expiry in the database
+      await db.update(users)
+        .set({
+          resetPasswordToken: token,
+          resetPasswordExpires: expiry,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id));
+      
+      // In a real implementation, you would send an email here with the reset link
+      // For this example, we'll just log it and return the token in the response
+      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+      log(`Password reset link generated: ${resetUrl}`, 'info');
+      
+      // TODO: Implement actual email sending in production
+      // Example: await sendEmail(email, 'Password Reset', `Click here to reset your password: ${resetUrl}`);
+      
+      res.status(200).json({ 
+        message: 'If an account with that email exists, a password reset link has been sent.',
+        // In production, don't return the token in the response
+        resetUrl, // Remove this in production
+        token // Remove this in production
+      });
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Forgot password error: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+  });
+  
+  // Verify reset token route - check if token is valid
+  app.get('/api/verify-reset-token/:token', async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        return res.status(400).json({ error: 'Token is required' });
+      }
+      
+      // Find user with this token and check if it's expired
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.resetPasswordToken, token));
+      
+      if (!user || !user.resetPasswordExpires) {
+        return res.status(400).json({ error: 'Invalid or expired password reset token' });
+      }
+      
+      const now = new Date();
+      if (now > user.resetPasswordExpires) {
+        return res.status(400).json({ error: 'Password reset token has expired' });
+      }
+      
+      // Token is valid
+      res.status(200).json({ message: 'Token is valid', userId: user.id });
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Verify reset token error: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to verify reset token' });
+    }
+  });
+  
+  // Reset password route - set new password
+  app.post('/api/reset-password', async (req: Request, res: Response) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ error: 'Token and password are required' });
+      }
+      
+      // Validate password strength
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+      }
+      
+      // Find user with this token and check if it's expired
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.resetPasswordToken, token));
+      
+      if (!user || !user.resetPasswordExpires) {
+        return res.status(400).json({ error: 'Invalid or expired password reset token' });
+      }
+      
+      const now = new Date();
+      if (now > user.resetPasswordExpires) {
+        return res.status(400).json({ error: 'Password reset token has expired' });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(password);
+      
+      // Update the user's password and clear the reset token
+      await db.update(users)
+        .set({
+          password: hashedPassword,
+          resetPasswordToken: null,
+          resetPasswordExpires: null,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id));
+      
+      res.status(200).json({ message: 'Password has been reset successfully' });
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Reset password error: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to reset password' });
+    }
+  });
 
   // Current user info route
   app.get('/api/user', (req: Request, res: Response) => {

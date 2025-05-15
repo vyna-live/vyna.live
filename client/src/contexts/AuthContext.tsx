@@ -10,6 +10,10 @@ interface AuthContextType {
   login: (credentials: { usernameOrEmail: string; password: string }) => Promise<User>;
   register: (userData: { username: string; email: string; password: string }) => Promise<User>;
   logout: () => Promise<void>;
+  // Password reset functions
+  forgotPassword: (email: string) => Promise<{ message: string; resetUrl?: string; token?: string }>;
+  verifyResetToken: (token: string) => Promise<{ valid: boolean; userId?: number }>;
+  resetPassword: (token: string, password: string) => Promise<{ success: boolean; message: string }>;
 }
 
 // Initialize with a default value that matches the shape
@@ -20,6 +24,9 @@ const defaultAuthContext: AuthContextType = {
   login: async () => { throw new Error('Not implemented'); },
   register: async () => { throw new Error('Not implemented'); },
   logout: async () => { throw new Error('Not implemented'); },
+  forgotPassword: async () => { throw new Error('Not implemented'); },
+  verifyResetToken: async () => { throw new Error('Not implemented'); },
+  resetPassword: async () => { throw new Error('Not implemented'); },
 };
 
 const AuthContext = createContext<AuthContextType>(defaultAuthContext);
@@ -109,7 +116,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await logoutMutation.mutateAsync();
   };
 
-  const isLoading = isLoadingUser || loginMutation.isPending || registerMutation.isPending || logoutMutation.isPending;
+  // Password reset functions
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await apiRequest('POST', '/api/forgot-password', { email });
+      return await response.json();
+    },
+    onError: (error: any) => {
+      console.error('Forgot password error:', error);
+    }
+  });
+
+  const verifyResetTokenMutation = useMutation({
+    mutationFn: async (token: string) => {
+      const response = await apiRequest('GET', `/api/verify-reset-token/${token}`);
+      const data = await response.json();
+      return { valid: !!data.userId, userId: data.userId };
+    },
+    onError: (error: any) => {
+      console.error('Token verification error:', error);
+      return { valid: false };
+    }
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ token, password }: { token: string; password: string }) => {
+      const response = await apiRequest('POST', '/api/reset-password', { token, password });
+      const data = await response.json();
+      return { success: response.ok, message: data.message || 'Password updated successfully' };
+    },
+    onError: (error: any) => {
+      console.error('Reset password error:', error);
+      return { success: false, message: error.message || 'Failed to reset password' };
+    }
+  });
+  
+  // Password reset function wrappers
+  const forgotPassword = async (email: string) => {
+    return await forgotPasswordMutation.mutateAsync(email);
+  };
+  
+  const verifyResetToken = async (token: string) => {
+    return await verifyResetTokenMutation.mutateAsync(token);
+  };
+  
+  const resetPassword = async (token: string, password: string) => {
+    return await resetPasswordMutation.mutateAsync({ token, password });
+  };
+
+  const isLoading = isLoadingUser || loginMutation.isPending || registerMutation.isPending || 
+                   logoutMutation.isPending || forgotPasswordMutation.isPending || 
+                   verifyResetTokenMutation.isPending || resetPasswordMutation.isPending;
   const isAuthenticated = !!user;
 
   return (
