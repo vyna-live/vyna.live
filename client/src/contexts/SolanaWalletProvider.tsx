@@ -34,9 +34,9 @@ const MEMO_PROGRAM_ID = new PublicKey(
 
 // USDC Token Mint address (use devnet for testing, mainnet for production)
 // Devnet USDC mint address
-const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+const USDC_MINT = new PublicKey("BXXkv6zRCz1mGJd96Chp4t64r1x3QT5BpHs4fFyz83Ps");
 // Mainnet USDC mint address: 'EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL'
-
+// const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 // USDC has 6 decimal places
 const USDC_DECIMALS = 6;
 
@@ -303,6 +303,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
               senderPublicKey, // owner
               USDC_MINT, // mint
             );
+
           transaction.add(createSenderAccountInstruction);
         }
 
@@ -312,7 +313,10 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           await getAccount(connection, recipientTokenAccount);
           recipientTokenAccountExists = true;
         } catch (error) {
-          console.log("Recipient token account does not exist, will create it");
+          console.log(
+            "Recipient token account does not exist, will create it",
+            error,
+          );
           // We'll create the account in the transaction
         }
 
