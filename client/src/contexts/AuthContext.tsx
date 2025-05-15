@@ -33,7 +33,15 @@ const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
-  // Fetch current user
+  // Check if we're on a path that shouldn't require authentication
+  const { pathname } = window.location;
+  const isAuthExemptPath = [
+    '/reset-password',
+    '/forgot-password',
+    '/verify-email'
+  ].some(path => pathname.startsWith(path));
+  
+  // Fetch current user, but skip for certain paths
   const {
     data: user,
     isLoading: isLoadingUser,
@@ -54,6 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    // Don't run the query at all on exempt paths
+    enabled: !isAuthExemptPath,
   });
 
   // Login mutation
@@ -186,7 +196,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return await resetPasswordMutation.mutateAsync({ token, password });
   };
 
-  const isLoading = isLoadingUser || loginMutation.isPending || registerMutation.isPending || 
+  // Don't show loading state for auth-exempt paths when it's just the user loading
+  const isLoading = (isAuthExemptPath ? false : isLoadingUser) || 
+                   loginMutation.isPending || registerMutation.isPending || 
                    logoutMutation.isPending || forgotPasswordMutation.isPending || 
                    verifyResetTokenMutation.isPending || resetPasswordMutation.isPending;
   const isAuthenticated = !!user;
