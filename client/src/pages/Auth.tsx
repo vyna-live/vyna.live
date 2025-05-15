@@ -226,9 +226,20 @@ export default function Auth() {
                       </>
                     )}
                   </Button>
+                  
+                  <div className="mt-4 text-center">
+                    <a 
+                      href="/forgot-password" 
+                      className="text-sm text-zinc-400 hover:text-[#A67D44] transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate('/forgot-password');
+                      }}
+                    >
+                      Forgot your password?
+                    </a>
+                  </div>
                 </form>
-
-
               </TabsContent>
               
               {/* Registration form */}

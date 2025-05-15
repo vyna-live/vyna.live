@@ -18,6 +18,8 @@ import Notepad from "@/pages/Notepad";
 import ProfilePage from "@/pages/ProfilePage";
 import SubscriptionPage from "@/pages/SubscriptionPage";
 import ResearchRewardsPage from "@/pages/ResearchRewardsPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import { SolanaWalletProvider } from "@/contexts/SolanaWalletProvider";
 
 function Router() {
@@ -44,6 +46,8 @@ function Router() {
       <Route path="/view-stream/:streamId" component={ViewStream} />
       <Route path="/view/:channelName" component={ViewStream} />
       <Route path="/research-rewards" component={ResearchRewardsPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route component={NotFound} />
     </Switch>
   );
