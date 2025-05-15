@@ -9,8 +9,8 @@ const randomUserId = `user-${Math.random().toString(36).substring(2, 9)}`;
 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-    <StreamVideoProvider userId={randomUserId} userName="Livestreamer">
+    {/* <StreamVideoProvider userId={randomUserId} userName="Livestreamer"> */}
       <App />
-    </StreamVideoProvider>
+    {/* </StreamVideoProvider> */}
   </ThemeProvider>
 );
