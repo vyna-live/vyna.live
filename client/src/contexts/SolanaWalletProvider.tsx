@@ -25,7 +25,7 @@ import {
 // Set up Buffer for browser environment
 import { Buffer } from "buffer";
 // Make buffer available globally for the SPL token library
-window.Buffer = window.Buffer || Buffer;
+globalThis.Buffer = globalThis.Buffer || Buffer;
 
 // For adding a memo to each transaction to prevent duplicate processing
 const MEMO_PROGRAM_ID = new PublicKey(
@@ -266,7 +266,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
 
         // Add memo instruction with payment details
         const memoMessage = `Vyna.live USDC payment: ${uniqueId}`;
-        // const encoder = new TextEncoder();
         const memoData = Buffer.from(memoMessage, "utf-8");
 
         const memoInstruction = new TransactionInstruction({
@@ -295,9 +294,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           );
         } catch (error) {
           console.error("Error getting sender token account:", error);
-          // throw new Error(
-          //   "Your wallet does not have a USDC token account or insufficient USDC balance",
-          // );
         }
         if (!senderTokenAccountInfo) {
           const createSenderAccountInstruction =
@@ -401,15 +397,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             console.log(
               `View on explorer: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`,
             );
-
-            // Important note for integration:
-            // This implementation currently only adds payment details as a memo on the blockchain
-            // In a production environment, you would use the @solana/spl-token library to perform
-            // an actual USDC token transfer using the Token Program on Solana
-            console.warn(
-              "Implementation Note: This is a simplified USDC payment integration. " +
-                "In production, this should be replaced with a proper SPL token transfer.",
-            );
           } catch (error) {
             console.error("Transaction error:", error);
 
@@ -486,12 +473,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             console.log("USDC Transaction confirmed:", txSignature);
             console.log(
               `View on explorer: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`,
-            );
-
-            // Implementation note regarding the same limitation
-            console.warn(
-              "Implementation Note: This is a simplified USDC payment integration. " +
-                "In production, this should be replaced with a proper SPL token transfer.",
             );
           } catch (error) {
             console.error("Transaction error:", error);
