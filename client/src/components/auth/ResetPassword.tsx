@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { usePasswordReset } from '@/components/auth/PasswordResetProvider';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function ResetPassword() {
-  const { verifyResetToken, resetPassword } = useAuth();
+  const { verifyResetToken, resetPassword } = usePasswordReset();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);

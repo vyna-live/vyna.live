@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PasswordResetProvider } from "@/components/auth/PasswordResetProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Home from "@/pages/Home";
 import Livestream from "@/pages/Livestream";
@@ -47,7 +48,11 @@ function Router() {
       <Route path="/view/:channelName" component={ViewStream} />
       <Route path="/research-rewards" component={ResearchRewardsPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
-      <Route path="/reset-password" component={ResetPasswordPage} />
+      <Route path="/reset-password">
+        <PasswordResetProvider>
+          <ResetPasswordPage />
+        </PasswordResetProvider>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
