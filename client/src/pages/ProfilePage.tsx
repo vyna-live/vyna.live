@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { LoyaltyPasses, LoyaltyTier } from '@/components/LoyaltyPass';
 import { Loader2, MessageSquare, ShieldCheck, BadgeCheck } from 'lucide-react';
+import VerificationStatus from '@/components/auth/VerificationStatus';
 import { useLocation } from 'wouter';
 
 interface LoyaltyPass {
@@ -102,8 +103,22 @@ const ProfilePage = () => {
           <div>
             <h1 className="text-2xl font-bold">{user.displayName || user.username}</h1>
             <p className="text-gray-400">@{user.username}</p>
+            {user.email && (
+              <p className="text-gray-400 text-sm mt-1 flex items-center">
+                {user.email}
+                {user.isEmailVerified && (
+                  <span className="inline-flex items-center ml-2 text-green-500">
+                    <BadgeCheck className="h-4 w-4 mr-1" />
+                    <span className="text-xs">Verified</span>
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         </div>
+        
+        {/* Show verification status if email is not verified */}
+        <VerificationStatus user={user} />
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
