@@ -18,9 +18,12 @@ import {
   Lock, 
   User, 
   AlertCircle,
+  Eye,
+  EyeOff,
   Wallet 
 } from 'lucide-react';
 import Logo from '@/components/Logo';
+import RegisterConfirmation from '@/components/auth/RegisterConfirmation';
 
 // Login form schema
 const loginSchema = z.object({
@@ -42,6 +45,8 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [error, setError] = useState<string | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const { isAuthenticated, isLoading, login, register } = useAuth();
   const [location, navigate] = useLocation();
 
@@ -134,7 +139,11 @@ export default function Auth() {
     setError(null);
     try {
       await register(data);
-      navigate(referrer);
+      // Instead of navigating, show registration success message
+      setRegisteredEmail(data.email);
+      setRegistrationSuccess(true);
+      // Switch to login tab for when they dismiss the confirmation
+      setActiveTab('login');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to register');
     }
