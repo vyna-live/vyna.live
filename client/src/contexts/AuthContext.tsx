@@ -178,6 +178,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
+        forgotPassword,
+        verifyResetToken,
+        resetPassword,
       }}
     >
       {children}
