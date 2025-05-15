@@ -459,6 +459,13 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: info.message || 'Invalid credentials' });
       }
       
+      // Optional: Check if email is verified
+      if (user.email && !user.isEmailVerified) {
+        // We allow login but log a warning
+        log(`User ${user.username} logged in with unverified email`, 'warn');
+        // Alternative: return res.status(403).json({ error: 'Please verify your email address before logging in' });
+      }
+      
       req.login(user, async (err: Error | null) => {
         if (err) {
           log(`Login session error: ${err.message}`, 'error');
@@ -685,6 +692,64 @@ export function setupAuth(app: Express) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log(`Email verification error: ${errorMessage}`, 'error');
       res.status(500).json({ error: 'Failed to verify email' });
+    }
+  });
+  
+  // Resend verification email route
+  app.post('/api/resend-verification', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      
+      if (!user) {
+        return res.status(401).json({ error: 'Not authenticated' });
+      }
+      
+      if (!user.email) {
+        return res.status(400).json({ error: 'User does not have an email address' });
+      }
+      
+      if (user.isEmailVerified) {
+        return res.status(400).json({ error: 'Email is already verified' });
+      }
+      
+      // Generate new verification token
+      const verificationToken = randomBytes(32).toString('hex');
+      const verificationExpires = new Date();
+      verificationExpires.setHours(verificationExpires.getHours() + 24); // Token valid for 24 hours
+      
+      // Update user with new token
+      await db.update(users)
+        .set({
+          verificationToken,
+          verificationExpires,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id));
+      
+      // Send verification email
+      const verificationUrl = `${req.protocol}://${req.get('host')}/api/verify-email/${verificationToken}`;
+      try {
+        const { sendVerificationEmail } = await import('./emailService');
+        const emailSent = await sendVerificationEmail(user.email, verificationUrl);
+        
+        if (!emailSent) {
+          log(`Failed to resend verification email to ${user.email}`, 'error');
+          return res.status(500).json({ error: 'Failed to send verification email' });
+        } else {
+          log(`Verification email resent to ${user.email}`, 'info');
+          return res.status(200).json({ message: 'Verification email has been sent' });
+        }
+      } catch (emailError) {
+        log(`Error resending verification email: ${
+          emailError instanceof Error ? emailError.message : String(emailError)
+        }`, 'error');
+        return res.status(500).json({ error: 'Failed to send verification email' });
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Resend verification error: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to resend verification email' });
     }
   });
 

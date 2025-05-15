@@ -149,6 +149,20 @@ export default function Auth() {
     }
   };
 
+  // Show registration success screen instead of the form
+  if (registrationSuccess) {
+    return (
+      <div className="flex min-h-screen bg-black">
+        <div className="flex flex-1 items-center justify-center px-4 py-12">
+          <RegisterConfirmation 
+            email={registeredEmail} 
+            onClose={() => setRegistrationSuccess(false)} 
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-black">
       {/* Left side - Authentication form */}
