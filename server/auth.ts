@@ -351,7 +351,12 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: 'Email is already registered' });
       }
       
-      // Create new user
+      // Generate verification token
+      const verificationToken = randomBytes(32).toString('hex');
+      const verificationExpires = new Date();
+      verificationExpires.setHours(verificationExpires.getHours() + 24); // Token valid for 24 hours
+      
+      // Create new user with verification token
       const user = await createUser({
         username,
         email,
@@ -359,7 +364,27 @@ export function setupAuth(app: Express) {
         displayName: displayName || username,
         role: 'user',
         isEmailVerified: false,
+        verificationToken,
+        verificationExpires,
       });
+      
+      // Send verification email
+      try {
+        const verificationUrl = `${req.protocol}://${req.get('host')}/api/verify-email/${verificationToken}`;
+        const { sendVerificationEmail } = await import('./emailService');
+        const emailSent = await sendVerificationEmail(email, verificationUrl);
+        
+        if (!emailSent) {
+          log(`Failed to send verification email to ${email}`, 'error');
+        } else {
+          log(`Verification email sent to ${email}`, 'info');
+        }
+      } catch (emailError) {
+        log(`Error sending verification email: ${
+          emailError instanceof Error ? emailError.message : String(emailError)
+        }`, 'error');
+        // Don't fail registration if email sending fails
+      }
       
       // Create stream session for the new user
       await createStreamSession(user);
@@ -617,6 +642,49 @@ export function setupAuth(app: Express) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log(`Reset password error: ${errorMessage}`, 'error');
       res.status(500).json({ error: 'Failed to reset password' });
+    }
+  });
+  
+  // Email verification route
+  app.get('/api/verify-email/:token', async (req: Request, res: Response) => {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        return res.status(400).json({ error: 'Verification token is required' });
+      }
+      
+      // Find user with this token and check if it's expired
+      const [user] = await db.select()
+        .from(users)
+        .where(eq(users.verificationToken, token));
+      
+      if (!user || !user.verificationExpires) {
+        return res.status(400).json({ error: 'Invalid or expired verification token' });
+      }
+      
+      const now = new Date();
+      if (now > user.verificationExpires) {
+        return res.status(400).json({ error: 'Verification token has expired' });
+      }
+      
+      // Update the user and mark email as verified
+      await db.update(users)
+        .set({
+          isEmailVerified: true,
+          verificationToken: null,
+          verificationExpires: null,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, user.id));
+      
+      // Redirect to the login page with a success message
+      res.redirect('/auth?emailVerified=true');
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log(`Email verification error: ${errorMessage}`, 'error');
+      res.status(500).json({ error: 'Failed to verify email' });
     }
   });
 

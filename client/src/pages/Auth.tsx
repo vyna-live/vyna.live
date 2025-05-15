@@ -45,9 +45,10 @@ export default function Auth() {
   const { isAuthenticated, isLoading, login, register } = useAuth();
   const [location, navigate] = useLocation();
 
-  // Get referrer from URL to redirect after login
+  // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const referrer = urlParams.get('referrer') || '/';
+  const emailVerified = urlParams.get('emailVerified') === 'true';
 
   // Initialize login form
   const loginForm = useForm<LoginFormData>({
@@ -163,6 +164,18 @@ export default function Auth() {
               <Alert variant="destructive" className="bg-red-900/20 border-red-900/50">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Email verification success message */}
+            {emailVerified && (
+              <Alert variant="default" className="bg-green-900/20 border-green-900/50">
+                <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <AlertDescription className="text-green-500">
+                  Your email has been verified successfully. You can now log in.
+                </AlertDescription>
               </Alert>
             )}
             
