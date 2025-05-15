@@ -132,7 +132,27 @@ export default function Auth() {
       await login(data);
       navigate(referrer);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to login';
+      // Extract just the message without the status code
+      let errorMessage = 'Failed to login';
+      
+      if (err instanceof Error) {
+        // Check if the message contains a status code format (e.g., "401: {...}")
+        const match = err.message.match(/^\d+:\s*(.*)/);
+        if (match && match[1]) {
+          try {
+            // Try to parse the JSON part if present
+            const jsonError = JSON.parse(match[1]);
+            errorMessage = jsonError.error || err.message;
+          } catch (e) {
+            // If parsing fails, use the part after the status code
+            errorMessage = match[1].trim();
+          }
+        } else {
+          // Use the raw error message if no format detected
+          errorMessage = err.message;
+        }
+      }
+      
       setError(errorMessage);
       
       // Show error toast
@@ -164,7 +184,27 @@ export default function Auth() {
       // Switch to login tab for when they dismiss the confirmation
       setActiveTab('login');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to register';
+      // Extract just the message without the status code
+      let errorMessage = 'Failed to register';
+      
+      if (err instanceof Error) {
+        // Check if the message contains a status code format (e.g., "401: {...}")
+        const match = err.message.match(/^\d+:\s*(.*)/);
+        if (match && match[1]) {
+          try {
+            // Try to parse the JSON part if present
+            const jsonError = JSON.parse(match[1]);
+            errorMessage = jsonError.error || err.message;
+          } catch (e) {
+            // If parsing fails, use the part after the status code
+            errorMessage = match[1].trim();
+          }
+        } else {
+          // Use the raw error message if no format detected
+          errorMessage = err.message;
+        }
+      }
+      
       setError(errorMessage);
       
       // Show error toast

@@ -55,11 +55,24 @@ export const PasswordResetProvider = ({ children }: { children: ReactNode }) => 
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ token, password }: { token: string; password: string }) => {
       const response = await apiRequest('POST', '/api/reset-password', { token, password });
-      return await response.json();
+      const result = await response.json();
+      
+      // Return a properly formatted response
+      return {
+        success: response.ok,
+        message: result.message || (response.ok ? 'Password has been reset successfully' : 'Failed to reset password')
+      };
     },
     onError: (error: any) => {
       console.error('Password reset error:', error);
-      return { success: false, message: 'Failed to reset password' };
+      
+      // Extract more helpful error message if available
+      let errorMessage = 'Failed to reset password';
+      if (error instanceof Error) {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      return { success: false, message: errorMessage };
     }
   });
 

@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const res = await apiRequest('POST', '/api/login', credentials);
       if (!res.ok) {
         const errorData = await res.json();
+        // Only throw the error message, not the entire response
         throw new Error(errorData.error || 'Login failed');
       }
       return await res.json();
