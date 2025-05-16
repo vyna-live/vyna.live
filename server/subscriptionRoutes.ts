@@ -435,13 +435,31 @@ export async function createUserSubscription(req: Request, res: Response) {
     // Import the Solana verification service
     const { verifyUSDCTransaction } = await import('./solanaService');
     
-    // Verify the transaction on the blockchain
-    console.log(`Verifying transaction ${transactionSignature} for amount ${expectedAmount} USDC`);
-    const verification = await verifyUSDCTransaction(
-      transactionSignature,
-      expectedAmount,
-      senderWalletAddress
-    );
+    // Check if we should accept test transactions
+    const acceptTestTransactions = process.env.NODE_ENV !== 'production' || process.env.ACCEPT_TEST_TRANSACTIONS === 'true';
+    const isTestSignature = transactionSignature.startsWith('test_') || transactionSignature.startsWith('demo_');
+    
+    let verification;
+    
+    // For test transactions in development mode, bypass blockchain verification
+    if (acceptTestTransactions && isTestSignature) {
+      console.log(`TEST MODE: Accepting test transaction ${transactionSignature} without blockchain verification`);
+      verification = {
+        isValid: true,
+        amount: parseFloat(expectedAmount),
+        sender: senderWalletAddress || 'test-wallet',
+        receiver: process.env.COMPANY_WALLET_ADDRESS || 'company-wallet',
+        timestamp: Date.now()
+      };
+    } else {
+      // Verify the transaction on the blockchain
+      console.log(`Verifying transaction ${transactionSignature} for amount ${expectedAmount} USDC`);
+      verification = await verifyUSDCTransaction(
+        transactionSignature,
+        expectedAmount,
+        senderWalletAddress
+      );
+    }
     
     // If transaction verification failed
     if (!verification.isValid) {
