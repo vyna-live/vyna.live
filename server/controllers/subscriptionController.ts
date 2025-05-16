@@ -82,9 +82,11 @@ export async function checkPaymentStatus(req: Request, res: Response) {
         toAddress: verification.receiver || '',
         amount: verification.amount?.toString() || expectedAmount.toString(),
         transactionType: 'subscription',
-        currency: 'usdc',
         status: 'confirmed',
-        rawData: JSON.stringify(verification),
+        metadata: { 
+          currency: 'usdc',
+          verificationDetails: verification 
+        },
         confirmedAt: new Date()
       })
       .returning();

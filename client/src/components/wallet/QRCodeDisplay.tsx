@@ -53,6 +53,7 @@ export function QRCodeDisplay({
           const response = await apiRequest('POST', '/api/subscription/check-payment', {
             tierId,
             expectedAmount: amount,
+            signature: 'QR-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 7),
             walletAddress: wallet.publicKey
           });
           

@@ -677,6 +677,10 @@ export function registerSubscriptionRoutes(app: express.Express) {
   app.post('/api/subscription/create', ensureAuthenticated, createUserSubscription);
   app.post('/api/subscription', ensureAuthenticated, createUserSubscription);
   
+  // Add payment verification endpoints
+  app.post('/api/subscription/check-payment', ensureAuthenticated, checkPaymentStatus);
+  app.get('/api/subscription/get-status', ensureAuthenticated, getSubscriptionStatus);
+  
   // Cancel a subscription
   app.delete('/api/subscription/:subscriptionId', ensureAuthenticated, cancelUserSubscription);
   app.post('/api/subscription/cancel', ensureAuthenticated, (req, res) => {
