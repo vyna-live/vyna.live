@@ -75,6 +75,30 @@ export const SolanaWalletContext = createContext<SolanaWalletContextType>({
 // Custom hook for accessing wallet context
 export const useSolanaWallet = () => useContext(SolanaWalletContext);
 
+// Global type augmentation for browser wallet providers
+declare global {
+  interface Window {
+    phantom?: {
+      solana: {
+        connect: () => Promise<{ publicKey: { toString: () => string } }>;
+        disconnect: () => Promise<void>;
+        signTransaction?: (transaction: Transaction) => Promise<Transaction>;
+        signAllTransactions?: (
+          transactions: Transaction[],
+        ) => Promise<Transaction[]>;
+      };
+    };
+    solflare?: {
+      connect: () => Promise<{ publicKey: { toString: () => string } }>;
+      disconnect: () => Promise<void>;
+      signTransaction?: (transaction: Transaction) => Promise<Transaction>;
+      signAllTransactions?: (
+        transactions: Transaction[],
+      ) => Promise<Transaction[]>;
+    };
+  }
+}
+
 // Provider component
 export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -357,18 +381,12 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         if (wallet.provider === "phantom" && window.phantom?.solana) {
           toast({
             title: "Waiting for approval",
-            description:
-              "Please approve the transaction in your Phantom wallet",
+            description: "Please approve the transaction in your Phantom wallet",
           });
 
           try {
             // Request Phantom wallet signature
             console.log("Requesting Phantom wallet signature");
-            toast({
-              title: "Waiting for wallet",
-              description: "Please approve the transaction in your Phantom wallet",
-            });
-            
             const signedTransaction = await window.phantom.solana.signTransaction?.(transaction);
 
             if (!signedTransaction) {
@@ -410,15 +428,17 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
               }
               
               console.log("Transaction confirmed successfully:", confirmation);
-            } catch (confirmError) {
-              console.error("Error confirming transaction:", confirmError);
+            } catch (error) {
+              console.error("Error confirming transaction:", error);
               
               // Check if the transaction was successful anyway
               const signatureStatus = await connection.getSignatureStatus(txSignature);
               if (signatureStatus.value && !signatureStatus.value.err) {
                 console.log("Transaction successful despite confirmation error");
               } else {
-                throw new Error(`Transaction may have failed: ${confirmError.message}`);
+                // Safe error message extraction
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                throw new Error(`Transaction may have failed: ${errorMessage}`);
               }
             }
 
@@ -473,11 +493,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           try {
             // Request Solflare wallet signature
             console.log("Requesting Solflare wallet signature");
-            toast({
-              title: "Waiting for wallet",
-              description: "Please approve the transaction in your Solflare wallet",
-            });
-            
             const signedTransaction = await window.solflare.signTransaction?.(transaction);
 
             if (!signedTransaction) {
@@ -519,15 +534,17 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
               }
               
               console.log("Transaction confirmed successfully:", confirmation);
-            } catch (confirmError) {
-              console.error("Error confirming transaction:", confirmError);
+            } catch (error) {
+              console.error("Error confirming transaction:", error);
               
               // Check if the transaction was successful anyway
               const signatureStatus = await connection.getSignatureStatus(txSignature);
               if (signatureStatus.value && !signatureStatus.value.err) {
                 console.log("Transaction successful despite confirmation error");
               } else {
-                throw new Error(`Transaction may have failed: ${confirmError.message}`);
+                // Safe error message extraction
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                throw new Error(`Transaction may have failed: ${errorMessage}`);
               }
             }
 
@@ -544,10 +561,8 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           } catch (error) {
             console.error("Transaction error:", error);
 
-            // Check if the error is about a transaction already being processed
             const errorMessage = String(error).toLowerCase();
             if (errorMessage.includes("already been processed")) {
-              // If the transaction was already processed, we can consider it a success
               toast({
                 title: "Transaction Note",
                 description:
@@ -555,7 +570,6 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
                 variant: "default",
               });
 
-              // Return the most recent signature if available, or a placeholder
               return { signature: signature || "ALREADY_PROCESSED" };
             }
 
@@ -578,101 +592,29 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
 
         return { signature };
       } catch (error) {
-        console.error("Error sending transaction:", error);
-
-        // Check for already processed transactions at the global level as well
-        const errorMessage = String(error).toLowerCase();
-        if (errorMessage.includes("already been processed")) {
-          toast({
-            title: "Transaction Note",
-            description:
-              "This transaction appears to have already been processed successfully.",
-            variant: "default",
-          });
-
-          return { signature: "ALREADY_PROCESSED" };
-        }
-
-        // More user-friendly error messages based on error type
-        if (errorMessage.includes("insufficient funds")) {
-          toast({
-            title: "Transaction Error",
-            description: "Insufficient funds for this payment",
-            variant: "destructive",
-          });
-          throw new Error("Insufficient funds for this payment");
-        } else if (errorMessage.includes("rejected")) {
-          toast({
-            title: "Transaction Error",
-            description: "You rejected the transaction. Please try again",
-            variant: "destructive",
-          });
-          throw new Error("Transaction was rejected. Please try again");
-        } else if (errorMessage.includes("timeout")) {
-          toast({
-            title: "Transaction Error",
-            description: "Transaction timed out. The network may be congested",
-            variant: "destructive",
-          });
-          throw new Error(
-            "Transaction timed out. The network may be congested",
-          );
-        } else {
-          toast({
-            title: "Transaction Error",
-            description:
-              error instanceof Error
-                ? error.message
-                : "Failed to send transaction",
-            variant: "destructive",
-          });
-          throw new Error(
-            error instanceof Error
-              ? error.message
-              : "Failed to send transaction",
-          );
-        }
+        console.error("Error in sendTransaction:", error);
+        toast({
+          title: "Payment error",
+          description: "There was an error processing your USDC payment. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
     [wallet, toast],
   );
 
-  // Context value
-  const value = {
-    wallet,
-    isConnecting,
-    connectWallet,
-    disconnectWallet,
-    sendTransaction,
-  };
-
   return (
-    <SolanaWalletContext.Provider value={value}>
+    <SolanaWalletContext.Provider
+      value={{
+        wallet,
+        isConnecting,
+        connectWallet,
+        disconnectWallet,
+        sendTransaction,
+      }}
+    >
       {children}
     </SolanaWalletContext.Provider>
   );
 };
-
-// Add types for wallet extensions to avoid TypeScript errors
-declare global {
-  interface Window {
-    phantom?: {
-      solana: {
-        connect: () => Promise<{ publicKey: { toString: () => string } }>;
-        disconnect: () => Promise<void>;
-        signTransaction?: (transaction: Transaction) => Promise<Transaction>;
-        signAllTransactions?: (
-          transactions: Transaction[],
-        ) => Promise<Transaction[]>;
-      };
-    };
-    solflare?: {
-      connect: () => Promise<{ publicKey: { toString: () => string } }>;
-      disconnect: () => Promise<void>;
-      signTransaction?: (transaction: Transaction) => Promise<Transaction>;
-      signAllTransactions?: (
-        transactions: Transaction[],
-      ) => Promise<Transaction[]>;
-    };
-  }
-}
