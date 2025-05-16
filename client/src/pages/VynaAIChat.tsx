@@ -35,7 +35,6 @@ import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { useLoginRequired } from "@/hooks/useLoginRequired";
 import Teleprompter from "@/components/Teleprompter";
 import "./VynaAIChat.css";
 
@@ -352,16 +351,6 @@ export default function VynaAIChat() {
   const handleSendMessage = async (message?: string) => {
     const messageToSend = message || inputValue;
     if (messageToSend.trim() === "") return;
-    
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      toast({
-        title: "Login Required",
-        description: "You need to be logged in to send messages",
-        variant: "destructive"
-      });
-      return;
-    }
     
     // Create temporary message objects for UI
     const userMessage: AiChatMessage = {
@@ -1062,7 +1051,7 @@ export default function VynaAIChat() {
                     className={`rounded-xl px-4 py-3.5 text-sm md:text-base ${
                       message.role === 'user' 
                         ? 'bg-[#2A2A2A] text-white ml-auto mr-0 max-w-[85%] sm:max-w-[80%] md:ml-0' 
-                        : 'bg-[#232323] text-[#EEEEEE] mr-auto ml-0 w-full sm:max-w-[90%] md:mr-0 ai-message-card'
+                        : 'bg-[#232323] text-[#DDDDDD] mr-auto ml-0 max-w-[95%] sm:max-w-[90%] md:mr-0'
                     }`}
                   >
                     {message.role === 'user' ? (
