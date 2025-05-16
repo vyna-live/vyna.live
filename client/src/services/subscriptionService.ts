@@ -91,94 +91,53 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
   }
 }
 
-// Create a new subscription
+// Create a new subscription with real payment validation
 export async function createSubscription(
   tierId: string,
   paymentMethod: 'usdc',
   amount: string,
   transactionSignature: string
 ): Promise<UserSubscription> {
-  // Check if this is a QR code payment (signature starts with QR)
+  // Check payment source to tag in analytics
   const isQRPayment = transactionSignature && transactionSignature.startsWith('QR');
   
-  // Or if it's a direct wallet payment that was already processed
-  const isPreProcessed = transactionSignature === 'ALREADY_PROCESSED';
-  
-  if (isQRPayment) {
-    console.log('Processing QR code payment - validated from blockchain events');
-    // In production, we would validate the transaction on the blockchain
-    // For now, we'll treat QR payments as valid and create a subscription
+  // Make sure we have a valid transaction signature
+  if (!transactionSignature || transactionSignature === 'ALREADY_PROCESSED') {
+    throw new Error('Valid transaction signature is required for subscription payment');
   }
   
-  // Special handling for 'ALREADY_PROCESSED' transactions
-  // This is a placeholder signature used when a transaction was already submitted
-  if (isPreProcessed) {
-    console.log('Processing ALREADY_PROCESSED transaction - creating a new unique signature');
-    
-    // Instead of reusing an existing subscription, always create a new one
-    // This allows multiple subscriptions from the same wallet
-    
-    // In development mode, return mock data since we know the transaction succeeded
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Creating a new subscription with unique ID in development mode');
-      
-      // Always return a new mock subscription with unique ID
-      return {
-        id: 123 + Math.floor(Math.random() * 1000), // Ensure unique ID
-        userId: 456,
-        tier: tierId,
-        status: 'active',
-        startDate: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-        gracePeriodEnd: new Date(Date.now() + 33 * 24 * 60 * 60 * 1000).toISOString(), // 33 days from now
-        autoRenew: true,
-        lastPayment: {
-          amount: amount,
-          currency: paymentMethod.toUpperCase(),
-          date: new Date().toISOString(),
-          transactionId: 'already-processed-' + Date.now()
-        }
-      };
-    }
-  }
+  console.log(`Processing subscription payment for ${tierId} tier with ${amount} USDC`);
+  console.log(`Transaction signature: ${transactionSignature}`);
   
-  // Also handle QR payment mock data if we're in development mode
-  if (isQRPayment && process.env.NODE_ENV === 'development') {
-    console.log('Creating a new subscription with QR payment in development mode');
-    
-    // Always return a new mock subscription with unique ID
-    return {
-      id: 9000 + Math.floor(Math.random() * 1000), // Different ID range for QR payments
-      userId: 456,
-      tier: tierId,
-      status: 'active',
-      startDate: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-      gracePeriodEnd: new Date(Date.now() + 33 * 24 * 60 * 60 * 1000).toISOString(), // 33 days from now
-      autoRenew: true,
-      lastPayment: {
-        amount: amount,
-        currency: paymentMethod.toUpperCase(),
-        date: new Date().toISOString(),
-        transactionId: transactionSignature
-      }
-    };
-  }
-  
-  // Regular API call for normal transactions
+  // Send the payment details to the server for validation and subscription creation
+  // The server will verify the transaction on the blockchain before creating the subscription
   const response = await apiRequest('POST', '/api/subscription/create', {
     tierId,
     paymentMethod,
     amount,
     transactionSignature,
-    paymentSource: isQRPayment ? 'qr_code' : 'direct_wallet' // Add payment source info
+    paymentSource: isQRPayment ? 'qr_code' : 'direct_wallet'
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to create subscription');
+    const errorData = await response.json();
+    
+    // Handle specific error cases with appropriate user messages
+    if (errorData.error === 'Underpayment detected') {
+      throw new Error(`Payment amount (${errorData.provided} USDC) is less than the required amount (${errorData.expected} USDC). Please pay the full amount.`);
+    } else if (errorData.error === 'Transaction already processed') {
+      throw new Error('This transaction has already been used for a subscription. Please make a new payment.');
+    } else if (errorData.error === 'Transaction validation failed') {
+      throw new Error('Unable to verify your payment on the blockchain. Please check the transaction and try again.');
+    } else if (errorData.error === 'Invalid transaction signature') {
+      throw new Error('The provided transaction signature is invalid. Please ensure you\'re submitting a valid Solana transaction.');
+    }
+    
+    // Generic error fallback
+    throw new Error(errorData.message || errorData.error || 'Failed to create subscription');
   }
   
+  // Return the verified and activated subscription
   return await response.json();
 }
 

@@ -376,8 +376,12 @@ export async function createUserSubscription(req: Request, res: Response) {
     }
 
     const userId = req.user.id;
-    const { tierId, amount, transactionSignature } = req.body;
+    const { tierId, amount, transactionSignature, paymentSource } = req.body;
     const paymentMethod = 'usdc'; // We now only support USDC
+    const senderWalletAddress = req.body.walletAddress; // Optional: wallet address that made the payment
+    
+    console.log(`Subscription request: Tier ${tierId}, Amount ${amount} USDC, Signature ${transactionSignature}`);
+    console.log(`Payment source: ${paymentSource || 'direct_wallet'}`);
     
     // Validate tier ID
     if (!['free', 'pro', 'max'].includes(tierId)) {
@@ -385,8 +389,31 @@ export async function createUserSubscription(req: Request, res: Response) {
     }
     
     // Special case for free tier
-    if (tierId === 'free' && parseFloat(amount) !== 0) {
-      return res.status(400).json({ error: 'Free tier does not require payment' });
+    if (tierId === 'free') {
+      console.log('Processing free tier subscription - no payment required');
+      
+      // Calculate subscription dates
+      const now = new Date();
+      const expirationDate = calculateExpirationDate(tierId);
+      const gracePeriodEnd = calculateGracePeriodEnd(tierId, expirationDate);
+      
+      // Create free subscription without payment verification
+      const [newSubscription] = await db
+        .insert(subscriptions)
+        .values({
+          userId,
+          tierId: tierId,
+          status: 'active',
+          paymentMethod: 'none',
+          amount: '0',
+          activatedAt: now,
+          expiresAt: expirationDate,
+          gracePeriodEnds: gracePeriodEnd,
+          renewalEnabled: true
+        })
+        .returning();
+      
+      return res.status(201).json(newSubscription);
     }
     
     // Find the tier to validate the amount
@@ -395,39 +422,37 @@ export async function createUserSubscription(req: Request, res: Response) {
       return res.status(400).json({ error: 'Subscription tier not found' });
     }
     
-    // For paid tiers, verify the USDC amount matches the expected price
-    // Account for USDC's 6 decimal places in exact comparisons
-    if (tierId !== 'free') {
-      const expectedAmount = tier.priceUsdc.toFixed(6);
-      const providedAmount = parseFloat(amount).toFixed(6);
-      
-      // Check for underpayments with 1% tolerance for transaction fees
-      if (parseFloat(providedAmount) < parseFloat(expectedAmount) * 0.99) {
-        const balanceDue = (parseFloat(expectedAmount) - parseFloat(providedAmount)).toFixed(2);
-        return res.status(400).json({ 
-          error: 'Underpayment detected', 
-          expected: expectedAmount,
-          provided: providedAmount,
-          balanceDue: balanceDue,
-          currency: 'USDC'
-        });
-      }
-      
-      // Log overpayments but still process them
-      if (parseFloat(providedAmount) > parseFloat(expectedAmount) * 1.01) {
-        console.log(`Overpayment detected for subscription ${tierId}. Expected: ${expectedAmount} USDC, Received: ${providedAmount} USDC`);
-        // TODO: Implement overpayment handling (store as credit, etc.)
-      }
+    // Get expected price for the tier
+    const expectedAmount = tier.priceUsdc.toFixed(2);
+    
+    // For paid tiers, require a transaction signature
+    if (!transactionSignature) {
+      return res.status(400).json({ 
+        error: 'Transaction signature required for paid subscriptions'
+      });
     }
     
-    // Special case: 'ALREADY_PROCESSED' signature 
-    // This is a placeholder used when a transaction was already processed
-    if (transactionSignature === 'ALREADY_PROCESSED') {
-      // For 'ALREADY_PROCESSED' transactions, we always create a new unique transaction ID
-      // This allows multiple subscriptions from the same wallet 
-      req.body.transactionSignature = `already-processed-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-      console.log('Generated new transaction signature for ALREADY_PROCESSED request:', req.body.transactionSignature);
+    // Import the Solana verification service
+    const { verifyUSDCTransaction } = await import('./solanaService');
+    
+    // Verify the transaction on the blockchain
+    console.log(`Verifying transaction ${transactionSignature} for amount ${expectedAmount} USDC`);
+    const verification = await verifyUSDCTransaction(
+      transactionSignature,
+      expectedAmount,
+      senderWalletAddress
+    );
+    
+    // If transaction verification failed
+    if (!verification.isValid) {
+      console.error(`Transaction verification failed: ${verification.errorMessage}`);
+      return res.status(400).json({
+        error: 'Transaction validation failed',
+        details: verification.errorMessage
+      });
     }
+    
+    console.log('Transaction verified successfully:', verification);
     
     // Calculate subscription dates
     const now = new Date();
@@ -442,7 +467,7 @@ export async function createUserSubscription(req: Request, res: Response) {
         tierId: tierId,
         status: 'active',
         paymentMethod: paymentMethod,
-        amount: amount.toString(),
+        amount: verification.amount?.toString() || amount.toString(),
         activatedAt: now,
         expiresAt: expirationDate,
         gracePeriodEnds: gracePeriodEnd,
