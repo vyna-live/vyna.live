@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, AlertCircle, Check, CreditCard, Coins, Wallet, QrCode, Copy } from 'lucide-react';
+import { Loader2, AlertCircle, Check, CreditCard, Home, Wallet, QrCode, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { SubscriptionTier } from '@/services/subscriptionService';
 import { useToast } from '@/hooks/use-toast';
+import { QRCodeDisplay } from './QRCodeDisplay';
 
 // Define payment status type at the top level
 type PaymentStatus = 'idle' | 'processing' | 'success' | 'error';
@@ -69,41 +67,8 @@ export function PaymentModal({
     }
   }, [selectedTier]);
 
-  // Listen for payments on the blockchain (simulated for now)
-  useEffect(() => {
-    // Only run this effect if we're in QR code payment mode and status is 'idle'
-    if (paymentTab === 'qrcode' && status === 'idle') {
-      // In a real implementation, this would connect to a blockchain listener
-      // For this demo, we'll simulate blockchain events with a timeout
-      let checkInterval: NodeJS.Timeout;
-      
-      const checkForPayment = () => {
-        // This is just for demo purposes
-        // In a real implementation, we would check for actual blockchain events
-        checkInterval = setTimeout(() => {
-          // 10% chance of "detecting" a payment in each interval (for demo purposes)
-          if (Math.random() < 0.1) {
-            // Get the USDC amount with proper formatting
-            const amount = selectedTier.priceUsdc.toString();
-              
-            // Simulate transaction signature
-            const mockSignature = 'QR' + Math.random().toString(36).substring(2, 15);
-            
-            // Show success and call the onSuccess callback
-            setStatus('success');
-            onSuccess(mockSignature, amount, paymentMethod);
-          }
-        }, 5000); // Check every 5 seconds
-      };
-      
-      checkForPayment();
-      
-      // Clean up on component unmount or when status/tab changes
-      return () => {
-        if (checkInterval) clearTimeout(checkInterval);
-      };
-    }
-  }, [paymentTab, status, selectedTier, onSuccess]);
+  // The QR code payment validation happens inside the QRCodeDisplay component
+  // We just need to handle the success callback
 
   // Handle direct wallet payment
   const handleSubmit = async () => {
@@ -298,61 +263,20 @@ export function PaymentModal({
             )}
               
             {paymentTab === 'qrcode' && (
-              <div className="py-4 space-y-4">
-                <div className="text-center">
-                  <h3 className="font-medium mb-1">USDC Payment</h3>
-                  <p className="text-sm text-neutral-400">
-                    Scan or copy this payment address to pay with USDC from your wallet
-                  </p>
-                  <p className="font-medium mt-2">
-                    ${selectedTier.priceUsdc} USDC
-                  </p>
-                  <p className="text-xs text-neutral-500 mt-1">USDC operates with 6 decimal places precision</p>
-                </div>
-                
-                <div className="flex items-center justify-center">
-                  <div className=" rounded-lg p-2 w-[200px] h-[200px]">
-                    <img 
-                      src="src/assets/qrcode.png" 
-                      alt="Payment QR Code" 
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                </div>
-                
-                <div className="mx-auto px-1">
-                  <div className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded-lg border border-[#333] overflow-hidden">
-                    <div className="truncate text-sm text-neutral-300 pl-2">
-                      HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU
-                    </div>
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="h-8 px-3 text-xs"
-                      onClick={() => {
-                        navigator.clipboard.writeText("HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU");
-                        toast({
-                          title: "Address copied",
-                          description: "Payment address copied to clipboard",
-                        });
-                      }}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="text-center text-xs text-neutral-400 px-1">
-                  <p className="mb-1">
-                    Payment must come from your connected wallet address: <span className="text-white font-mono">{wallet?.publicKey?.substring(0, 6)}...{wallet?.publicKey?.substring(wallet?.publicKey?.length - 4)}</span>
-                  </p>
-                  <p>
-                    Send exact USDC amount to complete your subscription payment. The system will automatically detect your payment and activate your subscription.
-                  </p>
-                  <p className="mt-1 text-amber-500/80">
-                    Make sure you're sending USDC tokens and not some other token or cryptocurrency.
-                  </p>
-                </div>
+              <div className="py-2 space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                <QRCodeDisplay 
+                  walletAddress="HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU" 
+                  amount={selectedTier.priceUsdc} 
+                  currencySymbol="USDC"
+                  tierId={selectedTier.id}
+                  onPaymentConfirmed={() => {
+                    // Handle payment confirmation
+                    setStatus('success');
+                    // Use a generated signature for QR payments
+                    const qrSignature = 'QR-' + Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+                    onSuccess(qrSignature, selectedTier.priceUsdc.toString(), paymentMethod);
+                  }}
+                />
                 
                 {error && (
                   <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2">
@@ -361,7 +285,7 @@ export function PaymentModal({
                   </div>
                 )}
                 
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center mt-2 space-x-3">
                   <Button 
                     variant="outline" 
                     onClick={onClose}
@@ -369,6 +293,14 @@ export function PaymentModal({
                     disabled={isPending || isProcessing}
                   >
                     Close
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/'}
+                    className="border-[#333] text-white hover:bg-[#252525]"
+                  >
+                    <Home className="h-4 w-4 mr-2" />
+                    Back to Home
                   </Button>
                 </div>
               </div>

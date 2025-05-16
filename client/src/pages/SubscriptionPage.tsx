@@ -282,24 +282,33 @@ export default function SubscriptionPage() {
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        <Button
-                          onClick={() => handleSelectTier(tier)}
-                          disabled={isSubscribing}
-                          className={`w-full ${
-                            tier.mostPopular
-                              ? 'bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black'
-                              : 'bg-neutral-800 hover:bg-neutral-700 text-white'
-                          }`}
-                        >
-                          {isSubscribing && selectedTier?.id === tier.id ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            'Subscribe'
-                          )}
-                        </Button>
+                        {tier.id !== 'free' ? (
+                          <Button
+                            onClick={() => handleSelectTier(tier)}
+                            disabled={isSubscribing}
+                            className={`w-full ${
+                              tier.mostPopular
+                                ? 'bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black'
+                                : 'bg-neutral-800 hover:bg-neutral-700 text-white'
+                            }`}
+                          >
+                            {isSubscribing && selectedTier?.id === tier.id ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              'Subscribe'
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            className="w-full bg-green-600 hover:bg-green-700 text-white cursor-default"
+                            disabled
+                          >
+                            Free Plan
+                          </Button>
+                        )}
                         <Button
                           onClick={() => setDetailTier(tier.id)}
                           className="w-full bg-transparent hover:bg-neutral-800 text-white border border-neutral-700"
