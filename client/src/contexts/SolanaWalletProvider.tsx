@@ -43,10 +43,9 @@ const USDC_MINT = new PublicKey("BXXkv6zRCz1mGJd96Chp4t64r1x3QT5BpHs4fFyz83Ps");
 // USDC has 6 decimal places
 const USDC_DECIMALS = 6;
 
-// Create a placeholder keypair for the application
-// This will be replaced with a proper recipient wallet later
-// In a production environment, this would be securely managed on the server
-const recipientKeyPair = Keypair.generate();
+// For application recipient wallet, we'll fetch from server-side
+// This approach is more secure than including private keys in client code
+let recipientPublicKeyString = "";  // Will be populated during transaction
 
 // Define wallet object interface
 interface Wallet {
@@ -258,6 +257,15 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
       });
 
       try {
+        // First, get the application wallet's public key from the server
+        const walletResponse = await fetch('/api/solana/wallet-address');
+        if (!walletResponse.ok) {
+          throw new Error("Failed to get application wallet address");
+        }
+        
+        const walletData = await walletResponse.json();
+        const recipientPublicKeyString = walletData.publicKey;
+
         // Set up connection to Solana devnet (or use mainnet for production)
         const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
@@ -268,19 +276,18 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         const uniqueId =
           Date.now().toString() + Math.random().toString().substring(2, 8);
 
-        // generate keypair for the transaction
-
         console.log(
-          "Wallet public key:",
-          recipientKeyPair.publicKey.toBase58(),
+          "Application wallet public key:",
+          recipientPublicKeyString,
         );
 
         // Create PublicKeys for sender and recipient
         const senderPublicKey = new PublicKey(wallet.publicKey);
         const recipientPublicKey = new PublicKey(recipient);
 
-        if (recipientPublicKey !== recipientKeyPair.publicKey) {
-          throw new Error("Public key mismatch! Check private key.");
+        // Validate the recipient matches our application wallet
+        if (recipientPublicKey.toString() !== recipientPublicKeyString) {
+          throw new Error("Payment recipient doesn't match application wallet");
         }
 
         // Add memo instruction with payment details
@@ -326,13 +333,14 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         //   transaction.add(createSenderAccountInstruction);
         // }
 
-        // Check if recipient token account exists, create if it doesn't
-        const recipientTokenAccount = await getOrCreateAssociatedTokenAccount(
-          connection,
-          recipientKeyPair,
-          USDC_MINT,
-          recipientKeyPair.publicKey,
-        );
+        // Get the recipient token account from the server
+        const tokenAccountResponse = await fetch('/api/solana/token-account');
+        if (!tokenAccountResponse.ok) {
+          throw new Error("Failed to get recipient token account");
+        }
+        
+        const tokenAccountData = await tokenAccountResponse.json();
+        const recipientTokenAddress = new PublicKey(tokenAccountData.tokenAccount);
         // transaction.add(recipientTokenAccount.isFrozen)
         // let recipientTokenAccountExists = false;
         // try {
@@ -366,7 +374,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         // Create the token transfer instruction
         const transferInstruction = createTransferInstruction(
           senderTokenAccount, // source
-          recipientTokenAccount.address, // destination
+          recipientTokenAddress, // destination
           senderPublicKey, // owner
           usdcAmount, // amount in token units
         );

@@ -18,6 +18,7 @@ import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
 import { registerLoyaltyRoutes } from "./loyaltyRoutes";
 import { registerSubscriptionRoutes } from "./subscriptionRoutes";
+import { registerSolanaRoutes } from "./solanaRoutes";
 
 // Configure multer for file uploads
 const upload = multer({ 
@@ -38,6 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register subscription routes
   registerSubscriptionRoutes(app);
+  
+  // Register Solana wallet routes
+  registerSolanaRoutes(app);
   
   // AI Chat endpoints
   // Get all chat sessions for a specific host
