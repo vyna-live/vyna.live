@@ -397,7 +397,7 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
           : size === 'large' 
             ? 'text-sm md:text-lg' 
             : 'text-xs md:text-base'
-      } ${darkMode ? 'text-white' : 'text-[#333333]'}`}>
+      } ${darkMode ? 'text-[#EEEEEE]' : 'text-[#333333]'}`}>
         {/* Render direct visualizations if provided */}
         {visualizations && visualizations.length > 0 && (
           <div className="visualizations-container mb-4">

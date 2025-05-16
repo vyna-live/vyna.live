@@ -35,6 +35,7 @@ import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useLoginRequired } from "@/hooks/useLoginRequired";
 import Teleprompter from "@/components/Teleprompter";
 import "./VynaAIChat.css";
 
