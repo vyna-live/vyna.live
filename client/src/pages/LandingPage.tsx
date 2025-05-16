@@ -125,26 +125,26 @@ export default function LandingPage() {
         </button>
 
         {/* AI Chat Panel */}
-        <div className="w-[758px] max-w-full mx-auto z-[1] animate-fadeInUp delay-200">
-          <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm h-[204px]">
+        <div className="w-[758px] max-w-full mx-auto z-[1] animate-fadeInUp delay-200 px-2 sm:px-4">
+          <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm h-auto sm:h-[204px]">
             {/* Tabs */}
-            <div className="flex items-center px-4 py-2 bg-[#252525] border-b border-[#333333]">
+            <div className="flex flex-wrap items-center px-3 sm:px-4 py-2 bg-[#252525] border-b border-[#333333]">
               <button 
-                className={`flex items-center gap-1 mr-2 px-3 py-1 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                className={`flex items-center gap-1 mr-2 px-2 sm:px-3 py-1 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                 onClick={() => switchTab('vynaai')}
               >
                 <Sparkles size={12} />
                 <span>VynaAI</span>
               </button>
               <button 
-                className={`flex items-center gap-1 px-3 py-1 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                 onClick={() => switchTab('notepad')}
               >
                 <span>Notepad</span>
               </button>
               <div className="flex-1"></div>
               <div className="flex items-center">
-                <div className="mr-3">
+                <div className="hidden sm:block mr-3">
                   <a 
                     href="/subscription" 
                     className="inline-flex items-center h-6 px-2.5 py-0.5 rounded-md bg-[#121212] hover:bg-[#1a1a1a] transition-colors"
@@ -156,7 +156,7 @@ export default function LandingPage() {
                 </div>
                 <button 
                   onClick={handleExpandView}
-                  className="text-[#999999] hover:text-white p-1" 
+                  className="text-[#999999] hover:text-white p-1 min-w-[44px] min-h-[44px] flex items-center justify-center" 
                   aria-label="Expand"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -171,20 +171,20 @@ export default function LandingPage() {
             
             {/* Content area - VynaAI */}
             {activeTab === 'vynaai' && (
-              <div className="px-4 pt-3 pb-4 input-area flex flex-col">
+              <div className="px-3 sm:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 input-area flex flex-col">
                 <div className="flex-grow mb-2">
                   <textarea
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleInputKeyDown}
                     placeholder="Ask your question"
-                    className="w-full h-[100px] px-4 py-2.5 text-sm"
+                    className="w-full h-20 sm:h-[100px] px-3 sm:px-4 py-2 text-sm rounded-xl"
                   />
                 </div>
                 
                 {/* Input controls */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5 text-white opacity-70">
+                <div className="flex items-center justify-between input-toolbar">
+                  <div className="flex items-center gap-2 sm:gap-5 text-white opacity-70">
                     <input 
                       type="file"
                       id="vynaai-file-upload"
@@ -199,7 +199,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button" 
                       aria-label="Upload file"
                       onClick={() => document.getElementById('vynaai-file-upload')?.click()}
                     >
@@ -207,7 +207,7 @@ export default function LandingPage() {
                     </button>
                     
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button" 
                       aria-label="Record audio"
                       onClick={() => {
                         setInputValue(prev => `${prev}\n\n[Audio Recording]`);
@@ -235,7 +235,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button" 
                       aria-label="Take photo"
                       onClick={() => document.getElementById('vynaai-image-upload')?.click()}
                     >
@@ -244,7 +244,7 @@ export default function LandingPage() {
                   </div>
                   <button 
                     onClick={handleSendMessage}
-                    className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
+                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-h-[44px] min-w-[60px]"
                     aria-label="Send message"
                   >
                     <span>Send</span>

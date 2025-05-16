@@ -29,13 +29,15 @@ const DEVNET_USDC_MINT = safePublicKey(
 );
 
 // Always use mainnet-beta for production
-const SOLANA_NETWORK = "mainnet-beta";
+const SOLANA_NETWORK = "devnet";
 
 // Always use the real USDC mint on mainnet
-const CURRENT_USDC_MINT = USDC_MINT;
+const CURRENT_USDC_MINT = DEVNET_USDC_MINT;
 
 // The company's wallet address where subscription payments are received
-const COMPANY_WALLET_ADDRESS = process.env.COMPANY_WALLET_ADDRESS || "HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU";
+const COMPANY_WALLET_ADDRESS =
+  process.env.COMPANY_WALLET_ADDRESS ||
+  "HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU";
 
 // No test mode in production
 const ENABLE_TEST_MODE = false;
@@ -158,7 +160,7 @@ export async function verifyUSDCTransaction(
       console.error(
         `No transfer to company wallet ${COMPANY_WALLET_ADDRESS} found`,
       );
-      
+
       return {
         isValid: false,
         errorMessage: `No transfer to company wallet found`,
