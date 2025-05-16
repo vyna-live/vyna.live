@@ -84,7 +84,8 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
       return {
         id: 0,
         userId: 0,
-        tier: 'free',
+        tierId: 'free',
+        tier: 'free', // For backward compatibility
         status: 'none',
         startDate: '',
         expiresAt: null,
@@ -107,7 +108,8 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
     return {
       id: 0,
       userId: 0,
-      tier: 'free',
+      tierId: 'free',
+      tier: 'free', // For backward compatibility
       status: 'none',
       startDate: '',
       expiresAt: null,
