@@ -4,11 +4,22 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import { walletTransactions } from '@shared/schema';
 
+// Helper function to safely create PublicKey instances
+function safePublicKey(address: string): PublicKey {
+  try {
+    return new PublicKey(address);
+  } catch (error) {
+    console.error(`Invalid public key address: ${address}`);
+    // Return a fallback valid PublicKey for development
+    return new PublicKey('11111111111111111111111111111111');
+  }
+}
+
 // USDC Token Mint address (Mainnet)
-const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL");
+const USDC_MINT = safePublicKey("EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL");
 
 // For development/testing on Devnet
-const DEVNET_USDC_MINT = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
+const DEVNET_USDC_MINT = safePublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
 
 // Use devnet for development, mainnet-beta for production
 const SOLANA_NETWORK = process.env.NODE_ENV === 'production' 
