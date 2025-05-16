@@ -20,6 +20,7 @@ import {
   createTransferInstruction,
   getAccount,
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 
 // Set up Buffer for browser environment
@@ -250,19 +251,88 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
       });
 
       try {
-        // Set up connection to Solana devnet (or use mainnet for production)
+        // Set up connection to Solana devnet (for production, you'd use "mainnet-beta")
         const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
         // Create transaction
         const transaction = new Transaction();
 
         // Generate a unique transaction ID to prevent duplicates
-        const uniqueId =
-          Date.now().toString() + Math.random().toString().substring(2, 8);
+        const uniqueId = Date.now().toString() + Math.random().toString().substring(2, 8);
 
         // Create PublicKeys for sender and recipient
         const senderPublicKey = new PublicKey(wallet.publicKey);
         const recipientPublicKey = new PublicKey(recipient);
+
+        // Convert the amount from decimal USDC to token units (USDC has 6 decimals)
+        const usdcAmount = BigInt(
+          Math.floor(parseFloat(amount) * Math.pow(10, USDC_DECIMALS)),
+        );
+
+        console.log(`Preparing USDC transfer of ${usdcAmount} lamports from ${senderPublicKey.toString()} to ${recipientPublicKey.toString()}`);
+
+        // Get the associated token accounts for sender and recipient
+        const senderTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT, 
+          senderPublicKey
+        );
+
+        const recipientTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT,
+          recipientPublicKey
+        );
+
+        console.log(`Sender token account: ${senderTokenAccount.toString()}`);
+        console.log(`Recipient token account: ${recipientTokenAccount.toString()}`);
+
+        // Check if sender token account exists
+        let senderTokenAccountInfo;
+        try {
+          senderTokenAccountInfo = await getAccount(connection, senderTokenAccount);
+          console.log("Sender token account exists");
+        } catch (error) {
+          console.log("Sender token account doesn't exist, will create it");
+          
+          // Create sender token account instruction
+          const createSenderTokenAccountIx = createAssociatedTokenAccountInstruction(
+            senderPublicKey, // payer
+            senderTokenAccount, // associated token account
+            senderPublicKey, // owner
+            USDC_MINT // mint
+          );
+          
+          transaction.add(createSenderTokenAccountIx);
+        }
+
+        // Check if recipient token account exists
+        let recipientTokenAccountInfo;
+        try {
+          recipientTokenAccountInfo = await getAccount(connection, recipientTokenAccount);
+          console.log("Recipient token account exists");
+        } catch (error) {
+          console.log("Recipient token account doesn't exist, will create it");
+          
+          // Create recipient token account instruction
+          const createRecipientTokenAccountIx = createAssociatedTokenAccountInstruction(
+            senderPublicKey, // payer
+            recipientTokenAccount, // associated token account
+            recipientPublicKey, // owner
+            USDC_MINT // mint
+          );
+          
+          transaction.add(createRecipientTokenAccountIx);
+        }
+
+        // Create transfer instruction
+        const transferIx = createTransferInstruction(
+          senderTokenAccount, // source
+          recipientTokenAccount, // destination
+          senderPublicKey, // owner (authority)
+          usdcAmount // amount
+        );
+
+        // Add transfer instruction to transaction
+        transaction.add(transferIx);
 
         // Add memo instruction with payment details
         const memoMessage = `Vyna.live USDC payment: ${uniqueId}`;
@@ -274,80 +344,8 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           data: memoData,
         });
 
-        // Get the associated token accounts for sender and recipient
-        const senderTokenAccount = await getAssociatedTokenAddress(
-          USDC_MINT,
-          senderPublicKey,
-        );
-
-        const recipientTokenAccount = await getAssociatedTokenAddress(
-          USDC_MINT,
-          recipientPublicKey,
-        );
-
-        // Check if sender token account exists and create one if not
-        let senderTokenAccountInfo;
-        try {
-          senderTokenAccountInfo = await getAccount(
-            connection,
-            senderTokenAccount,
-          );
-        } catch (error) {
-          console.error("Error getting sender token account:", error);
-        }
-        if (!senderTokenAccountInfo) {
-          const createSenderAccountInstruction =
-            createAssociatedTokenAccountInstruction(
-              senderPublicKey, // payer
-              senderTokenAccount, // associated token account address
-              senderPublicKey, // owner
-              USDC_MINT, // mint
-            );
-
-          transaction.add(createSenderAccountInstruction);
-        }
-
-        // Check if recipient token account exists, create if it doesn't
-        let recipientTokenAccountExists = false;
-        try {
-          await getAccount(connection, recipientTokenAccount);
-          recipientTokenAccountExists = true;
-        } catch (error) {
-          console.log(
-            "Recipient token account does not exist, will create it",
-            error,
-          );
-          // We'll create the account in the transaction
-        }
-
-        // If recipient token account doesn't exist, add instruction to create it
-        if (!recipientTokenAccountExists) {
-          const createAccountInstruction =
-            createAssociatedTokenAccountInstruction(
-              senderPublicKey, // payer
-              recipientTokenAccount, // associated token account address
-              recipientPublicKey, // owner
-              USDC_MINT, // mint
-            );
-          transaction.add(createAccountInstruction);
-        }
-
-        // Convert the amount from decimal USDC to token units (USDC has 6 decimals)
-        const usdcAmount = BigInt(
-          Math.floor(parseFloat(amount) * Math.pow(10, USDC_DECIMALS)),
-        );
-
-        // Create the token transfer instruction
-        const transferInstruction = createTransferInstruction(
-          senderTokenAccount, // source
-          recipientTokenAccount, // destination
-          senderPublicKey, // owner
-          usdcAmount, // amount in token units
-        );
-
-        // Add the instructions to the transaction
-        transaction.add(transferInstruction);
-        transaction.add(memoInstruction); // Add memo after transfer
+        // Add memo instruction to transaction
+        transaction.add(memoInstruction);
 
         // Get recent blockhash and set transaction fee payer
         const blockhash = await connection.getLatestBlockhash();
@@ -385,11 +383,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             signature = txSignature;
 
             // Wait for confirmation
-            await connection.confirmTransaction({
-              blockhash: blockhash.blockhash,
-              lastValidBlockHeight: blockhash.lastValidBlockHeight,
-              signature: txSignature,
-            });
+            await connection.confirmTransaction(txSignature, "confirmed");
 
             toast({
               title: "Transaction successful",
@@ -462,11 +456,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             signature = txSignature;
 
             // Wait for confirmation
-            await connection.confirmTransaction({
-              blockhash: blockhash.blockhash,
-              lastValidBlockHeight: blockhash.lastValidBlockHeight,
-              signature: txSignature,
-            });
+            await connection.confirmTransaction(txSignature, "confirmed");
 
             toast({
               title: "Transaction successful",
