@@ -20,9 +20,15 @@ export default function LandingPage() {
     setLocation("/auth");
   };
 
-  const handleExtensionDownload = () => {
-    // Link to the extension download
-    window.open("/browser-extension.zip", "_blank");
+  const handleExtensionDownload = (e: React.MouseEvent) => {
+    // Prevent the default behavior
+    e.preventDefault();
+    
+    // Show a toast notification that the feature is coming soon
+    toast({
+      title: "Coming Soon",
+      description: "Browser extension download will be available soon.",
+    });
   };
   
   const switchTab = (tab: 'vynaai' | 'notepad') => {
