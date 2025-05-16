@@ -25,6 +25,7 @@ import NoteContentRenderer from "@/components/NoteContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useLoginNotification } from "@/hooks/useLoginNotification";
 import "../pages/VynaAIChat.css";
 import "./Notepad.css";
 import { Note } from "@/types";
@@ -370,21 +371,12 @@ export default function Notepad() {
     }
   };
   
+  // Use login notification hook
+  const { showLoginRequiredNotification } = useLoginNotification();
+  
   const handleNewNote = async () => {
     if (!isAuthenticated || !user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to create notes',
-        variant: 'destructive',
-        action: (
-          <button 
-            className="bg-[#DCC5A2] text-[#121212] px-3 py-1 rounded-md text-xs font-medium"
-            onClick={() => setLocation("/auth")}
-          >
-            Log in
-          </button>
-        ),
-      });
+      showLoginRequiredNotification('Please log in to create notes');
       return;
     }
     

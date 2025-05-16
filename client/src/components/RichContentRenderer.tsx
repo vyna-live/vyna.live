@@ -449,16 +449,16 @@ const RichContentRenderer: React.FC<RichContentRendererProps> = ({
                         );
                       },
                       h1: ({node, ...props}) => (
-                        <h1 className="text-xl md:text-2xl font-bold mb-3 text-[#E8B85B] mt-4" {...props} />
+                        <h1 className={`text-xl md:text-2xl font-bold mb-3 mt-4 ${darkMode ? 'text-[#E8B85B]' : 'text-[#8A1538]'}`} {...props} />
                       ),
                       h2: ({node, ...props}) => (
-                        <h2 className="text-lg md:text-xl font-semibold mb-2 text-[#E8B85B] mt-3" {...props} />
+                        <h2 className={`text-lg md:text-xl font-semibold mb-2 mt-3 ${darkMode ? 'text-[#E8B85B]' : 'text-[#8A1538]'}`} {...props} />
                       ),
                       h3: ({node, ...props}) => (
-                        <h3 className="text-base md:text-lg font-medium mb-2 text-[#E8B85B] mt-2" {...props} />
+                        <h3 className={`text-base md:text-lg font-medium mb-2 mt-2 ${darkMode ? 'text-[#E8B85B]' : 'text-[#8A1538]'}`} {...props} />
                       ),
                       h4: ({node, ...props}) => (
-                        <h4 className="text-sm md:text-base font-medium mb-1 text-[#E8B85B] mt-2" {...props} />
+                        <h4 className={`text-sm md:text-base font-medium mb-1 mt-2 ${darkMode ? 'text-[#E8B85B]' : 'text-[#8A1538]'}`} {...props} />
                       ),
                       p: ({node, ...props}) => (
                         <p className="text-xs md:text-sm mb-4" {...props} />

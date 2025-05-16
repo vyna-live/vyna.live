@@ -250,7 +250,7 @@ export default function LandingPage() {
                   </div>
                   <button 
                     onClick={handleSendMessage}
-                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-h-[44px] min-w-[60px]"
+                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-2 h-10 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-w-[60px]"
                     aria-label="Send message"
                   >
                     <span>Send</span>

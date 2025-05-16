@@ -35,6 +35,7 @@ import AdaptiveContentRenderer from "@/components/AdaptiveContentRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useLoginNotification } from "@/hooks/useLoginNotification";
 import Teleprompter from "@/components/Teleprompter";
 import "./VynaAIChat.css";
 
@@ -572,22 +573,13 @@ export default function VynaAIChat() {
     }
   };
   
+  // Authentication notification functionality
+  const { showLoginRequiredNotification } = useLoginNotification();
+
   // Add to note functionality
   const handleAddToNote = async (messageId: number) => {
     if (!isAuthenticated) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to add content to notes',
-        variant: 'destructive',
-        action: (
-          <button 
-            className="bg-[#DCC5A2] text-[#121212] px-3 py-1 rounded-md text-xs font-medium"
-            onClick={() => setLocation("/auth")}
-          >
-            Log in
-          </button>
-        ),
-      });
+      showLoginRequiredNotification('Please log in to add content to notes');
       return;
     }
     
