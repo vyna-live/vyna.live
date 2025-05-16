@@ -134,26 +134,26 @@ export default function LandingPage() {
         <div className="w-[660px] max-w-full mx-auto z-[1] animate-fadeInUp delay-200 px-2 sm:px-4">
           <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm h-auto sm:h-[204px]">
             {/* Tabs */}
-            <div className="flex flex-wrap items-center px-3 sm:px-4 py-2 bg-[#252525] border-b border-[#333333]">
+            <div className="flex flex-wrap items-center px-2 py-1.5 bg-[#252525] border-b border-[#333333]">
               <button 
-                className={`flex items-center gap-1 mr-2 px-2 sm:px-3 py-1 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                className={`flex items-center gap-1 mr-2 px-2 py-0.5 text-xs rounded-md transition-colors ${activeTab === 'vynaai' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                 onClick={() => switchTab('vynaai')}
               >
                 <Sparkles size={12} />
                 <span>VynaAI</span>
               </button>
               <button 
-                className={`flex items-center gap-1 px-2 sm:px-3 py-1 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
+                className={`flex items-center gap-1 px-2 py-0.5 text-xs rounded-md transition-colors ${activeTab === 'notepad' ? 'bg-[#DCC5A2] text-[#121212] font-medium' : 'bg-transparent text-[#999999] hover:bg-[#333333] hover:text-white'}`}
                 onClick={() => switchTab('notepad')}
               >
                 <span>Notepad</span>
               </button>
               <div className="flex-1"></div>
               <div className="flex items-center">
-                <div className="hidden sm:block mr-3">
+                <div className="hidden sm:block mr-2">
                   <a 
                     href="/subscription" 
-                    className="inline-flex items-center h-6 px-2.5 py-0.5 rounded-md bg-[#121212] hover:bg-[#1a1a1a] transition-colors"
+                    className="inline-flex items-center h-5 px-1.5 py-0 rounded-md bg-[#121212] hover:bg-[#1a1a1a] transition-colors"
                   >
                     <span className="text-xs text-white font-normal">Free plan</span>
                     <span className="text-xs mx-1 text-gray-400">·</span>
@@ -177,20 +177,20 @@ export default function LandingPage() {
             
             {/* Content area - VynaAI */}
             {activeTab === 'vynaai' && (
-              <div className="px-3 sm:px-4 pt-2 sm:pt-3 pb-3 sm:pb-4 input-area flex flex-col">
-                <div className="flex-grow mb-2">
+              <div className="px-2 pt-2 pb-2 input-area flex flex-col">
+                <div className="flex-grow mb-1">
                   <textarea
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleInputKeyDown}
                     placeholder="Ask your question"
-                    className="w-full h-20 sm:h-[100px] px-3 sm:px-4 py-2 text-sm rounded-xl"
+                    className="w-full h-20 px-3 py-2 text-sm rounded-lg"
                   />
                 </div>
                 
                 {/* Input controls */}
                 <div className="flex items-center justify-between input-toolbar">
-                  <div className="flex items-center gap-2 sm:gap-5 text-white opacity-70">
+                  <div className="flex items-center gap-1 sm:gap-2 text-white opacity-70">
                     <input 
                       type="file"
                       id="vynaai-file-upload"
@@ -205,7 +205,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-8 h-8" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-7 h-7" 
                       aria-label="Upload file"
                       onClick={() => document.getElementById('vynaai-file-upload')?.click()}
                     >
@@ -213,7 +213,7 @@ export default function LandingPage() {
                     </button>
                     
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-8 h-8" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-7 h-7" 
                       aria-label="Record audio"
                       onClick={() => {
                         setInputValue(prev => `${prev}\n\n[Audio Recording]`);
@@ -241,7 +241,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-8 h-8" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-7 h-7" 
                       aria-label="Take photo"
                       onClick={() => document.getElementById('vynaai-image-upload')?.click()}
                     >
@@ -250,8 +250,8 @@ export default function LandingPage() {
                   </div>
                   <button 
                     onClick={handleSendMessage}
-                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-2 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-w-[60px]"
-                    style={{ height: '32px' }}
+                    className="button-hover-effect rounded-lg px-3 py-1 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium gap-1 hover:bg-[#C6B190] transition-all text-xs min-w-[50px]"
+                    style={{ height: '28px' }}
                     aria-label="Send message"
                   >
                     <span>Send</span>
@@ -263,20 +263,20 @@ export default function LandingPage() {
             
             {/* Content area - Notepad */}
             {activeTab === 'notepad' && (
-              <div className="px-4 pt-3 pb-4 input-area flex flex-col">
-                <div className="flex-grow mb-2">
+              <div className="px-2 pt-2 pb-2 input-area flex flex-col">
+                <div className="flex-grow mb-1">
                   <textarea
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleNoteKeyDown}
                     placeholder="Type a note"
-                    className="w-full h-[100px] px-4 py-2.5 text-sm"
+                    className="w-full h-20 px-3 py-2 text-sm rounded-lg"
                   />
                 </div>
                 
                 {/* Input controls */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 sm:gap-5 text-white opacity-70">
+                  <div className="flex items-center gap-1 sm:gap-2 text-white opacity-70">
                     <input 
                       type="file"
                       id="notepad-file-upload"
@@ -291,7 +291,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-8 h-8" 
+                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-7 h-7" 
                       aria-label="Upload file"
                       onClick={() => document.getElementById('notepad-file-upload')?.click()}
                     >
@@ -299,7 +299,7 @@ export default function LandingPage() {
                     </button>
                     
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-8 h-8" 
+                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-7 h-7" 
                       aria-label="Record audio"
                       onClick={() => {
                         setInputValue(prev => `${prev}\n\n[Audio Recording]`);
@@ -327,7 +327,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-8 h-8" 
+                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-7 h-7" 
                       aria-label="Take photo"
                       onClick={() => document.getElementById('notepad-image-upload')?.click()}
                     >
@@ -335,8 +335,8 @@ export default function LandingPage() {
                     </button>
                   </div>
                   <button 
-                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-2 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-w-[60px]"
-                    style={{ height: '32px' }}
+                    className="button-hover-effect rounded-lg px-3 py-1 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium gap-1 hover:bg-[#C6B190] transition-all text-xs min-w-[50px]"
+                    style={{ height: '28px' }}
                     aria-label="Add note"
                     onClick={handleAddNote}
                   >
