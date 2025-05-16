@@ -104,10 +104,6 @@ Vyna.AI is a cutting-edge browser extension and web application that provides an
    OPENAI_API_KEY=your_openai_key
    ANTHROPIC_API_KEY=your_anthropic_key
    GEMINI_API_KEY=your_gemini_key
-   AGORA_APP_ID=your_agora_app_id
-   AGORA_APP_CERTIFICATE=your_agora_certificate
-   GETSTREAM_API_KEY=your_getstream_key
-   GETSTREAM_API_SECRET=your_getstream_secret
    ```
 
 4. Initialize the database:
@@ -150,7 +146,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- Agora for livestreaming capabilities
 - OpenAI, Anthropic, and Google for AI services
 - Solana for blockchain infrastructure
 - Verxio Protocol for loyalty program infrastructure
