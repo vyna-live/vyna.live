@@ -8,6 +8,7 @@ import {
   insertWalletTransactionSchema
 } from '@shared/schema';
 import { ensureAuthenticated } from './auth';
+import { checkPaymentStatus, getSubscriptionStatus } from './controllers/subscriptionController';
 
 // Define subscription tiers (same as client-side but defined here for server use)
 const subscriptionTiers = [
@@ -666,6 +667,7 @@ export async function toggleSubscriptionRenewal(req: Request, res: Response) {
 export function registerSubscriptionRoutes(app: express.Express) {
   // Get subscription tiers and benefits
   app.get('/api/subscription/tiers', getSubscriptionTierBenefits);
+  
   
   // Get user's subscription status (support both endpoints for compatibility)
   app.get('/api/subscription/status', ensureAuthenticated, getUserSubscription);
