@@ -131,7 +131,7 @@ export default function LandingPage() {
         </button>
 
         {/* AI Chat Panel */}
-        <div className="w-[758px] max-w-full mx-auto z-[1] animate-fadeInUp delay-200 px-2 sm:px-4">
+        <div className="w-[660px] max-w-full mx-auto z-[1] animate-fadeInUp delay-200 px-2 sm:px-4">
           <div className="bg-[#1E1E1E] rounded-2xl border border-[#333333] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-sm h-auto sm:h-[204px]">
             {/* Tabs */}
             <div className="flex flex-wrap items-center px-3 sm:px-4 py-2 bg-[#252525] border-b border-[#333333]">
