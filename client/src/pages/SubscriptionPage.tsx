@@ -153,7 +153,7 @@ export default function SubscriptionPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-lg font-medium">
-                  Your Subscription: <span className="text-[#E6E2DA]">{subscription.tier.toUpperCase()}</span>
+                  Your Subscription: <span className="text-[#E6E2DA]">{subscription.tierId ? subscription.tierId.toUpperCase() : 'FREE'}</span>
                 </h2>
                 <p className="text-neutral-400">
                   Status: <span className={subscription.status === 'active' ? 'text-green-500' : 'text-yellow-500'}>

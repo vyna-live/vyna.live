@@ -1,0 +1,32 @@
+SES_UNCAUGHT_EXCEPTION: TypeError: subscription.tier is undefined
+    SubscriptionPage SubscriptionPage.tsx:156
+    React 13
+lockdown-install.js:1:135422
+SES_UNCAUGHT_EXCEPTION: TypeError: subscription.tier is undefined
+    SubscriptionPage SubscriptionPage.tsx:156
+    React 14
+lockdown-install.js:1:135422
+TypeError: subscription.tier is undefined
+    SubscriptionPage SubscriptionPage.tsx:156
+    React 11
+react-dom.development.js:18683:16
+The above error occurred in the <SubscriptionPage> component:
+
+SubscriptionPage@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/src/pages/SubscriptionPage.tsx:35:22
+Route@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0d808508:280:13
+Switch@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=0d808508:336:14
+Router
+Provider@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3RXG37ZK.js?v=0d808508:38:47
+TooltipProvider@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=0d808508:63:7
+SolanaWalletProvider@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/src/contexts/SolanaWalletProvider.tsx:61:37
+AuthProvider@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/src/contexts/AuthContext.tsx:45:29
+QueryClientProvider@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=0d808508:2880:27
+App
+V@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=0d808508:44:9
+J@https://3a054673-e2a8-4eb8-b6fa-167b42cbc5d7-00-2h7ofwa81gqdn.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=0d808508:42:18
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. react-dom.development.js:18704:14
+SES_UNCAUGHT_EXCEPTION: TypeError: subscription.tier is undefined
+    SubscriptionPage SubscriptionPage.tsx:156
+    React 11
