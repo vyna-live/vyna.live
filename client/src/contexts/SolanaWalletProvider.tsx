@@ -34,9 +34,9 @@ const MEMO_PROGRAM_ID = new PublicKey(
 
 // USDC Token Mint address (use devnet for testing, mainnet for production)
 // Devnet USDC mint address
-const USDC_MINT = new PublicKey("BXXkv6zRCz1mGJd96Chp4t64r1x3QT5BpHs4fFyz83Ps");
+const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 // Mainnet USDC mint address: 'EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL'
-// const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+// const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL");
 // USDC has 6 decimal places
 const USDC_DECIMALS = 6;
 
