@@ -1,8 +1,13 @@
-import { Connection, PublicKey, clusterApiUrl, ConfirmedSignatureInfo } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { db } from './db';
-import { eq } from 'drizzle-orm';
-import { walletTransactions } from '@shared/schema';
+import {
+  Connection,
+  PublicKey,
+  clusterApiUrl,
+  ConfirmedSignatureInfo,
+} from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import { walletTransactions } from "@shared/schema";
 
 // Helper function to safely create PublicKey instances
 function safePublicKey(address: string): PublicKey {
@@ -11,23 +16,25 @@ function safePublicKey(address: string): PublicKey {
   } catch (error) {
     console.error(`Invalid public key address: ${address}`);
     // Return a fallback valid PublicKey for development
-    return new PublicKey('11111111111111111111111111111111');
+    return new PublicKey("11111111111111111111111111111111");
   }
 }
 
 // USDC Token Mint address (Mainnet)
-const USDC_MINT = safePublicKey("EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL");
+const USDC_MINT = safePublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
 // For development/testing on Devnet
-const DEVNET_USDC_MINT = safePublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
+const DEVNET_USDC_MINT = safePublicKey(
+  "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
+);
 
 // Use devnet for development, mainnet-beta for production
-const SOLANA_NETWORK = process.env.NODE_ENV === 'production' 
-  ? 'mainnet-beta' 
-  : 'devnet';
+const SOLANA_NETWORK =
+  process.env.NODE_ENV === "production" ? "mainnet-beta" : "devnet";
 
 // The USDC mint to use based on environment
-const CURRENT_USDC_MINT = SOLANA_NETWORK === 'mainnet-beta' ? USDC_MINT : DEVNET_USDC_MINT;
+const CURRENT_USDC_MINT =
+  SOLANA_NETWORK === "mainnet-beta" ? USDC_MINT : DEVNET_USDC_MINT;
 
 // The company's wallet address where subscription payments are received
 const COMPANY_WALLET_ADDRESS = "HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU";
@@ -42,7 +49,7 @@ const COMPANY_WALLET_ADDRESS = "HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU";
 export async function verifyUSDCTransaction(
   signature: string,
   expectedAmount: string,
-  senderWalletAddress?: string
+  senderWalletAddress?: string,
 ): Promise<{
   isValid: boolean;
   amount?: number;
@@ -54,18 +61,18 @@ export async function verifyUSDCTransaction(
   try {
     console.log(`Verifying Solana USDC transaction: ${signature}`);
     console.log(`Expected amount: ${expectedAmount} USDC`);
-    
+
     // Check if we already verified and recorded this transaction
     const existingTransaction = await db
       .select()
       .from(walletTransactions)
       .where(eq(walletTransactions.signature, signature))
       .limit(1);
-    
+
     if (existingTransaction.length > 0) {
       const transaction = existingTransaction[0];
       console.log(`Transaction ${signature} already verified and recorded`);
-      
+
       // Return cached verification if it matches our expectations
       if (transaction.amount === expectedAmount) {
         return {
@@ -73,172 +80,198 @@ export async function verifyUSDCTransaction(
           amount: parseFloat(transaction.amount),
           sender: transaction.fromAddress,
           receiver: transaction.toAddress,
-          timestamp: transaction.confirmedAt ? new Date(transaction.confirmedAt).getTime() : undefined
+          timestamp: transaction.confirmedAt
+            ? new Date(transaction.confirmedAt).getTime()
+            : undefined,
         };
       } else {
         // Transaction exists but amount doesn't match expectations
         return {
           isValid: false,
-          errorMessage: `Transaction exists but amount ${transaction.amount} doesn't match expected ${expectedAmount}`
+          errorMessage: `Transaction exists but amount ${transaction.amount} doesn't match expected ${expectedAmount}`,
         };
       }
     }
-    
+
     // Initialize Solana connection
-    const connection = new Connection(clusterApiUrl(SOLANA_NETWORK), 'confirmed');
-    
+    const connection = new Connection(
+      clusterApiUrl(SOLANA_NETWORK),
+      "confirmed",
+    );
+
     // Retrieve transaction details
     const txInfo = await connection.getTransaction(signature, {
       maxSupportedTransactionVersion: 0,
     });
-    
+
     if (!txInfo) {
       console.error(`Transaction not found: ${signature}`);
-      return { 
+      return {
         isValid: false,
-        errorMessage: 'Transaction not found on the Solana blockchain'
+        errorMessage: "Transaction not found on the Solana blockchain",
       };
     }
-    
+
     // Verify transaction was successful
     if (txInfo.meta?.err) {
       console.error(`Transaction failed: ${JSON.stringify(txInfo.meta.err)}`);
-      return { 
+      return {
         isValid: false,
-        errorMessage: `Transaction failed: ${JSON.stringify(txInfo.meta.err)}`
+        errorMessage: `Transaction failed: ${JSON.stringify(txInfo.meta.err)}`,
       };
     }
-    
+
     // Extract token transfers
     const postTokenBalances = txInfo.meta?.postTokenBalances || [];
     const preTokenBalances = txInfo.meta?.preTokenBalances || [];
-    
+
     // Filter for USDC token transfers
-    const usdcTransfers = postTokenBalances.filter(balance => 
-      balance.mint === CURRENT_USDC_MINT.toString()
+    const usdcTransfers = postTokenBalances.filter(
+      (balance) => balance.mint === CURRENT_USDC_MINT.toString(),
     );
-    
+
     if (usdcTransfers.length === 0) {
-      console.error('No USDC transfers found in transaction');
-      return { 
+      console.error("No USDC transfers found in transaction");
+      return {
         isValid: false,
-        errorMessage: 'No USDC transfers found in transaction'
+        errorMessage: "No USDC transfers found in transaction",
       };
     }
-    
+
     // Find the company wallet in the transfer (receiver)
-    const companyWalletTransfer = usdcTransfers.find(transfer => {
+    const companyWalletTransfer = usdcTransfers.find((transfer) => {
       // Get keys from versioned or legacy transaction message
-      const messageAccountKeys = 'getAccountKeys' in txInfo.transaction.message 
-        ? txInfo.transaction.message.getAccountKeys() 
-        : { get: (i: number) => (txInfo.transaction.message as any).accountKeys[i] };
-      
+      const messageAccountKeys =
+        "getAccountKeys" in txInfo.transaction.message
+          ? txInfo.transaction.message.getAccountKeys()
+          : {
+              get: (i: number) =>
+                (txInfo.transaction.message as any).accountKeys[i],
+            };
+
       const ownerInfo = messageAccountKeys.get(transfer.accountIndex);
       return ownerInfo.toString() === COMPANY_WALLET_ADDRESS;
     });
-    
+
     if (!companyWalletTransfer) {
-      console.error(`No transfer to company wallet ${COMPANY_WALLET_ADDRESS} found`);
-      return { 
+      console.error(
+        `No transfer to company wallet ${COMPANY_WALLET_ADDRESS} found`,
+      );
+      return {
         isValid: false,
-        errorMessage: `No transfer to company wallet found`
+        errorMessage: `No transfer to company wallet found`,
       };
     }
-    
+
     // Find the prebalance for the company wallet to calculate the transfer amount
-    const companyPreBalance = preTokenBalances.find(balance => 
-      balance.accountIndex === companyWalletTransfer.accountIndex
+    const companyPreBalance = preTokenBalances.find(
+      (balance) => balance.accountIndex === companyWalletTransfer.accountIndex,
     );
-    
+
     if (!companyPreBalance) {
-      console.error('Cannot find pre-balance for company wallet');
-      return { 
+      console.error("Cannot find pre-balance for company wallet");
+      return {
         isValid: false,
-        errorMessage: 'Cannot verify transfer amount - pre-balance information missing'
+        errorMessage:
+          "Cannot verify transfer amount - pre-balance information missing",
       };
     }
-    
+
     // Calculate actual transferred amount in USDC
     const preBalanceAmount = BigInt(companyPreBalance.uiTokenAmount.amount);
-    const postBalanceAmount = BigInt(companyWalletTransfer.uiTokenAmount.amount);
-    const transferredAmount = Number(postBalanceAmount - preBalanceAmount) / 1_000_000; // USDC has 6 decimals
-    
+    const postBalanceAmount = BigInt(
+      companyWalletTransfer.uiTokenAmount.amount,
+    );
+    const transferredAmount =
+      Number(postBalanceAmount - preBalanceAmount) / 1_000_000; // USDC has 6 decimals
+
     console.log(`Detected USDC transfer amount: ${transferredAmount}`);
-    
+
     // Find sender account
     let senderAddress;
     // Get all token accounts that had a balance decrease
-    const potentialSenders = preTokenBalances
-      .filter(preBalance => {
-        const postBalance = postTokenBalances.find(post => 
-          post.accountIndex === preBalance.accountIndex && 
-          post.mint === CURRENT_USDC_MINT.toString()
-        );
-        
-        if (!postBalance) return false;
-        
-        const preBigInt = BigInt(preBalance.uiTokenAmount.amount);
-        const postBigInt = BigInt(postBalance.uiTokenAmount.amount);
-        
-        return preBigInt > postBigInt;
-      });
-    
+    const potentialSenders = preTokenBalances.filter((preBalance) => {
+      const postBalance = postTokenBalances.find(
+        (post) =>
+          post.accountIndex === preBalance.accountIndex &&
+          post.mint === CURRENT_USDC_MINT.toString(),
+      );
+
+      if (!postBalance) return false;
+
+      const preBigInt = BigInt(preBalance.uiTokenAmount.amount);
+      const postBigInt = BigInt(postBalance.uiTokenAmount.amount);
+
+      return preBigInt > postBigInt;
+    });
+
     if (potentialSenders.length > 0) {
       const senderIndex = potentialSenders[0].accountIndex;
       // Get keys from versioned or legacy transaction message
-      const messageAccountKeys = 'getAccountKeys' in txInfo.transaction.message 
-        ? txInfo.transaction.message.getAccountKeys() 
-        : { get: (i: number) => (txInfo.transaction.message as any).accountKeys[i] };
-      
+      const messageAccountKeys =
+        "getAccountKeys" in txInfo.transaction.message
+          ? txInfo.transaction.message.getAccountKeys()
+          : {
+              get: (i: number) =>
+                (txInfo.transaction.message as any).accountKeys[i],
+            };
+
       senderAddress = messageAccountKeys.get(senderIndex).toString();
       console.log(`Detected sender wallet: ${senderAddress}`);
-      
+
       // If a specific sender wallet was expected, verify it
       if (senderWalletAddress && senderAddress !== senderWalletAddress) {
-        console.warn(`Sender wallet mismatch. Expected: ${senderWalletAddress}, Actual: ${senderAddress}`);
+        console.warn(
+          `Sender wallet mismatch. Expected: ${senderWalletAddress}, Actual: ${senderAddress}`,
+        );
         return {
           isValid: false,
           amount: transferredAmount,
           sender: senderAddress,
           receiver: COMPANY_WALLET_ADDRESS,
           timestamp: txInfo.blockTime ? txInfo.blockTime * 1000 : undefined,
-          errorMessage: 'Payment came from a different wallet than expected'
+          errorMessage: "Payment came from a different wallet than expected",
         };
       }
     }
-    
+
     // Verify the transferred amount matches the expected amount (with 1% tolerance)
     const expectedAmountNumber = parseFloat(expectedAmount);
     const lowerBound = expectedAmountNumber * 0.99;
     const upperBound = expectedAmountNumber * 1.01;
-    
-    const amountMatches = transferredAmount >= lowerBound && transferredAmount <= upperBound;
+
+    const amountMatches =
+      transferredAmount >= lowerBound && transferredAmount <= upperBound;
     if (!amountMatches) {
-      console.error(`Amount mismatch. Expected: ${expectedAmount}, Actual: ${transferredAmount}`);
+      console.error(
+        `Amount mismatch. Expected: ${expectedAmount}, Actual: ${transferredAmount}`,
+      );
       return {
         isValid: false,
         amount: transferredAmount,
         sender: senderAddress,
         receiver: COMPANY_WALLET_ADDRESS,
         timestamp: txInfo.blockTime ? txInfo.blockTime * 1000 : undefined,
-        errorMessage: `Payment amount (${transferredAmount} USDC) doesn't match expected amount (${expectedAmount} USDC)`
+        errorMessage: `Payment amount (${transferredAmount} USDC) doesn't match expected amount (${expectedAmount} USDC)`,
       };
     }
-    
+
     // Transaction is valid
     return {
       isValid: true,
       amount: transferredAmount,
       sender: senderAddress,
       receiver: COMPANY_WALLET_ADDRESS,
-      timestamp: txInfo.blockTime ? txInfo.blockTime * 1000 : undefined
+      timestamp: txInfo.blockTime ? txInfo.blockTime * 1000 : undefined,
     };
-    
   } catch (error) {
-    console.error('Error verifying Solana transaction:', error);
+    console.error("Error verifying Solana transaction:", error);
     return {
       isValid: false,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error verifying transaction'
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "Unknown error verifying transaction",
     };
   }
 }
@@ -248,9 +281,9 @@ export async function verifyUSDCTransaction(
  * This is used for QR code payments where we poll for incoming transactions
  */
 export async function checkRecentTransactionsFromWallet(
-  senderWalletAddress: string, 
+  senderWalletAddress: string,
   expectedAmount: string,
-  timeWindowSeconds: number = 300 // 5 minutes by default
+  timeWindowSeconds: number = 300, // 5 minutes by default
 ): Promise<{
   found: boolean;
   signature?: string;
@@ -262,72 +295,77 @@ export async function checkRecentTransactionsFromWallet(
     console.log(`Checking recent transactions from ${senderWalletAddress}`);
     console.log(`Looking for amount: ${expectedAmount} USDC`);
     console.log(`Time window: ${timeWindowSeconds} seconds`);
-    
+
     // Initialize Solana connection
-    const connection = new Connection(clusterApiUrl(SOLANA_NETWORK), 'confirmed');
-    
+    const connection = new Connection(
+      clusterApiUrl(SOLANA_NETWORK),
+      "confirmed",
+    );
+
     // Calculate earliest timestamp to check (now - timeWindow)
     const earliestTimestamp = Math.floor(Date.now() / 1000) - timeWindowSeconds;
-    
+
     // Get the sender's public key
     const senderPublicKey = new PublicKey(senderWalletAddress);
-    
+
     // Get recent transactions from the sender
     const signatures = await connection.getSignaturesForAddress(
       senderPublicKey,
-      { limit: 10 }
+      { limit: 10 },
     );
-    
+
     if (signatures.length === 0) {
       return {
         found: false,
-        errorMessage: 'No recent transactions found from this wallet'
+        errorMessage: "No recent transactions found from this wallet",
       };
     }
-    
+
     // Filter for recent transactions
-    const recentSignatures = signatures.filter(sig => 
-      sig.blockTime && sig.blockTime >= earliestTimestamp
+    const recentSignatures = signatures.filter(
+      (sig) => sig.blockTime && sig.blockTime >= earliestTimestamp,
     );
-    
+
     if (recentSignatures.length === 0) {
       return {
         found: false,
-        errorMessage: `No transactions found in the last ${timeWindowSeconds} seconds`
+        errorMessage: `No transactions found in the last ${timeWindowSeconds} seconds`,
       };
     }
-    
+
     // Check each transaction
     for (const sig of recentSignatures) {
       // Verify the transaction
       const verification = await verifyUSDCTransaction(
         sig.signature,
         expectedAmount,
-        senderWalletAddress
+        senderWalletAddress,
       );
-      
+
       // If we found a valid transaction, return it
       if (verification.isValid) {
         return {
           found: true,
           signature: sig.signature,
           amount: verification.amount,
-          timestamp: verification.timestamp
+          timestamp: verification.timestamp,
         };
       }
     }
-    
+
     // No matching transactions found
     return {
       found: false,
-      errorMessage: 'No matching USDC payment found in recent transactions'
+      errorMessage: "No matching USDC payment found in recent transactions",
     };
-    
   } catch (error) {
-    console.error('Error checking recent transactions:', error);
+    console.error("Error checking recent transactions:", error);
     return {
       found: false,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error checking transactions'
+      errorMessage:
+        error instanceof Error
+          ? error.message
+          : "Unknown error checking transactions",
     };
   }
 }
@@ -340,7 +378,7 @@ export async function listenForTransactionFromWallet(
   senderWalletAddress: string,
   expectedAmount: string,
   pollingIntervalMs: number = 10000, // 10 seconds
-  timeoutMs: number = 300000 // 5 minutes
+  timeoutMs: number = 300000, // 5 minutes
 ): Promise<{
   found: boolean;
   signature?: string;
@@ -349,38 +387,43 @@ export async function listenForTransactionFromWallet(
   errorMessage?: string;
 }> {
   return new Promise((resolve) => {
-    console.log(`Starting to listen for transactions from ${senderWalletAddress}`);
+    console.log(
+      `Starting to listen for transactions from ${senderWalletAddress}`,
+    );
     console.log(`Expected amount: ${expectedAmount} USDC`);
-    console.log(`Polling interval: ${pollingIntervalMs}ms, Timeout: ${timeoutMs}ms`);
-    
+    console.log(
+      `Polling interval: ${pollingIntervalMs}ms, Timeout: ${timeoutMs}ms`,
+    );
+
     // Track our latest check to avoid duplicate processing
     let latestCheckTime = Date.now();
-    
+
     // Set timeout to stop listening after the specified time
     const timeoutId = setTimeout(() => {
       clearInterval(intervalId);
       resolve({
         found: false,
-        errorMessage: 'Timeout waiting for transaction'
+        errorMessage: "Timeout waiting for transaction",
       });
     }, timeoutMs);
-    
+
     // Poll for new transactions
     const intervalId = setInterval(async () => {
       try {
         // Calculate the time window to check for new transactions
-        const timeWindowSeconds = Math.ceil((Date.now() - latestCheckTime) / 1000) + 10; // Add a 10s buffer
-        
+        const timeWindowSeconds =
+          Math.ceil((Date.now() - latestCheckTime) / 1000) + 10; // Add a 10s buffer
+
         // Update our latest check time
         latestCheckTime = Date.now();
-        
+
         // Check for new transactions
         const result = await checkRecentTransactionsFromWallet(
           senderWalletAddress,
           expectedAmount,
-          timeWindowSeconds
+          timeWindowSeconds,
         );
-        
+
         // If we found a matching transaction, stop polling and resolve
         if (result.found) {
           clearTimeout(timeoutId);
@@ -388,7 +431,7 @@ export async function listenForTransactionFromWallet(
           resolve(result);
         }
       } catch (error) {
-        console.error('Error polling for transactions:', error);
+        console.error("Error polling for transactions:", error);
         // Continue polling despite errors
       }
     }, pollingIntervalMs);

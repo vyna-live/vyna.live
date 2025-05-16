@@ -122,7 +122,7 @@ Vyna.AI is a cutting-edge browser extension and web application that provides an
 The platform uses USDC tokens on the Solana blockchain for subscription payments:
 
 - **Testnet USDC**: `Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr`
-- **Mainnet USDC**: `EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL`
+- **Mainnet USDC**: `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`
 
 ### Payment Verification
 All subscription payments are verified on-chain before activation:
