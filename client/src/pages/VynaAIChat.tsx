@@ -1032,7 +1032,7 @@ export default function VynaAIChat() {
           </div>
           
           {/* Messages Area - Conditional overflow based on whether there are messages */}
-          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-6 space-y-6 bg-black`}>
+          <div className={`flex-1 ${messages.length > 0 ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden'} p-3 sm:p-6 space-y-4 sm:space-y-6 bg-black chat-wrapper-mobile`}>
             {messages.length > 0 ? (
               // Display messages when available
               messages.map((message) => (
@@ -1040,10 +1040,10 @@ export default function VynaAIChat() {
                   key={message.id} 
                   className={`flex message-appear ${message.role === 'user' ? 'justify-end' : 'items-start'}`}
                 >
-                  {/* Only show AI avatar on non-mobile view */}
-                  {message.role === 'assistant' && !isMobile && (
-                    <div className="w-8 h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-3 ai-avatar">
-                      <Sparkles size={16} color="#121212" />
+                  {/* Show AI avatar on all views for consistency */}
+                  {message.role === 'assistant' && (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#DCC5A2] flex items-center justify-center flex-shrink-0 mr-2 sm:mr-3 ai-avatar">
+                      <Sparkles size={14} className="sm:size-16" color="#121212" />
                     </div>
                   )}
                   
@@ -1065,25 +1065,34 @@ export default function VynaAIChat() {
                     )}
                     
                     {message.role === 'assistant' && (
-                      <div className="flex flex-wrap items-center gap-x-2 md:gap-x-3 gap-y-2 mt-3 text-[#777777] message-controls text-xs md:text-sm">
+                      <div className="flex flex-wrap items-center gap-x-1 sm:gap-x-2 md:gap-x-3 gap-y-2 mt-2 sm:mt-3 text-[#777777] message-controls text-xs md:text-sm">
                         <button 
-                          className="hover:text-[#DCC5A2] p-1" 
+                          className="action-button hover:text-[#DCC5A2]" 
                           aria-label="Add to teleprompter"
                           onClick={() => addToTeleprompter(message.content)}
                         >
                           <Book size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1" aria-label="Regenerate response">
+                        <button 
+                          className="action-button hover:text-[#DCC5A2]" 
+                          aria-label="Regenerate response"
+                        >
                           <RefreshCw size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1" aria-label="Like response">
+                        <button 
+                          className="action-button hover:text-[#DCC5A2]" 
+                          aria-label="Like response"
+                        >
                           <ThumbsUp size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1" aria-label="Dislike response">
+                        <button 
+                          className="action-button hover:text-[#DCC5A2]" 
+                          aria-label="Dislike response"
+                        >
                           <ThumbsDown size={14} />
                         </button>
                         <button
-                          className="hover:text-[#DCC5A2] p-1"
+                          className="action-button hover:text-[#DCC5A2]"
                           onClick={() => handleEarnResearchPoints(message.content)}
                           aria-label="Earn research points"
                           title="Earn research points for this insight"
@@ -1091,13 +1100,13 @@ export default function VynaAIChat() {
                           <TrendingUp size={14} />
                         </button>
                         <button
-                          className="hover:text-[#DCC5A2] p-1 relative"
+                          className="action-button hover:text-[#DCC5A2] relative"
                           onClick={() => handleAddToNote(message.id)}
                           aria-label="Add to note"
                         >
                           <MessageCirclePlus size={14} />
                         </button>
-                        <button className="hover:text-[#DCC5A2] p-1" aria-label="More options">
+                        <button className="action-button hover:text-[#DCC5A2]" aria-label="More options">
                           <MoreVertical size={14} />
                         </button>
                         
