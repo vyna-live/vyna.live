@@ -9,7 +9,6 @@ import React, {
 import { useToast } from "@/hooks/use-toast";
 import {
   Connection,
-  Keypair,
   PublicKey,
   Transaction,
   TransactionInstruction,
@@ -21,11 +20,7 @@ import {
   createTransferInstruction,
   getAccount,
   TOKEN_PROGRAM_ID,
-  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import bs58 from "bs58";
-import dotenv from "dotenv";
-dotenv.config();
 
 // Set up Buffer for browser environment
 import { Buffer } from "buffer";
@@ -44,10 +39,6 @@ const USDC_MINT = new PublicKey("BXXkv6zRCz1mGJd96Chp4t64r1x3QT5BpHs4fFyz83Ps");
 // const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 // USDC has 6 decimal places
 const USDC_DECIMALS = 6;
-
-// key for recipient wallet
-const secret = process.env.PRIVATE!;
-const recipientKeyPair = Keypair.fromSecretKey(bs58.decode(secret));
 
 // Define wallet object interface
 interface Wallet {
@@ -269,20 +260,9 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         const uniqueId =
           Date.now().toString() + Math.random().toString().substring(2, 8);
 
-        // generate keypair for the transaction
-
-        console.log(
-          "Wallet public key:",
-          recipientKeyPair.publicKey.toBase58(),
-        );
-
         // Create PublicKeys for sender and recipient
         const senderPublicKey = new PublicKey(wallet.publicKey);
         const recipientPublicKey = new PublicKey(recipient);
-
-        if (recipientPublicKey !== recipientKeyPair.publicKey) {
-          throw new Error("Public key mismatch! Check private key.");
-        }
 
         // Add memo instruction with payment details
         const memoMessage = `Vyna.live USDC payment: ${uniqueId}`;
@@ -300,64 +280,57 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           senderPublicKey,
         );
 
-        // const recipientTokenAccount = await getAssociatedTokenAddress(
-        //   USDC_MINT,
-        //   recipientPublicKey,
-        // );
+        const recipientTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT,
+          recipientPublicKey,
+        );
 
         // Check if sender token account exists and create one if not
-        // let senderTokenAccountInfo;
-        // try {
-        //   senderTokenAccountInfo = await getAccount(
-        //     connection,
-        //     senderTokenAccount,
-        //   );
-        // } catch (error) {
-        //   console.error("Error getting sender token account:", error);
-        // }
-        // if (!senderTokenAccountInfo) {
-        //   const createSenderAccountInstruction =
-        //     createAssociatedTokenAccountInstruction(
-        //       senderPublicKey, // payer
-        //       senderTokenAccount, // associated token account address
-        //       senderPublicKey, // owner
-        //       USDC_MINT, // mint
-        //     );
+        let senderTokenAccountInfo;
+        try {
+          senderTokenAccountInfo = await getAccount(
+            connection,
+            senderTokenAccount,
+          );
+        } catch (error) {
+          console.error("Error getting sender token account:", error);
+        }
+        if (!senderTokenAccountInfo) {
+          const createSenderAccountInstruction =
+            createAssociatedTokenAccountInstruction(
+              senderPublicKey, // payer
+              senderTokenAccount, // associated token account address
+              senderPublicKey, // owner
+              USDC_MINT, // mint
+            );
 
-        //   transaction.add(createSenderAccountInstruction);
-        // }
+          transaction.add(createSenderAccountInstruction);
+        }
 
         // Check if recipient token account exists, create if it doesn't
-        const recipientTokenAccount = await getOrCreateAssociatedTokenAccount(
-          connection,
-          recipientKeyPair,
-          USDC_MINT,
-          recipientKeyPair.publicKey,
-        );
-        // transaction.add(recipientTokenAccount.isFrozen)
-        // let recipientTokenAccountExists = false;
-        // try {
-        //   await getAccount(connection, recipientTokenAccount);
-        //   recipientTokenAccountExists = true;
-        // } catch (error) {
-        //   console.log(
-        //     "Recipient token account does not exist, will create it",
-        //     error,
-        //   );
-        //   // We'll create the account in the transaction
-        // }
+        let recipientTokenAccountExists = false;
+        try {
+          await getAccount(connection, recipientTokenAccount);
+          recipientTokenAccountExists = true;
+        } catch (error) {
+          console.log(
+            "Recipient token account does not exist, will create it",
+            error,
+          );
+          // We'll create the account in the transaction
+        }
 
-        // // If recipient token account doesn't exist, add instruction to create it
-        // if (!recipientTokenAccountExists) {
-        //   const createAccountInstruction =
-        //     createAssociatedTokenAccountInstruction(
-        //       senderPublicKey, // payer
-        //       recipientTokenAccount, // associated token account address
-        //       recipientPublicKey, // owner
-        //       USDC_MINT, // mint
-        //     );
-        //   transaction.add(createAccountInstruction);
-        // }
+        // If recipient token account doesn't exist, add instruction to create it
+        if (!recipientTokenAccountExists) {
+          const createAccountInstruction =
+            createAssociatedTokenAccountInstruction(
+              senderPublicKey, // payer
+              recipientTokenAccount, // associated token account address
+              recipientPublicKey, // owner
+              USDC_MINT, // mint
+            );
+          transaction.add(createAccountInstruction);
+        }
 
         // Convert the amount from decimal USDC to token units (USDC has 6 decimals)
         const usdcAmount = BigInt(
@@ -367,7 +340,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         // Create the token transfer instruction
         const transferInstruction = createTransferInstruction(
           senderTokenAccount, // source
-          recipientTokenAccount.address, // destination
+          recipientTokenAccount, // destination
           senderPublicKey, // owner
           usdcAmount, // amount in token units
         );
