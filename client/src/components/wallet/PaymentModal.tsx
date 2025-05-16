@@ -48,11 +48,22 @@ export function PaymentModal({
   // Reset state when modal opens/closes
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      // Reset state
-      setStatus('idle');
-      setIsProcessing(false);
-      setError(null);
-      setPaymentTab('wallet');
+      // Only close if we're not in a processing state
+      if (status === 'processing') {
+        // Don't allow closing while processing
+        return;
+      }
+      
+      // Don't reset success state - let the parent handle that
+      if (status !== 'success') {
+        // Reset state only if payment wasn't successful
+        setStatus('idle');
+        setIsProcessing(false);
+        setError(null);
+        setPaymentTab('wallet');
+      }
+      
+      // Call parent close handler
       onClose();
     }
   };

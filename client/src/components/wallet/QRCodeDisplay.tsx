@@ -3,7 +3,7 @@ import { Copy, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import { apiRequest } from '@/lib/queryClient';
 
 interface QRCodeDisplayProps {
