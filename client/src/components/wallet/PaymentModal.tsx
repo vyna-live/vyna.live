@@ -313,7 +313,7 @@ export function PaymentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {status === 'processing' ? 'Processing Payment' : 
@@ -328,7 +328,21 @@ export function PaymentModal({
           )}
         </DialogHeader>
 
-        {renderContent()}
+        <div className="overflow-y-auto pr-1 max-h-[calc(90vh-130px)]">
+          {renderContent()}
+        </div>
+
+        {status === 'success' && (
+          <div className="flex justify-center mt-4">
+            <Button
+              onClick={() => window.location.href = '/'}
+              className="bg-[#E6E2DA] hover:bg-[#D6D2CA] text-black"
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

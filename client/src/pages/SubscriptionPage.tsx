@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Container } from '../components/Container';
 import { Button } from '@/components/ui/button';
-import { Check, AlertCircle, Loader2, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, AlertCircle, Loader2, Star, ChevronDown, ChevronUp, Home } from 'lucide-react';
 import { 
   SubscriptionTier,
   fetchSubscriptionTiers,
@@ -116,6 +116,17 @@ export default function SubscriptionPage() {
   return (
     <Container className="py-16">
       <div className="max-w-4xl mx-auto">
+        <div className="flex justify-center mb-4">
+          <Button 
+            variant="outline" 
+            className="border-[#333] hover:bg-[#252525]"
+            onClick={() => window.location.href = '/'}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Back to Home
+          </Button>
+        </div>
+        
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
             Upgrade Your Experience
