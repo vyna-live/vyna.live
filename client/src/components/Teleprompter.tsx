@@ -86,7 +86,25 @@ export default function Teleprompter({ text, onClose, visualizations = [] }: Tel
               </button>
 
               <button
-                onClick={toggleSettings}
+                onClick={(e) => {
+                  e.preventDefault();
+                  
+                  // Show coming soon notification instead of toggling settings
+                  const toast = document.createElement('div');
+                  toast.className = 'fixed bottom-4 right-4 bg-[#1a1a1a] text-white px-4 py-3 rounded-lg shadow-lg z-[10000] border border-[#333]';
+                  toast.innerHTML = `
+                    <div class="flex items-center gap-2">
+                      <div class="font-medium">Coming Soon</div>
+                      <div class="text-sm text-gray-300">Teleprompter settings will be available soon.</div>
+                    </div>
+                  `;
+                  document.body.appendChild(toast);
+                  
+                  // Remove the toast after 3 seconds
+                  setTimeout(() => {
+                    document.body.removeChild(toast);
+                  }, 3000);
+                }}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
               >
                 <Sliders className="h-4 w-4 text-white" />

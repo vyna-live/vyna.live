@@ -36,9 +36,25 @@ export default function UserAvatar() {
     }
   };
   
-  const handleSettings = () => {
+  const handleSettings = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsOpen(false);
-    setLocation('/settings');
+    
+    // Show coming soon notification instead of navigating
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-[#1a1a1a] text-white px-4 py-3 rounded-lg shadow-lg z-[10000] border border-[#333]';
+    toast.innerHTML = `
+      <div class="flex items-center gap-2">
+        <div class="font-medium">Coming Soon</div>
+        <div class="text-sm text-gray-300">Settings page will be available soon.</div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Remove the toast after 3 seconds
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
   };
   
   const handleUpgrade = () => {
@@ -51,9 +67,25 @@ export default function UserAvatar() {
     setLocation('/profile');
   };
   
-  const handleResearchRewards = () => {
+  const handleResearchRewards = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsOpen(false);
-    setLocation('/research-rewards');
+    
+    // Show coming soon notification instead of navigating
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-[#1a1a1a] text-white px-4 py-3 rounded-lg shadow-lg z-[10000] border border-[#333]';
+    toast.innerHTML = `
+      <div class="flex items-center gap-2">
+        <div class="font-medium">Coming Soon</div>
+        <div class="text-sm text-gray-300">Research Rewards program will be available soon.</div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Remove the toast after 3 seconds
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 3000);
   };
   
   return (
