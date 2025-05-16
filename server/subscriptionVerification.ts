@@ -1,81 +1,149 @@
 import { Request, Response } from 'express';
-// Define subscription tiers (same as in subscriptionRoutes but defined here directly)
-const subscriptionTiers = [
-  {
-    id: 'free',
-    name: 'Free',
-    priceUsdc: 0
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    priceUsdc: 15.00
-  },
-  {
-    id: 'max',
-    name: 'Max',
-    priceUsdc: 75.00
+import { db } from './db';
+import { eq } from 'drizzle-orm';
+import { subscriptions, pendingPayments, users } from '@shared/schema';
+import { verifyUSDCTransaction, checkRecentTransactionsFromWallet } from './solanaService';
+
+// Get the subscription tier data from database
+async function getSubscriptionTierPrice(tierId: string): Promise<number | null> {
+  try {
+    // Query for subscription tier data from the database
+    // This would be fetched from a tiers table or known configuration
+    if (tierId === 'free') {
+      return 0;
+    } else if (tierId === 'pro') {
+      return 15;
+    } else if (tierId === 'max') {
+      return 75;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting tier price:', error);
+    return null;
   }
-];
+}
 
 /**
- * Handle QR code payment verification
- * This endpoint checks for recent transactions from a wallet address
- * Used when a user pays via QR code instead of direct wallet connection
+ * Verifies a Solana USDC transaction and activates a subscription if valid
+ */
+export async function verifySubscriptionPayment(
+  userId: number, 
+  signature: string, 
+  tierId: string, 
+  amount: number
+): Promise<{ success: boolean, message: string }> {
+  try {
+    console.log(`Verifying payment signature ${signature} for user ${userId}, tier ${tierId}, amount ${amount}`);
+
+    // Verify the transaction on the blockchain
+    const verification = await verifyUSDCTransaction(signature, amount.toString());
+    
+    if (!verification.isValid) {
+      console.error(`Transaction verification failed: ${verification.errorMessage}`);
+      return { success: false, message: verification.errorMessage || 'Payment verification failed' };
+    }
+    
+    console.log(`Transaction verified successfully: ${JSON.stringify(verification)}`);
+
+    // Get the subscription tier price to verify amount
+    const tierPrice = await getSubscriptionTierPrice(tierId);
+
+    if (tierPrice === null) {
+      return { success: false, message: 'Invalid subscription tier' };
+    }
+
+    // Verify the amount matches the subscription price (free tier price is 0)
+    if (tierPrice > 0 && Math.abs(amount - tierPrice) > 0.01) {
+      return { 
+        success: false, 
+        message: `Payment amount ${amount} doesn't match subscription price ${tierPrice}`
+      };
+    }
+
+    // Insert a new subscription record
+    await db.insert(subscriptions).values({
+      userId,
+      tierId,
+      status: 'active',
+      paymentMethod: 'usdc',
+      amount: amount.toString(),
+      activatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      transactionSignature: signature,
+      featureAccess: {},
+      usageMetrics: {},
+      paymentDetails: { signature, amount, timestamp: Date.now() },
+      metadata: { verificationDetails: verification }
+    });
+
+    console.log(`Subscription activated for user ${userId}, tier ${tierId}`);
+    
+    return { success: true, message: 'Payment verified and subscription activated' };
+  } catch (error) {
+    console.error('Error verifying subscription payment:', error);
+    return { success: false, message: `Payment verification error: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
+/**
+ * Handles verification of a QR code payment
+ * Returns status of any pending payment check
  */
 export async function checkPendingPayment(req: Request, res: Response) {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    const { walletAddress, tierId } = req.body;
-    
-    // Validate input parameters
-    if (!walletAddress) {
-      return res.status(400).json({ error: 'Wallet address is required' });
+
+    const { tierId, expectedAmount, walletAddress } = req.body;
+
+    if (!tierId || !expectedAmount || !walletAddress) {
+      return res.status(400).json({ error: 'Missing required parameters' });
     }
-    
-    if (!tierId || !['free', 'pro', 'max'].includes(tierId)) {
-      return res.status(400).json({ error: 'Valid tier ID is required' });
-    }
-    
-    // Find the tier to get its price
-    const tier = subscriptionTiers.find(t => t.id === tierId);
-    if (!tier) {
-      return res.status(400).json({ error: 'Subscription tier not found' });
-    }
-    
-    // Free tier doesn't need payment verification
-    if (tierId === 'free') {
-      return res.status(200).json({ 
-        found: true, 
-        message: 'Free tier does not require payment'
+
+    console.log(`Checking pending payment for user ${userId}, tier ${tierId}, amount ${expectedAmount} from wallet ${walletAddress}`);
+
+    // Check for recent transactions from the user's wallet to our company wallet
+    const paymentCheck = await checkRecentTransactionsFromWallet(
+      walletAddress,
+      expectedAmount.toString()
+    );
+
+    if (paymentCheck.found && paymentCheck.signature) {
+      // Payment found, verify and activate subscription
+      const verification = await verifySubscriptionPayment(
+        userId,
+        paymentCheck.signature,
+        tierId,
+        parseFloat(expectedAmount)
+      );
+
+      // If verification successful, remove any pending payment records
+      if (verification.success) {
+        await db.delete(pendingPayments)
+          .where(eq(pendingPayments.userId, userId));
+      }
+
+      return res.json({
+        success: verification.success,
+        message: verification.message,
+        paymentFound: true,
+        signature: paymentCheck.signature
       });
     }
-    
-    // Get the expected amount for the selected tier
-    const expectedAmount = tier.priceUsdc.toFixed(2);
-    
-    // Import the Solana service
-    const { checkRecentTransactionsFromWallet } = await import('./solanaService');
-    
-    // Look for transactions from this wallet in the last 10 minutes (600 seconds)
-    console.log(`Checking for recent USDC payments from wallet ${walletAddress}`);
-    const result = await checkRecentTransactionsFromWallet(
-      walletAddress,
-      expectedAmount,
-      600 // 10 minutes
-    );
-    
-    // Return the result to the client
-    res.status(200).json(result);
-    
+
+    // No payment found yet
+    return res.json({
+      success: false,
+      paymentFound: false,
+      message: 'No matching payment found yet. Please complete payment or try again later.'
+    });
   } catch (error) {
     console.error('Error checking pending payment:', error);
-    res.status(500).json({ 
-      error: 'Failed to check pending payment',
-      message: error instanceof Error ? error.message : 'Unknown error'
+    return res.status(500).json({ 
+      error: `Payment check error: ${error instanceof Error ? error.message : String(error)}` 
     });
   }
 }

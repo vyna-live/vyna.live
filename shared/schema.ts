@@ -156,6 +156,19 @@ export const walletTransactions = pgTable("wallet_transactions", {
   confirmedAt: timestamp("confirmed_at"),
 });
 
+// For tracking pending QR code payments
+export const pendingPayments = pgTable("pending_payments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tierId: varchar("tier_id", { length: 50 }).notNull(),
+  expectedAmount: text("expected_amount").notNull(),
+  walletAddress: text("wallet_address").notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, confirmed, expired, failed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"),
+});
+
 export const subscriptions = pgTable("subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),

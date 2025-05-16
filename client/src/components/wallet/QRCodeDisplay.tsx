@@ -1,20 +1,35 @@
-import { useState, useEffect } from 'react';
-import { Copy, Check, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Copy, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
+import { useSubscription } from '@/hooks/use-subscription';
+import { apiRequest } from '@/lib/api';
 
 interface QRCodeDisplayProps {
   walletAddress: string;
   amount: number;
   currencySymbol: 'USDC';
+  tierId: string;
+  onPaymentConfirmed?: () => void;
 }
 
-export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeDisplayProps) {
+export function QRCodeDisplay({ 
+  walletAddress, 
+  amount, 
+  currencySymbol, 
+  tierId,
+  onPaymentConfirmed 
+}: QRCodeDisplayProps) {
   const { toast } = useToast();
   const { wallet } = useSolanaWallet();
+  const { refetchStatus } = useSubscription();
   const [copied, setCopied] = useState(false);
   const [pollingForPayment, setPollingForPayment] = useState(false);
+  const [paymentFound, setPaymentFound] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pollingIntervalRef = useRef<number | null>(null);
   
   // Import the QR code image - this is the one provided by the user
   const qrCodeImage = '/Untitled.png';
@@ -29,17 +44,74 @@ export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeD
     }
   }, [copied]);
 
+  // Payment verification polling
+  useEffect(() => {
+    if (pollingForPayment && !paymentConfirmed && wallet?.publicKey) {
+      // Start polling for payment
+      const checkPayment = async () => {
+        try {
+          const response = await apiRequest('POST', '/api/subscription/check-payment', {
+            tierId,
+            expectedAmount: amount,
+            walletAddress: wallet.publicKey
+          });
+          
+          const data = await response.json();
+          
+          if (data.paymentFound) {
+            setPaymentFound(true);
+            
+            if (data.success) {
+              setPaymentConfirmed(true);
+              setPollingForPayment(false);
+              
+              toast({
+                title: 'Payment confirmed',
+                description: 'Your subscription has been activated!',
+                variant: 'default'
+              });
+              
+              // Refetch subscription status
+              refetchStatus();
+              
+              // Notify parent component
+              if (onPaymentConfirmed) {
+                onPaymentConfirmed();
+              }
+            } else {
+              setError(data.message || 'Payment found but could not be verified');
+            }
+          }
+        } catch (err) {
+          console.error('Error checking payment:', err);
+        }
+      };
+      
+      // Initial check
+      checkPayment();
+      
+      // Set up polling interval
+      pollingIntervalRef.current = window.setInterval(checkPayment, 10000); // Check every 10 seconds
+      
+      return () => {
+        if (pollingIntervalRef.current !== null) {
+          clearInterval(pollingIntervalRef.current);
+        }
+      };
+    }
+  }, [pollingForPayment, paymentConfirmed, wallet, tierId, amount, toast, refetchStatus, onPaymentConfirmed]);
+
   // Handle wallet address copy
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(walletAddress);
     setCopied(true);
     
-    // Start "polling" for payment (in a real implementation, this would listen for blockchain events)
+    // Start polling for payment
     setPollingForPayment(true);
     
     toast({
       title: 'Address copied',
-      description: 'Payment address copied to clipboard',
+      description: 'Payment address copied to clipboard. Monitoring for payments...',
     });
   };
 
@@ -109,11 +181,42 @@ export function QRCodeDisplay({ walletAddress, amount, currencySymbol }: QRCodeD
         </p>
       </div>
       
-      {pollingForPayment && (
+      {pollingForPayment && !paymentConfirmed && !error && (
         <div className="rounded-lg bg-green-900/20 p-3 text-green-500 text-sm flex items-start gap-2 mt-2">
-          <div className="animate-pulse bg-green-500 rounded-full h-2 w-2 mt-1.5" />
-          <span>Listening for USDC payment confirmation...</span>
+          <Loader2 className="h-4 w-4 animate-spin mt-0.5" />
+          <span>Monitoring blockchain for your payment... This may take a few minutes.</span>
         </div>
+      )}
+      
+      {paymentFound && !paymentConfirmed && (
+        <div className="rounded-lg bg-amber-900/20 p-3 text-amber-500 text-sm flex items-start gap-2 mt-2">
+          <Loader2 className="h-4 w-4 animate-spin mt-0.5" />
+          <span>Payment detected! Verifying transaction details...</span>
+        </div>
+      )}
+      
+      {paymentConfirmed && (
+        <div className="rounded-lg bg-green-900/20 p-3 text-green-500 text-sm flex items-start gap-2 mt-2">
+          <Check className="h-4 w-4 mt-0.5" />
+          <span>Payment confirmed! Your subscription has been activated.</span>
+        </div>
+      )}
+      
+      {error && (
+        <div className="rounded-lg bg-red-900/20 p-3 text-red-500 text-sm flex items-start gap-2 mt-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5" />
+          <span>{error}</span>
+        </div>
+      )}
+      
+      {pollingForPayment && !paymentConfirmed && (
+        <Button
+          variant="outline"
+          className="mt-2 border-neutral-700 hover:bg-neutral-800 text-sm"
+          onClick={() => window.location.href = '/'}
+        >
+          Back to Home
+        </Button>
       )}
     </div>
   );
