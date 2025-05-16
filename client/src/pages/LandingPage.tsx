@@ -5,12 +5,14 @@ import Logo from "@/components/Logo";
 import UserAvatar from "@/components/UserAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLoginNotification } from "@/hooks/useLoginNotification";
 import "./landing.css";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
+  const { showLoginRequiredNotification } = useLoginNotification();
   const [activeTab, setActiveTab] = useState<'vynaai' | 'notepad'>('vynaai');
   const [inputValue, setInputValue] = useState("");
   
@@ -39,6 +41,12 @@ export default function LandingPage() {
   };
   
   const handleExpandView = () => {
+    // Check if user is logged in
+    if (!isAuthenticated && !isLoading) {
+      showLoginRequiredNotification("Please log in to access the full features. Create an account to get started.");
+      return;
+    }
+    
     // Navigate to the appropriate expanded view based on the active tab
     if (activeTab === 'vynaai') {
       setLocation('/ai-chat');
@@ -54,6 +62,12 @@ export default function LandingPage() {
   const handleSendMessage = () => {
     if (inputValue.trim() === "") return;
     
+    // Check if user is logged in
+    if (!isAuthenticated && !isLoading) {
+      showLoginRequiredNotification("Please log in to use VynaAI. Create an account to access all features.");
+      return;
+    }
+    
     // Store the question in sessionStorage
     sessionStorage.setItem("vynaai_question", inputValue);
     
@@ -63,6 +77,12 @@ export default function LandingPage() {
   
   const handleAddNote = () => {
     if (inputValue.trim() === "") return;
+    
+    // Check if user is logged in
+    if (!isAuthenticated && !isLoading) {
+      showLoginRequiredNotification("Please log in to save your notes. Create an account to access all features.");
+      return;
+    }
     
     // Store the note in sessionStorage
     sessionStorage.setItem("notepad_content", inputValue);
