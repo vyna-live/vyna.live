@@ -174,7 +174,12 @@ export async function verifyUSDCTransaction(
     
     if (potentialSenders.length > 0) {
       const senderIndex = potentialSenders[0].accountIndex;
-      senderAddress = txInfo.transaction.message.accountKeys[senderIndex].toString();
+      // Get keys from versioned or legacy transaction message
+      const messageAccountKeys = 'getAccountKeys' in txInfo.transaction.message 
+        ? txInfo.transaction.message.getAccountKeys() 
+        : { get: (i: number) => (txInfo.transaction.message as any).accountKeys[i] };
+      
+      senderAddress = messageAccountKeys.get(senderIndex).toString();
       console.log(`Detected sender wallet: ${senderAddress}`);
       
       // If a specific sender wallet was expected, verify it
