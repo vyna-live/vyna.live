@@ -1198,24 +1198,24 @@ export default function VynaAIChat() {
           </div>
           
           {/* Input Area - No border - hidden in fullscreen mode */}
-          <div className={`p-4 bg-black rounded-b-lg ${isFullscreen ? 'hidden' : 'block'} transition-all duration-300`}>
-            <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-3">
+          <div className={`p-3 sm:p-4 bg-black rounded-b-lg ${isFullscreen ? 'hidden' : 'block'} transition-all duration-300`}>
+            <div className="input-area flex flex-col bg-[#1A1A1A] rounded-lg p-2 sm:p-3">
               <div className="flex-grow mb-2">
                 <textarea
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleInputKeyDown}
                   placeholder="Ask a question"
-                  className="chat-input w-full h-[60px] px-3 py-2 text-xs md:text-sm bg-transparent"
+                  className="chat-input w-full min-h-[60px] px-3 py-2 text-sm bg-transparent"
                   disabled={!isAuthenticated || isLoading3Dots}
                 />
               </div>
               
               {/* Input controls */}
-              <div className="flex items-center justify-between">
-                <div className={`flex items-center ${isMobile ? 'gap-0.5' : 'gap-3 sm:gap-5'} text-[#999999]`}>
+              <div className="input-toolbar flex items-center justify-between">
+                <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-3 sm:gap-5'} text-[#999999]`}>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
+                    className="action-button hover:text-[#DCC5A2] transition-colors" 
                     aria-label="Upload file"
                     onClick={handleFileUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1223,7 +1223,7 @@ export default function VynaAIChat() {
                     <Paperclip size={16} />
                   </button>
                   <button 
-                    className={`hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5 ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
+                    className={`action-button hover:text-[#DCC5A2] transition-colors ${isRecording ? 'text-red-500 animate-pulse' : ''}`} 
                     aria-label="Record audio"
                     onClick={toggleAudioRecording}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1231,7 +1231,7 @@ export default function VynaAIChat() {
                     <Mic size={16} />
                   </button>
                   <button 
-                    className="hover:text-[#DCC5A2] transition-colors p-1 sm:p-1.5" 
+                    className="action-button hover:text-[#DCC5A2] transition-colors" 
                     aria-label="Take photo"
                     onClick={handleImageUpload}
                     disabled={isUploading || isLoading3Dots || !isAuthenticated}
@@ -1242,15 +1242,15 @@ export default function VynaAIChat() {
                   {/* Commentary style selector - moved here */}
                   <div className="flex items-center">
                     <span className={`text-xs text-[#999999] ${isMobile ? 'mx-0.5' : 'mx-2'}`}>{isMobile ? "S:" : "Style:"}</span>
-                    <div className="flex bg-[#232323] rounded-md p-0.5 sm:p-1">
+                    <div className="flex bg-[#232323] rounded-md p-0.5">
                       <button
-                        className={`text-xs ${isMobile ? 'px-1.5' : 'px-2'} py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                        className={`mobile-commentary-indicator text-xs ${isMobile ? 'px-1.5 w-7' : 'px-2'} py-1 rounded ${commentaryStyle === 'color' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('color')}
                       >
                         {isMobile ? "cc" : "Color"}
                       </button>
                       <button
-                        className={`text-xs ${isMobile ? 'px-1.5' : 'px-2'} py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
+                        className={`mobile-commentary-indicator text-xs ${isMobile ? 'px-1.5 w-7' : 'px-2'} py-1 rounded ${commentaryStyle === 'play-by-play' ? 'bg-[#DCC5A2] text-[#121212]' : 'text-[#999999]'}`}
                         onClick={() => setCommentaryStyle('play-by-play')}
                       >
                         {isMobile ? "pp" : "Play-by-play"}
@@ -1259,7 +1259,7 @@ export default function VynaAIChat() {
                   </div>
                 </div>
                 <button 
-                  className="button-hover-effect rounded-lg px-4 sm:px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
+                  className="button-hover-effect rounded-lg px-3 sm:px-4 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-h-[44px] min-w-[60px]"
                   aria-label="Send message"
                   onClick={() => handleSendMessage(inputValue)}
                   disabled={!isAuthenticated || isLoading3Dots || isUploading || inputValue.trim() === ""}

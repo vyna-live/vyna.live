@@ -26,6 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import "../pages/VynaAIChat.css";
+import "./Notepad.css";
 import { Note } from "@/types";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
