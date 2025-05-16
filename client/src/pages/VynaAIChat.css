@@ -173,7 +173,15 @@
   /* Adjust VynaCard display for mobile */
   .vynacard-mobile {
     max-width: 100%;
+    width: 100%;
     margin: 8px 0;
+    border: 1px solid rgba(220, 197, 162, 0.15);
+  }
+  
+  /* Improve AI message card visibility and contrast */
+  .ai-message-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(220, 197, 162, 0.2);
   }
 
   /* Pure black background for chat interface on mobile */
@@ -190,6 +198,18 @@
   .ai-message-mobile {
     font-size: 15px;
     line-height: 1.5;
+    color: #EEEEEE;
+    background-color: rgba(26, 26, 26, 0.4);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(220, 197, 162, 0.15);
+    margin-bottom: 12px;
+  }
+  
+  /* Improve text visibility in AI responses */
+  .ai-response-text {
+    color: #EEEEEE !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
   /* Optimize file uploads and attachments for mobile */

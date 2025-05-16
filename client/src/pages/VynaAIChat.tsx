@@ -1062,7 +1062,7 @@ export default function VynaAIChat() {
                     className={`rounded-xl px-4 py-3.5 text-sm md:text-base ${
                       message.role === 'user' 
                         ? 'bg-[#2A2A2A] text-white ml-auto mr-0 max-w-[85%] sm:max-w-[80%] md:ml-0' 
-                        : 'bg-[#232323] text-[#DDDDDD] mr-auto ml-0 max-w-[95%] sm:max-w-[90%] md:mr-0'
+                        : 'bg-[#232323] text-[#EEEEEE] mr-auto ml-0 w-full sm:max-w-[90%] md:mr-0 ai-message-card'
                     }`}
                   >
                     {message.role === 'user' ? (
