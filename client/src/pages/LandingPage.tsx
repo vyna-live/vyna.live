@@ -205,7 +205,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors action-button" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-8 h-8" 
                       aria-label="Upload file"
                       onClick={() => document.getElementById('vynaai-file-upload')?.click()}
                     >
@@ -213,7 +213,7 @@ export default function LandingPage() {
                     </button>
                     
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors action-button" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-8 h-8" 
                       aria-label="Record audio"
                       onClick={() => {
                         setInputValue(prev => `${prev}\n\n[Audio Recording]`);
@@ -241,7 +241,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors action-button" 
+                      className="hover:text-[#DCC5A2] transition-colors action-button flex items-center justify-center w-8 h-8" 
                       aria-label="Take photo"
                       onClick={() => document.getElementById('vynaai-image-upload')?.click()}
                     >
@@ -250,7 +250,8 @@ export default function LandingPage() {
                   </div>
                   <button 
                     onClick={handleSendMessage}
-                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-2 h-10 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-w-[60px]"
+                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-2 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-w-[60px]"
+                    style={{ height: '32px' }}
                     aria-label="Send message"
                   >
                     <span>Send</span>
@@ -275,7 +276,7 @@ export default function LandingPage() {
                 
                 {/* Input controls */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5 text-white opacity-70">
+                  <div className="flex items-center gap-2 sm:gap-5 text-white opacity-70">
                     <input 
                       type="file"
                       id="notepad-file-upload"
@@ -290,7 +291,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors" 
+                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-8 h-8" 
                       aria-label="Upload file"
                       onClick={() => document.getElementById('notepad-file-upload')?.click()}
                     >
@@ -298,7 +299,7 @@ export default function LandingPage() {
                     </button>
                     
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors" 
+                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-8 h-8" 
                       aria-label="Record audio"
                       onClick={() => {
                         setInputValue(prev => `${prev}\n\n[Audio Recording]`);
@@ -326,7 +327,7 @@ export default function LandingPage() {
                       }}
                     />
                     <button 
-                      className="hover:text-[#DCC5A2] transition-colors" 
+                      className="hover:text-[#DCC5A2] transition-colors flex items-center justify-center w-8 h-8" 
                       aria-label="Take photo"
                       onClick={() => document.getElementById('notepad-image-upload')?.click()}
                     >
@@ -334,7 +335,8 @@ export default function LandingPage() {
                     </button>
                   </div>
                   <button 
-                    className="button-hover-effect rounded-lg px-5 py-1.5 bg-[#DCC5A2] text-[#121212] font-medium flex items-center gap-1.5 hover:bg-[#C6B190] transition-all text-xs"
+                    className="button-hover-effect rounded-lg px-4 sm:px-5 py-2 flex items-center justify-center bg-[#DCC5A2] text-[#121212] font-medium gap-1.5 hover:bg-[#C6B190] transition-all text-xs min-w-[60px]"
+                    style={{ height: '32px' }}
                     aria-label="Add note"
                     onClick={handleAddNote}
                   >
