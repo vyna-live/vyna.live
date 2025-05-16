@@ -51,10 +51,9 @@ export async function fetchSubscriptionTiers(): Promise<SubscriptionTier[]> {
   try {
     const response = await apiRequest('GET', '/api/subscription/tiers');
     
-    // If we're in development mode and the API isn't fully implemented,
-    // return mock data
-    if (!response.ok && process.env.NODE_ENV === 'development') {
-      return getMockSubscriptionTiers();
+    // For production, we must have a valid API response
+    if (!response.ok) {
+      throw new Error('Failed to fetch subscription tiers');
     }
     
     return await response.json();

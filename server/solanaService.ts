@@ -15,8 +15,8 @@ function safePublicKey(address: string): PublicKey {
     return new PublicKey(address);
   } catch (error) {
     console.error(`Invalid public key address: ${address}`);
-    // Return a fallback valid PublicKey for development
-    return new PublicKey("11111111111111111111111111111111");
+    // In production, we should throw an error instead of using a fallback
+    throw new Error(`Invalid public key address: ${address}`);
   }
 }
 
@@ -28,19 +28,17 @@ const DEVNET_USDC_MINT = safePublicKey(
   "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr",
 );
 
-// Use devnet for development, mainnet-beta for production
-const SOLANA_NETWORK =
-  process.env.NODE_ENV === "production" ? "mainnet-beta" : "devnet";
+// Always use mainnet-beta for production
+const SOLANA_NETWORK = "mainnet-beta";
 
-// The USDC mint to use based on environment
-const CURRENT_USDC_MINT =
-  SOLANA_NETWORK === "mainnet-beta" ? USDC_MINT : DEVNET_USDC_MINT;
+// Always use the real USDC mint on mainnet
+const CURRENT_USDC_MINT = USDC_MINT;
 
 // The company's wallet address where subscription payments are received
 const COMPANY_WALLET_ADDRESS = process.env.COMPANY_WALLET_ADDRESS || "HF7EHsCJAiQvuVyvEZpEXGAnbLk1hotBKuuTq7v9JBYU";
 
-// Whether we're in development/testing mode where we should accept test transactions
-const ENABLE_TEST_MODE = process.env.NODE_ENV !== "production" || process.env.ACCEPT_TEST_TRANSACTIONS === "true";
+// No test mode in production
+const ENABLE_TEST_MODE = false;
 
 /**
  * Verify a Solana transaction to confirm USDC payment
@@ -160,30 +158,6 @@ export async function verifyUSDCTransaction(
       console.error(
         `No transfer to company wallet ${COMPANY_WALLET_ADDRESS} found`,
       );
-      
-      // In test mode, allow transactions to pass verification even if company wallet isn't the recipient
-      // This is for development and testing only
-      if (ENABLE_TEST_MODE) {
-        console.warn('TEST MODE: Bypassing company wallet verification check');
-        
-        // Look for any USDC transfer in the transaction
-        const anyUSDCTransfer = postTokenBalances.find((post) => {
-          const pre = preTokenBalances.find(pre => pre.accountIndex === post.accountIndex);
-          return pre && post.mint === CURRENT_USDC_MINT.toString();
-        });
-        
-        if (anyUSDCTransfer) {
-          // Use this as our transfer for test mode
-          console.warn('TEST MODE: Using alternative USDC transfer for verification');
-          return {
-            isValid: true,
-            amount: parseFloat(expectedAmount), // Trust the expected amount in test mode
-            sender: senderWalletAddress || 'test-wallet',
-            receiver: COMPANY_WALLET_ADDRESS,
-            timestamp: txInfo.blockTime ? txInfo.blockTime * 1000 : Date.now(),
-          };
-        }
-      }
       
       return {
         isValid: false,
