@@ -21,6 +21,7 @@ import {
   createTransferInstruction,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAccount,
 } from "@solana/spl-token";
 
 // Set up Buffer for browser environment
@@ -30,14 +31,14 @@ globalThis.Buffer = globalThis.Buffer || Buffer;
 
 // For adding a memo to each transaction to prevent duplicate processing
 const MEMO_PROGRAM_ID = new PublicKey(
-  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
 );
 
 // USDC Token Mint address (using Devnet USDC for testing)
 // This is the official Devnet USDC mint address
-const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+const USDC_MINT = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
 
-// For production mainnet: 
+// For production mainnet:
 // const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL");
 
 // USDC has 6 decimal places
@@ -279,55 +280,65 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
       try {
         // Connect to Solana devnet (or mainnet in production)
         const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-        
+
         // Parse sender and recipient addresses
         const senderPublicKey = new PublicKey(wallet.publicKey);
         const recipientPublicKey = new PublicKey(recipient);
-        
+
         // Create a new transaction
         const transaction = new Transaction();
-        
+
         // Generate payment ID to track this specific transaction
-        const paymentId = Date.now().toString() + Math.random().toString(36).substring(2, 8);
-        
+        const paymentId =
+          Date.now().toString() + Math.random().toString(36).substring(2, 8);
+
         // Log transaction participants
         console.log("USDC Payment Transaction:");
         console.log(`- Sender: ${senderPublicKey.toString()}`);
         console.log(`- Recipient: ${recipientPublicKey.toString()}`);
         console.log(`- Payment ID: ${paymentId}`);
-        
+
         // Convert the payment amount to USDC token units (with 6 decimals)
         const amountInUSDC = parseFloat(amount);
-        const tokenAmount = BigInt(Math.floor(amountInUSDC * Math.pow(10, USDC_DECIMALS)));
-        console.log(`- Amount: ${amountInUSDC} USDC (${tokenAmount} base units)`);
-        
+        const tokenAmount = BigInt(amountInUSDC * 10 ** USDC_DECIMALS);
+        console.log(
+          `- Amount: ${amountInUSDC} USDC (${tokenAmount} base units)`,
+        );
+
         // Get the sender's associated token account for USDC
         const senderTokenAccount = await getAssociatedTokenAddress(
           USDC_MINT,
           senderPublicKey,
           false,
           TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
+          ASSOCIATED_TOKEN_PROGRAM_ID,
         );
         console.log(`- Sender token account: ${senderTokenAccount.toString()}`);
-        
+
+        const usdcAccount = await getAccount(connection, senderTokenAccount);
+        console.log("USDC Balance:", Number(usdcAccount.amount) / 1_000_000);
+
         // Get recipient's associated token account
         const recipientTokenAccount = await getAssociatedTokenAddress(
           USDC_MINT,
           recipientPublicKey,
           false,
           TOKEN_PROGRAM_ID,
-          ASSOCIATED_TOKEN_PROGRAM_ID
+          ASSOCIATED_TOKEN_PROGRAM_ID,
         );
-        console.log(`- Recipient token account: ${recipientTokenAccount.toString()}`);
-        
+        console.log(
+          `- Recipient token account: ${recipientTokenAccount.toString()}`,
+        );
+
         // Check if recipient token account exists
-        const recipientAccountInfo = await connection.getAccountInfo(recipientTokenAccount);
-        
+        const recipientAccountInfo = await connection.getAccountInfo(
+          recipientTokenAccount,
+        );
+
         // If recipient token account doesn't exist, create it
         if (!recipientAccountInfo) {
           console.log("Creating recipient token account - it doesn't exist");
-          
+
           transaction.add(
             createAssociatedTokenAccountInstruction(
               senderPublicKey,
@@ -335,12 +346,12 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
               recipientPublicKey,
               USDC_MINT,
               TOKEN_PROGRAM_ID,
-              ASSOCIATED_TOKEN_PROGRAM_ID
-            )
+              ASSOCIATED_TOKEN_PROGRAM_ID,
+            ),
           );
           console.log("Added recipient token account creation instruction");
         }
-        
+
         // Add the token transfer instruction
         transaction.add(
           createTransferInstruction(
@@ -349,8 +360,8 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             senderPublicKey,
             tokenAmount,
             [],
-            TOKEN_PROGRAM_ID
-          )
+            TOKEN_PROGRAM_ID,
+          ),
         );
         console.log("Added USDC token transfer instruction");
 
@@ -368,11 +379,15 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         transaction.add(memoInstruction);
 
         // Get recent blockhash and set transaction fee payer
-        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+        const { blockhash, lastValidBlockHeight } =
+          await connection.getLatestBlockhash("confirmed");
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = senderPublicKey;
-        
-        console.log("Transaction prepared with instructions:", transaction.instructions.length);
+
+        console.log(
+          "Transaction prepared with instructions:",
+          transaction.instructions.length,
+        );
         console.log("Transaction ready with blockhash:", blockhash);
 
         // Sign and send the transaction based on wallet provider
@@ -381,13 +396,15 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         if (wallet.provider === "phantom" && window.phantom?.solana) {
           toast({
             title: "Waiting for approval",
-            description: "Please approve the transaction in your Phantom wallet",
+            description:
+              "Please approve the transaction in your Phantom wallet",
           });
 
           try {
             // Request Phantom wallet signature
             console.log("Requesting Phantom wallet signature");
-            const signedTransaction = await window.phantom.solana.signTransaction?.(transaction);
+            const signedTransaction =
+              await window.phantom.solana.signTransaction?.(transaction);
 
             if (!signedTransaction) {
               throw new Error("Failed to sign transaction with Phantom wallet");
@@ -399,45 +416,59 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             });
 
             console.log("Transaction signed, sending to Solana network");
-            
+
             // Send the transaction to the Solana network
             const txSignature = await connection.sendRawTransaction(
               signedTransaction.serialize(),
-              { 
+              {
                 skipPreflight: false,
                 maxRetries: 3,
-                preflightCommitment: "confirmed"
-              }
+                preflightCommitment: "confirmed",
+              },
             );
-            
+
             signature = txSignature;
             console.log("Transaction sent with signature:", txSignature);
-            console.log(`Solana Explorer URL: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
-            
+            console.log(
+              `Solana Explorer URL: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`,
+            );
+
             // Wait for transaction confirmation with timeout
             try {
-              const confirmation = await connection.confirmTransaction({
-                signature: txSignature,
-                blockhash: blockhash,
-                lastValidBlockHeight: lastValidBlockHeight
-              }, "confirmed");
-              
+              const confirmation = await connection.confirmTransaction(
+                {
+                  signature: txSignature,
+                  blockhash: blockhash,
+                  lastValidBlockHeight: lastValidBlockHeight,
+                },
+                "confirmed",
+              );
+
               if (confirmation.value.err) {
-                console.error("Transaction confirmed but has errors:", confirmation.value.err);
-                throw new Error(`Transaction failed: ${confirmation.value.err}`);
+                console.error(
+                  "Transaction confirmed but has errors:",
+                  confirmation.value.err,
+                );
+                throw new Error(
+                  `Transaction failed: ${confirmation.value.err}`,
+                );
               }
-              
+
               console.log("Transaction confirmed successfully:", confirmation);
             } catch (error) {
               console.error("Error confirming transaction:", error);
-              
+
               // Check if the transaction was successful anyway
-              const signatureStatus = await connection.getSignatureStatus(txSignature);
+              const signatureStatus =
+                await connection.getSignatureStatus(txSignature);
               if (signatureStatus.value && !signatureStatus.value.err) {
-                console.log("Transaction successful despite confirmation error");
+                console.log(
+                  "Transaction successful despite confirmation error",
+                );
               } else {
                 // Safe error message extraction
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const errorMessage =
+                  error instanceof Error ? error.message : String(error);
                 throw new Error(`Transaction may have failed: ${errorMessage}`);
               }
             }
@@ -493,10 +524,13 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           try {
             // Request Solflare wallet signature
             console.log("Requesting Solflare wallet signature");
-            const signedTransaction = await window.solflare.signTransaction?.(transaction);
+            const signedTransaction =
+              await window.solflare.signTransaction?.(transaction);
 
             if (!signedTransaction) {
-              throw new Error("Failed to sign transaction with Solflare wallet");
+              throw new Error(
+                "Failed to sign transaction with Solflare wallet",
+              );
             }
 
             toast({
@@ -505,45 +539,59 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
             });
 
             console.log("Transaction signed, sending to Solana network");
-            
+
             // Send the transaction to the Solana network
             const txSignature = await connection.sendRawTransaction(
               signedTransaction.serialize(),
-              { 
+              {
                 skipPreflight: false,
                 maxRetries: 3,
-                preflightCommitment: "confirmed"
-              }
+                preflightCommitment: "confirmed",
+              },
             );
-            
+
             signature = txSignature;
             console.log("Transaction sent with signature:", txSignature);
-            console.log(`Solana Explorer URL: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
-            
+            console.log(
+              `Solana Explorer URL: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`,
+            );
+
             // Wait for transaction confirmation with timeout
             try {
-              const confirmation = await connection.confirmTransaction({
-                signature: txSignature,
-                blockhash: blockhash,
-                lastValidBlockHeight: lastValidBlockHeight
-              }, "confirmed");
-              
+              const confirmation = await connection.confirmTransaction(
+                {
+                  signature: txSignature,
+                  blockhash: blockhash,
+                  lastValidBlockHeight: lastValidBlockHeight,
+                },
+                "confirmed",
+              );
+
               if (confirmation.value.err) {
-                console.error("Transaction confirmed but has errors:", confirmation.value.err);
-                throw new Error(`Transaction failed: ${confirmation.value.err}`);
+                console.error(
+                  "Transaction confirmed but has errors:",
+                  confirmation.value.err,
+                );
+                throw new Error(
+                  `Transaction failed: ${confirmation.value.err}`,
+                );
               }
-              
+
               console.log("Transaction confirmed successfully:", confirmation);
             } catch (error) {
               console.error("Error confirming transaction:", error);
-              
+
               // Check if the transaction was successful anyway
-              const signatureStatus = await connection.getSignatureStatus(txSignature);
+              const signatureStatus =
+                await connection.getSignatureStatus(txSignature);
               if (signatureStatus.value && !signatureStatus.value.err) {
-                console.log("Transaction successful despite confirmation error");
+                console.log(
+                  "Transaction successful despite confirmation error",
+                );
               } else {
                 // Safe error message extraction
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const errorMessage =
+                  error instanceof Error ? error.message : String(error);
                 throw new Error(`Transaction may have failed: ${errorMessage}`);
               }
             }
@@ -595,7 +643,8 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         console.error("Error in sendTransaction:", error);
         toast({
           title: "Payment error",
-          description: "There was an error processing your USDC payment. Please try again.",
+          description:
+            "There was an error processing your USDC payment. Please try again.",
           variant: "destructive",
         });
         throw error;
