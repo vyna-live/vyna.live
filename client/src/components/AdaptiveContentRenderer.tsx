@@ -97,13 +97,15 @@ const AdaptiveContentRenderer: React.FC<AdaptiveContentRendererProps> = ({
   // If we don't need a card background, render standard content
   if (!renderingMetadata.useCardBackground) {
     return (
-      <div className={cn("relative", className)}>
-        <RichContentRenderer
-          content={content}
-          visualizations={visualizations}
-          darkMode={darkMode}
-          size="medium"
-        />
+      <div className={cn("relative w-full max-w-full", className)}>
+        <div className="w-full overflow-x-auto">
+          <RichContentRenderer
+            content={content}
+            visualizations={visualizations}
+            darkMode={darkMode}
+            size="medium"
+          />
+        </div>
         {AddToNoteButton}
         
         {/* Loading overlay */}
@@ -120,19 +122,21 @@ const AdaptiveContentRenderer: React.FC<AdaptiveContentRendererProps> = ({
   
   // For rich content that requires the Vyna card
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative w-full max-w-full", className)}>
       <VynaCard 
         isTeleprompter={renderingMetadata.isTeleprompter}
         showLogo={true} 
         showBranding={true}
         className={renderingMetadata.isTeleprompter ? "min-h-[200px]" : ""}
       >
-        <RichContentRenderer
-          content={content}
-          visualizations={visualizations}
-          darkMode={false} // Always use light mode inside the card for better readability
-          size={renderingMetadata.isTeleprompter ? "large" : "medium"}
-        />
+        <div className="w-full overflow-x-auto">
+          <RichContentRenderer
+            content={content}
+            visualizations={visualizations}
+            darkMode={false} // Always use light mode inside the card for better readability
+            size={renderingMetadata.isTeleprompter ? "large" : "medium"}
+          />
+        </div>
       </VynaCard>
       
       {AddToNoteButton}

@@ -69,8 +69,8 @@ const VynaCard: React.FC<VynaCardProps> = ({
 
       {/* Branding Element - Always use "JUST GO LIVE" for consistency */}
       {showBranding && (
-        <div className="absolute bottom-4 right-4 z-10">
-          <span className="text-sm font-bold text-[#8A1538]">
+        <div className="absolute bottom-2 md:bottom-4 right-2 md:right-4 z-10">
+          <span className="text-xs md:text-sm font-bold text-[#8A1538]">
             JUST GO LIVE
           </span>
         </div>
