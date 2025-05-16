@@ -8,7 +8,7 @@ import { walletTransactions } from '@shared/schema';
 const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybAPX3ovGdTAbS1ZC1nQjL");
 
 // For development/testing on Devnet
-const DEVNET_USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+const DEVNET_USDC_MINT = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
 
 // Use devnet for development, mainnet-beta for production
 const SOLANA_NETWORK = process.env.NODE_ENV === 'production' 
