@@ -1,0 +1,211 @@
+Comprehensive Implementation Guide: Share Button for AI Chat Research Tool
+Overview
+Implement a sophisticated share button system for our AI chat research tool that enables users to share livestream links across social media platforms with customized preview cards. This feature should seamlessly integrate with our existing application architecture while maintaining our aesthetic design language.
+Visual Reference
+Use the provided design mockups as your primary visual guide:
+Image 1: Complete preview card with all elements populated
+Image 2: Template preview card showing layout without user-specific content
+Technical Specifications
+1. Share Button Component
+jsx
+// Component structure<ShareButton   responseId={responseId}  userName={currentUser.username}  userAvatar={currentUser.avatarUrl}  chatTopic={currentChat.topic}/>
+Requirements:
+Position: Add to each AI response container, aligned right, 16px from the bottom edge
+Visual: Use a minimal icon design (recommend using Lucide React's Share2 icon)
+Size: 24x24px with appropriate padding (12px) for touch targets
+State handling: 
+oDefault: Semi-transparent (opacity: 0.7)
+oHover: Full opacity (1.0) with 300ms transition
+oFocus: Include focus ring for accessibility (outline or box-shadow)
+Tooltip: 
+oTrigger: on hover AND on focus (for keyboard accessibility)
+oText: "Add your livestream link and share to your platform"
+oPosition: Above button, centered
+oAppearance: Match app theme, subtle shadow, rounded corners (8px)
+oAnimation: Fade in 150ms, slight scale (1.0 to 1.05)
+2. Share Modal Component
+jsx
+// Component structure<ShareModal  isOpen={isModalOpen}  onClose={() => setModalOpen(false)}  initialData={{    userName: currentUser.username,    userAvatar: currentUser.avatarUrl,    topic: currentChat.topic || ""  }}  onShareComplete={handleShareComplete}/>
+Modal Container:
+Type: Fixed position, centered dialog with backdrop
+Size: 90% width on mobile (max 400px), 450px on desktop
+Animation: Fade in + slight scale up (250ms ease-out)
+Backdrop: Semi-transparent black (rgba(0,0,0,0.5)), click to dismiss
+Structure: Card with header, body, and footer sections
+Header Section:
+Title: "Share Your Livestream" (22px, semibold)
+Close button: Top-right corner, accessible (aria-label="Close")
+Form Section:
+Stream Link Input: 
+oLabel: "Paste your livestream URL"
+oType: text input with URL validation
+oPlaceholder: "https://your-stream-platform.com/your-channel"
+oValidation: Show subtle error if URL format is invalid
+oVisual: Full width, consistent with app's input styling
+Redirect Option: 
+oUI: Checkbox with accompanying label
+oDefault: Checked (true)
+oLabel: "Redirect users to vyna.live"
+oInfo icon: On click, show tooltip explaining: "When checked, users will see your stream preview on our platform before being directed to your livestream"
+oPosition: 16px below the input field
+Stream Topic Input (optional): 
+oLabel: "Stream Topic (optional)"
+oDefault value: Chat topic if available
+oPurpose: Used for the preview card's heading
+Platform Icons: 
+oLayout: Horizontal row, evenly spaced, scrollable if needed
+oPlatforms: Twitter/X, Facebook, Instagram, WhatsApp, LinkedIn, Discord, Reddit
+oVisual: Color icons, 36px diameter, with subtle hover effect
+oBehavior: Highlight selected platform(s)
+Preview Section:
+Live preview of the share card matching the design in mockups
+Shows real-time updates as user enters information
+Split design: 
+oLeft panel: Deep burgundy (#5D1D35) with stream topic and Vyna logo
+oRight panel: Light pink/purple gradient with stream details and user info
+oDynamic content: Updates username, avatar, and topic based on form input
+Footer Section:
+"Cancel" button: Secondary styling, closes modal
+"Generate Share Link" button: Primary styling, disabled until valid URL provided
+3. Link Generation System
+URL Structure:
+Direct link format: {userProvidedUrl}
+Vyna redirect format: https://vyna.live/go/{encodedUserName}/{encodedStreamId}
+Backend Requirements:
+javascript
+// Pseudo-code for link generationfunction generateShareLink(userData) {  const { streamUrl, redirectToVyna, userName, streamTopic } = userData;    // Create database entry  const streamId = createStreamRecord({    originalUrl: streamUrl,    topic: streamTopic,    userId: currentUser.id,    createdAt: new Date()  });    // Generate appropriate URL  if (redirectToVyna) {    return `https://vyna.live/go/${encodeURIComponent(userName)}/${streamId}`;  } else {    return streamUrl;  }}
+Link Storage:
+Store in user profile collection: 
+
+{  userId: "user123",  streamLinks: [    {      id: "link123",      originalUrl: "https://twitch.tv/example",      redirectUrl: "https://vyna.live/go/username/link123",      topic: "Vyna Visualization Pipeline",      createdAt: "2025-05-15T10:30:00Z",      clickCount: 42    }  ]}
+
+
+4. Share Preview Implementation
+Open Graph Tags Generation:
+html
+<!-- Example OG tags to be dynamically generated --><meta property="og:title" content="Stream: Vyna Visualization Pipeline" /><meta property="og:description" content="Join GoddessWriter's livestream via Vyna" /><meta property="og:image" content="https://vyna.live/api/share-preview/link123.png" /><meta property="og:url" content="https://vyna.live/go/GoddessWriter/link123" /><meta property="og:type" content="website" /><!-- Twitter/X specific --><meta name="twitter:card" content="summary_large_image" />
+Preview Card Generation:
+Server-side rendering: 
+oUse HTML/CSS template to generate preview image
+oCanvas or headless browser to convert to PNG/JPEG
+oCache generated images with stream ID as key
+oImage dimensions: 1200×630px (optimal for most platforms)
+Preview Card Design:
+Exactly match the provided mockup
+Typography: 
+o"THEME:" - small caps, light weight, white
+oStream topic - large (32-40px), serif font, white
+o"STREAM LINK:" - small caps, medium weight, dark
+oStream URL - italics, medium size, dark
+o"STREAMER:" - small caps, medium weight, dark
+oUsername - large, bold, dark
+o"Just Go Live" - medium, bold, dark
+Logo placement: Bottom left, white version on burgundy background
+Avatar: Circular crop, 64×64px, with subtle border
+5. Saved Links Management
+Saved Links Tab:
+Add "Saved Links" tab to user profile navigation
+URL: /profile/{username}/saved-links
+Default sort: Newest first
+List View:
+jsx
+<SavedLinksTable  links={userSavedLinks}  onShare={linkId => openShareModal(linkId)}  onDelete={linkId => confirmDelete(linkId)}  onToggleRedirect={linkId => toggleRedirect(linkId)}/>
+Features:
+Pagination: 10 items per page
+Sort options: Date created, most clicked
+Search: Filter by topic or platform
+For each link show: 
+oPreview thumbnail (scaled down version of share card)
+oStream topic
+oCreation date
+oClick count
+oPlatform icons showing where it was shared
+oActions menu (share again, edit, delete)
+Link Management:
+Edit capability: 
+oStream topic
+oRedirect preference
+Metrics: 
+oTrack clicks with source platform if available
+oShow simple analytics chart for each link
+6. Redirection Behavior
+Redirect Page (/go/{username}/{streamId}):
+Load within 500ms, show loading spinner if delay
+Display: 
+oFull-size preview card (centered)
+oLarge CTA button: "Go to Livestream"
+oCountdown timer (5s) for automatic redirect
+oSmall text: "Powered by Vyna"
+Behavior: 
+oRecord click in analytics
+oAfter 5s or button click, redirect to original stream URL
+oAdd remember preference option: "Don't show this page again"
+Direct Links:
+When redirect option is disabled, verify link is valid then direct user immediately
+7. Implementation Guidelines
+State Management:
+Use React Context for sharing state across components
+Implement with proper loading/error states
+Handle network failures gracefully
+API Endpoints Required:
+POST /api/share/create              # Create new share linkGET  /api/share/preview/{linkId}    # Get preview imageGET  /api/share/{linkId}/stats      # Get link statisticsGET  /api/user/saved-links          # Get user's saved linksPUT  /api/share/{linkId}            # Update share linkDELETE /api/share/{linkId}          # Delete share link
+Performance Considerations:
+Lazy load the share modal
+Pre-generate common assets
+Optimize preview images for fast loading
+Use appropriate caching strategies
+Animation Guidelines:
+Use consistent timing: 
+oQuick interactions: 150-200ms
+oModal transitions: 250-300ms
+Use the same easing function throughout (recommend: cubic-bezier(0.16, 1, 0.3, 1))
+Ensure animations respect user preferences (prefers-reduced-motion)
+Accessibility Requirements:
+Full keyboard navigation support
+ARIA attributes for all interactive elements
+Sufficient color contrast (WCAG AA compliance)
+Screen reader friendly implementations
+Focus management for modal dialogs
+Error Handling:
+Invalid URLs: Show inline validation
+Network errors: Toast notification with retry option
+Permission issues: Clear explanation with next steps
+Design Guidelines
+Color Palette:
+Primary burgundy: #5D1D35
+Secondary pink: #E8C1CE
+Background gradient: linear-gradient(135deg, #E8C1CE 0%, #D8A1B1 100%)
+Text dark: #1A1A1A
+Text light: #FFFFFF
+Accent: #F2C94C
+Design System Integration:
+Use existing button, input, and modal components
+Maintain consistent spacing (multiple of 4px)
+Follow established typography scale
+Use shadows sparingly for depth cues only
+Responsive Behavior:
+Mobile (320-767px): Full width modals, stacked controls
+Tablet (768-1023px): Constrained width, inline controls where space permits
+Desktop (1024px+): Optimal layout with side-by-side elements where appropriate
+Testing Requirements
+Unit Tests:
+Form validation logic
+URL generation
+State management
+Component rendering
+Integration Tests:
+End-to-end flow from button click to link generation
+Redirection behavior
+Link storage and retrieval
+Usability Testing Focus:
+Verify intuitive flow for first-time users
+Confirm mobile usability especially for form completion
+Test social media preview appearance across platforms
+Final Deliverables
+1.Fully implemented share button component
+2.Modal form with validation and preview
+3.Backend services for link generation and tracking
+4.Saved links management in user profile
+5.Share preview generation system
+6.Comprehensive documentation for future maintenance
+Implement with attention to detail, prioritizing user experience and visual fidelity to the provided designs. The final implementation should feel polished, intuitive, and seamlessly integrated with the existing application.
