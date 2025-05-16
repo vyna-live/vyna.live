@@ -232,7 +232,7 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [wallet, toast]);
 
-  // Send transaction for USDC payment
+  // Send USDC token transaction
   const sendTransaction = useCallback(
     async ({
       amount,
@@ -248,91 +248,90 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
       }
 
       toast({
-        title: "Preparing transaction",
-        description: "Setting up your USDC payment...",
+        title: "Preparing USDC payment",
+        description: "Setting up your subscription payment...",
       });
 
       try {
-        // Set up connection to Solana devnet
+        // Connect to Solana devnet (or mainnet in production)
         const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-
-        // Create new transaction
-        const transaction = new Transaction();
-
-        // Generate a unique identifier for this transaction
-        const uniqueId = Date.now().toString() + Math.random().toString().substring(2, 8);
-
-        // Create PublicKeys from wallet addresses
+        
+        // Parse sender and recipient addresses
         const senderPublicKey = new PublicKey(wallet.publicKey);
         const recipientPublicKey = new PublicKey(recipient);
-
-        // Convert amount to USDC token units (USDC has 6 decimal places)
-        const usdcAmount = BigInt(
-          Math.floor(parseFloat(amount) * Math.pow(10, USDC_DECIMALS))
-        );
-
-        console.log(`Processing USDC payment: ${usdcAmount} units from ${senderPublicKey.toString()} to ${recipientPublicKey.toString()}`);
-
-        // Step 1: Get the associated token addresses
+        
+        // Create a new transaction
+        const transaction = new Transaction();
+        
+        // Generate payment ID to track this specific transaction
+        const paymentId = Date.now().toString() + Math.random().toString(36).substring(2, 8);
+        
+        // Log transaction participants
+        console.log("USDC Payment Transaction:");
+        console.log(`- Sender: ${senderPublicKey.toString()}`);
+        console.log(`- Recipient: ${recipientPublicKey.toString()}`);
+        console.log(`- Payment ID: ${paymentId}`);
+        
+        // Convert the payment amount to USDC token units (with 6 decimals)
+        const amountInUSDC = parseFloat(amount);
+        const tokenAmount = BigInt(Math.floor(amountInUSDC * Math.pow(10, USDC_DECIMALS)));
+        console.log(`- Amount: ${amountInUSDC} USDC (${tokenAmount} base units)`);
+        
+        // Get the sender's associated token account for USDC
         const senderTokenAccount = await getAssociatedTokenAddress(
           USDC_MINT,
-          senderPublicKey
+          senderPublicKey,
+          false,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
         );
-
+        console.log(`- Sender token account: ${senderTokenAccount.toString()}`);
+        
+        // Get recipient's associated token account
         const recipientTokenAccount = await getAssociatedTokenAddress(
           USDC_MINT,
-          recipientPublicKey
+          recipientPublicKey,
+          false,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
         );
-
-        console.log(`Sender token account: ${senderTokenAccount.toString()}`);
-        console.log(`Recipient token account: ${recipientTokenAccount.toString()}`);
-
-        // Step 2: Check if recipient token account exists and create it if not
-        try {
-          // This will throw an error if the account doesn't exist
-          const accountInfo = await connection.getAccountInfo(recipientTokenAccount);
+        console.log(`- Recipient token account: ${recipientTokenAccount.toString()}`);
+        
+        // Check if recipient token account exists
+        const recipientAccountInfo = await connection.getAccountInfo(recipientTokenAccount);
+        
+        // If recipient token account doesn't exist, create it
+        if (!recipientAccountInfo) {
+          console.log("Creating recipient token account - it doesn't exist");
           
-          if (!accountInfo) {
-            console.log("Creating recipient token account");
-            
-            // Add instruction to create recipient associated token account
-            transaction.add(
-              createAssociatedTokenAccountInstruction(
-                senderPublicKey, // payer
-                recipientTokenAccount, // ata
-                recipientPublicKey, // owner
-                USDC_MINT // mint
-              )
-            );
-          } else {
-            console.log("Recipient token account already exists");
-          }
-        } catch (error) {
-          console.log("Creating recipient token account due to error:", error);
-          
-          // Add instruction to create recipient associated token account
           transaction.add(
             createAssociatedTokenAccountInstruction(
-              senderPublicKey, // payer
-              recipientTokenAccount, // ata
-              recipientPublicKey, // owner
-              USDC_MINT // mint
+              senderPublicKey,
+              recipientTokenAccount,
+              recipientPublicKey,
+              USDC_MINT,
+              TOKEN_PROGRAM_ID,
+              ASSOCIATED_TOKEN_PROGRAM_ID
             )
           );
+          console.log("Added recipient token account creation instruction");
         }
-
-        // Step 3: Add token transfer instruction
+        
+        // Add the token transfer instruction
         transaction.add(
           createTransferInstruction(
-            senderTokenAccount, // source
-            recipientTokenAccount, // destination
-            senderPublicKey, // owner
-            usdcAmount // amount
+            senderTokenAccount,
+            recipientTokenAccount,
+            senderPublicKey,
+            tokenAmount,
+            [],
+            TOKEN_PROGRAM_ID
           )
         );
+        console.log("Added USDC token transfer instruction");
 
-        // Step 4: Add memo instruction with payment details
-        const memoMessage = `Vyna.live USDC payment: ${uniqueId}`;
+        // Add memo instruction with payment details
+        const memoMessage = `Vyna.live USDC payment: ${paymentId}`;
         const memoData = Buffer.from(memoMessage, "utf-8");
 
         const memoInstruction = new TransactionInstruction({
@@ -344,12 +343,13 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
         // Add memo instruction to transaction
         transaction.add(memoInstruction);
 
-        // Step 5: Get recent blockhash and set transaction fee payer
+        // Get recent blockhash and set transaction fee payer
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = senderPublicKey;
         
         console.log("Transaction prepared with instructions:", transaction.instructions.length);
+        console.log("Transaction ready with blockhash:", blockhash);
 
         // Sign and send the transaction based on wallet provider
         let signature = "";
@@ -362,8 +362,13 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           });
 
           try {
-            // Request signature from Phantom wallet
-            console.log("Requesting signature from Phantom wallet");
+            // Request Phantom wallet signature
+            console.log("Requesting Phantom wallet signature");
+            toast({
+              title: "Waiting for wallet",
+              description: "Please approve the transaction in your Phantom wallet",
+            });
+            
             const signedTransaction = await window.phantom.solana.signTransaction?.(transaction);
 
             if (!signedTransaction) {
@@ -375,28 +380,47 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
               description: "Your USDC payment is being processed...",
             });
 
-            console.log("Transaction signed, sending to network");
+            console.log("Transaction signed, sending to Solana network");
             
-            // Send the signed transaction to the network
+            // Send the transaction to the Solana network
             const txSignature = await connection.sendRawTransaction(
               signedTransaction.serialize(),
               { 
                 skipPreflight: false,
+                maxRetries: 3,
                 preflightCommitment: "confirmed"
               }
             );
             
             signature = txSignature;
             console.log("Transaction sent with signature:", txSignature);
+            console.log(`Solana Explorer URL: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
             
-            // Wait for transaction confirmation
-            const confirmation = await connection.confirmTransaction({
-              signature: txSignature,
-              blockhash: blockhash,
-              lastValidBlockHeight: lastValidBlockHeight
-            }, "confirmed");
-            
-            console.log("Transaction confirmed:", confirmation);
+            // Wait for transaction confirmation with timeout
+            try {
+              const confirmation = await connection.confirmTransaction({
+                signature: txSignature,
+                blockhash: blockhash,
+                lastValidBlockHeight: lastValidBlockHeight
+              }, "confirmed");
+              
+              if (confirmation.value.err) {
+                console.error("Transaction confirmed but has errors:", confirmation.value.err);
+                throw new Error(`Transaction failed: ${confirmation.value.err}`);
+              }
+              
+              console.log("Transaction confirmed successfully:", confirmation);
+            } catch (confirmError) {
+              console.error("Error confirming transaction:", confirmError);
+              
+              // Check if the transaction was successful anyway
+              const signatureStatus = await connection.getSignatureStatus(txSignature);
+              if (signatureStatus.value && !signatureStatus.value.err) {
+                console.log("Transaction successful despite confirmation error");
+              } else {
+                throw new Error(`Transaction may have failed: ${confirmError.message}`);
+              }
+            }
 
             toast({
               title: "Transaction successful",
@@ -447,8 +471,13 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
           });
 
           try {
-            // Request signature from Solflare wallet
-            console.log("Requesting signature from Solflare wallet");
+            // Request Solflare wallet signature
+            console.log("Requesting Solflare wallet signature");
+            toast({
+              title: "Waiting for wallet",
+              description: "Please approve the transaction in your Solflare wallet",
+            });
+            
             const signedTransaction = await window.solflare.signTransaction?.(transaction);
 
             if (!signedTransaction) {
@@ -460,28 +489,47 @@ export const SolanaWalletProvider: React.FC<{ children: ReactNode }> = ({
               description: "Your USDC payment is being processed...",
             });
 
-            console.log("Transaction signed, sending to network");
+            console.log("Transaction signed, sending to Solana network");
             
-            // Send the signed transaction to the network
+            // Send the transaction to the Solana network
             const txSignature = await connection.sendRawTransaction(
               signedTransaction.serialize(),
               { 
                 skipPreflight: false,
+                maxRetries: 3,
                 preflightCommitment: "confirmed"
               }
             );
             
             signature = txSignature;
             console.log("Transaction sent with signature:", txSignature);
+            console.log(`Solana Explorer URL: https://explorer.solana.com/tx/${txSignature}?cluster=devnet`);
             
-            // Wait for transaction confirmation
-            const confirmation = await connection.confirmTransaction({
-              signature: txSignature,
-              blockhash: blockhash,
-              lastValidBlockHeight: lastValidBlockHeight
-            }, "confirmed");
-            
-            console.log("Transaction confirmed:", confirmation);
+            // Wait for transaction confirmation with timeout
+            try {
+              const confirmation = await connection.confirmTransaction({
+                signature: txSignature,
+                blockhash: blockhash,
+                lastValidBlockHeight: lastValidBlockHeight
+              }, "confirmed");
+              
+              if (confirmation.value.err) {
+                console.error("Transaction confirmed but has errors:", confirmation.value.err);
+                throw new Error(`Transaction failed: ${confirmation.value.err}`);
+              }
+              
+              console.log("Transaction confirmed successfully:", confirmation);
+            } catch (confirmError) {
+              console.error("Error confirming transaction:", confirmError);
+              
+              // Check if the transaction was successful anyway
+              const signatureStatus = await connection.getSignatureStatus(txSignature);
+              if (signatureStatus.value && !signatureStatus.value.err) {
+                console.log("Transaction successful despite confirmation error");
+              } else {
+                throw new Error(`Transaction may have failed: ${confirmError.message}`);
+              }
+            }
 
             toast({
               title: "Transaction successful",
