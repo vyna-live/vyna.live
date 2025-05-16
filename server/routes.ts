@@ -18,6 +18,7 @@ import * as agoraAccessToken from 'agora-access-token';
 import { setupAuth } from "./auth";
 import { registerLoyaltyRoutes } from "./loyaltyRoutes";
 import { registerSubscriptionRoutes } from "./subscriptionRoutes";
+import { checkPendingPayment } from "./subscriptionVerification";
 
 // Configure multer for file uploads
 const upload = multer({ 
