@@ -1,11 +1,19 @@
 /**
- * Helper function for making API requests
+ * Utility for making API requests to our server
+ */
+
+/**
+ * Make an API request to the backend
+ * @param method HTTP method to use
+ * @param endpoint API endpoint (with leading slash)
+ * @param data Optional data to send (for POST/PUT/PATCH)
+ * @returns Response object
  */
 export async function apiRequest(
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  method: string,
   endpoint: string,
   data?: any
-) {
+): Promise<Response> {
   const options: RequestInit = {
     method,
     headers: {
@@ -14,18 +22,15 @@ export async function apiRequest(
     credentials: 'include',
   };
 
-  if (data && method !== 'GET') {
+  if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch(endpoint, options);
-  
-  // For non-2xx responses, throw an error
-  if (!response.ok && response.status !== 401) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMessage = errorData.error || errorData.message || `Error: ${response.status}`;
-    throw new Error(errorMessage);
+  try {
+    const response = await fetch(endpoint, options);
+    return response;
+  } catch (error) {
+    console.error(`API request error: ${endpoint}`, error);
+    throw error;
   }
-
-  return response;
 }

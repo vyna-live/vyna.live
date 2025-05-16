@@ -36,11 +36,14 @@ export default function SubscriptionPage() {
   // Fetch user's subscription
   const { 
     data: subscription, 
-    isLoading: isLoadingSubscription 
+    isLoading: isLoadingSubscription,
+    refetch: refetchSubscription
   } = useQuery({
     queryKey: ['userSubscription'],
     queryFn: getUserSubscription,
     enabled: !!wallet, // Only run if wallet is connected
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 
   // Create subscription mutation
@@ -91,6 +94,13 @@ export default function SubscriptionPage() {
         transactionSignature: signature,
       });
     }
+  };
+  
+  // Handler for modal close - refetch subscription status to ensure accurate display
+  const handleModalClose = () => {
+    setShowPaymentModal(false);
+    // Force a refetch of subscription status to ensure we're showing the latest data
+    refetchSubscription();
   };
 
   // Handler for successful wallet connection
@@ -485,7 +495,7 @@ export default function SubscriptionPage() {
       {selectedTier && (
         <PaymentModal
           isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
+          onClose={handleModalClose}
           selectedTier={selectedTier}
           onSuccess={handlePaymentSuccess}
           isPending={isSubscribing}

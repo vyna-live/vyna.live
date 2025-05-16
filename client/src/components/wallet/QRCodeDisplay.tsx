@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useSolanaWallet } from '@/contexts/SolanaWalletProvider';
 import { useSubscription } from '@/hooks/use-subscription';
-import { apiRequest } from '@/lib/api';
+import { apiRequest } from '@/lib/queryClient';
 
 interface QRCodeDisplayProps {
   walletAddress: string;
