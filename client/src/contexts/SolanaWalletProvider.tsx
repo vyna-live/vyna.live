@@ -24,8 +24,6 @@ import {
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import bs58 from "bs58";
-import dotenv from 'dotenv';
-dotenv.config();
 
 // Set up Buffer for browser environment
 import { Buffer } from "buffer";
@@ -45,9 +43,10 @@ const USDC_MINT = new PublicKey("BXXkv6zRCz1mGJd96Chp4t64r1x3QT5BpHs4fFyz83Ps");
 // USDC has 6 decimal places
 const USDC_DECIMALS = 6;
 
-// key for recipient wallet
-const secret = process.env.PRIVATE_KEY!;
-const recipientKeyPair = Keypair.fromSecretKey(bs58.decode(secret));
+// Create a placeholder keypair for the application
+// This will be replaced with a proper recipient wallet later
+// In a production environment, this would be securely managed on the server
+const recipientKeyPair = Keypair.generate();
 
 // Define wallet object interface
 interface Wallet {
