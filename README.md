@@ -1,39 +1,39 @@
-# Vyna.live: AI-Enhanced Livestreaming Platform
+# Vyna.AI: Multi-Browser AI Assistant & Notes Platform
 
-![Vyna.live Logo](/public/logo.png)
+![Vyna.AI Logo](/public/logo.png)
 
-Vyna.live is a cutting-edge livestreaming platform with built-in AI-powered teleprompter and content generation. It provides streamers with real-time AI assistance during live broadcasts while offering viewers an enhanced interactive experience.
+Vyna.AI is a cutting-edge browser extension and web application that provides an AI-powered assistant for capturing, organizing, and managing digital notes across different platforms. The platform offers intelligent note-taking with AI enhancement, helping users research and organize information more effectively.
 
 ## 🚀 Features
 
-### AI-Powered Streaming
+### AI-Powered Assistant
 
-- **Dual-Mode AI Teleprompter**: Generate content in two distinct styles:
-  - Play-by-play commentary for dynamic narration
-  - Color commentary for in-depth analysis
+- **Multi-Model AI Integration**: Access to multiple AI models:
+  - OpenAI's GPT models
+  - Anthropic's Claude models
+  - Google's Gemini models
 - **Rich Content Formats**: Support for text, tables, graphs, cards, images, and audio
 - **Data Visualization**: Enhanced visual representation of information
-- **Contextual Awareness**: AI responses that understand the streaming context
+- **Contextual Analysis**: AI responses that understand the context of your research
 
-### Video Streaming
+### Smart Note-Taking
 
-- **Agora SDK Integration**: Professional-grade video, audio, and livestreaming
-- **Dual View Options**:
-  - Full-screen view for viewers
-  - Split view with teleprompter panel for streamers
-- **Real-time Interaction**: Built-in chat and audience engagement tools
+- **Intelligent Organization**: Automatic categorization and tagging
+- **Rich Media Support**: Embed images, links, and formatted content 
+- **Searchable Archive**: Full-text search across all your saved notes
+- **Cross-Platform Sync**: Access your notes from any device
 
-### Notes & Research
+### Browser Extension
 
-- **Smart Notepad**: AI-enhanced note-taking with rich text capabilities
-- **Research Assistant**: AI-powered research tools to help prepare content
-- **File Upload**: Support for documents, images, and other reference materials
-- **Collaboration**: Share and collaborate on notes and research
+- **Cross-Browser Support**: Works on Chrome, Firefox, and Edge
+- **Instant Access**: AI assistant right in your browser window
+- **Research Helper**: Get AI insights while browsing the web
+- **Quick Notes**: Capture and organize thoughts without switching contexts
 
 ### Authentication & User Management
 
 - **Secure Login**: Email/password authentication with password reset
-- **User Profiles**: Customizable profiles for streamers and viewers
+- **User Profiles**: Customizable user settings and preferences
 - **Cross-Platform**: Consistent experience across web, browser extension, and mobile
 
 ### Subscription System
@@ -63,14 +63,14 @@ Vyna.live is a cutting-edge livestreaming platform with built-in AI-powered tele
 ### Backend
 - Express.js server with TypeScript
 - PostgreSQL database with Drizzle ORM
-- Socket-based real-time communications
+- RESTful API architecture
 - Multer for file uploads
 
 ### AI & Blockchain
 - OpenAI, Anthropic, and Gemini AI integration
 - Solana blockchain integration for payments
 - Verxio Protocol for blockchain-based loyalty
-- Agora SDK for livestreaming
+- Secure file storage and processing
 
 ### Authentication & Security
 - JWT-based authentication

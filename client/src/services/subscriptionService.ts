@@ -71,23 +71,49 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
   try {
     const response = await apiRequest('GET', '/api/subscription/status');
     
-    // If we're in development mode and the API isn't fully implemented,
-    // return mock data
-    if (!response.ok && process.env.NODE_ENV === 'development') {
-      return getMockUserSubscription();
-    }
-    
     if (!response.ok) {
-      return null;
+      // Only use mock data when explicitly in development mode AND if the API returns an error
+      // This prevents mock data from being used in production
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Using mock subscription data in development');
+        return getMockUserSubscription();
+      }
+      
+      // In production, return the free tier default
+      return {
+        id: 0,
+        userId: 0,
+        tier: 'free',
+        status: 'none',
+        startDate: '',
+        expiresAt: null,
+        gracePeriodEnd: null,
+        autoRenew: false,
+        lastPayment: null
+      };
     }
     
     return await response.json();
   } catch (error) {
-    // Return mock data in development for easier testing
+    // Only use mock data in development mode
     if (process.env.NODE_ENV === 'development') {
+      console.log('Error fetching subscription, using mock data:', error);
       return getMockUserSubscription();
     }
-    throw error;
+    console.error('Subscription fetch error:', error);
+    
+    // In production, return the free tier default on error
+    return {
+      id: 0,
+      userId: 0,
+      tier: 'free',
+      status: 'none',
+      startDate: '',
+      expiresAt: null,
+      gracePeriodEnd: null,
+      autoRenew: false,
+      lastPayment: null
+    };
   }
 }
 
