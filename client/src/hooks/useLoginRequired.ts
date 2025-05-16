@@ -1,7 +1,5 @@
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { ToastAction } from "@/components/ui/toast";
-import React from "react";
 
 /**
  * Hook to handle the scenario when a user tries to use a feature that requires login
@@ -24,11 +22,6 @@ export function useLoginRequired() {
       title: "Login Required",
       description: message || "You need to be logged in to use this feature",
       variant: "destructive",
-      action: redirectToLogin ? (
-        <ToastAction altText="Log in" onClick={() => setLocation("/auth")}>
-          Log in
-        </ToastAction>
-      ) : undefined
     });
 
     if (redirectToLogin) {

@@ -353,6 +353,16 @@ export default function VynaAIChat() {
     const messageToSend = message || inputValue;
     if (messageToSend.trim() === "") return;
     
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "You need to be logged in to send messages",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Create temporary message objects for UI
     const userMessage: AiChatMessage = {
       id: Date.now(),
