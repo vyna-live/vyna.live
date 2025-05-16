@@ -58,10 +58,7 @@ export async function fetchSubscriptionTiers(): Promise<SubscriptionTier[]> {
     
     return await response.json();
   } catch (error) {
-    // Return mock data in development for easier testing
-    if (process.env.NODE_ENV === 'development') {
-      return getMockSubscriptionTiers();
-    }
+    console.error('Error fetching subscription tiers:', error);
     throw error;
   }
 }
@@ -72,14 +69,7 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
     const response = await apiRequest('GET', '/api/subscription/status');
     
     if (!response.ok) {
-      // Only use mock data when explicitly in development mode AND if the API returns an error
-      // This prevents mock data from being used in production
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Using mock subscription data in development');
-        return getMockUserSubscription();
-      }
-      
-      // In production, return the free tier default
+      // For production, return a standardized response for non-subscribed users
       return {
         id: 0,
         userId: 0,
@@ -96,14 +86,9 @@ export async function getUserSubscription(): Promise<UserSubscription | null> {
     
     return await response.json();
   } catch (error) {
-    // Only use mock data in development mode
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Error fetching subscription, using mock data:', error);
-      return getMockUserSubscription();
-    }
     console.error('Subscription fetch error:', error);
     
-    // In production, return the free tier default on error
+    // Return the free tier default on error
     return {
       id: 0,
       userId: 0,
@@ -212,8 +197,9 @@ export function formatSubscriptionTimeRemaining(expiresAt: string): string {
   }
 }
 
-// Mock data functions
-function getMockSubscriptionTiers(): SubscriptionTier[] {
+// Production-ready functions only
+// Mock data removed
+function _removedMockSubscriptionTiers(): SubscriptionTier[] {
   return [
     {
       id: 'free',
@@ -330,42 +316,7 @@ function getMockSubscriptionTiers(): SubscriptionTier[] {
   ];
 }
 
-function getMockUserSubscription(): UserSubscription | null {
-  // Return a 50% chance of having a subscription in development
-  if (Math.random() > 0.5) {
-    // Randomly select a tier between pro and max
-    const tierId = Math.random() > 0.5 ? 'pro' : 'max';
-    const amount = tierId === 'pro' ? '15.00' : '75.00';
-    
-    return {
-      id: 123,
-      userId: 456,
-      tierId: tierId,
-      tier: tierId, // For backward compatibility
-      status: 'active',
-      startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
-      expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now
-      gracePeriodEnd: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(), // 18 days from now
-      autoRenew: true,
-      lastPayment: {
-        amount: amount,
-        currency: 'USDC',
-        date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        transactionId: 'mock_tx_' + Math.random().toString(36).substring(2, 15)
-      }
-    };
-  }
-  
-  return {
-    id: 0,
-    userId: 456,
-    tierId: 'free',
-    tier: 'free', // For backward compatibility
-    status: 'none',
-    startDate: '',
-    expiresAt: null,
-    gracePeriodEnd: null,
-    autoRenew: false,
-    lastPayment: null
-  };
+function _removedMockUserSubscription(): UserSubscription | null {
+  // Mock function removed for production
+  return null;
 }
