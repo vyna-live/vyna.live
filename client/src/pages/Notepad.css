@@ -1,101 +1,247 @@
-/* Custom scrollbar styles */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
+/* Notepad styling */
+.notepad-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #121212;
+  color: #fff;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+.notepad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Chat input styling */
-.chat-input {
-  resize: none;
-  outline: none;
-  color: white;
-  line-height: 1.5;
-}
-
-.chat-input::placeholder {
-  color: #797979;
-}
-
-/* Button hover effect */
-.button-hover-effect {
-  position: relative;
+.notepad-content {
+  display: flex;
+  flex: 1;
   overflow: hidden;
 }
 
-.button-hover-effect::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150%;
-  height: 150%;
-  background: rgba(255, 255, 255, 0.1);
-  transform: translate(-50%, -50%) scale(0);
-  border-radius: 50%;
-  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  z-index: -1;
+.notepad-sidebar {
+  width: 260px;
+  border-right: 1px solid #333;
+  background-color: #1a1a1a;
+  overflow-y: auto;
 }
 
-.button-hover-effect:hover::after {
-  transform: translate(-50%, -50%) scale(1);
+.notepad-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/* Input area specific styling */
-.input-area {
-  border-radius: 10px;
-  border: 1px solid #2a2a2a;
+.notepad-editor {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
 }
 
-/* Empty state animation */
-.empty-state-animation {
-  animation: fadeIn 0.6s ease-out;
+.notepad-footer {
+  border-top: 1px solid #333;
+  background-color: #1a1a1a;
+  padding: 0.75rem 1rem;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+.note-list {
+  padding: 0.5rem;
+}
+
+.note-item {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  background-color: #252525;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.note-item:hover {
+  background-color: #333;
+}
+
+.note-item.active {
+  background-color: #3a3a3a;
+  border-left: 3px solid #DCC5A2;
+}
+
+.note-title {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.note-date {
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.notepad-input-wrapper {
+  display: flex;
+  background-color: #252525;
+  border-radius: 8px;
+  padding: 0.5rem;
+  border: 1px solid #333;
+}
+
+.notepad-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  min-height: 60px;
+  resize: none;
+  padding: 0.5rem;
+}
+
+.input-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  align-items: center;
+}
+
+.action-button {
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.action-button:hover {
+  color: #DCC5A2;
+}
+
+.add-note-button {
+  padding: 0.5rem 1rem;
+  background-color: #DCC5A2;
+  color: #121212;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-note-button:hover {
+  background-color: #C6B190;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 767px) {
+  .notepad-container {
+    position: relative;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .notepad-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 85%;
+    max-width: 300px;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .notepad-sidebar.visible {
+    transform: translateX(0);
+  }
+  
+  .notepad-header {
+    padding: 0.5rem;
+  }
+  
+  .mobile-menu-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .notepad-input {
+    font-size: 16px;
+    min-height: 80px;
+  }
+  
+  .action-button {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Improve touch targets for interactive elements */
+  .note-item {
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  
+  /* Remove expand and collapse icons for mobile */
+  .mobile-hidden {
+    display: none;
+  }
+  
+  /* Remove Go Live button from navbar in expanded view */
+  .notepad-live-button {
+    display: none;
+  }
+  
+  /* Change the commentary style indicators to be more compact */
+  .commentary-style-indicator {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  
+  .cc-indicator {
+    content: "cc";
+  }
+  
+  .pp-indicator {
+    content: "pp";
+  }
+  
+  /* Adjust spacing for mobile */
+  .input-toolbar {
+    gap: 0.5rem;
+    padding: 0.4rem;
+  }
+  
+  /* Pure black background as requested */
+  .notepad-main {
+    background-color: #000000;
+  }
+  
+  /* Improve file attachment display on mobile */
+  .file-attachment {
+    flex-direction: column;
+    width: 100%;
   }
 }
 
-/* Message appear animation */
-.message-appear {
-  animation: messageSlideIn 0.3s ease-out;
-}
-
-@keyframes messageSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+/* Tablet responsive styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .notepad-sidebar {
+    width: 240px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .notepad-main {
+    padding: 0.75rem;
   }
 }
 
-/* Hide message controls until hover */
-.message-controls {
-  opacity: 0;
-  transition: opacity 0.2s ease-out;
-}
-
-.message-appear:hover .message-controls {
-  opacity: 1;
+/* Prevent content clipping on narrow screens */
+.note-content {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }

@@ -118,3 +118,103 @@
     transform: translateY(0);
   }
 }
+
+/* Mobile responsive styles */
+@media (max-width: 767px) {
+  /* Ensure input areas have appropriate sizing on mobile */
+  .chat-input {
+    min-height: 60px;
+    font-size: 16px;
+    padding: 10px;
+  }
+  
+  /* Fix message spacing for readability */
+  .message-item {
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  
+  /* Input toolbar improvements */
+  .input-toolbar {
+    gap: 8px;
+    padding: 8px;
+  }
+  
+  /* Better sized buttons for touch targets */
+  .action-button {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Reduce padding in sidebar on mobile */
+  .mobile-sidebar {
+    padding: 8px;
+  }
+  
+  /* Adjust text sizes for readability */
+  .chat-title {
+    font-size: 16px;
+    line-height: 1.3;
+  }
+  
+  /* Commentary style indicators for mobile */
+  .mobile-commentary-indicator {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Adjust VynaCard display for mobile */
+  .vynacard-mobile {
+    max-width: 100%;
+    margin: 8px 0;
+  }
+
+  /* Pure black background for chat interface on mobile */
+  .chat-wrapper-mobile {
+    background-color: #000000;
+  }
+  
+  /* Hide sidebar by default on mobile */
+  .mobile-sidebar-hidden {
+    display: none;
+  }
+  
+  /* Optimize message rendering on small screens */
+  .ai-message-mobile {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  
+  /* Optimize file uploads and attachments for mobile */
+  .file-attachment-mobile {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+
+/* Tablet responsive styles */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Chat container spacing */
+  .chat-container-tablet {
+    padding: 12px;
+  }
+  
+  /* Sidebar width adjustment for tablets */
+  .sidebar-tablet {
+    width: 240px;
+  }
+}
+
+/* Prevent content clipping on narrow screens */
+.content-container {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
