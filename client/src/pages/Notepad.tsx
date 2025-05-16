@@ -373,9 +373,17 @@ export default function Notepad() {
   const handleNewNote = async () => {
     if (!isAuthenticated || !user) {
       toast({
-        title: 'Authentication required',
-        description: 'Please login to create notes',
-        variant: 'destructive'
+        title: 'Authentication Required',
+        description: 'Please log in to create notes',
+        variant: 'destructive',
+        action: (
+          <button 
+            className="bg-[#DCC5A2] text-[#121212] px-3 py-1 rounded-md text-xs font-medium"
+            onClick={() => setLocation("/auth")}
+          >
+            Log in
+          </button>
+        ),
       });
       return;
     }
