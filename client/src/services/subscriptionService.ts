@@ -31,7 +31,8 @@ export interface SubscriptionTier {
 export interface UserSubscription {
   id: number;
   userId: number;
-  tier: string;
+  tierId: string; // Updated property name to match server response
+  tier?: string; // Keep for backward compatibility
   status: 'none' | 'active' | 'grace_period' | 'expired' | 'canceled';
   startDate: string;
   expiresAt: string | null;
@@ -332,13 +333,14 @@ function getMockUserSubscription(): UserSubscription | null {
   // Return a 50% chance of having a subscription in development
   if (Math.random() > 0.5) {
     // Randomly select a tier between pro and max
-    const tier = Math.random() > 0.5 ? 'pro' : 'max';
-    const amount = tier === 'pro' ? '15.00' : '75.00';
+    const tierId = Math.random() > 0.5 ? 'pro' : 'max';
+    const amount = tierId === 'pro' ? '15.00' : '75.00';
     
     return {
       id: 123,
       userId: 456,
-      tier: tier,
+      tierId: tierId,
+      tier: tierId, // For backward compatibility
       status: 'active',
       startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
       expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days from now
@@ -356,7 +358,8 @@ function getMockUserSubscription(): UserSubscription | null {
   return {
     id: 0,
     userId: 456,
-    tier: 'free',
+    tierId: 'free',
+    tier: 'free', // For backward compatibility
     status: 'none',
     startDate: '',
     expiresAt: null,

@@ -120,7 +120,7 @@ export default function SubscriptionPage() {
   // Helper function to check if a tier is active
   const isTierActive = (tierId: string) => {
     if (!subscription || subscription.status === 'none') return false;
-    return subscription.tier === tierId && subscription.status === 'active';
+    return subscription.tierId === tierId && subscription.status === 'active';
   };
 
   return (
