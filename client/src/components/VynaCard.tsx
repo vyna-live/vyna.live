@@ -26,8 +26,9 @@ const VynaCard: React.FC<VynaCardProps> = ({
 }) => {
   return (
     <Card className={cn(
-      "relative overflow-hidden rounded-xl border-0 shadow-md",
+      "relative overflow-hidden rounded-xl border-0 shadow-md w-full",
       "bg-gradient-to-br from-[#f7f2eb] to-[#efe6dc]",
+      "max-w-full mx-auto",
       className
     )}>
       {/* Background watermark and curved lines */}
@@ -45,8 +46,8 @@ const VynaCard: React.FC<VynaCardProps> = ({
 
       {/* Logo - using the exact image provided */}
       {showLogo && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center z-10">
-          <div className="w-[90px] h-[70px] flex items-center justify-center">
+        <div className="absolute top-2 md:top-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center z-10">
+          <div className="w-[70px] h-[50px] md:w-[90px] md:h-[70px] flex items-center justify-center">
             <img 
               src={vynaLogoPath} 
               alt="Vyna Live Logo" 
@@ -58,10 +59,12 @@ const VynaCard: React.FC<VynaCardProps> = ({
 
       {/* Content container with padding for logo */}
       <div className={cn(
-        "relative z-10 p-6",
-        showLogo && "pt-20"
+        "relative z-10 p-4 md:p-6",
+        showLogo && "pt-16 md:pt-20"
       )}>
-        {children}
+        <div className="w-full overflow-x-auto">
+          {children}
+        </div>
       </div>
 
       {/* Branding Element - Always use "JUST GO LIVE" for consistency */}
